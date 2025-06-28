@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolByte - Student Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* Global CSS Variables for Unified Color Palette */
+        :root {
+            /* Brand Colors */
+            --color-brand-primary: #1a2a6c;   /* Dark Blue - Main brand color */
+            --color-brand-secondary: #b21f1f; /* Deep Red/Maroon - Secondary brand color, accents */
+            --color-brand-gold: #FFD700;     /* Gold - Accent for special elements, highlights */
+            --color-brand-orange: #FFA500;   /* Orange - Used in gradients with gold */
+
+            /* Neutral Palette */
+            --color-neutral-white: #ffffff;
+            --color-neutral-lightest: #f0f4f8; /* Very light gray/blue, good for subtle backgrounds */
+            --color-neutral-light: #d1d5db;    /* Light gray for disabled elements, input borders */
+            --color-neutral-medium: #9ca3af;   /* Medium gray for placeholders, disabled radio accents */
+            --color-neutral-dark: #4b5563;     /* Dark gray for most body text, labels */
+            --color-neutral-darkest: #333333;  /* Very dark gray for prominent text */
+
+            /* Semantic Colors */
+            --color-error-red: #e74c3c;        /* Standard error color */
+            --color-error-red-dark: #c0392b;   /* Darker error red for hover states */
+            --color-success-green: #2ecc71;    /* Success color */
+            --color-info-blue: #3498db;        /* Info color */
+
+            /* Background Gradients */
+            --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            --gradient-background-secondary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
+
+            /* Text Gradients */
+            --gradient-text-gold: linear-gradient(to right, var(--color-brand-gold), var(--color-neutral-white));
+
+            /* Button Gradients */
+            --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
+            --gradient-button-active-hover: linear-gradient(to right, #FFC800, #FF8C00);
+
+            /* Transparent Overlays */
+            --overlay-light: rgba(255, 255, 255, 0.1);
+            --overlay-medium: rgba(0, 0, 0, 0.2);
+            --overlay-dark: rgba(30, 30, 60, 0.95);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--gradient-background-secondary);
+            min-height: 100vh;
+            color: var(--color-neutral-darkest);
+        }
+
+        /* Header Styles */
+        header {
+            background-color: var(--color-neutral-white);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 2rem;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: var(--gradient-background-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--gradient-background-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-neutral-white);
+            font-size: 1.5rem;
+            cursor: pointer; /* Add cursor pointer to indicate clickability */
+            transition: transform 0.2s ease-in-out; /* Smooth transition for hover */
+        }
+
+        .avatar:hover {
+            transform: scale(1.1); /* Slightly enlarge on hover */
+        }
+
+        .student-name {
+            font-weight: 600;
+            color: var(--color-brand-primary);
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .welcome-message {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--color-brand-primary);
+        }
+
+        /* Activity Cards */
+        .activity-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .activity-card {
+            background-color: var(--color-neutral-white);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .activity-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .activity-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--color-brand-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .info-icon {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background-color: var(--color-info-blue);
+            color: var(--color-neutral-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .info-tooltip {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: var(--color-neutral-darkest);
+            color: var(--color-neutral-white);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            width: 250px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+
+        .info-icon:hover .info-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .activity-btn {
+            display: inline-block;
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-white);
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        .activity-btn:hover {
+            background: var(--gradient-button-active-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Subjects Section */
+        .subjects-section {
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--color-brand-primary);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 100px;
+            height: 4px;
+            background: var(--gradient-background-primary);
+            margin: 0.5rem auto 0;
+            border-radius: 2px;
+        }
+
+        .subjects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .subject-card {
+            background-color: var(--color-neutral-white);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .subject-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+            background: var(--gradient-background-primary);
+            color: var(--color-neutral-white);
+        }
+
+        .subject-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--color-brand-primary);
+        }
+
+        .subject-card:hover .subject-icon {
+            color: var(--color-neutral-white);
+        }
+
+        .subject-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* Sign Out Button */
+        .sign-out-section {
+            text-align: center;
+            margin-top: 3rem;
+        }
+
+        .sign-out-btn {
+            background-color: var(--color-error-red);
+            color: var(--color-neutral-white);
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .sign-out-btn:hover {
+            background-color: var(--color-error-red-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Bytes Counter */
+        .bytes-counter {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background-color: var(--color-brand-primary);
+            color: var(--color-neutral-white);
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .bytes-icon {
+            color: var(--color-brand-gold);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .logo {
+                font-size: 2rem;
+            }
+
+            .welcome-message {
+                font-size: 1.5rem;
+            }
+
+            .subjects-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header with Logo and Profile -->
+    <header>
+        <div class="header-container">
+            <a href="#" class="logo">SchoolByte</a>
+            <div class="profile-section">
+                <!-- Made the avatar clickable to lead to studentprofile.html -->
+                <div class="avatar" onclick="window.location.href='studentprofile.html'">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <span class="student-name" id="studentNameDisplay">Student</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <h1 class="welcome-message" id="welcomeMessage">Hello Student, what do you want to dive into today?</h1>
+        </div>
+
+        <!-- Activity Cards -->
+        <div class="activity-cards">
+            <div class="activity-card">
+                <div class="activity-title">
+                    Quizzes
+                    <div class="info-icon">
+                        i
+                        <div class="info-tooltip">Get more bytes by completing quizzes. Earn 3 bytes for each quiz completed with a score above 70%.</div>
+                    </div>
+                </div>
+                <p>Test your knowledge and earn bytes!</p>
+                <a href="#" class="activity-btn">Start Quiz</a>
+            </div>
+            <div class="activity-card">
+                <div class="activity-title">
+                    Preader Games
+                    <div class="info-icon">
+                        i
+                        <div class="info-tooltip">Get more bytes while you shape your character. Get 5 bytes for every game played.</div>
+                    </div>
+                </div>
+                <p>Learn through fun educational games!</p>
+                <a href="#" class="activity-btn">Play Games</a>
+            </div>
+        </div>
+
+        <!-- Subjects Section -->
+        <div class="subjects-section">
+            <h2 class="section-title">SUBJECTS</h2>
+            <div class="subjects-grid">
+                <!-- Agriculture -->
+                <div class="subject-card" onclick="window.location.href='agristudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-tractor"></i>
+                    </div>
+                    <div class="subject-name">Agriculture</div>
+                </div>
+                
+                <!-- Biology -->
+                <div class="subject-card" onclick="window.location.href='biostudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-dna"></i>
+                    </div>
+                    <div class="subject-name">Biology</div>
+                </div>
+                
+                <!-- Chemistry -->
+                <div class="subject-card" onclick="window.location.href='chestudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-flask"></i>
+                    </div>
+                    <div class="subject-name">Chemistry</div>
+                </div>
+                
+                <!-- Christian Religious Education -->
+                <div class="subject-card" onclick="window.location.href='crestudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-bible"></i>
+                    </div>
+                    <div class="subject-name">Christian Religious Education</div>
+                </div>
+                
+                <!-- English Language -->
+                <div class="subject-card" onclick="window.location.href='engstudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-language"></i>
+                    </div>
+                    <div class="subject-name">English Language</div>
+                </div>
+                
+                <!-- Entrepreneurship Education -->
+                <div class="subject-card" onclick="window.location.href='entstudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <div class="subject-name">Entrepreneurship Education</div>
+                </div>
+                
+                <!-- Food and Nutrition -->
+                <div class="subject-card" onclick="window.location.href='fnstudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <div class="subject-name">Food and Nutrition</div>
+                </div>
+                
+                <!-- Geography -->
+                <div class="subject-card" onclick="window.location.href='geostudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-globe-africa"></i>
+                    </div>
+                    <div class="subject-name">Geography</div>
+                </div>
+                
+                <!-- German -->
+                <div class="subject-card" onclick="window.location.href='gerstudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-language"></i>
+                    </div>
+                    <div class="subject-name">German</div>
+                </div>
+                
+                <!-- History -->
+                <div class="subject-card" onclick="window.location.href='hisstudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-landmark"></i>
+                    </div>
+                    <div class="subject-name">History</div>
+                </div>
+                
+                <!-- Kiswahili -->
+                <div class="subject-card" onclick="window.location.href='kiswastudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-language"></i>
+                    </div>
+                    <div class="subject-name">Kiswahili</div>
+                </div>
+                
+                <!-- Literature in English -->
+                <div class="subject-card" onclick="window.location.href='litstudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <div class="subject-name">Literature in English</div>
+                </div>
+                
+                <!-- Luganda -->
+                <div class="subject-card" onclick="window.location.href='lugstudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-language"></i>
+                    </div>
+                    <div class="subject-name">Luganda</div>
+                </div>
+                
+                <!-- Mathematics -->
+                <div class="subject-card" onclick="window.location.href='mathstudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-square-root-alt"></i>
+                    </div>
+                    <div class="subject-name">Mathematics</div>
+                </div>
+                
+                <!-- Performing Arts -->
+                <div class="subject-card" onclick="window.location.href='pastudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-theater-masks"></i>
+                    </div>
+                    <div class="subject-name">Performing Arts</div>
+                </div>
+                
+                <!-- Physical Education -->
+                <div class="subject-card" onclick="window.location.href='pestudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-running"></i>
+                    </div>
+                    <div class="subject-name">Physical Education</div>
+                </div>
+                
+                <!-- Physics -->
+                <div class="subject-card" onclick="window.location.href='phystudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-atom"></i>
+                    </div>
+                    <div class="subject-name">Physics</div>
+                </div>
+                
+                <!-- Technology and Design -->
+                <div class="subject-card" onclick="window.location.href='tdstudentdashboard.html'">
+                    <div class="subject-icon">
+                        <i class="fas fa-laptop-code"></i>
+                    </div>
+                    <div class="subject-name">Technology and Design</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sign Out Button -->
+        <div class="sign-out-section">
+            <button class="sign-out-btn" onclick="signOut()">
+                <i class="fas fa-sign-out-alt"></i> Sign Out
+            </button>
+        </div>
+    </div>
+
+    <!-- Bytes Counter -->
+    <div class="bytes-counter">
+        <i class="fas fa-coins bytes-icon"></i>
+        <span id="bytesCount">150</span> Bytes
+    </div>
+
+    <script>
+        // Get student name from URL parameter
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const studentName = urlParams.get('name') || 'Student';
+            
+            // Update welcome message and profile name
+            document.getElementById('welcomeMessage').textContent = `Hello ${studentName}, what do you want to dive into today?`;
+            document.getElementById('studentNameDisplay').textContent = studentName;
+            
+            // Initialize bytes count (would normally come from backend)
+            let bytesCount = localStorage.getItem('bytesCount') || 150;
+            document.getElementById('bytesCount').textContent = bytesCount;
+        });
+
+        // Sign out function
+        function signOut() {
+            // Here you would typically clear session data
+            localStorage.removeItem('bytesCount');
+            
+            // Redirect to login page
+            window.location.href = 'index.html';
+        }
+
+        // Tooltip initialization
+        document.querySelectorAll('.info-icon').forEach(icon => {
+            icon.addEventListener('mouseenter', function() {
+                this.querySelector('.info-tooltip').style.opacity = '1';
+                this.querySelector('.info-tooltip').style.visibility = 'visible';
+            });
+            
+            icon.addEventListener('mouseleave', function() {
+                this.querySelector('.info-tooltip').style.opacity = '0';
+                this.querySelector('.info-tooltip').style.visibility = 'hidden';
+            });
+        });
+    </script>
+</body>
+</html>
