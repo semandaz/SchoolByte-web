@@ -448,13 +448,17 @@
                 <div id="passwordSection" class="password-section">
                     <div class="form-group">
                         <label for="password">Password</label>
-                        <input type="password" id="password" placeholder="Min 8 chars, incl. uppercase, lowercase, number, special" required>
-                        <i class="fas fa-eye password-toggle" id="togglePassword"></i>
+                        <div style="position: relative;">
+                            <input type="password" id="password" placeholder="Min 8 chars, incl. uppercase, lowercase, number, special" required>
+                            <i class="fas fa-eye password-toggle" id="togglePassword"></i>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="confirmPassword">Confirm Password</label>
-                        <input type="password" id="confirmPassword" placeholder="Re-enter your password" required>
-                        <i class="fas fa-eye password-toggle" id="toggleConfirmPassword"></i>
+                        <div style="position: relative;">
+                            <input type="password" id="confirmPassword" placeholder="Re-enter your password" required>
+                            <i class="fas fa-eye password-toggle" id="toggleConfirmPassword"></i>
+                        </div>
                     </div>
                 </div>
                 
@@ -489,7 +493,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Define your backend URL here! This is the URL Replit gives you.
-            const BACKEND_URL = 'https://e6a47e2e-7ff5-4724-be0b-2504fa40eb11-00-2wcx9db4aw73j.spock.replit.dev'; 
+            const BACKEND_URL = window.location.origin; 
 
             // Cached DOM elements
             const sendCodeBtn = document.getElementById('sendCodeBtn');
@@ -670,11 +674,9 @@
                 
                 // Control Continue (Submit) button
                 if (isFormValidForSubmission) {
-                    submitButton.classList.remove('btn-disabled'); 
                     submitButton.classList.add('active');
                     submitButton.disabled = false;
                 } else {
-                    submitButton.classList.add('btn-disabled'); 
                     submitButton.classList.remove('active');
                     submitButton.disabled = true;
                 }
@@ -730,7 +732,7 @@
                             sendCodeBtn.disabled = true;
                             sendCodeBtn.classList.add('disabled');
                             resendCode.style.display = 'none'; // Hide resend option
-                            submitButton.textContent = 'Continue'; // Change button text for next stage
+                            submitButton.textContent = 'Register'; // Change button text for registration stage
                             validateForm(); // Re-validate to enable/disable button based on new fields
                             passwordInput.focus(); // Focus on password field
                         } else {
@@ -784,20 +786,20 @@
                         const data = await response.json();
 
                         if (response.ok) {
-                            showMessageBox('Success', data.message + '\nRedirecting to dashboard.');
+                            showMessageBox('Success', data.message + '\nRedirecting to dashboard...');
                             setTimeout(() => {
-                                window.location.href = './studentdashboard.html'; 
-                            }, 1500);
+                                window.location.href = 'studentdashboard.html'; 
+                            }, 2000);
                         } else {
                             showMessageBox('Error', data.message || 'Registration failed. Please try again.');
-                            submitButton.textContent = 'Continue';
+                            submitButton.textContent = 'Register';
                             submitButton.disabled = false;
                             validateForm();
                         }
                     } catch (error) {
                         console.error('Error during student registration:', error);
                         showMessageBox('Network Error', 'Could not connect to the server during registration. Please try again.');
-                        submitButton.textContent = 'Continue';
+                        submitButton.textContent = 'Register';
                         submitButton.disabled = false;
                         validateForm();
                     }
