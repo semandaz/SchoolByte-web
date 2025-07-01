@@ -1,291 +1,207 @@
-// server.js (Updated with MongoDB using Mongoose, and Student Registration)
+// Ensure you have these imports at the top of your server.js
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const nodemailer = require('nodemailer'); // For email sending
+const bcrypt = require('bcrypt'); // For password hashing
 
-// Import necessary modules
-const express = require("express"); // Express.js framework
-const bodyParser = require("body-parser"); // Middleware to parse incoming request bodies (like JSON)
-const nodemailer = require("nodemailer"); // Library for sending emails
-const mongoose = require("mongoose"); // Mongoose for MongoDB interaction
-const bcrypt = require("bcrypt"); // For password hashing
-require("dotenv").config(); // Loads environment variables from a .env file for security
-
-// Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 3000; // Define the port, use 3000 by default
+const PORT = 3000; // Or whatever port Replit assigns, usually handled by process.env.PORT
 
-// --- Middleware Setup ---
-app.use(express.static("public")); // Serve static files from the 'public' directory (your HTML, CSS, JS)
-app.use(bodyParser.json()); // Parse JSON request bodies
+// Middleware
+app.use(cors());
+app.use(express.json()); // For parsing application/json bodies
+app.use(express.static('public')); // Serve static files from 'public' directory
 
-// --- MongoDB Connection Setup ---
-// Use the MONGODB_URI environment variable (from Replit Secrets)
-const DB_URI = process.env.MONGODB_URI;
+// --- MongoDB Connection ---
+const MONGODB_URI = process.env.MONGODB_URI; // Make sure this is set in Replit Secrets
 
-mongoose
-    .connect(DB_URI)
-    .then(() => console.log("Successfully connected to MongoDB!"))
-    .catch((err) => console.error("MongoDB connection error:", err));
+mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log('MongoDB connected successfully'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
-// --- Define MongoDB Schemas and Models ---
-
-// Schema for Verification Codes (existing)
+// --- Mongoose Schema and Model for Verification Codes ---
 const verificationCodeSchema = new mongoose.Schema({
-    email: {
-        type: String,
-        required: true,
-        unique: true, // Each email should only have one active code
-    },
-    code: {
-        type: String,
-        required: true,
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-        // Automatically delete the document after 10 minutes (600 seconds)
-        // This relies on MongoDB's TTL (Time-To-Live) index.
-        expires: 600, // 600 seconds = 10 minutes
-    },
+    email: { type: String, required: true, unique: true },
+    code: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now, expires: '10m' } // Code expires in 10 minutes
 });
+const VerificationCode = mongoose.model('VerificationCode', verificationCodeSchema);
 
-// Create a Mongoose Model from the schema. This represents the 'verificationcodes' collection in MongoDB.
-const VerificationCode = mongoose.model("VerificationCode", verificationCodeSchema);
-
-// NEW: Schema for Students
+// --- Mongoose Schema and Model for Students ---
 const studentSchema = new mongoose.Schema({
-    studentName: {
-        type: String,
-        required: true,
-        trim: true // Removes whitespace from both ends of a string
-    },
-    indexNumber: {
-        type: String,
-        required: true,
-        unique: true, // Index numbers should be unique
-        trim: true
-    },
-    email: {
-        type: String,
-        required: true,
-        unique: true, // Emails should be unique
-        lowercase: true, // Store emails in lowercase
-        trim: true
-    },
-    passwordHash: { // Stores the hashed password, NOT the plain text password
-        type: String,
-        required: true
-    },
-    // You can add more fields here like:
-    // courses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
-    // registrationDate: { type: Date, default: Date.now }
+    studentName: { type: String, required: true },
+    indexNumber: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true }, // Store hashed password
+    createdAt: { type: Date, default: Date.now }
 });
-
-// Create a Mongoose Model for Students
-const Student = mongoose.model("Student", studentSchema);
-
+const Student = mongoose.model('Student', studentSchema);
 
 // --- Nodemailer Transporter Setup ---
 const transporter = nodemailer.createTransport({
-    service: "gmail", // Using Gmail SMTP. Remember to use an App password!
+    service: 'gmail', // or your email service
     auth: {
-        user: process.env.EMAIL_USER, // Your email address (e.g., from your .env file)
-        pass: process.env.EMAIL_PASS, // Your application-specific password (from your .env file)
-    },
+        user: process.env.EMAIL_USER, // Your Gmail address (from Replit Secrets)
+        pass: process.env.EMAIL_PASS  // Your App Password (from Replit Secrets)
+    }
 });
 
-// --- API Endpoints (Routes) ---
+// --- API Endpoints ---
 
-/**
- * POST /send-verification-code
- * Handles requests to generate and send a verification code to a user's email.
- */
-app.post("/send-verification-code", async (req, res) => {
-    const { email } = req.body; // Extract email from the request body
-
-    // Input validation: Check if email is provided
+// Endpoint to send verification code (for signup)
+app.post('/send-verification-code', async (req, res) => {
+    const { email } = req.body;
     if (!email) {
-        return res.status(400).json({ message: "Email address is required." });
+        return res.status(400).json({ message: 'Email is required.' });
     }
 
-    // Generate a random 6-digit verification code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-
     try {
-        // Try to find if a code already exists for this email
-        let existingCodeEntry = await VerificationCode.findOne({
-            email: email,
-        });
+        // Generate a 6-digit verification code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
 
-        if (existingCodeEntry) {
-            // If exists, update it with the new code and reset the expiration
-            existingCodeEntry.code = code;
-            existingCodeEntry.createdAt = Date.now(); // Resets the TTL expiration
-            await existingCodeEntry.save();
-            console.log(`Updated code for ${email} to ${code}`);
-        } else {
-            // If not, create a new entry
-            const newCodeEntry = new VerificationCode({
-                email: email,
-                code: code,
-            });
-            await newCodeEntry.save();
-            console.log(`Saved new code ${code} for ${email}`);
-        }
+        // Save or update the code in the database
+        await VerificationCode.findOneAndUpdate(
+            { email },
+            { code, createdAt: Date.now() },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
 
-        // Send the email
+        // Email options
         const mailOptions = {
-            from: process.env.EMAIL_USER, // Sender email address
-            to: email, // Recipient email address
-            subject: "Your SchoolByte Verification Code", // Email subject
-            text: `Your verification code is: ${code}. This code is valid for 10 minutes.`, // Plain text body
-            html: `<p>Your verification code is: <strong>${code}</strong></p>
-                   <p>This code is valid for 10 minutes. Please do not share it with anyone.</p>`, // HTML body
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'SchoolByte Email Verification Code',
+            html: `<p>Your SchoolByte verification code is: <strong>${code}</strong></p><p>This code is valid for 10 minutes.</p>`
         };
 
+        // Send email
         await transporter.sendMail(mailOptions);
-        res.status(200).json({
-            message: "Verification code sent to your email! Please check your inbox.",
-        });
+        res.status(200).json({ message: 'Verification code sent to your email.' });
+
     } catch (error) {
-        console.error("Error in send-verification-code:", error);
-        // Check for specific MongoDB duplicate key error if unique index is violated before `findOne`
-        if (error.code === 11000) {
-            // MongoDB duplicate key error code
-            return res
-                .status(500)
-                .json({
-                    message:
-                        "A verification request is already in progress for this email. Please wait a moment or try verifying.",
-                });
-        }
-        res.status(500).json({
-            message: "Failed to send verification code. Please try again.",
-        });
+        console.error('Error sending verification email:', error);
+        res.status(500).json({ message: 'Failed to send verification code.', error: error.message });
     }
 });
 
-/**
- * POST /verify-code
- * Handles requests to verify a submitted code against the stored code.
- */
-app.post("/verify-code", async (req, res) => {
-    const { email, code } = req.body; // Extract email and code from request body
-
+// Endpoint to verify code (for signup)
+app.post('/verify-code', async (req, res) => {
+    const { email, code } = req.body;
     if (!email || !code) {
-        return res
-            .status(400)
-            .json({ message: "Email and verification code are required." });
+        return res.status(400).json({ message: 'Email and verification code are required.' });
     }
 
     try {
-        // Find the code entry in the database for the given email
-        const storedCodeEntry = await VerificationCode.findOne({
-            email: email,
-        });
+        const storedCode = await VerificationCode.findOne({ email });
 
-        if (!storedCodeEntry) {
-            // This could mean the code expired (due to TTL), was never sent, or already used.
-            return res
-                .status(400)
-                .json({
-                    message:
-                        "No pending verification for this email, or code has expired/been used.",
-                });
+        if (!storedCode) {
+            return res.status(400).json({ message: 'No verification code found for this email.', verified: false });
         }
 
-        // The TTL index on `createdAt` should handle expiration automatically.
-        // However, a double-check here for immediate feedback if TTL hasn't kicked in yet.
-        const TEN_MINUTES = 10 * 60 * 1000;
-        if (Date.now() - storedCodeEntry.createdAt.getTime() > TEN_MINUTES) {
-            await VerificationCode.deleteOne({ email: email }); // Manually delete if expired
-            return res
-                .status(400)
-                .json({
-                    message:
-                        "Verification code has expired. Please request a new one.",
-                });
-        }
-
-        // Compare the submitted code with the stored one
-        if (storedCodeEntry.code === code) {
-            // Code matches: Delete it from the database after successful verification
-            await VerificationCode.deleteOne({ email: email });
-            res.status(200).json({
-                message: "Email successfully verified! Proceed to registration.",
-                verified: true // Indicate successful verification to the frontend
-            });
+        // Check if code matches and is not expired (Mongoose's `expires` handles actual deletion)
+        if (storedCode.code === code) {
+            // Optional: Delete the code after successful verification to prevent reuse
+            await VerificationCode.deleteOne({ email });
+            return res.status(200).json({ message: 'Email verified successfully!', verified: true });
         } else {
-            // Code does not match
-            res.status(401).json({
-                message: "Invalid verification code. Please try again.",
-            });
+            return res.status(400).json({ message: 'Invalid verification code.', verified: false });
         }
     } catch (error) {
-        console.error("Error in verify-code:", error);
-        res.status(500).json({
-            message: "An error occurred during verification. Please try again.",
-        });
+        console.error('Error verifying code:', error);
+        res.status(500).json({ message: 'Error verifying code.', error: error.message, verified: false });
     }
 });
 
-/**
- * POST /register-student
- * Handles new student registration after email verification.
- */
-app.post("/register-student", async (req, res) => {
+// Endpoint to register a new student (for signup)
+app.post('/register-student', async (req, res) => {
     const { studentName, indexNumber, email, password } = req.body;
 
-    // Basic validation
+    // 1. Basic Validation
     if (!studentName || !indexNumber || !email || !password) {
-        return res.status(400).json({ message: "All fields are required for registration." });
+        return res.status(400).json({ message: 'All fields are required.' });
     }
 
     try {
-        // Check if student with this email or index number already exists
-        const existingStudentByEmail = await Student.findOne({ email: email });
-        if (existingStudentByEmail) {
-            return res.status(409).json({ message: "Email already registered." });
+        // 2. Check if student already exists (by email or indexNumber)
+        const existingStudent = await Student.findOne({ $or: [{ email }, { indexNumber }] });
+        if (existingStudent) {
+            return res.status(409).json({ message: 'Student with this email or index number already exists.' });
         }
 
-        const existingStudentByIndex = await Student.findOne({ indexNumber: indexNumber });
-        if (existingStudentByIndex) {
-            return res.status(409).json({ message: "Index number already registered." });
-        }
+        // 3. Hash the password
+        const saltRounds = 10; // Recommended salt rounds for bcrypt
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        // Hash the password
-        const saltRounds = 10; // The number of salt rounds to use (cost factor)
-        const passwordHash = await bcrypt.hash(password, saltRounds);
-
-        // Create new student record
+        // 4. Create new student instance
         const newStudent = new Student({
-            studentName: studentName,
-            indexNumber: indexNumber,
-            email: email,
-            passwordHash: passwordHash, // Store the hashed password
+            studentName,
+            indexNumber,
+            email,
+            password: hashedPassword // Save the hashed password
         });
 
+        // 5. Save student to database
         await newStudent.save();
-        console.log(`New student registered: ${email}`);
 
-        res.status(201).json({ message: "Student registered successfully!", studentId: newStudent._id });
+        res.status(201).json({ message: 'Student registered successfully!', student: { name: studentName, email: email } });
 
     } catch (error) {
-        console.error("Error in /register-student:", error);
-        // Handle potential duplicate key errors (if unique constraint fails for some reason not caught by findOne)
-        if (error.code === 11000) {
-            return res.status(409).json({ message: "An account with this email or index number already exists." });
+        console.error('Error during student registration:', error);
+        // Handle specific Mongoose validation errors if needed
+        if (error.code === 11000) { // Duplicate key error
+            return res.status(409).json({ message: 'A student with this email or index number already exists.' });
         }
-        res.status(500).json({ message: "Student registration failed. Please try again." });
+        res.status(500).json({ message: 'Server error during registration.', error: error.message });
+    }
+});
+
+// NEW: Endpoint for student login
+app.post('/login-student', async (req, res) => {
+    const { email, password } = req.body;
+
+    // 1. Basic validation
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required.' });
+    }
+
+    try {
+        // 2. Find student by email
+        const student = await Student.findOne({ email });
+
+        if (!student) {
+            // User not found
+            return res.status(401).json({ message: 'Invalid email or password.' });
+        }
+
+        // 3. Compare provided password with hashed password in database
+        const isMatch = await bcrypt.compare(password, student.password);
+
+        if (!isMatch) {
+            // Passwords do not match
+            return res.status(401).json({ message: 'Invalid email or password.' });
+        }
+
+        // 4. Successful login
+        // In a real application, you would generate a JWT (JSON Web Token) here
+        // and send it back to the client for session management.
+        // For now, we'll just send a success message and student's name.
+        res.status(200).json({ 
+            message: 'Login successful!', 
+            student: { 
+                studentName: student.studentName,
+                email: student.email 
+            } 
+        });
+
+    } catch (error) {
+        console.error('Error during student login:', error);
+        res.status(500).json({ message: 'Server error during login.', error: error.message });
     }
 });
 
 
-// --- Server Start ---
+// Start the server
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-    console.log(
-        "Ensure you have environment variables (Secrets) for MONGODB_URI, EMAIL_USER, and EMAIL_PASS.",
-    );
-    console.log(
-        "Make sure your MongoDB Atlas cluster is running and accessible (0.0.0.0/0 IP access).",
-    );
+    console.log(`Server running on port ${PORT}`);
 });

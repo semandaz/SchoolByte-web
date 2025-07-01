@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolByte - Student Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Load all fonts that can be selected for site-wide font changing -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Lato:wght@400;700&family=Nunito+Sans:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&family=Satisfy&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Global CSS Variables for Unified Color Palette */
+        :root {
+            /* Brand Colors */
+            --color-brand-primary: #1a2a6c;   /* Dark Blue - Main brand color */
+            --color-brand-secondary: #b21f1f; /* Deep Red/Maroon - Secondary brand color, accents */
+            --color-brand-gold: #FFD700;     /* Gold - Accent for special elements, highlights */
+            --color-brand-orange: #FFA500;   /* Orange - Used in gradients with gold */
+
+            /* Neutral Palette */
+            --color-neutral-white: #ffffff;
+            --color-neutral-lightest: #f0f4f8; /* Very light gray/blue, good for subtle backgrounds */
+            --color-neutral-light: #d1d5db;    /* Light gray for disabled elements, input borders */
+            --color-neutral-medium: #9ca3af;   /* Medium gray for placeholders, disabled radio accents */
+            --color-neutral-dark: #4b5563;     /* Dark gray for most body text, labels */
+            --color-neutral-darkest: #333333;  /* Very dark gray for prominent text */
+
+            /* Semantic Colors */
+            --color-error-red: #e74c3c;        /* Standard error color */
+            --color-error-red-dark: #c0392b;   /* Darker error red for hover states */
+            --color-success-green: #2ecc71;    /* Success color */
+            --color-info-blue: #3498db;        /* Info color */
+
+            /* Background Gradients */
+            --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            --gradient-background-secondary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
+
+            /* Text Gradients */
+            --gradient-text-gold: linear-gradient(to right, var(--color-brand-gold), var(--color-neutral-white));
+
+            /* Button Gradients */
+            --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
+            --gradient-button-active-hover: linear-gradient(to right, #FFC800, #FF8C00);
+
+            /* Transparent Overlays */
+            --overlay-light: rgba(255, 255, 255, 0.1);
+            --overlay-medium: rgba(0, 0, 0, 0.2);
+            --overlay-dark: rgba(30, 30, 60, 0.95);
+            --overlay-selected-option: rgba(26, 42, 108, 0.6);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            /* font-family will be set by JS dynamically */
+        }
+
+        body {
+            background: var(--gradient-background-secondary);
+            min-height: 100vh;
+            color: var(--color-neutral-darkest);
+        }
+
+        /* Header Styles */
+        header {
+            background-color: var(--color-neutral-white);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 2rem;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: var(--gradient-background-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer; /* Make it clickable to go to profile settings */
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--gradient-background-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-neutral-white);
+            font-size: 1.5rem;
+        }
+
+        .student-name-display { /* Renamed from .student-name to avoid conflict */
+            font-weight: 600;
+            color: var(--color-brand-primary);
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .welcome-message {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--color-brand-primary);
+        }
+
+        /* Profile Card */
+        .profile-card {
+            background-color: var(--color-neutral-white);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--color-brand-primary);
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 100px;
+            height: 4px;
+            background: var(--gradient-background-primary);
+            margin: 0.5rem 0 1rem;
+            border-radius: 2px;
+        }
+
+        /* Form Elements (for profile info display) */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--color-brand-primary);
+        }
+
+        select, input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid var(--color-neutral-light);
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: var(--color-neutral-white);
+            transition: all 0.3s;
+        }
+
+        input[readonly] {
+            background-color: var(--color-neutral-lightest);
+            cursor: default;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--color-brand-primary);
+            box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
+        }
+
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1rem;
+        }
+
+        /* Progress Section */
+        .progress-card {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border-radius: 15px; /* Use direct value for consistency */
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .bytes-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--color-brand-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .bytes-label {
+            font-size: 1rem;
+            color: var(--color-neutral-dark);
+        }
+
+        /* Info Icon */
+        .info-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: var(--color-info-blue);
+            color: var(--color-neutral-white);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+            cursor: help;
+            position: relative;
+        }
+
+        .info-tooltip {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--color-neutral-darkest);
+            color: var(--color-neutral-white);
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            width: 250px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 10;
+            text-align: center;
+        }
+
+        .info-icon:hover .info-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Leaderboard */
+        .leaderboard {
+            background-color: var(--color-neutral-lightest);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .leaderboard-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--color-brand-primary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            background-color: var(--color-neutral-white);
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Adjusted shadow for consistency */
+        }
+
+        .rank {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+
+        .rank-1 {
+            background: var(--color-brand-gold);
+            color: var(--color-neutral-darkest);
+        }
+
+        .rank-2 {
+            background: var(--color-neutral-medium);
+            color: var(--color-neutral-white);
+        }
+
+        .rank-3 {
+            background: #cd7f32; /* Bronze */
+            color: var(--color-neutral-white);
+        }
+
+        .student-name-leaderboard { /* Renamed to avoid conflict */
+            flex-grow: 1;
+            font-weight: 500;
+        }
+
+        .student-bytes-leaderboard { /* Renamed to avoid conflict */
+            font-weight: 600;
+            color: var(--color-brand-primary);
+        }
+
+        .show-more {
+            display: block;
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--color-brand-primary);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-white);
+        }
+
+        .btn-primary:hover {
+            background: var(--gradient-button-active-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background-color: var(--color-neutral-light);
+            color: var(--color-neutral-darkest);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--color-neutral-medium);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-danger {
+            background-color: var(--color-error-red);
+            color: var(--color-neutral-white);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--color-error-red-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Coming Soon Badge */
+        .coming-soon {
+            display: inline-block;
+            background-color: var(--color-brand-gold);
+            color: var(--color-neutral-darkest);
+            padding: 0.2rem 0.5rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        /* Bytes Counter */
+        .bytes-counter {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background-color: var(--color-brand-primary);
+            color: var(--color-neutral-white);
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Custom Message Box Styles (copied from login/signup for consistency) */
+        .message-box-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
+        }
+
+        .message-box-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .message-box {
+            background: var(--color-neutral-white);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+
+        .message-box-overlay.show .message-box {
+            transform: translateY(0);
+        }
+
+        .message-box h3 {
+            color: var(--color-error-red);
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+        .message-box h3.success-title {
+            color: var(--color-brand-primary);
+        }
+
+        .message-box p {
+            color: var(--color-neutral-darkest);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            white-space: pre-wrap;
+        }
+
+        .message-box button {
+            background: var(--color-brand-primary);
+            color: var(--color-neutral-white);
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .message-box button:hover {
+            background: var(--color-brand-secondary); /* Consistent hover for primary */
+        }
+
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .logo {
+                font-size: 2rem;
+            }
+
+            .welcome-message {
+                font-size: 1.5rem;
+            }
+
+            .container {
+                padding: 0 1rem;
+            }
+
+            .bytes-counter {
+                bottom: 1rem;
+                right: 1rem;
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header with Logo and Profile -->
+    <header>
+        <div class="header-container">
+            <a href="studentdashboard.html" class="logo">SchoolByte</a>
+            <div class="profile-section" id="profileSectionHeader">
+                <div class="avatar">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <span class="student-name-display" id="studentNameDisplay">Student</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <h1 class="welcome-message" id="welcomeMessage">Student Dashboard</h1>
+        </div>
+
+        <!-- Personal Information Card -->
+        <div class="profile-card">
+            <h2 class="section-title">Personal Information</h2>
+
+            <div class="form-group">
+                <label for="studentNameInput">Full Name</label>
+                <input type="text" id="studentNameInput" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="indexNumberInput">Index Number</label>
+                <input type="text" id="indexNumberInput" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="studentEmail">Email Address</label>
+                <input type="email" id="studentEmail" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="studentClass">Class/Grade</label>
+                <input type="text" id="studentClass" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="studentStream">Stream</label>
+                <input type="text" id="studentStream" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="classTeacherInput">Class Teacher</label>
+                <input type="text" id="classTeacherInput" readonly>
+            </div>
+
+            <!-- Link to full profile page for editing -->
+            <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="location.href='studentprofile.html'">
+                <i class="fas fa-edit" style="margin-right: 8px;"></i>
+                Edit Profile Details
+            </button>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="profile-card">
+            <div class="section-header">
+                <h2 class="section-title">My Progress</h2>
+                <div class="info-icon">
+                    i
+                    <div class="info-tooltip">
+                        Bytes are the status of your academic progress. Play more quizzes, complete more activities and play more Preader games to accumulate bytes.
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-card">
+                <div class="bytes-value" id="bytesDisplay">0 Bytes</div>
+                <div class="bytes-label">Total Learning Bytes Earned</div>
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                <i class="fas fa-trophy" style="margin-right: 8px;"></i>
+                View Achievements
+                <span class="coming-soon">Coming Soon</span>
+            </button>
+        </div>
+
+        <!-- Settings Section -->
+        <div class="profile-card">
+            <h2 class="section-title">Settings</h2>
+
+            <div class="form-group">
+                <label for="preferredFont">Preferred Font</label>
+                <select id="preferredFont">
+                    <option value="Inter, sans-serif">Inter</option>
+                    <option value="'Roboto', sans-serif">Roboto</option>
+                    <option value="'Open Sans', sans-serif">Open Sans</option>
+                    <option value="'Lato', sans-serif">Lato</option>
+                    <option value="'Nunito Sans', sans-serif">Nunito Sans</option>
+                    <option value="'Atkinson Hyperlegible', sans-serif">Atkinson Hyperlegible</option>
+                    <option value="'Montserrat', sans-serif">Montserrat</option>
+                    <option value="'Poppins', sans-serif">Poppins</option>
+                    <option value="'Satisfy', cursive">Galandi (Satisfy)</option>
+                    <option value="'Dancing Script', cursive">Cursive (Dancing Script)</option>
+                </select>
+            </div>
+
+            <button class="btn btn-secondary" style="width: 100%; margin-top: 1rem;">
+                <i class="fas fa-moon" style="margin-right: 8px;"></i>
+                Dark Mode
+                <span class="coming-soon">Coming Soon</span>
+            </button>
+        </div>
+
+        <!-- Leaderboard Section -->
+        <div class="profile-card">
+            <h2 class="section-title">Leaderboard</h2>
+
+            <div class="leaderboard">
+                <div class="leaderboard-title">Top Performers</div>
+                <div class="leaderboard-item">
+                    <div class="rank rank-1">1</div>
+                    <div class="student-name-leaderboard">Joy</div>
+                    <div class="student-bytes-leaderboard">1.2 MB</div>
+                </div>
+                <div class="leaderboard-item">
+                    <div class="rank rank-2">2</div>
+                    <div class="student-name-leaderboard">Mark</div>
+                    <div class="student-bytes-leaderboard">850 kB</div>
+                </div>
+                <div class="leaderboard-item">
+                    <div class="rank rank-3">3</div>
+                    <div class="student-name-leaderboard">Sarah</div>
+                    <div class="student-bytes-leaderboard">720 kB</div>
+                </div>
+                <div class="show-more" onclick="window.location.href='studentleaderboard.html'">
+                    Show more <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Social Section -->
+        <div class="profile-card">
+            <h2 class="section-title">Social</h2>
+
+            <button class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">
+                <i class="fas fa-comments" style="margin-right: 8px;"></i>
+                Chat With Classmates
+                <span class="coming-soon">Coming Soon</span>
+            </button>
+
+            <button class="btn btn-secondary" style="width: 100%;">
+                <i class="fas fa-users" style="margin-right: 8px;"></i>
+                Study Groups
+                <span class="coming-soon">Coming Soon</span>
+            </button>
+        </div>
+
+        <!-- Sign Out Button -->
+        <div style="text-align: center; margin: 2rem 0;">
+            <button class="btn btn-danger" id="signOutBtn">
+                <i class="fas fa-sign-out-alt" style="margin-right: 8px;"></i>
+                Sign Out
+            </button>
+        </div>
+    </div>
+
+    <!-- Bytes Counter -->
+    <div class="bytes-counter">
+        <i class="fas fa-coins bytes-icon"></i>
+        <span id="bytesCount">0</span> Bytes
+    </div>
+
+    <!-- Custom Message Box HTML -->
+    <div id="messageBoxOverlay" class="message-box-overlay">
+        <div class="message-box">
+            <h3 id="messageBoxTitle"></h3>
+            <p id="messageBoxContent"></p>
+            <button id="messageBoxCloseBtn">OK</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Define your backend URL here! This is the URL Replit gives you.
+            const BACKEND_URL = 'https://e6a47e2e-7ff5-4724-be0b-2504fa40eb11-00-2wcx9db4aw73j.spock.replit.dev'; 
+
+            // Cached DOM elements for dashboard info
+            const studentNameDisplay = document.getElementById('studentNameDisplay');
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            const studentNameInput = document.getElementById('studentNameInput');
+            const indexNumberInput = document.getElementById('indexNumberInput');
+            const studentEmailInput = document.getElementById('studentEmail');
+            const studentClassInput = document.getElementById('studentClass');
+            const studentStreamInput = document.getElementById('studentStream');
+            const classTeacherInput = document.getElementById('classTeacherInput');
+            const preferredFontSelect = document.getElementById('preferredFont');
+            const bytesDisplay = document.getElementById('bytesDisplay');
+            const bytesCounter = document.getElementById('bytesCount');
+            const profileSectionHeader = document.getElementById('profileSectionHeader');
+
+            // Message Box elements
+            const messageBoxOverlay = document.getElementById('messageBoxOverlay');
+            const messageBoxTitle = document.getElementById('messageBoxTitle');
+            const messageBoxContent = document.getElementById('messageBoxContent');
+            const messageBoxCloseBtn = document.getElementById('messageBoxCloseBtn');
+
+            // Function to display custom message box
+            function showMessageBox(title, message, isSuccess = false) {
+                messageBoxTitle.textContent = title;
+                messageBoxContent.textContent = message;
+                if (isSuccess) {
+                    messageBoxTitle.classList.add('success-title');
+                    messageBoxTitle.style.color = 'var(--color-brand-primary)';
+                } else {
+                    messageBoxTitle.classList.remove('success-title');
+                    messageBoxTitle.style.color = 'var(--color-error-red)';
+                }
+                messageBoxOverlay.classList.add('show');
+            }
+
+            // Close message box
+            messageBoxCloseBtn.addEventListener('click', function() {
+                messageBoxOverlay.classList.remove('show');
+            });
+
+            // Format bytes for display
+            function formatBytes(bytes) {
+                if (bytes === 0) return '0 Bytes';
+
+                const k = 1000;
+                const sizes = ['Bytes', 'kB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+            }
+
+            // --- Fetch Student Data from Backend ---
+            async function fetchStudentData() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const studentEmail = urlParams.get('email'); // Get email from URL parameter
+
+                if (!studentEmail) {
+                    showMessageBox('Error', 'Student email not found in URL. Please log in again.', false);
+                    console.error('Student email missing from URL.');
+                    setTimeout(() => window.location.href = '/index.html', 2000);
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${BACKEND_URL}/student-dashboard-data?email=${encodeURIComponent(studentEmail)}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        const student = data.student;
+                        // Populate header and welcome message
+                        studentNameDisplay.textContent = student.studentName || 'Student';
+                        welcomeMessage.textContent = `${student.studentName}'s Dashboard`;
+
+                        // Populate personal information fields
+                        studentNameInput.value = student.studentName || '';
+                        indexNumberInput.value = student.indexNumber || '';
+                        studentEmailInput.value = student.email || '';
+                        studentClassInput.value = student.class || '';
+                        studentStreamInput.value = student.stream || '';
+                        classTeacherInput.value = student.classTeacher || '';
+
+                        // Update bytes display
+                        const currentBytes = student.bytes || 0;
+                        bytesDisplay.textContent = formatBytes(currentBytes);
+                        bytesCounter.textContent = currentBytes;
+
+                        // Save email to localStorage for future use (e.g., profile page)
+                        localStorage.setItem('currentStudentEmail', student.email);
+
+                    } else {
+                        showMessageBox('Error', data.message || 'Failed to load student data. Please try again.', false);
+                        console.error('Failed to fetch student data:', data.message);
+                        setTimeout(() => window.location.href = '/index.html', 2000);
+                    }
+                } catch (error) {
+                    console.error('Network error fetching student data:', error);
+                    showMessageBox('Network Error', 'Could not connect to the server to load profile data. Please check your internet connection.', false);
+                    setTimeout(() => window.location.href = '/index.html', 2000);
+                }
+            }
+
+            // --- Font selection logic ---
+            // Apply saved font preference on page load
+            const savedFont = localStorage.getItem('preferredFont');
+            if (savedFont) {
+                document.body.style.fontFamily = savedFont;
+            } else {
+                document.body.style.fontFamily = 'Inter, sans-serif'; // Default font
+            }
+            preferredFontSelect.value = savedFont || 'Inter, sans-serif'; // Set dropdown to current font
+
+            preferredFontSelect.addEventListener('change', function() {
+                const selectedFont = this.value;
+                localStorage.setItem('preferredFont', selectedFont);
+                document.body.style.fontFamily = selectedFont;
+            });
+
+            // --- Sign out function ---
+            document.getElementById('signOutBtn').addEventListener('click', function() {
+                localStorage.removeItem('currentStudentEmail');
+                localStorage.removeItem('bytesCount');
+                localStorage.removeItem('preferredFont');
+
+                window.location.href = '/index.html';
+            });
+
+            // --- Redirect to studentprofile.html with email ---
+            profileSectionHeader.addEventListener('click', function() {
+                const currentEmail = localStorage.getItem('currentStudentEmail');
+                if (currentEmail) {
+                    window.location.href = `/studentprofile.html?email=${encodeURIComponent(currentEmail)}`;
+                } else {
+                    showMessageBox('Error', 'Could not determine student email for profile page. Please log in again.', false);
+                    setTimeout(() => window.location.href = '/index.html', 2000);
+                }
+            });
+
+            // Initial data fetch when page loads
+            fetchStudentData();
+        });
+    </script>
+</body>
+</html>

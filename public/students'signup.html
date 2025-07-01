@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        /* Global CSS Variables for Unified Color Palette (copy from index.html) */
+        /* Global CSS Variables for Unified Color Palette */
         :root {
           /* Brand Colors */
           --color-brand-primary: #1a2a6c;   /* Dark Blue - Main brand color */
@@ -421,7 +421,8 @@
                 <h2>Student Sign Up</h2>
             </div>
             
-            <form id="studentSignupForm">
+            <!-- Added novalidate to the form -->
+            <form id="studentSignupForm" novalidate> 
                 <div class="form-group">
                     <label for="studentName">Student's Name</label>
                     <input type="text" id="studentName" placeholder="e.g., Naluwagga Joy" required>
@@ -444,21 +445,17 @@
                     <input type="text" id="verificationCode" placeholder="••••••" maxlength="6" class="verification-code-input" required>
                 </div>
 
-                <!-- NEW: Password fields, initially hidden -->
+                <!-- NEW: Password fields, initially hidden. Removed 'required' here -->
                 <div id="passwordSection" class="password-section">
                     <div class="form-group">
                         <label for="password">Password</label>
-                        <div style="position: relative;">
-                            <input type="password" id="password" placeholder="Min 8 chars, incl. uppercase, lowercase, number, special" required>
-                            <i class="fas fa-eye password-toggle" id="togglePassword"></i>
-                        </div>
+                        <input type="password" id="password" placeholder="Min 8 chars, incl. uppercase, lowercase, number, special"> 
+                        <i class="fas fa-eye password-toggle" id="togglePassword"></i>
                     </div>
                     <div class="form-group">
                         <label for="confirmPassword">Confirm Password</label>
-                        <div style="position: relative;">
-                            <input type="password" id="confirmPassword" placeholder="Re-enter your password" required>
-                            <i class="fas fa-eye password-toggle" id="toggleConfirmPassword"></i>
-                        </div>
+                        <input type="password" id="confirmPassword" placeholder="Re-enter your password">
+                        <i class="fas fa-eye password-toggle" id="toggleConfirmPassword"></i>
                     </div>
                 </div>
                 
@@ -473,7 +470,8 @@
                     <button type="button" class="btn btn-back" onclick="location.href='index.html'">
                         <i class="fas fa-arrow-left"></i> Back
                     </button>
-                    <button type="submit" id="submitButton" class="btn btn-next" disabled>
+                    <!-- Changed type="submit" to type="button" for manual handling -->
+                    <button type="button" id="submitButton" class="btn btn-next" disabled> 
                         Continue <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
@@ -493,7 +491,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Define your backend URL here! This is the URL Replit gives you.
-            const BACKEND_URL = window.location.origin; 
+            const BACKEND_URL = 'https://e6a47e2e-7ff5-4724-be0b-2504fa40eb11-00-2wcx9db4aw73j.spock.replit.dev'; 
 
             // Cached DOM elements
             const sendCodeBtn = document.getElementById('sendCodeBtn');
@@ -503,14 +501,14 @@
             const studentSignupForm = document.getElementById('studentSignupForm');
             const studentNameInput = document.getElementById('studentName');
             const indexNumberInput = document.getElementById('indexNumber');
-            const passwordInput = document.getElementById('password'); // NEW
-            const confirmPasswordInput = document.getElementById('confirmPassword'); // NEW
-            const passwordSection = document.getElementById('passwordSection'); // NEW
-            const togglePassword = document.getElementById('togglePassword'); // NEW
-            const toggleConfirmPassword = document.getElementById('toggleConfirmPassword'); // NEW
+            const passwordInput = document.getElementById('password'); 
+            const confirmPasswordInput = document.getElementById('confirmPassword'); 
+            const passwordSection = document.getElementById('passwordSection'); 
+            const togglePassword = document.getElementById('togglePassword'); 
+            const toggleConfirmPassword = document.getElementById('toggleConfirmPassword'); 
             const agreeTermsCheckbox = document.getElementById('agreeTerms');
-            const submitButton = document.getElementById('submitButton');
-            
+            const submitButton = document.getElementById('submitButton'); // This is now type="button"
+
             let countdownInterval;
             let emailVerified = false; // Flag to track successful email verification
 
@@ -546,17 +544,24 @@
             
             // Toggle password visibility
             function setupPasswordToggle(toggleElement, passwordField) {
-                toggleElement.addEventListener('click', function() {
-                    const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
-                    passwordField.setAttribute('type', type);
-                    toggleElement.classList.toggle('fa-eye');
-                    toggleElement.classList.toggle('fa-eye-slash');
-                });
+                if (toggleElement && passwordField) { // Add null check for safety
+                    toggleElement.addEventListener('click', function() {
+                        const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+                        passwordField.setAttribute('type', type);
+                        toggleElement.classList.toggle('fa-eye');
+                        toggleElement.classList.toggle('fa-eye-slash');
+                    });
+                }
             }
             
             // Initialize password toggles
-            setupPasswordToggle(togglePassword, passwordInput);
-            setupPasswordToggle(toggleConfirmPassword, confirmPasswordInput);
+            // Ensure these elements exist before trying to set up listeners
+            if (togglePassword && passwordInput) {
+                setupPasswordToggle(togglePassword, passwordInput);
+            }
+            if (toggleConfirmPassword && confirmPasswordInput) {
+                setupPasswordToggle(toggleConfirmPassword, confirmPasswordInput);
+            }
             
             // Start countdown timer for resend
             function startCountdown() {
@@ -657,11 +662,11 @@
                 let isFormValidForSubmission = false;
 
                 if (!emailVerified) {
-                    // Before email is verified, submit button depends only on previous fields
+                    // Before email is verified, submit button depends only on initial fields
                     isFormValidForSubmission = isNameFilled && isIndexNumberFilled && isEmailValid && isCodeFilled && isTermsChecked;
                 } else {
                     // After email is verified, submit button also depends on passwords
-                    const isPasswordFilled = passwordInput.value.length >= 8; // Basic length check
+                    const isPasswordFilled = passwordInput.value.length >= 8; 
                     const isConfirmPasswordFilled = confirmPasswordInput.value.length >= 8;
                     const passwordsMatch = passwordInput.value === confirmPasswordInput.value;
                     const isPasswordComplex = isValidPassword(passwordInput.value);
@@ -674,9 +679,11 @@
                 
                 // Control Continue (Submit) button
                 if (isFormValidForSubmission) {
+                    submitButton.classList.remove('btn-disabled'); 
                     submitButton.classList.add('active');
                     submitButton.disabled = false;
                 } else {
+                    submitButton.classList.add('btn-disabled'); 
                     submitButton.classList.remove('active');
                     submitButton.disabled = true;
                 }
@@ -687,28 +694,35 @@
             indexNumberInput.addEventListener('input', validateForm);
             emailInput.addEventListener('input', validateForm);
             verificationCodeInput.addEventListener('input', validateForm);
-            passwordInput.addEventListener('input', validateForm); // NEW
-            confirmPasswordInput.addEventListener('input', validateForm); // NEW
+            passwordInput.addEventListener('input', validateForm); 
+            confirmPasswordInput.addEventListener('input', validateForm); 
             agreeTermsCheckbox.addEventListener('change', validateForm);
             
-            // Form submission logic (now handles both code verification and registration)
-            studentSignupForm.addEventListener('submit', async function(event) {
-                event.preventDefault(); 
+            // Event listener for the "Continue" button (now type="button")
+            submitButton.addEventListener('click', async function(event) {
+                event.preventDefault(); // Prevent default button behavior, not form submission directly now
 
                 const studentName = studentNameInput.value.trim();
                 const indexNumber = indexNumberInput.value.trim();
                 const email = emailInput.value.trim();
                 const verificationCode = verificationCodeInput.value.trim();
-                const password = passwordInput.value; // NEW
-                const confirmPassword = confirmPasswordInput.value; // NEW
+                const password = passwordInput.value; 
+                const confirmPassword = confirmPasswordInput.value; 
 
                 // Stage 1: Verify Email Code
                 if (!emailVerified) {
+                    console.log('DEBUG: Attempting Stage 1: Verify Email Code'); // DEBUG LOG
                     if (verificationCode.length !== 6) {
                         showMessageBox('Validation Error', 'Please enter the 6-digit verification code.');
                         verificationCodeInput.focus();
                         return;
                     }
+                     // Manually check other required fields for stage 1 before sending to backend
+                    if (!studentName || !indexNumber || !email || !agreeTermsCheckbox.checked) {
+                        showMessageBox('Validation Error', 'Please fill in all details and agree to terms before continuing.');
+                        return;
+                    }
+
 
                     submitButton.textContent = 'Verifying Code...';
                     submitButton.disabled = true;
@@ -722,27 +736,43 @@
                         });
 
                         const data = await response.json();
+                        console.log('DEBUG: Verify Code Response Status:', response.status); // DEBUG LOG
+                        console.log('DEBUG: Verify Code Response Data:', data); // DEBUG LOG
 
-                        if (response.ok) {
+                        if (response.ok && data.verified) { // Check data.verified as well
                             showMessageBox('Success', data.message);
                             emailVerified = true; // Set flag
-                            passwordSection.style.display = 'block'; // Show password fields
+                            
+                            // *** CRITICAL PART: DISPLAYING THE PASSWORD SECTION ***
+                            if (passwordSection) { // Ensure element exists before manipulating
+                                passwordSection.style.display = 'block'; 
+                                console.log('DEBUG: Password section set to display: block;'); // DEBUG LOG
+                                // Now that fields are visible, ensure they are functionally required
+                                passwordInput.setAttribute('required', 'true');
+                                confirmPasswordInput.setAttribute('required', 'true');
+                            } else {
+                                console.error('DEBUG ERROR: passwordSection element not found!'); // DEBUG ERROR LOG
+                            }
+                            // **************************************************
+
                             emailInput.readOnly = true; // Prevent changing email after verification
                             verificationCodeInput.readOnly = true; // Prevent changing code after verification
                             sendCodeBtn.disabled = true;
                             sendCodeBtn.classList.add('disabled');
                             resendCode.style.display = 'none'; // Hide resend option
-                            submitButton.textContent = 'Register'; // Change button text for registration stage
+                            submitButton.textContent = 'Continue (Register)'; // Change button text for next stage
                             validateForm(); // Re-validate to enable/disable button based on new fields
                             passwordInput.focus(); // Focus on password field
+                            console.log('DEBUG: Stage 1: Email verified, password section should now be visible.'); // DEBUG LOG
                         } else {
                             showMessageBox('Error', data.message || 'Verification failed. Please try again.');
                             submitButton.textContent = 'Continue';
                             submitButton.disabled = false;
                             validateForm();
+                            console.log('DEBUG: Stage 1: Email verification failed or not confirmed as verified.'); // DEBUG LOG
                         }
                     } catch (error) {
-                        console.error('Error during code verification:', error);
+                        console.error('DEBUG ERROR: Error during code verification:', error); // DEBUG ERROR LOG
                         showMessageBox('Network Error', 'Could not connect to the server during verification. Please try again.');
                         submitButton.textContent = 'Continue';
                         submitButton.disabled = false;
@@ -750,7 +780,10 @@
                     }
                 } else {
                     // Stage 2: Register Student (Email already verified)
-                    if (password.length < 8) {
+                    console.log('DEBUG: Attempting Stage 2: Register Student'); // DEBUG LOG
+                    
+                    // Frontend validation for password fields now that they are visible
+                    if (!password || password.length < 8) {
                         showMessageBox('Validation Error', 'Password must be at least 8 characters long.');
                         passwordInput.focus();
                         return;
@@ -784,22 +817,29 @@
                         });
 
                         const data = await response.json();
+                        console.log('DEBUG: Register Student Response Status:', response.status); // DEBUG LOG
+                        console.log('DEBUG: Register Student Response Data:', data); // DEBUG LOG
 
                         if (response.ok) {
-                            showMessageBox('Success', data.message + '\nRedirecting to dashboard...');
+                            showMessageBox('Success', data.message + '\nRedirecting to dashboard.');
                             setTimeout(() => {
-                                window.location.href = 'studentdashboard.html'; 
-                            }, 2000);
+                                // Clear local storage or session data relevant to signup
+                                // For example, if you stored the name temporarily for display
+                                // localStorage.removeItem('tempStudentName'); 
+                                window.location.href = `./studentdashboard.html?name=${encodeURIComponent(studentName)}`; // Pass name for dashboard display
+                            }, 1500);
+                            console.log('DEBUG: Stage 2: Student registered successfully, redirecting.'); // DEBUG LOG
                         } else {
                             showMessageBox('Error', data.message || 'Registration failed. Please try again.');
-                            submitButton.textContent = 'Register';
+                            submitButton.textContent = 'Continue (Register)';
                             submitButton.disabled = false;
                             validateForm();
+                            console.log('DEBUG: Stage 2: Student registration failed.'); // DEBUG LOG
                         }
                     } catch (error) {
-                        console.error('Error during student registration:', error);
+                        console.error('DEBUG ERROR: Error during student registration:', error); // DEBUG ERROR LOG
                         showMessageBox('Network Error', 'Could not connect to the server during registration. Please try again.');
-                        submitButton.textContent = 'Register';
+                        submitButton.textContent = 'Continue (Register)';
                         submitButton.disabled = false;
                         validateForm();
                     }
