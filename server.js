@@ -200,6 +200,41 @@ app.post('/login-student', async (req, res) => {
     }
 });
 
+// Endpoint to get student dashboard data
+app.get('/student-dashboard-data', async (req, res) => {
+    const { email } = req.query;
+
+    if (!email) {
+        return res.status(400).json({ message: 'Email is required.' });
+    }
+
+    try {
+        const student = await Student.findOne({ email });
+
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        // Return student data with some default values for fields not in database
+        res.status(200).json({
+            message: 'Student data retrieved successfully',
+            student: {
+                studentName: student.studentName,
+                indexNumber: student.indexNumber,
+                email: student.email,
+                class: 'S.4', // Default class - you can modify this
+                stream: 'Science', // Default stream - you can modify this
+                classTeacher: 'Mr. Smith', // Default teacher - you can modify this
+                bytes: 150 // Default bytes - you can modify this
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching student dashboard data:', error);
+        res.status(500).json({ message: 'Server error fetching student data.', error: error.message });
+    }
+});
+
 
 // Start the server
 app.listen(PORT, () => {
