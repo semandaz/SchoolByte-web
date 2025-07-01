@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SchoolByte - Student Sign Up</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Lato:wght@400;700&family=Nunito+Sans:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&family=Satisfy&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
     <style>
         /* Global CSS Variables for Unified Color Palette */
         :root {
@@ -848,6 +848,24 @@
 
             // Initial validation when page loads
             validateForm();
+
+            // Font selection logic
+            const savedFont = localStorage.getItem('preferredFont');
+            if (savedFont) {
+                document.body.style.fontFamily = savedFont;
+            } else {
+                document.body.style.fontFamily = 'Inter, sans-serif'; // Default font
+            }
+            // If this page has a font selection dropdown, update its value too:
+            const preferredFontSelect = document.getElementById('preferredFont');
+            if (preferredFontSelect) {
+                preferredFontSelect.value = savedFont || 'Inter, sans-serif';
+                preferredFontSelect.addEventListener('change', function() {
+                    const selectedFont = this.value;
+                    localStorage.setItem('preferredFont', selectedFont);
+                    document.body.style.fontFamily = selectedFont;
+                });
+            }
         });
     </script>
 </body>
