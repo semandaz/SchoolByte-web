@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SchoolByte - Student Profile</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Load all fonts that can be selected for site-wide font changing -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Lato:wght@400;700&family=Nunito+Sans:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&family=Satisfy&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Load all fonts that can be selected -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Lato:wght@400;700&family=Nunito+Sans:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         /* Global CSS Variables for Unified Color Palette */
         :root {
@@ -22,13 +22,11 @@
             --color-neutral-light: #d1d5db;    /* Light gray for disabled elements, input borders */
             --color-neutral-medium: #9ca3af;   /* Medium gray for placeholders, disabled radio accents */
             --color-neutral-dark: #4b5563;     /* Dark gray for most body text, labels */
-            --color-neutral-darkest: #333333;  /* Very dark gray for prominent text */
+            --color-neutral-darkest: #333333;  /* Very dark gray for prominent text (e.g., terms.html body) */
 
             /* Semantic Colors */
             --color-error-red: #e74c3c;        /* Standard error color */
             --color-error-red-dark: #c0392b;   /* Darker error red for hover states */
-            --color-success-green: #2ecc71;    /* Success color */
-            --color-info-blue: #3498db;        /* Info color */
 
             /* Background Gradients */
             --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
@@ -41,7 +39,7 @@
             --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
             --gradient-button-active-hover: linear-gradient(to right, #FFC800, #FF8C00);
 
-            /* Transparent Overlays */
+            /* Transparent Overlays (for cards, popups, etc.) */
             --overlay-light: rgba(255, 255, 255, 0.1);
             --overlay-medium: rgba(0, 0, 0, 0.2);
             --overlay-dark: rgba(30, 30, 60, 0.95);
@@ -182,6 +180,8 @@
             font-style: italic;
         }
 
+        /* Removed send-code-btn and resend-code styles as they are not needed on profile page */
+
         .terms {
             display: flex;
             align-items: flex-start;
@@ -309,16 +309,12 @@
             margin-bottom: 15px;
         }
 
-        .message-box h3.success-title {
-            color: var(--color-brand-primary);
-        }
-
         .message-box p {
             color: var(--color-neutral-darkest);
             font-size: 1.1rem;
             line-height: 1.6;
             margin-bottom: 25px;
-            white-space: pre-wrap;
+            white-space: pre-wrap; /* Allows newlines from JS to display */
         }
 
         .message-box button {
@@ -333,7 +329,7 @@
         }
 
         .message-box button:hover {
-            background: var(--color-brand-secondary); /* Consistent hover for primary */
+            background: var(--color-brand-primary); /* Consistent hover for primary */
         }
 
         @media (max-width: 768px) {
@@ -423,7 +419,9 @@
 
                 <div class="form-group">
                     <label for="email" class="required">Email Address</label>
+                    <!-- Email is now read-only on profile page -->
                     <input type="email" id="email" placeholder="e.g., student@schoolbyte.com" required readonly>
+                    <!-- Removed send code and resend code buttons -->
                 </div>
 
                 <!-- Password change section - initially optional -->
@@ -459,7 +457,7 @@
                 </div>
 
                 <div class="buttons">
-                    <button type="button" class="btn btn-back" onclick="location.href='/studentdashboard.html'">
+                    <button type="button" class="btn btn-back" onclick="location.href='studentdashboard.html'">
                         <i class="fas fa-arrow-left"></i> Back to Dashboard
                     </button>
                     <button type="submit" id="saveProfileBtn" class="btn btn-submit">
@@ -481,7 +479,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const BACKEND_URL = window.location.origin; 
+            const BACKEND_URL = 'https://e6a47e2e-7ff5-4724-be0b-2504fa40eb11-00-2wcx9db4aw73j.spock.replit.dev'; 
 
             // Cached DOM elements
             const studentProfileForm = document.getElementById('studentProfileForm');
