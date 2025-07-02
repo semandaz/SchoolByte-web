@@ -5,16 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SchoolByte - Student Profile</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Load all fonts that can be selected -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Lato:wght@400;700&family=Nunito+Sans:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         /* Global CSS Variables for Unified Color Palette */
         :root {
             /* Brand Colors */
             --color-brand-primary: #1a2a6c;   /* Dark Blue - Main brand color */
             --color-brand-secondary: #b21f1f; /* Deep Red/Maroon - Secondary brand color, accents */
-            --color-brand-gold: #FFD700;     /* Gold - Accent for special elements, highlights */
-            --color-brand-orange: #FFA500;   /* Orange - Used in gradients with gold */
+            --color-brand-gold: #FFD700;      /* Gold - Accent for special elements, highlights */
+            --color-brand-orange: #FFA500;    /* Orange - Used in gradients with gold */
 
             /* Neutral Palette */
             --color-neutral-white: #ffffff;
@@ -22,11 +21,13 @@
             --color-neutral-light: #d1d5db;    /* Light gray for disabled elements, input borders */
             --color-neutral-medium: #9ca3af;   /* Medium gray for placeholders, disabled radio accents */
             --color-neutral-dark: #4b5563;     /* Dark gray for most body text, labels */
-            --color-neutral-darkest: #333333;  /* Very dark gray for prominent text (e.g., terms.html body) */
+            --color-neutral-darkest: #333333;  /* Very dark gray for prominent text */
 
             /* Semantic Colors */
             --color-error-red: #e74c3c;        /* Standard error color */
             --color-error-red-dark: #c0392b;   /* Darker error red for hover states */
+            --color-success-green: #2ecc71;    /* Success color */
+            --color-info-blue: #3498db;        /* Info color */
 
             /* Background Gradients */
             --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
@@ -39,703 +40,727 @@
             --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
             --gradient-button-active-hover: linear-gradient(to right, #FFC800, #FF8C00);
 
-            /* Transparent Overlays (for cards, popups, etc.) */
+            /* Transparent Overlays */
             --overlay-light: rgba(255, 255, 255, 0.1);
             --overlay-medium: rgba(0, 0, 0, 0.2);
             --overlay-dark: rgba(30, 30, 60, 0.95);
-            --overlay-selected-option: rgba(26, 42, 108, 0.6);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            /* Font family set by JS based on user preference */
+            font-family: 'Inter', sans-serif;
         }
 
         body {
-            background: var(--gradient-background-secondary); /* Consistent background gradient */
+            background: var(--gradient-background-secondary);
             min-height: 100vh;
+            color: var(--color-neutral-darkest);
+        }
+
+        /* Header Styles */
+        header {
+            background-color: var(--color-neutral-white);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 2rem;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 600px;
-            width: 100%;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            padding: 40px;
-        }
-
-        .logo-container {
-            text-align: center;
-            margin-bottom: 25px;
         }
 
         .logo {
-            font-size: 4.5rem;
+            font-size: 2.5rem;
             font-weight: 900;
-            background: var(--gradient-background-primary); /* Consistent text gradient */
+            background: var(--gradient-background-primary);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            letter-spacing: -2px;
-            margin-bottom: 10px;
+            text-decoration: none;
         }
 
-        .subtitle {
-            color: var(--color-brand-primary); /* Consistent subtitle color */
-            font-size: 1.2rem;
-            margin-top: 15px;
-        }
-
-        .profile-header {
-            text-align: center;
-            margin-bottom: 30px;
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
 
         .avatar {
-            width: 120px;
-            height: 120px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            background: var(--gradient-background-primary); /* Consistent avatar background */
-            margin: 0 auto 20px;
+            background: var(--gradient-background-primary);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3.5rem;
             color: var(--color-neutral-white);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            font-size: 1.5rem;
         }
 
-        .profile-header h2 {
-            color: var(--color-brand-primary); /* Consistent heading color */
+        .student-name {
+            font-weight: 600;
+            color: var(--color-brand-primary);
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .welcome-message {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--color-brand-primary);
+        }
+
+        /* Profile Card */
+        .profile-card {
+            background-color: var(--color-neutral-white);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
             font-size: 1.8rem;
             font-weight: 700;
+            color: var(--color-brand-primary);
+            margin-bottom: 1.5rem;
+            position: relative;
         }
 
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 100px;
+            height: 4px;
+            background: var(--gradient-background-primary);
+            margin: 0.5rem 0 1rem;
+            border-radius: 2px;
+        }
+
+        /* Form Elements */
         .form-group {
-            margin-bottom: 25px;
-            position: relative;
+            margin-bottom: 1.5rem;
         }
 
         label {
             display: block;
-            margin-bottom: 8px;
-            color: var(--color-brand-primary); /* Consistent label color */
+            margin-bottom: 0.5rem;
             font-weight: 600;
-            font-size: 1.1rem;
+            color: var(--color-brand-primary);
         }
 
-        .required::after {
-            content: " *";
-            color: var(--color-error-red); /* Consistent required indicator color */
-        }
-
-        input, select {
+        select, input {
             width: 100%;
-            padding: 15px;
-            border: 2px solid var(--color-neutral-light); /* Consistent border color */
-            border-radius: 10px;
+            padding: 0.8rem 1rem;
+            border: 1px solid var(--color-neutral-light);
+            border-radius: 8px;
             font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-        
-        input[readonly] {
-            background-color: var(--color-neutral-lightest);
-            cursor: not-allowed;
+            background-color: var(--color-neutral-white);
+            transition: all 0.3s;
         }
 
-        input:focus, select:focus {
+        select:focus, input:focus {
             outline: none;
-            border-color: var(--color-brand-primary); /* Consistent focus border color */
-            box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.2);
+            border-color: var(--color-brand-primary);
+            box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
         }
 
-        .password-container {
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1rem;
+        }
+
+        /* Progress Section */
+        .progress-card {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border-radius: var(--radius); /* Note: --radius is not defined in your CSS variables, consider adding it if needed */
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .bytes-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--color-brand-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .bytes-label {
+            font-size: 1rem;
+            color: var(--color-neutral-dark);
+        }
+
+        /* Info Icon */
+        .info-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: var(--color-info-blue);
+            color: var(--color-neutral-white);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+            cursor: help;
             position: relative;
         }
 
-        .toggle-password {
+        .info-tooltip {
             position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--color-neutral-dark); /* Consistent toggle color */
-            cursor: pointer;
-        }
-
-        .password-hint {
-            font-size: 0.85rem;
-            color: var(--color-neutral-dark); /* Consistent password hint color */
-            margin-top: 5px;
-            font-style: italic;
-        }
-
-        /* Removed send-code-btn and resend-code styles as they are not needed on profile page */
-
-        .terms {
-            display: flex;
-            align-items: flex-start;
-            margin: 25px 0;
-            gap: 12px;
-        }
-
-        .terms input {
-            width: 22px;
-            height: 22px;
-            margin-top: 3px;
-        }
-
-        .terms label {
-            font-weight: normal;
-            color: var(--color-neutral-dark); /* Consistent label text color */
-        }
-
-        .terms a {
-            color: var(--color-brand-primary); /* Consistent link color */
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .terms a:hover {
-            text-decoration: underline;
-        }
-
-        .buttons {
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-            margin-top: 10px;
-        }
-
-        .btn {
-            padding: 15px 25px;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn-back {
-            background: var(--color-error-red); /* Consistent back button color */
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--color-neutral-darkest);
             color: var(--color-neutral-white);
-            flex: 1;
-        }
-
-        .btn-back:hover {
-            background: var(--color-error-red-dark); /* Consistent hover for back button */
-            transform: translateY(-2px);
-        }
-
-        .btn-submit {
-            background: var(--color-brand-primary); /* Consistent submit button color */
-            color: var(--color-neutral-white);
-            flex: 2;
-        }
-
-        .btn-submit:hover {
-            background: var(--color-brand-primary); /* Consider a darker shade if available, or just keep primary */
-            opacity: 0.9; /* Add slight opacity change for hover if no dark variant */
-            transform: translateY(-2px);
-        }
-
-        .btn-submit:disabled {
-            background: var(--color-neutral-medium); /* Consistent disabled background */
-            color: var(--color-neutral-dark); /* Consistent disabled text */
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn i {
-            font-size: 1.2rem;
-        }
-
-        /* Custom Message Box Styles (copied for consistency) */
-        .message-box-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            width: 250px;
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.3s ease;
+            transition: all 0.3s;
+            z-index: 10;
+            text-align: center;
         }
 
-        .message-box-overlay.show {
+        .info-icon:hover .info-tooltip {
             opacity: 1;
             visibility: visible;
         }
 
-        .message-box {
-            background: var(--color-neutral-white);
-            padding: 30px;
+        /* Leaderboard */
+        .leaderboard {
+            background-color: var(--color-neutral-lightest);
             border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .leaderboard-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--color-brand-primary);
+            margin-bottom: 1rem;
             text-align: center;
-            max-width: 400px;
-            width: 90%;
-            transform: translateY(-20px);
-            transition: transform 0.3s ease;
         }
 
-        .message-box-overlay.show .message-box {
-            transform: translateY(0);
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            background-color: var(--color-neutral-white);
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Added a default shadow if --shadow is not defined */
         }
 
-        .message-box h3 {
-            color: var(--color-error-red);
-            font-size: 1.8rem;
-            margin-bottom: 15px;
+        .rank {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 1rem;
+            flex-shrink: 0;
         }
 
-        .message-box p {
+        .rank-1 {
+            background: var(--color-brand-gold);
             color: var(--color-neutral-darkest);
-            font-size: 1.1rem;
-            line-height: 1.6;
-            margin-bottom: 25px;
-            white-space: pre-wrap; /* Allows newlines from JS to display */
         }
 
-        .message-box button {
-            background: var(--color-brand-primary);
+        .rank-2 {
+            background: var(--color-neutral-medium);
             color: var(--color-neutral-white);
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
+        }
+
+        .rank-3 {
+            background: #cd7f32; /* Bronze */
+            color: var(--color-neutral-white);
+        }
+
+        .student-name {
+            flex-grow: 1;
+            font-weight: 500;
+        }
+
+        .student-bytes {
+            font-weight: 600;
+            color: var(--color-brand-primary);
+        }
+
+        .show-more {
+            display: block;
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--color-brand-primary);
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s ease;
         }
 
-        .message-box button:hover {
-            background: var(--color-brand-primary); /* Consistent hover for primary */
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            text-align: center;
         }
 
+        .btn-primary {
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-white);
+        }
+
+        .btn-primary:hover {
+            background: var(--gradient-button-active-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background-color: var(--color-neutral-light);
+            color: var(--color-neutral-darkest);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--color-neutral-medium);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-danger {
+            background-color: var(--color-error-red);
+            color: var(--color-neutral-white);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--color-error-red-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Coming Soon Badge */
+        .coming-soon {
+            display: inline-block;
+            background-color: var(--color-brand-gold);
+            color: var(--color-neutral-darkest);
+            padding: 0.2rem 0.5rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        /* Bytes Counter */
+        .bytes-counter {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background-color: var(--color-brand-primary);
+            color: var(--color-neutral-white);
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .bytes-icon {
+            color: var(--color-brand-gold);
+        }
+
+        /* Loading/Error Messages */
+        #loadingMessage, #errorMessage {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        #errorMessage {
+            color: var(--color-error-red);
+        }
+
+
+        /* Responsive Design */
         @media (max-width: 768px) {
-            .card {
-                padding: 30px 20px;
+            .header-container {
+                flex-direction: column;
+                gap: 1rem;
             }
 
             .logo {
-                font-size: 3.5rem;
+                font-size: 2rem;
             }
 
-            .subtitle {
-                font-size: 1rem;
+            .welcome-message {
+                font-size: 1.5rem;
             }
 
-            .avatar {
-                width: 100px;
-                height: 100px;
-                font-size: 2.5rem;
+            .container {
+                padding: 0 1rem;
             }
 
-            .buttons {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
+            .bytes-counter {
+                bottom: 1rem;
+                right: 1rem;
+                padding: 0.6rem 1.2rem;
+                font-size: 0.9rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <div class="logo-container">
-                <div class="logo">SchoolByte</div>
-                <p class="subtitle">Your personalized academic platform</p>
-            </div>
-
-            <div class="profile-header">
+    <!-- Header with Logo and Profile -->
+    <header>
+        <div class="header-container">
+            <a href="studentdashboard.html" class="logo">SchoolByte</a>
+            <div class="profile-section">
                 <div class="avatar">
                     <i class="fas fa-user-graduate"></i>
                 </div>
-                <h2>Your Profile</h2>
+                <span class="student-name" id="studentNameDisplay">Loading...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <h1 class="welcome-message" id="welcomeMessage">Loading Profile...</h1>
+        </div>
+
+        <!-- Loading and Error Messages -->
+        <div id="loadingMessage" style="display: block;">Fetching student data...</div>
+        <div id="errorMessage" style="display: none;"></div>
+
+        <!-- Profile Card -->
+        <div class="profile-card" id="profileCard" style="display: none;">
+            <h2 class="section-title">Personal Information</h2>
+            
+            <div class="form-group">
+                <label for="studentNameInput">Full Name</label>
+                <input type="text" id="studentNameInput" placeholder="Student Name" readonly>
             </div>
 
-            <p class="subtitle" style="text-align: center; margin-bottom: 25px;">View and update your academic details</p>
+            <div class="form-group">
+                <label for="indexNumberInput">Index Number</label>
+                <input type="text" id="indexNumberInput" placeholder="e.g., 2023001" readonly>
+            </div>
 
-            <form id="studentProfileForm" novalidate>
-                <div class="form-group">
-                    <label for="studentName" class="required">Student's Name</label>
-                    <input type="text" id="studentName" placeholder="e.g., Naluwagga Joy" required>
-                </div>
+            <div class="form-group">
+                <label for="preferredName">Preferred Name</label>
+                <select id="preferredName">
+                    <option value="">Select your preferred name</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="studentEmail">Email Address</label>
+                <input type="email" id="studentEmail" placeholder="student@schoolbyte.com" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label for="studentClass">Class/Grade</label>
+                <input type="text" id="studentClass" placeholder="Grade 10" readonly>
+                <small style="color: var(--color-neutral-dark);"> (This field is not yet populated from the backend.)</small>
+            </div>
+        </div>
 
-                <div class="form-group">
-                    <label for="indexNumber" class="required">Index Number</label>
-                    <input type="text" id="indexNumber" placeholder="e.g., 21/M/N/22" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="classTeacher">Class Teacher</label>
-                    <input type="text" id="classTeacher" placeholder="e.g., Mr. Sentongo">
-                </div>
-
-                <div class="form-group">
-                    <label for="class" class="required">Class</label>
-                    <select id="class" required>
-                        <option value="">Select Class</option>
-                        <option value="S1">Senior 1</option>
-                        <option value="S2">Senior 2</option>
-                        <option value="S3">Senior 3</option>
-                        <option value="S4">Senior 4</option>
-                        <option value="S5">Senior 5</option>
-                        <option value="S6">Senior 6</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="stream">Stream</label>
-                    <select id="stream">
-                        <option value="">Select Stream (Optional)</option>
-                        <option value="Arts">Arts</option>
-                        <option value="Science">Science</option>
-                        <option value="Commercial">Commercial</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="email" class="required">Email Address</label>
-                    <!-- Email is now read-only on profile page -->
-                    <input type="email" id="email" placeholder="e.g., student@schoolbyte.com" required readonly>
-                    <!-- Removed send code and resend code buttons -->
-                </div>
-
-                <!-- Password change section - initially optional -->
-                <div class="form-group">
-                    <label for="currentPassword">Current Password (for change)</label>
-                    <div class="password-container">
-                        <input type="password" id="currentPassword" placeholder="Enter current password">
-                        <span class="toggle-password" id="currentPasswordToggle">
-                            <i class="fas fa-eye"></i>
-                        </span>
+        <!-- Progress Section -->
+        <div class="profile-card" id="progressCard" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">My Progress</h2>
+                <div class="info-icon">
+                    i
+                    <div class="info-tooltip">
+                        Bytes are the status of your academic progress. Play more quizzes, complete more activities and play more Preader games to accumulate bytes.
                     </div>
                 </div>
+            </div>
+            
+            <div class="progress-card">
+                <div class="bytes-value" id="bytesDisplay">0 Bytes</div>
+                <div class="bytes-label">Total Learning Bytes Earned</div>
+            </div>
+            
+            <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                <i class="fas fa-trophy" style="margin-right: 8px;"></i>
+                View Achievements
+            </button>
+        </div>
 
-                <div class="form-group">
-                    <label for="newPassword">New Password</label>
-                    <div class="password-container">
-                        <input type="password" id="newPassword" placeholder="Min 8 chars, incl. uppercase, lowercase, number, special">
-                        <span class="toggle-password" id="newPasswordToggle">
-                            <i class="fas fa-eye"></i>
-                        </span>
-                    </div>
-                    <p class="password-hint">Only fill if you want to change your password.</p>
-                </div>
+        <!-- Settings Section -->
+        <div class="profile-card" id="settingsCard" style="display: none;">
+            <h2 class="section-title">Settings</h2>
+            
+            <div class="form-group">
+                <label for="preferredFont">Preferred Font</label>
+                <select id="preferredFont">
+                    <option value="Inter, sans-serif">Inter</option>
+                    <option value="'Roboto', sans-serif">Roboto</option>
+                    <option value="'Open Sans', sans-serif">Open Sans</option>
+                    <option value="'Lato', sans-serif">Lato</option>
+                    <option value="'Nunito Sans', sans-serif">Nunito Sans</option>
+                    <option value="'Atkinson Hyperlegible', sans-serif">Atkinson Hyperlegible</option>
+                    <option value="'Montserrat', sans-serif">Montserrat</option>
+                    <option value="'Poppins', sans-serif">Poppins</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-secondary" style="width: 100%; margin-top: 1rem;">
+                <i class="fas fa-moon" style="margin-right: 8px;"></i>
+                Dark Mode
+                <span class="coming-soon">Coming Soon</span>
+            </button>
+        </div>
 
-                <div class="form-group">
-                    <label for="confirmNewPassword">Confirm New Password</label>
-                    <div class="password-container">
-                        <input type="password" id="confirmNewPassword" placeholder="Re-enter new password">
-                        <span class="toggle-password" id="confirmNewPasswordToggle">
-                            <i class="fas fa-eye"></i>
-                        </span>
-                    </div>
+        <!-- Leaderboard Section -->
+        <div class="profile-card" id="leaderboardCard" style="display: none;">
+            <h2 class="section-title">Leaderboard</h2>
+            
+            <div class="leaderboard">
+                <div class="leaderboard-title">Top Performers</div>
+                <div class="leaderboard-item">
+                    <div class="rank rank-1">1</div>
+                    <div class="student-name">Joy</div>
+                    <div class="student-bytes">1.2 MB</div>
                 </div>
+                <div class="leaderboard-item">
+                    <div class="rank rank-2">2</div>
+                    <div class="student-name">Mark</div>
+                    <div class="student-bytes">850 kB</div>
+                </div>
+                <div class="leaderboard-item">
+                    <div class="rank rank-3">3</div>
+                    <div class="student-name">Sarah</div>
+                    <div class="student-bytes">720 kB</div>
+                </div>
+                <div class="show-more" onclick="window.location.href='studentleaderboard.html'">
+                    Show more <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
 
-                <div class="buttons">
-                    <button type="button" class="btn btn-back" onclick="location.href='studentdashboard.html'">
-                        <i class="fas fa-arrow-left"></i> Back to Dashboard
-                    </button>
-                    <button type="submit" id="saveProfileBtn" class="btn btn-submit">
-                        <i class="fas fa-save"></i> Save Profile
-                    </button>
-                </div>
-            </form>
+        <!-- Social Section -->
+        <div class="profile-card" id="socialCard" style="display: none;">
+            <h2 class="section-title">Social</h2>
+            
+            <button class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">
+                <i class="fas fa-comments" style="margin-right: 8px;"></i>
+                Chat With Classmates
+                <span class="coming-soon">Coming Soon</span>
+            </button>
+            
+            <button class="btn btn-secondary" style="width: 100%;">
+                <i class="fas fa-users" style="margin-right: 8px;"></i>
+                Study Groups
+                <span class="coming-soon">Coming Soon</span>
+            </button>
+        </div>
+
+        <!-- Sign Out Button -->
+        <div style="text-align: center; margin: 2rem 0;">
+            <button class="btn btn-danger" id="signOutBtn">
+                <i class="fas fa-sign-out-alt" style="margin-right: 8px;"></i>
+                Sign Out
+            </button>
         </div>
     </div>
 
-    <!-- Custom Message Box HTML -->
-    <div id="messageBoxOverlay" class="message-box-overlay">
-        <div class="message-box">
-            <h3 id="messageBoxTitle"></h3>
-            <p id="messageBoxContent"></p>
-            <button id="messageBoxCloseBtn">OK</button>
-        </div>
+    <!-- Bytes Counter -->
+    <div class="bytes-counter">
+        <i class="fas fa-coins bytes-icon"></i>
+        <span id="bytesCount">150</span> Bytes
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const BACKEND_URL = 'https://e6a47e2e-7ff5-4724-be0b-2504fa40eb11-00-2wcx9db4aw73j.spock.replit.dev'; 
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Get references to HTML elements
+            const studentNameDisplay = document.getElementById('studentNameDisplay');
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            const studentNameInput = document.getElementById('studentNameInput');
+            const indexNumberInput = document.getElementById('indexNumberInput');
+            const studentEmailInput = document.getElementById('studentEmail');
+            const studentClassInput = document.getElementById('studentClass'); // This field is not in your current backend schema
+            const preferredNameSelect = document.getElementById('preferredName');
+            const bytesDisplay = document.getElementById('bytesDisplay');
+            const bytesCountElement = document.getElementById('bytesCount'); // For the fixed counter
+            const loadingMessage = document.getElementById('loadingMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            const profileCards = document.querySelectorAll('.profile-card'); // Select all profile cards
 
-            // Cached DOM elements
-            const studentProfileForm = document.getElementById('studentProfileForm');
-            const studentNameInput = document.getElementById('studentName');
-            const indexNumberInput = document.getElementById('indexNumber');
-            const classTeacherInput = document.getElementById('classTeacher');
-            const classSelect = document.getElementById('class');
-            const streamSelect = document.getElementById('stream');
-            const emailInput = document.getElementById('email'); // Now read-only
-
-            const currentPasswordInput = document.getElementById('currentPassword');
-            const newPasswordInput = document.getElementById('newPassword');
-            const confirmNewPasswordInput = document.getElementById('confirmNewPassword');
-
-            const currentPasswordToggle = document.getElementById('currentPasswordToggle');
-            const newPasswordToggle = document.getElementById('newPasswordToggle');
-            const confirmNewPasswordToggle = document.getElementById('confirmNewPasswordToggle');
-
-            const saveProfileBtn = document.getElementById('saveProfileBtn');
-
-            // Message Box elements
-            const messageBoxOverlay = document.getElementById('messageBoxOverlay');
-            const messageBoxTitle = document.getElementById('messageBoxTitle');
-            const messageBoxContent = document.getElementById('messageBoxContent');
-            const messageBoxCloseBtn = document.getElementById('messageBoxCloseBtn');
-
-            // Function to display custom message box
-            function showMessageBox(title, message, isSuccess = false) {
-                messageBoxTitle.textContent = title;
-                messageBoxContent.textContent = message;
-                // Set title color based on success/error
-                if (isSuccess) {
-                    messageBoxTitle.classList.add('success-title');
-                    messageBoxTitle.style.color = 'var(--color-brand-primary)'; // Explicitly set success color
-                } else {
-                    messageBoxTitle.classList.remove('success-title');
-                    messageBoxTitle.style.color = 'var(--color-error-red)'; // Explicitly set error color
-                }
-                messageBoxOverlay.classList.add('show');
+            // Function to hide all profile cards initially
+            function hideAllProfileCards() {
+                profileCards.forEach(card => card.style.display = 'none');
             }
 
-            // Close message box
-            messageBoxCloseBtn.addEventListener('click', function() {
-                messageBoxOverlay.classList.remove('show');
-            });
+            // Initially hide cards until data is loaded
+            hideAllProfileCards();
 
-            // Toggle password visibility
-            function setupPasswordToggle(field, toggle) {
-                if (field && toggle) {
-                    toggle.addEventListener('click', function() {
-                        const icon = this.querySelector('i');
-                        if (field.type === 'password') {
-                            field.type = 'text';
-                            icon.classList.remove('fa-eye');
-                            icon.classList.add('fa-eye-slash');
+            // --- IMPORTANT: Retrieve student email from localStorage ---
+            // This assumes that after a successful login, you store the student's email
+            // in localStorage, e.g., localStorage.setItem('loggedInStudentEmail', student.email);
+            const loggedInStudentEmail = localStorage.getItem('loggedInStudentEmail');
+
+            if (!loggedInStudentEmail) {
+                loadingMessage.style.display = 'none';
+                errorMessage.textContent = 'No student email found. Please ensure you are logged in.';
+                errorMessage.style.display = 'block';
+                // Optionally redirect to login page
+                // window.location.href = 'login.html';
+                return; // Stop execution
+            }
+
+            // Function to fetch student data from backend
+            async function fetchStudentData(email) {
+                try {
+                    // Adjust the API URL based on your Replit/server deployment
+                    // If running locally: const apiUrl = `http://localhost:3000/get-student-profile/${email}`;
+                    // If on Replit, use the relative path (assuming frontend served from same Replit app):
+                    const apiUrl = `/get-student-profile/${email}`;
+
+                    const response = await fetch(apiUrl);
+                    const data = await response.json();
+
+                    loadingMessage.style.display = 'none'; // Hide loading message
+
+                    if (response.ok && data.student) {
+                        // Populate header and welcome message
+                        studentNameDisplay.textContent = data.student.studentName;
+                        welcomeMessage.textContent = `${data.student.studentName}'s Profile`;
+
+                        // Populate personal information fields
+                        studentNameInput.value = data.student.studentName;
+                        indexNumberInput.value = data.student.indexNumber;
+                        studentEmailInput.value = data.student.email;
+                        // studentClassInput.value = data.student.studentClass || ''; // Uncomment if you add studentClass to schema
+
+                        // Populate preferred name dropdown
+                        const nameParts = data.student.studentName.split(' ');
+                        preferredNameSelect.innerHTML = '<option value="">Select your preferred name</option>'; // Clear existing options
+                        nameParts.forEach(part => {
+                            if (part.trim().length > 0) {
+                                const option = document.createElement('option');
+                                option.value = part;
+                                option.textContent = part;
+                                preferredNameSelect.appendChild(option);
+                            }
+                        });
+
+                        // Load saved preferred name (if any)
+                        const savedPreferredName = localStorage.getItem('preferredName');
+                        if (savedPreferredName) {
+                            preferredNameSelect.value = savedPreferredName;
                         } else {
-                            field.type = 'password';
-                            icon.classList.remove('fa-eye-slash');
-                            icon.classList.add('fa-eye');
+                            // Optionally set the first name as default preferred name
+                            if (nameParts.length > 0 && nameParts[0].trim().length > 0) {
+                                preferredNameSelect.value = nameParts[0];
+                                localStorage.setItem('preferredName', nameParts[0]);
+                            }
                         }
-                    });
-                }
-            }
 
-            // Setup password toggles for all password fields
-            setupPasswordToggle(currentPasswordInput, currentPasswordToggle);
-            setupPasswordToggle(newPasswordInput, newPasswordToggle);
-            setupPasswordToggle(confirmNewPasswordInput, confirmNewPasswordToggle);
-
-            // Validate password complexity
-            function isValidPassword(password) {
-                const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+])[A-Za-z\d!@#$%^&*()_+]{8,}$/;
-                return passwordRegex.test(password);
-            }
-
-            // --- Fetch Student Data ---
-            async function fetchStudentProfile() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const studentEmail = urlParams.get('email'); // Get email from URL parameter
-
-                if (!studentEmail) {
-                    showMessageBox('Error', 'Student email not found in URL. Please log in again.', false);
-                    console.error('Student email missing from URL for profile page.');
-                    setTimeout(() => window.location.href = '/index.html', 2000); // Corrected redirect
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`${BACKEND_URL}/student-dashboard-data?email=${encodeURIComponent(studentEmail)}`, {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        const student = data.student;
-                        studentNameInput.value = student.studentName || '';
-                        indexNumberInput.value = student.indexNumber || '';
-                        classTeacherInput.value = student.classTeacher || '';
-                        classSelect.value = student.class || '';
-                        streamSelect.value = student.stream || '';
-                        emailInput.value = student.email || ''; // Email is read-only
-                        
-                        // Store email in localStorage for consistency
-                        localStorage.setItem('currentStudentEmail', student.email);
+                        // Show all profile cards after data is loaded
+                        profileCards.forEach(card => card.style.display = 'block');
 
                     } else {
-                        showMessageBox('Error', data.message || 'Failed to load profile data. Please try again.', false);
-                        console.error('Failed to fetch student profile:', data.message);
-                        setTimeout(() => window.location.href = '/index.html', 2000); // Corrected redirect
+                        errorMessage.textContent = data.message || 'Failed to load student profile.';
+                        errorMessage.style.display = 'block';
                     }
+
                 } catch (error) {
-                    console.error('Network error fetching profile:', error);
-                    showMessageBox('Network Error', 'Could not load profile. Check internet.', false);
-                    setTimeout(() => window.location.href = '/index.html', 2000); // Corrected redirect
+                    console.error('Error fetching student profile:', error);
+                    loadingMessage.style.display = 'none';
+                    errorMessage.textContent = 'An error occurred while fetching your profile. Please try again later.';
+                    errorMessage.style.display = 'block';
                 }
             }
 
-            // --- Validate Form (for Save Profile button) ---
-            function validateForm() {
-                const isNameFilled = studentNameInput.value.trim() !== '';
-                const isIndexNumberFilled = indexNumberInput.value.trim() !== '';
-                const isClassSelected = classSelect.value !== '';
-                const isEmailFilled = emailInput.value.trim() !== ''; // Email is read-only, so it should always be filled if data loaded
+            // Call the function to fetch student data
+            fetchStudentData(loggedInStudentEmail);
 
-                let isPasswordChangeValid = true;
-                const newPassword = newPasswordInput.value;
-                const confirmNewPassword = confirmNewPasswordInput.value;
-                const currentPassword = currentPasswordInput.value;
-
-                // If any new password field is filled, all must be valid
-                if (newPassword || confirmNewPassword || currentPassword) {
-                    if (!currentPassword) {
-                        isPasswordChangeValid = false;
-                    }
-                    if (newPassword.length < 8 || !isValidPassword(newPassword)) {
-                        isPasswordChangeValid = false;
-                    }
-                    if (newPassword !== confirmNewPassword) {
-                        isPasswordChangeValid = false;
-                    }
-                }
-
-                const isFormValid = isNameFilled && isIndexNumberFilled && isClassSelected && isEmailFilled && isPasswordChangeValid;
+            // --- Existing client-side logic for bytes and font ---
+            // Initialize bytes count (still from localStorage as it's not in your current backend schema)
+            let bytesCount = localStorage.getItem('bytesCount') || 150;
+            bytesCountElement.textContent = bytesCount;
+            
+            // Format bytes for display
+            function formatBytes(bytes) {
+                if (bytes === 0) return '0 Bytes';
                 
-                saveProfileBtn.disabled = !isFormValid;
-                if (isFormValid) {
-                    saveProfileBtn.classList.add('active');
-                } else {
-                    saveProfileBtn.classList.remove('active');
-                }
+                const k = 1000;
+                const sizes = ['Bytes', 'kB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
             }
-
-            // --- Handle Form Submission (Save Profile) ---
-            studentProfileForm.addEventListener('submit', async function(event) {
-                event.preventDefault();
-
-                // Re-validate just before submission
-                validateForm();
-                if (saveProfileBtn.disabled) {
-                    showMessageBox('Validation Error', 'Please fill in all required fields and ensure passwords meet criteria.', false);
-                    return;
-                }
-
-                const studentEmail = emailInput.value.trim(); // Get email from the read-only field
-                const studentName = studentNameInput.value.trim();
-                const indexNumber = indexNumberInput.value.trim();
-                const classTeacher = classTeacherInput.value.trim();
-                const studentClass = classSelect.value;
-                const stream = streamSelect.value;
-
-                let updatePayload = {
-                    studentName,
-                    indexNumber,
-                    classTeacher,
-                    class: studentClass,
-                    stream
-                };
-
-                // Add password fields to payload ONLY if they are being changed
-                const newPassword = newPasswordInput.value;
-                const currentPassword = currentPasswordInput.value;
-
-                if (newPassword) {
-                    if (newPassword !== confirmNewPasswordInput.value) {
-                        showMessageBox('Error', 'New passwords do not match.', false);
-                        confirmNewPasswordInput.focus();
-                        return;
-                    }
-                    if (!isValidPassword(newPassword)) {
-                        showMessageBox('Password Requirements', 'New password does not meet the requirements.', false);
-                        newPasswordInput.focus();
-                        return;
-                    }
-                    updatePayload.currentPassword = currentPassword;
-                    updatePayload.newPassword = newPassword;
-                }
-
-                saveProfileBtn.textContent = 'Saving...';
-                saveProfileBtn.disabled = true;
-                saveProfileBtn.classList.remove('active');
-
-                try {
-                    const response = await fetch(`${BACKEND_URL}/update-student-profile?email=${encodeURIComponent(studentEmail)}`, {
-                        method: 'PUT', // Use PUT for updates
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(updatePayload)
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        showMessageBox('Success', data.message, true);
-                        // Clear password fields after successful update
-                        currentPasswordInput.value = '';
-                        newPasswordInput.value = '';
-                        confirmNewPasswordInput.value = '';
-                        // Re-fetch data to ensure UI is consistent with backend (e.g., if backend modifies data)
-                        fetchStudentProfile(); 
-                    } else {
-                        showMessageBox('Error', data.message || 'Failed to update profile.', false);
-                    }
-                } catch (error) {
-                    console.error('Error saving profile:', error);
-                    showMessageBox('Network Error', 'Could not connect to the server to save profile.', false);
-                } finally {
-                    saveProfileBtn.textContent = 'Save Profile';
-                    validateForm(); // Re-validate to reset button state
-                }
+            
+            // Set progress bytes display
+            bytesDisplay.textContent = formatBytes(bytesCount);
+            
+            // Save preferred name when changed
+            preferredNameSelect.addEventListener('change', function() {
+                localStorage.setItem('preferredName', this.value);
             });
-
-            // Apply saved font preference on page load
-            const savedFont = localStorage.getItem('preferredFont');
-            if (savedFont) {
-                document.body.style.fontFamily = savedFont;
-            } else {
-                document.body.style.fontFamily = 'Inter, sans-serif'; // Default font
-            }
-
-            // Initial load and validation
-            fetchStudentProfile(); // Load data when page loads
-            studentNameInput.addEventListener('input', validateForm);
-            indexNumberInput.addEventListener('input', validateForm);
-            classTeacherInput.addEventListener('input', validateForm);
-            classSelect.addEventListener('change', validateForm);
-            streamSelect.addEventListener('change', validateForm);
-            currentPasswordInput.addEventListener('input', validateForm);
-            newPasswordInput.addEventListener('input', validateForm);
-            confirmNewPasswordInput.addEventListener('input', validateForm);
-            // Initial validation after data is populated (or mocked)
-            setTimeout(validateForm, 500); // Give a slight delay for data to load
+            
+            // Font selection
+            const fontSelect = document.getElementById('preferredFont');
+            const savedFont = localStorage.getItem('preferredFont') || 'Inter, sans-serif';
+            fontSelect.value = savedFont;
+            
+            // Apply font
+            document.body.style.fontFamily = savedFont;
+            
+            // Save font preference
+            fontSelect.addEventListener('change', function() {
+                const selectedFont = this.value;
+                localStorage.setItem('preferredFont', selectedFont);
+                document.body.style.fontFamily = selectedFont;
+            });
+            
+            // Sign out function
+            document.getElementById('signOutBtn').addEventListener('click', function() {
+                // Clear all relevant session data
+                localStorage.removeItem('bytesCount');
+                localStorage.removeItem('preferredName');
+                localStorage.removeItem('preferredFont');
+                localStorage.removeItem('loggedInStudentEmail'); // Clear the stored email on sign out
+                
+                // Redirect to login page
+                window.location.href = 'index.html'; // Assuming index.html is your login/landing page
+            });
         });
     </script>
 </body>

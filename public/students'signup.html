@@ -30,7 +30,7 @@
           /* Background Gradients */
           --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
           --gradient-background-secondary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
-
+          
           /* Text Gradients */
           --gradient-text-gold: linear-gradient(to right, var(--color-brand-gold), var(--color-neutral-white));
 
@@ -51,7 +51,7 @@
             box-sizing: border-box;
             font-family: 'Inter', sans-serif; /* Standardized font */
         }
-
+        
         body {
             background: var(--gradient-background-primary); /* Consistent background gradient */
             min-height: 100vh;
@@ -60,12 +60,12 @@
             align-items: center;
             padding: 20px;
         }
-
+        
         .container {
             max-width: 500px;
             width: 100%;
         }
-
+        
         .card {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
@@ -73,12 +73,12 @@
             overflow: hidden;
             padding: 40px;
         }
-
+        
         .logo-container {
             text-align: center;
             margin-bottom: 25px;
         }
-
+        
         .logo {
             font-size: 4.5rem;
             font-weight: 900;
@@ -89,7 +89,7 @@
             letter-spacing: -2px;
             margin-bottom: 10px;
         }
-
+        
         .avatar {
             width: 120px;
             height: 120px;
@@ -103,23 +103,23 @@
             color: var(--color-neutral-white);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
         }
-
+        
         .profile-header {
             text-align: center;
             margin-bottom: 30px;
         }
-
+        
         .profile-header h2 {
             color: var(--color-brand-primary); /* Consistent heading color */
             font-size: 1.8rem;
             font-weight: 700;
         }
-
+        
         .form-group {
             margin-bottom: 25px;
             position: relative; /* For send-code-btn positioning */
         }
-
+        
         label {
             display: block;
             margin-bottom: 8px;
@@ -127,7 +127,7 @@
             font-weight: 600;
             font-size: 1.1rem;
         }
-
+        
         input {
             width: 100%;
             padding: 15px;
@@ -136,18 +136,18 @@
             font-size: 1rem;
             transition: all 0.3s ease;
         }
-
+        
         input:focus {
             outline: none;
             border-color: var(--color-brand-primary); /* Consistent focus border color */
             box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.2);
         }
-
+        
         input::placeholder {
             color: var(--color-neutral-medium); /* Consistent placeholder color */
             font-style: italic;
         }
-
+        
         .send-code-btn {
             position: absolute;
             right: 10px;
@@ -161,18 +161,18 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
-
+        
         .send-code-btn:hover:not(.disabled) {
             background: var(--color-brand-primary); /* Use a slightly darker shade or opacity */
             opacity: 0.9;
         }
-
+        
         .send-code-btn.disabled {
             background: var(--color-neutral-light); /* Consistent disabled background */
             color: var(--color-neutral-dark); /* Consistent disabled text color */
             cursor: not-allowed;
         }
-
+        
         .resend-code {
             text-align: right;
             margin-top: 5px;
@@ -181,11 +181,11 @@
             cursor: pointer;
             display: none;
         }
-
+        
         .resend-code:hover {
             text-decoration: underline;
         }
-
+        
         .verification-code-input { /* Changed from .verification-code for consistency */
             letter-spacing: 10px;
             font-size: 1.2rem;
@@ -197,7 +197,7 @@
         .password-section {
             display: none; /* Hidden by default, shown after email verification */
         }
-
+        
         /* Password toggle button styles */
         .password-toggle {
             position: absolute;
@@ -207,18 +207,18 @@
             color: var(--color-neutral-medium);
             transition: color 0.3s ease;
         }
-
+        
         .password-toggle:hover {
             color: var(--color-brand-primary);
         }
-
+        
         .terms {
             display: flex;
             align-items: center;
             margin: 25px 0;
             gap: 12px;
         }
-
+        
         .terms-checkbox {
             appearance: none;
             -webkit-appearance: none;
@@ -230,12 +230,12 @@
             position: relative;
             transition: all 0.3s ease;
         }
-
+        
         .terms-checkbox:checked {
             background-color: var(--color-brand-secondary); /* Consistent checked checkbox background */
             border-color: var(--color-brand-secondary); /* Consistent checked checkbox border */
         }
-
+        
         .terms-checkbox:checked::before {
             content: '\2713';
             display: block;
@@ -244,29 +244,29 @@
             text-align: center;
             line-height: 20px;
         }
-
+        
         .terms-label {
             font-weight: normal;
             color: var(--color-neutral-dark); /* Consistent label text color */
         }
-
+        
         .terms-label a {
             color: var(--color-brand-primary); /* Consistent link color */
             font-weight: 600;
             text-decoration: underline;
         }
-
+        
         .terms-label a:hover {
             color: var(--color-brand-secondary); /* Consistent link hover color */
         }
-
+        
         .buttons {
             display: flex;
             justify-content: space-between;
             gap: 20px;
             margin-top: 10px;
         }
-
+        
         .btn {
             padding: 15px 25px;
             border-radius: 10px;
@@ -280,37 +280,37 @@
             justify-content: center;
             gap: 8px;
         }
-
+        
         .btn-back {
             background: var(--color-brand-secondary); /* Consistent back button color */
             color: var(--color-neutral-white);
             flex: 1;
         }
-
+        
         .btn-back:hover {
             background: var(--color-error-red-dark); /* Consistent hover for back button */
             transform: translateY(-2px);
         }
-
+        
         .btn-next {
             background: var(--color-neutral-light); /* Consistent disabled background */
             color: var(--color-neutral-dark); /* Consistent disabled text */
             flex: 2;
             cursor: not-allowed;
         }
-
+        
         .btn-next.active {
             background: var(--color-brand-primary); /* Consistent active button color */
             color: var(--color-neutral-white);
             cursor: pointer;
         }
-
+        
         .btn-next.active:hover {
             background: var(--color-brand-primary); /* Consider a darker primary shade if available, or just keep primary */
             opacity: 0.9; /* Add slight opacity change for hover if no dark variant */
             transform: translateY(-2px);
         }
-
+        
         .btn i {
             font-size: 1.2rem;
         }
@@ -381,26 +381,26 @@
         .message-box button:hover {
             background: var(--color-brand-primary); /* Consistent hover for primary */
         }
-
+        
         @media (max-width: 768px) {
             .card {
                 padding: 30px 20px;
             }
-
+            
             .logo {
                 font-size: 3.5rem;
             }
-
+            
             .avatar {
                 width: 100px;
                 height: 100px;
                 font-size: 2.5rem;
             }
-
+            
             .buttons {
                 flex-direction: column;
             }
-
+            
             .btn {
                 width: 100%;
             }
@@ -413,33 +413,33 @@
             <div class="logo-container">
                 <div class="logo">SchoolByte</div>
             </div>
-
+            
             <div class="profile-header">
                 <div class="avatar">
                     <i class="fas fa-user-graduate"></i>
                 </div>
                 <h2>Student Sign Up</h2>
             </div>
-
+            
             <!-- Added novalidate to the form -->
             <form id="studentSignupForm" novalidate> 
                 <div class="form-group">
                     <label for="studentName">Student's Name</label>
                     <input type="text" id="studentName" placeholder="e.g., Naluwagga Joy" required>
                 </div>
-
+                
                 <div class="form-group">
                     <label for="indexNumber">Index Number</label>
                     <input type="text" id="indexNumber" placeholder="e.g., 21m/ms/22" required>
                 </div>
-
+                
                 <div class="form-group">
                     <label for="email">Email Address</label>
                     <input type="email" id="email" placeholder="schoolbyte@gmail.com" required>
                     <button type="button" id="sendCodeBtn" class="send-code-btn" disabled>Send Code</button>
                     <div id="resendCode" class="resend-code">Didn't receive code? Send code again</div>
                 </div>
-
+                
                 <div class="form-group">
                     <label for="verificationCode">Verification Code</label>
                     <input type="text" id="verificationCode" placeholder="••••••" maxlength="6" class="verification-code-input" required>
@@ -458,14 +458,14 @@
                         <i class="fas fa-eye password-toggle" id="toggleConfirmPassword"></i>
                     </div>
                 </div>
-
+                
                 <div class="terms">
                     <input type="checkbox" id="agreeTerms" class="terms-checkbox">
                     <label for="agreeTerms" class="terms-label">
                         I confirm that I have read the <a href="term.html" target="_blank">Terms and Conditions</a> of SchoolByte
                     </label>
                 </div>
-
+                
                 <div class="buttons">
                     <button type="button" class="btn btn-back" onclick="location.href='index.html'">
                         <i class="fas fa-arrow-left"></i> Back
@@ -529,7 +529,7 @@
             messageBoxCloseBtn.addEventListener('click', function() {
                 messageBoxOverlay.classList.remove('show');
             });
-
+            
             // Validate email format
             function isValidEmail(email) {
                 return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -541,7 +541,7 @@
                 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+])[A-Za-z\d!@#$%^&*()_+]{8,}$/;
                 return passwordRegex.test(password);
             }
-
+            
             // Toggle password visibility
             function setupPasswordToggle(toggleElement, passwordField) {
                 if (toggleElement && passwordField) { // Add null check for safety
@@ -553,7 +553,7 @@
                     });
                 }
             }
-
+            
             // Initialize password toggles
             // Ensure these elements exist before trying to set up listeners
             if (togglePassword && passwordInput) {
@@ -562,19 +562,19 @@
             if (toggleConfirmPassword && confirmPasswordInput) {
                 setupPasswordToggle(toggleConfirmPassword, confirmPasswordInput);
             }
-
+            
             // Start countdown timer for resend
             function startCountdown() {
                 let seconds = 60;
                 sendCodeBtn.classList.add('disabled');
                 sendCodeBtn.textContent = `Resend (${seconds}s)`;
                 sendCodeBtn.disabled = true; 
-
+                
                 clearInterval(countdownInterval); // Clear any existing interval
                 countdownInterval = setInterval(function() {
                     seconds--;
                     sendCodeBtn.textContent = `Resend (${seconds}s)`;
-
+                    
                     if (seconds <= 0) {
                         clearInterval(countdownInterval);
                         sendCodeBtn.classList.remove('disabled');
@@ -585,7 +585,7 @@
                     }
                 }, 1000);
             }
-
+            
             // Send verification code to backend
             sendCodeBtn.addEventListener('click', async function() {
                 if (!isValidEmail(emailInput.value)) { 
@@ -595,7 +595,7 @@
                 if (sendCodeBtn.classList.contains('disabled') && sendCodeBtn.textContent.includes('Resend')) {
                     return; // Do not allow re-click during countdown
                 }
-
+                
                 // Show loading state
                 sendCodeBtn.textContent = 'Sending...';
                 sendCodeBtn.disabled = true;
@@ -632,7 +632,7 @@
                     resendCode.style.display = 'block';
                 }
             });
-
+            
             // Resend verification code (this will trigger the same API call)
             resendCode.addEventListener('click', function() {
                 if (isValidEmail(emailInput.value)) {
@@ -641,7 +641,7 @@
                     showMessageBox('Input Error', 'Please enter a valid email address to resend the code.');
                 }
             });
-
+            
             // Validate form on input changes and control button states
             function validateForm() {
                 const isEmailValid = isValidEmail(emailInput.value);
@@ -676,7 +676,7 @@
                                                isCodeFilled && isTermsChecked && isPasswordFilled && 
                                                isConfirmPasswordFilled && passwordsMatch && isPasswordComplex;
                 }
-
+                
                 // Control Continue (Submit) button
                 if (isFormValidForSubmission) {
                     submitButton.classList.remove('btn-disabled'); 
@@ -688,7 +688,7 @@
                     submitButton.disabled = true;
                 }
             }
-
+            
             // Add event listeners for form validation
             studentNameInput.addEventListener('input', validateForm);
             indexNumberInput.addEventListener('input', validateForm);
@@ -697,7 +697,7 @@
             passwordInput.addEventListener('input', validateForm); 
             confirmPasswordInput.addEventListener('input', validateForm); 
             agreeTermsCheckbox.addEventListener('change', validateForm);
-
+            
             // Event listener for the "Continue" button (now type="button")
             submitButton.addEventListener('click', async function(event) {
                 event.preventDefault(); // Prevent default button behavior, not form submission directly now
@@ -742,7 +742,7 @@
                         if (response.ok && data.verified) { // Check data.verified as well
                             showMessageBox('Success', data.message);
                             emailVerified = true; // Set flag
-
+                            
                             // *** CRITICAL PART: DISPLAYING THE PASSWORD SECTION ***
                             if (passwordSection) { // Ensure element exists before manipulating
                                 passwordSection.style.display = 'block'; 
@@ -781,7 +781,7 @@
                 } else {
                     // Stage 2: Register Student (Email already verified)
                     console.log('DEBUG: Attempting Stage 2: Register Student'); // DEBUG LOG
-
+                    
                     // Frontend validation for password fields now that they are visible
                     if (!password || password.length < 8) {
                         showMessageBox('Validation Error', 'Password must be at least 8 characters long.');
@@ -822,7 +822,6 @@
 
                         if (response.ok) {
                             showMessageBox('Success', data.message + '\nRedirecting to dashboard.');
-                            ```text
                             setTimeout(() => {
                                 // Clear local storage or session data relevant to signup
                                 // For example, if you stored the name temporarily for display
