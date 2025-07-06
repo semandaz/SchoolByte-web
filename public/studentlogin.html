@@ -9,17 +9,18 @@
     <style>
         /* Global CSS Variables for Unified Color Palette */
         :root {
-          --color-brand-primary: #1a2a6c;   /* Dark Blue */
-          --color-brand-secondary: #b21f1f; /* Deep Red/Maroon */
-          --color-brand-gold: #FFD700;     /* Gold */
-          --color-neutral-white: #ffffff;
-          --color-neutral-lightest: #f0f4f8;
-          --color-neutral-light: #d1d5db;
-          --color-neutral-medium: #9ca3af;
-          --color-neutral-dark: #4b5563;
-          --color-neutral-darkest: #333333;
-          --color-error-red: #e74c3c;
-          --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            --color-brand-primary: #1a2a6c;    /* Dark Blue */
+            --color-brand-secondary: #b21f1f; /* Deep Red/Maroon */
+            --color-brand-gold: #FFD700;       /* Gold */
+            --color-neutral-white: #ffffff;
+            --color-neutral-lightest: #f0f4f8;
+            --color-neutral-light: #d1d5db;
+            --color-neutral-medium: #9ca3af;
+            --color-neutral-dark: #4b5563;
+            --color-neutral-darkest: #333333;
+            --color-error-red: #e74c3c;
+            --color-success-green: #28a745; /* Added success green for consistency */
+            --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
         }
 
         * {
@@ -271,7 +272,7 @@
             margin-bottom: 15px;
         }
         .message-box h3.success-title {
-            color: var(--color-brand-primary); /* Green for success messages */
+            color: var(--color-success-green); /* Green for success messages */
         }
 
 
@@ -384,8 +385,8 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Define your backend URL here! This is the URL Replit gives you.
-            const BACKEND_URL = 'https://e6a47e2e-7ff5-4724-be0b-2504fa40eb11-00-2wcx9db4aw73j.spock.replit.dev'; 
+            // Define your backend URL here! Use window.location.origin for dynamic Replit URL.
+            const BACKEND_URL = window.location.origin; 
 
             // Cached DOM elements
             const togglePassword = document.getElementById('togglePassword');
@@ -406,11 +407,9 @@
                 messageBoxContent.textContent = message;
                 // Set title color based on success/error
                 if (isSuccess) {
-                    messageBoxTitle.classList.add('success-title');
-                    messageBoxTitle.style.color = 'var(--color-brand-primary)'; // Explicitly set success color
+                    messageBoxTitle.classList.add('success-title'); // Add the success-title class for green
                 } else {
-                    messageBoxTitle.classList.remove('success-title');
-                    messageBoxTitle.style.color = 'var(--color-error-red)'; // Explicitly set error color
+                    messageBoxTitle.classList.remove('success-title'); // Remove if it was previously added
                 }
                 messageBoxOverlay.classList.add('show');
             }
@@ -447,7 +446,7 @@
 
                 const email = emailInput.value.trim();
                 const password = passwordInput.value.trim();
-                const rememberMe = document.getElementById('rememberMe').checked; // Still capture this, but not implementing yet
+                const rememberMe = document.getElementById('rememberMe').checked; // Still capture this, but not implementing persistent login yet
 
                 // Basic frontend validation
                 if (!email || !password) {
@@ -456,6 +455,7 @@
                 }
 
                 // Disable button and show loading state
+                const originalBtnText = loginSubmitBtn.textContent; // Store original text
                 loginSubmitBtn.textContent = 'Logging In...';
                 loginSubmitBtn.disabled = true;
 
@@ -471,12 +471,21 @@
                     const data = await response.json();
 
                     if (response.ok) { // Status code 200-299
-                        showMessageBox('Success', data.message, true); // Pass true for success message
+                        showMessageBox('Login Successful', data.message + '\nRedirecting to your dashboard...', true); // Pass true for success message
                         console.log('Login successful:', data);
                         
+                        // Store the JWT for future authenticated requests
+                        if (data.token) {
+                            localStorage.setItem('jwtToken', data.token);
+                            console.log('JWT stored:', data.token);
+                        } else {
+                            console.warn('No JWT received from login response.');
+                        }
+
                         // Redirect to student dashboard after a short delay
                         setTimeout(() => {
-                            // Pass student name to dashboard for display
+                            // You might want to pass the token or rely on localStorage for the dashboard
+                            // For now, passing name via query param for simple display
                             window.location.href = `studentdashboard.html?name=${encodeURIComponent(data.student.studentName)}`;
                         }, 1500); // 1.5 second delay
                     } else { // Status code outside 200-299 (e.g., 401, 400, 500)
@@ -488,7 +497,7 @@
                     showMessageBox('Network Error', 'Could not connect to the server. Please check your internet connection and try again.');
                 } finally {
                     // Re-enable button and reset text after API call
-                    loginSubmitBtn.textContent = 'Log In';
+                    loginSubmitBtn.textContent = originalBtnText; // Restore original text
                     validateForm(); // Re-run validation to set correct disabled state
                 }
             });

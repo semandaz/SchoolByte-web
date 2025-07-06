@@ -10,24 +10,24 @@
         /* Global CSS Variables for Unified Color Palette */
         :root {
             /* Brand Colors */
-            --color-brand-primary: #1a2a6c;   /* Dark Blue - Main brand color */
+            --color-brand-primary: #1a2a6c;    /* Dark Blue - Main brand color */
             --color-brand-secondary: #b21f1f; /* Deep Red/Maroon - Secondary brand color, accents */
-            --color-brand-gold: #FFD700;     /* Gold - Accent for special elements, highlights */
-            --color-brand-orange: #FFA500;   /* Orange - Used in gradients with gold */
+            --color-brand-gold: #FFD700;       /* Gold - Accent for special elements, highlights */
+            --color-brand-orange: #FFA500;    /* Orange - Used in gradients with gold */
 
             /* Neutral Palette */
             --color-neutral-white: #ffffff;
             --color-neutral-lightest: #f0f4f8; /* Very light gray/blue, good for subtle backgrounds */
             --color-neutral-light: #d1d5db;    /* Light gray for disabled elements, input borders */
-            --color-neutral-medium: #9ca3af;   /* Medium gray for placeholders, disabled radio accents */
-            --color-neutral-dark: #4b5563;     /* Dark gray for most body text, labels */
+            --color-neutral-medium: #9ca3af;    /* Medium gray for placeholders, disabled radio accents */
+            --color-neutral-dark: #4b5563;       /* Dark gray for most body text, labels */
             --color-neutral-darkest: #333333;  /* Very dark gray for prominent text */
 
             /* Semantic Colors */
-            --color-error-red: #e74c3c;        /* Standard error color */
-            --color-error-red-dark: #c0392b;   /* Darker error red for hover states */
-            --color-success-green: #2ecc71;    /* Success color */
-            --color-info-blue: #3498db;        /* Info color */
+            --color-error-red: #e74c3c;         /* Standard error color */
+            --color-error-red-dark: #c0392b;    /* Darker error red for hover states */
+            --color-success-green: #2ecc71;     /* Success color */
+            --color-info-blue: #3498db;         /* Info color */
 
             /* Background Gradients */
             --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
@@ -316,10 +316,40 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            z-index: 100; /* Ensure it's above other content */
         }
 
         .bytes-icon {
             color: var(--color-brand-gold);
+        }
+
+        /* Loading and Error Messages */
+        .message-container {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .loading-message {
+            background-color: #e0f7fa;
+            color: #007bff;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .error-message {
+            background-color: #ffe0e0;
+            color: var(--color-error-red);
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        /* Content Sections */
+        .hidden {
+            display: none;
         }
 
         /* Responsive Design */
@@ -340,255 +370,319 @@
             .subjects-grid {
                 grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             }
+
+            .bytes-counter {
+                bottom: 1rem;
+                right: 1rem;
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
         }
     </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedFont = localStorage.getItem('preferredFont');
+            if (savedFont) {
+                document.body.style.fontFamily = savedFont;
+            } else {
+                document.body.style.fontFamily = 'Inter, sans-serif';
+            }
+        });
+    </script>
 </head>
 <body>
-    <!-- Header with Logo and Profile -->
     <header>
         <div class="header-container">
-            <a href="#" class="logo">SchoolByte</a>
+            <a href="studentdashboard.html" class="logo">SchoolByte</a>
             <div class="profile-section">
-                <!-- Made the avatar clickable to lead to studentprofile.html -->
                 <div class="avatar" onclick="window.location.href='studentprofile.html'">
                     <i class="fas fa-user-graduate"></i>
                 </div>
-                <span class="student-name" id="studentNameDisplay">Student</span>
+                <span class="student-name" id="studentNameDisplay">Loading...</span>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
     <div class="container">
-        <!-- Welcome Section -->
-        <div class="welcome-section">
-            <h1 class="welcome-message" id="welcomeMessage">Hello Student, what do you want to dive into today?</h1>
+        <div class="message-container" id="loadingMessage">
+            <div class="loading-message">Fetching student data...</div>
+        </div>
+        <div class="message-container hidden" id="errorMessage">
+            <div class="error-message"></div>
         </div>
 
-        <!-- Activity Cards -->
-        <div class="activity-cards">
-            <div class="activity-card">
-                <div class="activity-title">
-                    Quizzes
-                    <div class="info-icon">
-                        i
-                        <div class="info-tooltip">Get more bytes by completing quizzes. Earn 3 bytes for each quiz completed with a score above 70%.</div>
-                    </div>
-                </div>
-                <p>Test your knowledge and earn bytes!</p>
-                <a href="#" class="activity-btn">Start Quiz</a>
+        <div id="mainContent" class="hidden">
+            <div class="welcome-section">
+                <h1 class="welcome-message" id="welcomeMessage">Hello Student, what do you want to dive into today?</h1>
             </div>
-            <div class="activity-card">
-                <div class="activity-title">
-                    Preader Games
-                    <div class="info-icon">
-                        i
-                        <div class="info-tooltip">Get more bytes while you shape your character. Get 5 bytes for every game played.</div>
-                    </div>
-                </div>
-                <p>Learn through fun educational games!</p>
-                <a href="#" class="activity-btn">Play Games</a>
-            </div>
-        </div>
 
-        <!-- Subjects Section -->
-        <div class="subjects-section">
-            <h2 class="section-title">SUBJECTS</h2>
-            <div class="subjects-grid">
-                <!-- Agriculture -->
-                <div class="subject-card" onclick="window.location.href='agristudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-tractor"></i>
+            <div class="activity-cards">
+                <div class="activity-card">
+                    <div class="activity-title">
+                        Quizzes
+                        <div class="info-icon">
+                            i
+                            <div class="info-tooltip">Get more bytes by completing quizzes. Earn 3 bytes for each quiz completed with a score above 70%.</div>
+                        </div>
                     </div>
-                    <div class="subject-name">Agriculture</div>
+                    <p>Test your knowledge and earn bytes!</p>
+                    <a href="#" class="activity-btn">Start Quiz</a>
                 </div>
-                
-                <!-- Biology -->
-                <div class="subject-card" onclick="window.location.href='biostudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-dna"></i>
+                <div class="activity-card">
+                    <div class="activity-title">
+                        Preader Games
+                        <div class="info-icon">
+                            i
+                            <div class="info-tooltip">Get more bytes while you shape your character. Get 5 bytes for every game played.</div>
+                        </div>
                     </div>
-                    <div class="subject-name">Biology</div>
-                </div>
-                
-                <!-- Chemistry -->
-                <div class="subject-card" onclick="window.location.href='chestudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-flask"></i>
-                    </div>
-                    <div class="subject-name">Chemistry</div>
-                </div>
-                
-                <!-- Christian Religious Education -->
-                <div class="subject-card" onclick="window.location.href='crestudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-bible"></i>
-                    </div>
-                    <div class="subject-name">Christian Religious Education</div>
-                </div>
-                
-                <!-- English Language -->
-                <div class="subject-card" onclick="window.location.href='engstudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-language"></i>
-                    </div>
-                    <div class="subject-name">English Language</div>
-                </div>
-                
-                <!-- Entrepreneurship Education -->
-                <div class="subject-card" onclick="window.location.href='entstudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-lightbulb"></i>
-                    </div>
-                    <div class="subject-name">Entrepreneurship Education</div>
-                </div>
-                
-                <!-- Food and Nutrition -->
-                <div class="subject-card" onclick="window.location.href='fnstudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-utensils"></i>
-                    </div>
-                    <div class="subject-name">Food and Nutrition</div>
-                </div>
-                
-                <!-- Geography -->
-                <div class="subject-card" onclick="window.location.href='geostudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-globe-africa"></i>
-                    </div>
-                    <div class="subject-name">Geography</div>
-                </div>
-                
-                <!-- German -->
-                <div class="subject-card" onclick="window.location.href='gerstudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-language"></i>
-                    </div>
-                    <div class="subject-name">German</div>
-                </div>
-                
-                <!-- History -->
-                <div class="subject-card" onclick="window.location.href='hisstudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-landmark"></i>
-                    </div>
-                    <div class="subject-name">History</div>
-                </div>
-                
-                <!-- Kiswahili -->
-                <div class="subject-card" onclick="window.location.href='kiswastudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-language"></i>
-                    </div>
-                    <div class="subject-name">Kiswahili</div>
-                </div>
-                
-                <!-- Literature in English -->
-                <div class="subject-card" onclick="window.location.href='litstudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-book-open"></i>
-                    </div>
-                    <div class="subject-name">Literature in English</div>
-                </div>
-                
-                <!-- Luganda -->
-                <div class="subject-card" onclick="window.location.href='lugstudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-language"></i>
-                    </div>
-                    <div class="subject-name">Luganda</div>
-                </div>
-                
-                <!-- Mathematics -->
-                <div class="subject-card" onclick="window.location.href='mathstudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-square-root-alt"></i>
-                    </div>
-                    <div class="subject-name">Mathematics</div>
-                </div>
-                
-                <!-- Performing Arts -->
-                <div class="subject-card" onclick="window.location.href='pastudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-theater-masks"></i>
-                    </div>
-                    <div class="subject-name">Performing Arts</div>
-                </div>
-                
-                <!-- Physical Education -->
-                <div class="subject-card" onclick="window.location.href='pestudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-running"></i>
-                    </div>
-                    <div class="subject-name">Physical Education</div>
-                </div>
-                
-                <!-- Physics -->
-                <div class="subject-card" onclick="window.location.href='phystudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-atom"></i>
-                    </div>
-                    <div class="subject-name">Physics</div>
-                </div>
-                
-                <!-- Technology and Design -->
-                <div class="subject-card" onclick="window.location.href='tdstudentdashboard.html'">
-                    <div class="subject-icon">
-                        <i class="fas fa-laptop-code"></i>
-                    </div>
-                    <div class="subject-name">Technology and Design</div>
+                    <p>Learn through fun educational games!</p>
+                    <a href="#" class="activity-btn">Play Games</a>
                 </div>
             </div>
-        </div>
 
-        <!-- Sign Out Button -->
-        <div class="sign-out-section">
-            <button class="sign-out-btn" onclick="signOut()">
-                <i class="fas fa-sign-out-alt"></i> Sign Out
-            </button>
-        </div>
-    </div>
+            <div class="subjects-section">
+                <h2 class="section-title">SUBJECTS</h2>
+                <div class="subjects-grid">
+                    <div class="subject-card" onclick="window.location.href='agristudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-tractor"></i>
+                        </div>
+                        <div class="subject-name">Agriculture</div>
+                    </div>
 
-    <!-- Bytes Counter -->
+                    <div class="subject-card" onclick="window.location.href='biostudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-dna"></i>
+                        </div>
+                        <div class="subject-name">Biology</div>
+                    </div>
+
+                    <div class="subject-card" onclick="window.location.href='chestudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <div class="subject-name">Chemistry</div>
+                    </div>
+
+                    <div class="subject-card" onclick="window.location.href='crestudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-bible"></i>
+                        </div>
+                        <div class="subject-name">Christian Religious Education</div>
+                    </div>
+
+                    <div class="subject-card" onclick="window.location.href='engstudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <div class="subject-name">English Language</div>
+                    </div>
+
+                    <div class="subject-card" onclick="window.location.href='entstudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <div class="subject-name">Entrepreneurship Education</div>
+                    </div>
+
+                    <div class="subject-card" onclick="window.location.href='fnstudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                        <div class="subject-name">Food and Nutrition</div>
+                    </div>
+
+                    <div class="subject-card" onclick="window.location.href='geostudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-globe-africa"></i>
+                        </div>
+                        <div class="subject-name">Geography</div>
+                    </div>
+
+                    <div class="subject-card" onclick="window.location.href='gerstudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <div class="subject-name">German</div>
+                    </div>
+
+                    <div class="subject-card" onclick="window.location.href='hisstudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-landmark"></i>
+                        </div>
+                        <div class="subject-name">History</div>
+                    </div>
+
+                    <div class="subject-card" onclick="window.location.href='kiswastudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <div class="subject-name">Kiswahili</div>
+                    </div>
+
+                    <div class="subject-card" onclick="window.location.href='litstudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <div class="subject-name">Literature in English</div>
+                    </div>
+
+                    <div class="subject-card" onclick="window.location.href='lugstudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <div class="subject-name">Luganda</div>
+                    </div>
+
+                    <div class="subject-card" onclick="window.location.href='mathstudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-square-root-alt"></i>
+                        </div>
+                        <div class="subject-name">Mathematics</div>
+                    </div>
+
+                    <div class="subject-card" onclick="window.location.href='pastudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-theater-masks"></i>
+                        </div>
+                        <div class="subject-name">Performing Arts</div>
+                    </div>
+
+                    <div class="subject-card" onclick="window.location.href='pestudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-running"></i>
+                        </div>
+                        <div class="subject-name">Physical Education</div>
+                    </div>
+
+                    <div class="subject-card" onclick="window.location.href='phystudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-atom"></i>
+                        </div>
+                        <div class="subject-name">Physics</div>
+                    </div>
+
+                    <div class="subject-card" onclick="window.location.href='tdstudentdashboard.html'">
+                        <div class="subject-icon">
+                            <i class="fas fa-laptop-code"></i>
+                        </div>
+                        <div class="subject-name">Technology and Design</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sign-out-section">
+                <button class="sign-out-btn" id="signOutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Sign Out
+                </button>
+            </div>
+        </div> </div>
+
     <div class="bytes-counter">
         <i class="fas fa-coins bytes-icon"></i>
-        <span id="bytesCount">150</span> Bytes
+        <span id="bytesCount">Loading...</span> Bytes
     </div>
 
     <script>
-        // Get student name from URL parameter
-        document.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const studentName = urlParams.get('name') || 'Student';
-            
-            // Update welcome message and profile name
-            document.getElementById('welcomeMessage').textContent = `Hello ${studentName}, what do you want to dive into today?`;
-            document.getElementById('studentNameDisplay').textContent = studentName;
-            
-            // Initialize bytes count (would normally come from backend)
-            let bytesCount = localStorage.getItem('bytesCount') || 150;
-            document.getElementById('bytesCount').textContent = bytesCount;
-        });
+        document.addEventListener('DOMContentLoaded', async function() {
+            const studentNameDisplay = document.getElementById('studentNameDisplay');
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            const bytesCountElement = document.getElementById('bytesCount');
+            const loadingMessage = document.getElementById('loadingMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            const mainContent = document.getElementById('mainContent');
+            const signOutBtn = document.getElementById('signOutBtn');
 
-        // Sign out function
-        function signOut() {
-            // Here you would typically clear session data
-            localStorage.removeItem('bytesCount');
-            
-            // Redirect to login page
-            window.location.href = 'index.html';
-        }
+            // --- IMPORTANT: Retrieve JWT from localStorage ---
+            const jwtToken = localStorage.getItem('jwtToken');
 
-        // Tooltip initialization
-        document.querySelectorAll('.info-icon').forEach(icon => {
-            icon.addEventListener('mouseenter', function() {
-                this.querySelector('.info-tooltip').style.opacity = '1';
-                this.querySelector('.info-tooltip').style.visibility = 'visible';
+            if (!jwtToken) {
+                loadingMessage.classList.add('hidden');
+                errorMessage.querySelector('.error-message').textContent = 'You are not logged in. Please log in to view your dashboard.';
+                errorMessage.classList.remove('hidden');
+                // Redirect to login page after a delay
+                setTimeout(() => {
+                    window.location.href = 'studentlogin.html';
+                }, 2000);
+                return; // Stop execution
+            }
+
+            // Function to fetch student data from backend
+            async function fetchStudentData() {
+                try {
+                    const apiUrl = `${window.location.origin}/student/dashboard`; // Use the protected endpoint
+
+                    const response = await fetch(apiUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${jwtToken}` // Send the JWT
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    loadingMessage.classList.add('hidden'); // Hide loading message
+
+                    if (response.ok && data.student) {
+                        const studentName = data.student.studentName || 'Student';
+                        const currentBytes = data.student.bytes || 0; // Get bytes from backend, default to 0
+
+                        studentNameDisplay.textContent = studentName;
+                        welcomeMessage.textContent = `Hello ${studentName}, what do you want to dive into today?`;
+                        bytesCountElement.textContent = currentBytes;
+
+                        // Store bytes in localStorage for other pages if needed (though backend is source of truth)
+                        localStorage.setItem('bytesCount', currentBytes);
+
+                        mainContent.classList.remove('hidden'); // Show main content
+                    } else {
+                        errorMessage.querySelector('.error-message').textContent = data.message || 'Failed to load dashboard. Invalid token or data.';
+                        errorMessage.classList.remove('hidden');
+                        if (response.status === 401 || response.status === 403) {
+                            localStorage.removeItem('jwtToken');
+                            localStorage.removeItem('bytesCount');
+                            localStorage.removeItem('preferredName');
+                            localStorage.removeItem('preferredFont');
+                            setTimeout(() => {
+                                window.location.href = 'studentlogin.html';
+                            }, 2000);
+                        }
+                    }
+
+                } catch (error) {
+                    console.error('Error fetching student dashboard:', error);
+                    loadingMessage.classList.add('hidden');
+                    errorMessage.querySelector('.error-message').textContent = 'An error occurred while fetching your dashboard. Please try again later.';
+                    errorMessage.classList.remove('hidden');
+                }
+            }
+
+            fetchStudentData(); // Call the function to fetch student data
+
+            // Sign out function
+            signOutBtn.addEventListener('click', function() {
+                localStorage.removeItem('jwtToken'); // Crucial: clear JWT
+                localStorage.removeItem('bytesCount'); // Clear bytes
+                localStorage.removeItem('preferredName'); // Clear preferred name (from profile page)
+                localStorage.removeItem('preferredFont'); // Clear font (from profile page)
+
+                // Redirect to login/landing page
+                window.location.href = 'index.html';
             });
-            
-            icon.addEventListener('mouseleave', function() {
-                this.querySelector('.info-tooltip').style.opacity = '0';
-                this.querySelector('.info-tooltip').style.visibility = 'hidden';
+
+            // Tooltip initialization
+            document.querySelectorAll('.info-icon').forEach(icon => {
+                icon.addEventListener('mouseenter', function() {
+                    this.querySelector('.info-tooltip').style.opacity = '1';
+                    this.querySelector('.info-tooltip').style.visibility = 'visible';
+                });
+
+                icon.addEventListener('mouseleave', function() {
+                    this.querySelector('.info-tooltip').style.opacity = '0';
+                    this.querySelector('.info-tooltip').style.visibility = 'hidden';
+                });
             });
         });
     </script>

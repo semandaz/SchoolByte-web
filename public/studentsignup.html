@@ -5,51 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SchoolByte - Student Sign Up</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Lato:wght@400;700&family=Nunito+Sans:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&family=Satisfy&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Consolidated and expanded font imports for all pages -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Lato:wght@400;700&family=Nunito+Sans:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&family=Satisfy&family=Dancing+Script:wght@400;700&family=Ubuntu:wght@400;700&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&family=Oswald:wght@400;700&family=Lora:wght@400;700&family=PT+Sans:wght@400;700&family=Source+Sans+Pro:wght@400;700&family=Fira+Sans:wght@400;700&family=Quicksand:wght@400;700&family=Space+Mono&display=swap" rel="stylesheet">
     <style>
         /* Global CSS Variables for Unified Color Palette */
         :root {
-          /* Brand Colors */
-          --color-brand-primary: #1a2a6c;   /* Dark Blue - Main brand color */
-          --color-brand-secondary: #b21f1f; /* Deep Red/Maroon - Secondary brand color, accents */
-          --color-brand-gold: #FFD700;     /* Gold - Accent for special elements, highlights */
-          --color-brand-orange: #FFA500;   /* Orange - Used in gradients with gold */
+            /* Brand Colors */
+            --color-brand-primary: #1a2a6c;    /* Dark Blue - Main brand color */
+            --color-brand-secondary: #b21f1f; /* Deep Red/Maroon - Secondary brand color, accents */
+            --color-brand-gold: #FFD700;       /* Gold - Accent for special elements, highlights */
+            --color-brand-orange: #FFA500;     /* Orange - Used in gradients with gold */
 
-          /* Neutral Palette */
-          --color-neutral-white: #ffffff;
-          --color-neutral-lightest: #f0f4f8; /* Very light gray/blue, good for subtle backgrounds */
-          --color-neutral-light: #d1d5db;    /* Light gray for disabled elements, input borders */
-          --color-neutral-medium: #9ca3af;   /* Medium gray for placeholders, disabled radio accents */
-          --color-neutral-dark: #4b5563;     /* Dark gray for most body text, labels */
-          --color-neutral-darkest: #333333;  /* Very dark gray for prominent text (e.g., terms.html body) */
+            /* Neutral Palette */
+            --color-neutral-white: #ffffff;
+            --color-neutral-lightest: #f0f4f8; /* Very light gray/blue, good for subtle backgrounds */
+            --color-neutral-light: #d1d5db;    /* Light gray for disabled elements, input borders */
+            --color-neutral-medium: #9ca3af;    /* Medium gray for placeholders, disabled radio accents */
+            --color-neutral-dark: #4b5563;      /* Dark gray for most body text, labels */
+            --color-neutral-darkest: #333333;  /* Very dark gray for prominent text (e.g., terms.html body) */
 
-          /* Semantic Colors */
-          --color-error-red: #e74c3c;        /* Standard error color */
-          --color-error-red-dark: #c0392b;   /* Darker error red for hover states */
+            /* Semantic Colors */
+            --color-error-red: #e74c3c;         /* Standard error color */
+            --color-error-red-dark: #c0392b;    /* Darker error red for hover states */
+            --color-success-green: #28a745;     /* Standard success color */
 
-          /* Background Gradients */
-          --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
-          --gradient-background-secondary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
-          
-          /* Text Gradients */
-          --gradient-text-gold: linear-gradient(to right, var(--color-brand-gold), var(--color-neutral-white));
+            /* Background Gradients */
+            --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            --gradient-background-secondary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
+            
+            /* Text Gradients */
+            --gradient-text-gold: linear-gradient(to right, var(--color-brand-gold), var(--color-neutral-white));
 
-          /* Button Gradients */
-          --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
-          --gradient-button-active-hover: linear-gradient(to right, #FFC800, #FF8C00);
+            /* Button Gradients */
+            --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
+            --gradient-button-active-hover: linear-gradient(to right, #FFC800, #FF8C00);
 
-          /* Transparent Overlays (for cards, popups, etc.) */
-          --overlay-light: rgba(255, 255, 255, 0.1);
-          --overlay-medium: rgba(0, 0, 0, 0.2);
-          --overlay-dark: rgba(30, 30, 60, 0.95);
-          --overlay-selected-option: rgba(26, 42, 108, 0.6);
+            /* Transparent Overlays (for cards, popups, etc.) */
+            --overlay-light: rgba(255, 255, 255, 0.1);
+            --overlay-medium: rgba(0, 0, 0, 0.2);
+            --overlay-dark: rgba(30, 30, 60, 0.95);
+            --overlay-selected-option: rgba(26, 42, 108, 0.6);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', sans-serif; /* Standardized font */
+            /* Font family will be set by JS based on localStorage */
         }
         
         body {
@@ -179,7 +181,7 @@
             font-size: 0.9rem;
             color: var(--color-brand-primary); /* Consistent link color */
             cursor: pointer;
-            display: none;
+            display: none; /* Hidden by default */
         }
         
         .resend-code:hover {
@@ -193,7 +195,7 @@
             padding: 15px;
         }
 
-        /* NEW: Styles for password fields, if needed beyond general input styles */
+        /* Styles for password fields, initially hidden */
         .password-section {
             display: none; /* Hidden by default, shown after email verification */
         }
@@ -315,7 +317,7 @@
             font-size: 1.2rem;
         }
 
-        /* Custom Message Box Styles (copied for consistency) */
+        /* Custom Message Box Styles */
         .message-box-overlay {
             position: fixed;
             top: 0;
@@ -354,9 +356,12 @@
         }
 
         .message-box h3 {
-            color: var(--color-error-red);
+            color: var(--color-error-red); /* Default to error red */
             font-size: 1.8rem;
             margin-bottom: 15px;
+        }
+        .message-box h3.success {
+            color: var(--color-success-green); /* Green for success messages */
         }
 
         .message-box p {
@@ -406,6 +411,24 @@
             }
         }
     </style>
+    <script>
+        // IMPORTANT: This script MUST be in the <head> of ALL your HTML files
+        // (index.html, studentsignup.html, studentlogin.html, studentprofile.html, studentdashboard.html, etc.)
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedFont = localStorage.getItem('preferredFont');
+            if (savedFont) {
+                document.body.style.fontFamily = savedFont;
+                // If there's a font select dropdown on this page, set its value
+                const fontSelect = document.getElementById('preferredFont'); // This element might not exist on all pages
+                if (fontSelect) {
+                    fontSelect.value = savedFont;
+                }
+            } else {
+                // Default font if nothing saved
+                document.body.style.fontFamily = 'Inter, sans-serif';
+            }
+        });
+    </script>
 </head>
 <body>
     <div class="container">
@@ -421,7 +444,7 @@
                 <h2>Student Sign Up</h2>
             </div>
             
-            <!-- Added novalidate to the form -->
+            <!-- Added novalidate to the form to disable browser's default validation -->
             <form id="studentSignupForm" novalidate> 
                 <div class="form-group">
                     <label for="studentName">Student's Name</label>
@@ -445,7 +468,7 @@
                     <input type="text" id="verificationCode" placeholder="••••••" maxlength="6" class="verification-code-input" required>
                 </div>
 
-                <!-- NEW: Password fields, initially hidden. Removed 'required' here -->
+                <!-- NEW: Password fields, initially hidden -->
                 <div id="passwordSection" class="password-section">
                     <div class="form-group">
                         <label for="password">Password</label>
@@ -519,9 +542,17 @@
             const messageBoxCloseBtn = document.getElementById('messageBoxCloseBtn');
 
             // Function to display custom message box
-            function showMessageBox(title, message) {
+            function showMessageBox(title, message, isSuccess = false) {
                 messageBoxTitle.textContent = title;
                 messageBoxContent.textContent = message;
+                // Set title color based on success/error
+                if (isSuccess) {
+                    messageBoxTitle.classList.remove('text-red-600');
+                    messageBoxTitle.classList.add('success'); // Use the .success class for green color
+                } else {
+                    messageBoxTitle.classList.remove('success');
+                    messageBoxTitle.classList.add('text-red-600');
+                }
                 messageBoxOverlay.classList.add('show');
             }
 
@@ -589,14 +620,15 @@
             // Send verification code to backend
             sendCodeBtn.addEventListener('click', async function() {
                 if (!isValidEmail(emailInput.value)) { 
-                     showMessageBox('Input Error', 'Please enter a valid email address to send the code.');
-                     return;
+                    showMessageBox('Input Error', 'Please enter a valid email address to send the code.');
+                    return;
                 }
                 if (sendCodeBtn.classList.contains('disabled') && sendCodeBtn.textContent.includes('Resend')) {
                     return; // Do not allow re-click during countdown
                 }
                 
                 // Show loading state
+                const originalSendCodeText = sendCodeBtn.textContent;
                 sendCodeBtn.textContent = 'Sending...';
                 sendCodeBtn.disabled = true;
                 sendCodeBtn.classList.add('disabled'); 
@@ -613,12 +645,12 @@
                     const data = await response.json(); 
 
                     if (response.ok) { 
-                        showMessageBox('Success', data.message);
+                        showMessageBox('Success', data.message, true); // Pass true for success message
                         startCountdown(); 
                         resendCode.style.display = 'none';
                     } else {
                         showMessageBox('Error', data.message || 'Failed to send verification code. Please try again.');
-                        sendCodeBtn.textContent = 'Send Code';
+                        sendCodeBtn.textContent = originalSendCodeText; // Restore original text
                         sendCodeBtn.disabled = false;
                         sendCodeBtn.classList.remove('disabled'); 
                         resendCode.style.display = 'block';
@@ -626,7 +658,7 @@
                 } catch (error) {
                     console.error('Error sending verification code:', error);
                     showMessageBox('Network Error', 'Could not connect to the server. Please check your internet connection and try again.');
-                    sendCodeBtn.textContent = 'Send Code';
+                    sendCodeBtn.textContent = originalSendCodeText; // Restore original text
                     sendCodeBtn.disabled = false;
                     sendCodeBtn.classList.remove('disabled'); 
                     resendCode.style.display = 'block';
@@ -651,7 +683,7 @@
                 const isTermsChecked = agreeTermsCheckbox.checked;
 
                 // Control Send Code button
-                if (isEmailValid && !countdownInterval) { 
+                if (isEmailValid && !countdownInterval && !emailVerified) { // Only enable if email not verified yet
                     sendCodeBtn.disabled = false;
                     sendCodeBtn.classList.remove('disabled');
                 } else {
@@ -662,18 +694,17 @@
                 let isFormValidForSubmission = false;
 
                 if (!emailVerified) {
-                    // Before email is verified, submit button depends only on initial fields
+                    // Before email is verified, 'Continue' button depends on initial fields and code
                     isFormValidForSubmission = isNameFilled && isIndexNumberFilled && isEmailValid && isCodeFilled && isTermsChecked;
                 } else {
-                    // After email is verified, submit button also depends on passwords
-                    const isPasswordFilled = passwordInput.value.length >= 8; 
-                    const isConfirmPasswordFilled = confirmPasswordInput.value.length >= 8;
+                    // After email is verified, 'Continue' button (now 'Register Account') also depends on passwords
+                    const isPasswordFilled = passwordInput.value.length > 0;
+                    const isConfirmPasswordFilled = confirmPasswordInput.value.length > 0;
                     const passwordsMatch = passwordInput.value === confirmPasswordInput.value;
                     const isPasswordComplex = isValidPassword(passwordInput.value);
 
-
-                    isFormValidForSubmission = isNameFilled && isIndexNumberFilled && isEmailValid && 
-                                               isCodeFilled && isTermsChecked && isPasswordFilled && 
+                    isFormValidForSubmission = isNameFilled && isIndexNumberFilled && isEmailValid &&
+                                               isTermsChecked && isPasswordFilled &&
                                                isConfirmPasswordFilled && passwordsMatch && isPasswordComplex;
                 }
                 
@@ -709,7 +740,7 @@
                 const password = passwordInput.value; 
                 const confirmPassword = confirmPasswordInput.value; 
 
-                // Stage 1: Verify Email Code
+                // Stage 1: Verify Email Code (if email not yet verified)
                 if (!emailVerified) {
                     console.log('DEBUG: Attempting Stage 1: Verify Email Code'); // DEBUG LOG
                     if (verificationCode.length !== 6) {
@@ -717,7 +748,7 @@
                         verificationCodeInput.focus();
                         return;
                     }
-                     // Manually check other required fields for stage 1 before sending to backend
+                    // Manually check other required fields for stage 1 before sending to backend
                     if (!studentName || !indexNumber || !email || !agreeTermsCheckbox.checked) {
                         showMessageBox('Validation Error', 'Please fill in all details and agree to terms before continuing.');
                         return;
@@ -726,7 +757,7 @@
 
                     submitButton.textContent = 'Verifying Code...';
                     submitButton.disabled = true;
-                    submitButton.classList.remove('active');
+                    submitButton.classList.remove('active'); // Remove active class during loading
 
                     try {
                         const response = await fetch(`${BACKEND_URL}/verify-code`, {
@@ -740,7 +771,7 @@
                         console.log('DEBUG: Verify Code Response Data:', data); // DEBUG LOG
 
                         if (response.ok && data.verified) { // Check data.verified as well
-                            showMessageBox('Success', data.message);
+                            showMessageBox('Success', data.message + '\n\nYou can now set your password.', true); // Pass true for success
                             emailVerified = true; // Set flag
                             
                             // *** CRITICAL PART: DISPLAYING THE PASSWORD SECTION ***
@@ -760,8 +791,11 @@
                             sendCodeBtn.disabled = true;
                             sendCodeBtn.classList.add('disabled');
                             resendCode.style.display = 'none'; // Hide resend option
-                            submitButton.textContent = 'Continue (Register)'; // Change button text for next stage
-                            validateForm(); // Re-validate to enable/disable button based on new fields
+                            agreeTermsCheckbox.disabled = true; // Disable terms checkbox
+
+                            // Update button text for next stage
+                            submitButton.textContent = 'Register Account';
+                            validateForm(); // Re-validate to enable/disable based on password fields
                             passwordInput.focus(); // Focus on password field
                             console.log('DEBUG: Stage 1: Email verified, password section should now be visible.'); // DEBUG LOG
                         } else {
@@ -821,25 +855,26 @@
                         console.log('DEBUG: Register Student Response Data:', data); // DEBUG LOG
 
                         if (response.ok) {
-                            showMessageBox('Success', data.message + '\nRedirecting to dashboard.');
+                            showMessageBox('Registration Success', data.message + '\n\nYou will now be redirected to the login page.', true); // Pass true for success
                             setTimeout(() => {
-                                // Clear local storage or session data relevant to signup
-                                // For example, if you stored the name temporarily for display
-                                // localStorage.removeItem('tempStudentName'); 
-                                window.location.href = `./studentdashboard.html?name=${encodeURIComponent(studentName)}`; // Pass name for dashboard display
-                            }, 1500);
+                                window.location.href = 'studentlogin.html'; // Redirect to login page - UPDATED
+                            }, 3000); // Redirect after 3 seconds
                             console.log('DEBUG: Stage 2: Student registered successfully, redirecting.'); // DEBUG LOG
                         } else {
-                            showMessageBox('Error', data.message || 'Registration failed. Please try again.');
-                            submitButton.textContent = 'Continue (Register)';
-                            submitButton.disabled = false;
-                            validateForm();
+                            // Handle backend validation errors or other registration errors
+                            let errorMessage = data.message || 'Registration failed. Please try again.';
+                            if (data.errors && data.errors.length > 0) {
+                                errorMessage = data.errors.map(err => err.msg).join('\n'); // Join multiple validation errors
+                            }
+                            showMessageBox('Registration Error', errorMessage);
+                            submitButton.textContent = 'Register Account';
+                            validateForm(); // Re-validate to re-enable button if possible
                             console.log('DEBUG: Stage 2: Student registration failed.'); // DEBUG LOG
                         }
                     } catch (error) {
                         console.error('DEBUG ERROR: Error during student registration:', error); // DEBUG ERROR LOG
                         showMessageBox('Network Error', 'Could not connect to the server during registration. Please try again.');
-                        submitButton.textContent = 'Continue (Register)';
+                        submitButton.textContent = 'Register Account';
                         submitButton.disabled = false;
                         validateForm();
                     }
@@ -849,23 +884,24 @@
             // Initial validation when page loads
             validateForm();
 
-            // Font selection logic
-            const savedFont = localStorage.getItem('preferredFont');
-            if (savedFont) {
-                document.body.style.fontFamily = savedFont;
-            } else {
-                document.body.style.fontFamily = 'Inter, sans-serif'; // Default font
-            }
-            // If this page has a font selection dropdown, update its value too:
-            const preferredFontSelect = document.getElementById('preferredFont');
-            if (preferredFontSelect) {
-                preferredFontSelect.value = savedFont || 'Inter, sans-serif';
-                preferredFontSelect.addEventListener('change', function() {
-                    const selectedFont = this.value;
-                    localStorage.setItem('preferredFont', selectedFont);
-                    document.body.style.fontFamily = selectedFont;
-                });
-            }
+            // Font selection logic (if applicable, otherwise remove)
+            // This part is now handled by the script in the <head>
+            // const savedFont = localStorage.getItem('preferredFont');
+            // if (savedFont) {
+            //     document.body.style.fontFamily = savedFont;
+            // } else {
+            //     document.body.style.fontFamily = 'Inter, sans-serif'; // Default font
+            // }
+            // // If this page has a font selection dropdown, update its value too:
+            // const preferredFontSelect = document.getElementById('preferredFont');
+            // if (preferredFontSelect) {
+            //     preferredFontSelect.value = savedFont || 'Inter, sans-serif';
+            //     preferredFontSelect.addEventListener('change', function() {
+            //         const selectedFont = this.value;
+            //         localStorage.setItem('preferredFont', selectedFont);
+            //         document.body.style.fontFamily = selectedFont;
+            //     });
+            // }
         });
     </script>
 </body>
