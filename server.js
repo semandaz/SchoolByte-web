@@ -21,6 +21,7 @@ const PORT = process.env.PORT || 3000; // Use process.env.PORT for Replit
 // --- Middleware ---
 app.use(cors());
 app.use(express.json()); // For parsing application/json bodies
+app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
 app.use(express.static('public')); // Serve static files from 'public' directory
 
 // Security middleware (Helmet) - Helps secure your app by setting various HTTP headers.
@@ -801,6 +802,187 @@ app.put('/student/preferences', authenticateToken, [
     }
 });
 
+// Endpoint for students to submit answers to an Activity
+// This endpoint will handle automated scoring, byte awarding, and keyword revelation.
+app.post(
+    '/student/activities/:activityId/submit',
+    authenticateToken, // Ensure only authenticated students can submit
+    [
+        // Validate the answers array structure
+        body('answers')
+            .isArray({ min: 1 }).withMessage('Answers array is required and must not be empty.'),
+        body('answers.*.questionIndex') // Validate each item in the answers array
+            .isInt({ min: 0 }).withMessage('Question index must be a non-negative integer.'),
+        body('answers.*.studentAnswer')
+            .isString().withMessage('Student answer must be a string.')
+            .trim()
+            .notEmpty().withMessage('Student answer cannot be empty.')
+            .isLength({ min: 1, max: 2000 }).withMessage('Student answer must be between 1 and 2000 characters.')
+    ],
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { activityId } = req.params;
+        const { answers: studentAnswers } = req.body; // Renamed to avoid confusion
+        const studentId = req.student.id; // Get student ID from authenticated token
+
+        // Start a Mongoose session for transactional behavior
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            // --- Step 1: Fetch Activity and Student Data ---
+            const activity = await Activity.findById(activityId).session(session);
+            if (!activity) {
+                return res.status(404).json({ message: 'Activity not found.' });
+            }
+
+            const student = await Student.findById(studentId).session(session);
+            if (!student) {
+                return res.status(404).json({ message: 'Student not found.' });
+            }
+
+            // --- Step 2: Retrieve Previous Submissions for this Activity and Student ---
+            const existingSubmissions = await StudentActivitySubmission.find({
+                student: studentId,
+                activity: activityId
+            }).sort({ submittedAt: -1 }).session(session); // Sort to get the latest attempt
+
+            const latestSubmission = existingSubmissions.length > 0 ? existingSubmissions[0] : null;
+            const initialAttempt = existingSubmissions.find(sub => sub.attemptType === 'initial'); // Find the first initial attempt
+
+            let currentAttemptNumber = (latestSubmission ? latestSubmission.attemptNumber : 0) + 1;
+            let currentAttemptType = 'revision'; // Default to revision
+            let bytesAwardedForThisAttempt = 0;
+            let keywordsToReveal = [];
+            let totalCorrectKeywords = 0;
+            let totalPossibleKeywords = 0;
+
+            // --- Step 3: Automated Scoring Logic ---
+            const gradedAnswers = [];
+            for (const [ansIndex, studentAns] of studentAnswers.entries()) {
+                const question = activity.questions[studentAns.questionIndex];
+
+                if (!question) {
+                    // Skip if question index is invalid, or handle as an error
+                    console.warn(`Invalid questionIndex ${studentAns.questionIndex} for activity ${activityId}`);
+                    continue;
+                }
+
+                let questionCorrectKeywords = 0;
+                const normalizedStudentAnswer = studentAns.studentAnswer.toLowerCase().trim();
+                const normalizedKeywords = question.keywordsForMarking.map(k => k.toLowerCase().trim());
+
+                // For long answers, check if student's answer includes each keyword
+                for (const keyword of normalizedKeywords) {
+                    if (normalizedStudentAnswer.includes(keyword)) {
+                        questionCorrectKeywords++;
+                    }
+                }
+
+                totalCorrectKeywords += questionCorrectKeywords;
+                totalPossibleKeywords += normalizedKeywords.length;
+
+                gradedAnswers.push({
+                    questionIndex: studentAns.questionIndex,
+                    studentAnswer: studentAns.studentAnswer,
+                    correctKeywordsFound: questionCorrectKeywords,
+                    totalKeywordsForQuestion: normalizedKeywords.length,
+                    isQuestionCorrect: questionCorrectKeywords === normalizedKeywords.length // Mark question as correct if all keywords are found
+                });
+
+                // If question is not fully correct, add its keywords to potential revelation list
+                if (questionCorrectKeywords < normalizedKeywords.length) {
+                    keywordsToReveal = keywordsToReveal.concat(question.keywordsForMarking);
+                }
+            }
+
+            const overallScore = totalPossibleKeywords > 0 ? (totalCorrectKeywords / totalPossibleKeywords) * 100 : 0;
+            const passed = overallScore >= 70; // Define your passing threshold (e.g., 70%)
+
+            // --- Step 4: Byte Awarding Logic ---
+            if (!initialAttempt) { // This is the very first attempt for this activity
+                currentAttemptType = 'initial';
+                if (passed) {
+                    bytesAwardedForThisAttempt = activity.maxBytesReward;
+                    student.bytes += bytesAwardedForThisAttempt; // Add bytes to student
+                    await student.save({ session }); // Save updated student bytes
+                }
+            } else {
+                // Subsequent attempt logic
+                const twoWeeksInMs = 14 * 24 * 60 * 60 * 1000;
+                const timeSinceLastAttempt = Date.now() - initialAttempt.lastAttemptDate.getTime();
+
+                // Check if the initial attempt failed AND it's been more than 14 days
+                if (initialAttempt.score < 70 && timeSinceLastAttempt > twoWeeksInMs) {
+                    // This is an eligible revision attempt for re-earning bytes
+                    currentAttemptType = 'revision';
+                    if (passed) {
+                        bytesAwardedForThisAttempt = activity.maxBytesReward;
+                        student.bytes += bytesAwardedForThisAttempt; // Add bytes to student
+                        await student.save({ session }); // Save updated student bytes
+                    }
+                } else {
+                    // Not eligible for bytes (either initial attempt passed, or it's within 14 days)
+                    currentAttemptType = 'revision'; // Still a revision attempt, but no bytes
+                }
+            }
+
+            // --- Step 5: Keyword Revelation Logic ---
+            // Keywords are revealed if the student failed the current attempt
+            // AND it's a revision attempt (meaning they are practicing or re-earning)
+            let finalRevealedKeywords = [];
+            if (!passed && currentAttemptType === 'revision') {
+                // Only reveal keywords for questions they got wrong in this specific attempt
+                finalRevealedKeywords = keywordsToReveal;
+            } else if (latestSubmission && latestSubmission.revealedKeywords.length > 0) {
+                // If they previously had keywords revealed (e.g., from a failed initial attempt),
+                // ensure they can still see them even if they pass this revision attempt.
+                // This prevents keywords from disappearing if they pass a revision after failing initial.
+                finalRevealedKeywords = latestSubmission.revealedKeywords;
+            }
+
+
+            // --- Step 6: Create New StudentActivitySubmission Document ---
+            const newSubmission = new StudentActivitySubmission({
+                student: studentId,
+                activity: activityId,
+                answers: gradedAnswers, // Store the graded answers including correctness info
+                score: overallScore,
+                bytesEarned: bytesAwardedForThisAttempt,
+                attemptNumber: currentAttemptNumber,
+                attemptType: currentAttemptType,
+                lastAttemptDate: Date.now(), // Update last attempt date for this new submission
+                revealedKeywords: finalRevealedKeywords // Store keywords revealed for this submission
+            });
+            await newSubmission.save({ session });
+
+            // --- Step 7: Commit Transaction ---
+            await session.commitTransaction();
+
+            res.status(200).json({
+                message: 'Activity submitted and graded successfully!',
+                score: overallScore,
+                bytesEarned: bytesAwardedForThisAttempt,
+                attemptNumber: newSubmission.attemptNumber,
+                attemptType: newSubmission.attemptType,
+                revealedKeywords: newSubmission.revealedKeywords, // Send revealed keywords to frontend
+                studentCurrentBytes: student.bytes // Send updated student bytes
+            });
+
+        } catch (error) {
+            await session.abortTransaction(); // Rollback on error
+            console.error('Error submitting student activity:', error);
+            res.status(500).json({ message: 'Failed to submit activity. Please try again.', error: error.message });
+        } finally {
+            session.endSession(); // End the session
+        }
+    }
+);
+
 
 // Endpoint to get the Student Leaderboard
 app.get('/leaderboard', async (req, res) => {
@@ -1226,8 +1408,6 @@ app.post('/admin/trigger-yearly-upgrade', authenticateAdminToken, async (req, re
         res.status(500).json({ message: 'Server error during yearly upgrade process.', error: error.message });
     }
 });
-
-// Add this endpoint after your existing teacher routes, e.g., after app.put('/teacher/preferences', ...)
 
 // Endpoint for Teacher to upload a WorkFile PDF and its associated Activity
 // This route will handle multipart/form-data, including the PDF file and JSON data.
