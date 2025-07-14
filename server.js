@@ -1,4 +1,6 @@
-// Ensure you have these imports at the top of your server.js
+// server.js - SchoolByte Backend
+
+// --- Module Imports ---
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -8,6 +10,10 @@ const jwt = require('jsonwebtoken'); // For JSON Web Tokens
 const { body, validationResult } = require('express-validator'); // For input validation
 const helmet = require('helmet'); // For security headers
 const morgan = require('morgan'); // For logging HTTP requests
+
+// Cloudinary imports for file storage
+const cloudinary = require('cloudinary').v2; // Use .v2 for Cloudinary SDK
+const multer = require('multer'); // For handling multipart/form-data (file uploads)
 
 const app = express();
 const PORT = process.env.PORT || 3000; // Use process.env.PORT for Replit
@@ -70,7 +76,7 @@ const studentSchema = new mongoose.Schema({
         type: Object, // This allows for flexible key-value pairs
         default: {
             fontSize: "medium", // Default font size preference
-            theme: "light",      // Default theme preference (e.g., 'light', 'dark')
+            theme: "light",     // Default theme preference (e.g., 'light', 'dark')
             notifications_on: true // Default notification preference
         }
     }
@@ -86,6 +92,12 @@ const teacherSchema = new mongoose.Schema({
     password: { type: String, required: true }, // Stores hashed password
     bytes: { type: Number, default: 0 }, // Teachers also have bytes, starting at 0
     createdAt: { type: Date, default: Date.now },
+    // NEW FIELD: To track if teacher has set their initial password
+    isPasswordSet: { type: Boolean, default: false },
+    // NEW FIELDS: Added for admin portal management
+    gender: { type: String, enum: ['Male', 'Female', 'Other'], trim: true, default: 'Other' }, // Optional gender field
+    physicalDescription: { type: String, trim: true }, // Optional physical description/notes
+
     // Teachers also have preferences, similar to students
     preferences: {
         type: Object,
@@ -106,9 +118,17 @@ const workFileSchema = new mongoose.Schema({
     subject: { type: String, required: true, trim: true }, // E.g., "Mathematics", "English Language" (from your list)
     intendedClass: { type: String, required: true, trim: true }, // E.g., "S.1", "S.2", "S.3", "S.4", "S.5", "S.6"
     costBytes: { type: Number, required: true, default: 2, min: 0 }, // Bytes required to download
-    uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', required: true }, // Reference to the Teacher who uploaded it
+    // MODIFIED: Store both teacherId and teacherName for persistence
+    uploadedBy: {
+        teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null }, // Can be null if teacher account is deleted
+        teacherName: { type: String, required: true } // Always retains the name
+    },
     // This field will link to the associated activity
     activity: { type: mongoose.Schema.Types.ObjectId, ref: 'Activity', required: true, unique: true }, // Each WorkFile must have ONE unique Activity
+
+    // NEW: Watermark preferences for download
+    applyDownloadWatermark: { type: Boolean, default: true }, // Teacher's choice for downloaded PDF
+
     createdAt: { type: Date, default: Date.now }
 });
 const WorkFile = mongoose.model('WorkFile', workFileSchema);
@@ -119,7 +139,7 @@ const activitySchema = new mongoose.Schema({
     description: { type: String, trim: true }, // A brief overview of the activity
     subject: { type: String, required: true, trim: true }, // E.g., "Biology", "History" - must match one of your predefined subjects
     intendedClass: { type: String, required: true, trim: true }, // E.g., "S.1", "S.4" - the class this activity is primarily for
-    maxBytesReward: { type: Number, required: true, default: 2, min: 0 }, // Max bytes student can earn (based on your "multiplied by 2 bytes" rule)
+    maxBytesReward: { type: Number, required: true, default: 5, min: 0 }, // Fixed bytes for activity completion (as per your last discussion)
 
     // Reference to the WorkFile (PDF) this activity is associated with.
     // 'unique: true' ensures one activity is tied to one work file.
@@ -149,7 +169,11 @@ const activitySchema = new mongoose.Schema({
         }
     ],
 
-    uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', required: true }, // Reference to the Teacher who created this activity
+    // MODIFIED: Store both teacherId and teacherName for persistence
+    uploadedBy: {
+        teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null },
+        teacherName: { type: String, required: true }
+    },
     createdAt: { type: Date, default: Date.now }
 });
 const Activity = mongoose.model('Activity', activitySchema);
@@ -165,14 +189,14 @@ const quizQuestionSchema = new mongoose.Schema({
     type: {
         type: String,
         enum: [
-            'short-answer',          // Brief written responses
-            'multiple-choice-single',// Single correct option from a list
-            'multiple-choice-multi', // Multiple correct options (select all that apply)
-            'true-false',            // Boolean statement
-            'fill-in-the-blank',     // Requires specific word(s) for a blank
-            'matching',              // Match items from one group to another
-            'ordering',              // Arrange items in a specific sequence
-            'problem-solving',       // Numerical or logical calculation (answer is a number/formula result)
+            'short-answer',
+            'multiple-choice-single',
+            'multiple-choice-multi',
+            'true-false',
+            'fill-in-the-blank',
+            'matching',
+            'ordering',
+            'problem-solving',
             // 'labeling' could be added later, might require more complex data for diagram coordinates.
         ],
         required: true
@@ -194,7 +218,7 @@ const quizQuestionSchema = new mongoose.Schema({
         type: [String],
         // This array is required for types that don't rely on the 'options' array.
         required: function() {
-            return ['short-answer', 'true-false', 'fill-in-the-blank', 'problem-solving'].includes(this.type);
+            return ['short-answer', 'true-false', 'problem-solving'].includes(this.type) || (this.type === 'fill-in-the-blank' && this.correctAnswers && this.correctAnswers.length > 0);
         },
         validate: {
             validator: function(v) {
@@ -233,7 +257,11 @@ const quizQuestionSchema = new mongoose.Schema({
     // For a 10-question quiz awarding a max of 5 bytes, each question would be 0.5 bytes.
     maxBytesRewardPerQuestion: { type: Number, required: true, default: 0.5, min: 0 },
 
-    uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', required: true },
+    // MODIFIED: Store both teacherId and teacherName for persistence
+    uploadedBy: {
+        teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null },
+        teacherName: { type: String, required: true }
+    },
     isFeatured: { type: Boolean, default: false }, // For the "10 bytes for a month" feature
     featuredUntil: { type: Date, required: function() { return this.isFeatured; } }, // Only required if isFeatured is true
     createdAt: { type: Date, default: Date.now }
@@ -258,9 +286,13 @@ const preaderGameSchema = new mongoose.Schema({
     // The initial prompt/seed for the AI to start generating the game narrative
     gamePrompt: { type: String, required: true, trim: true },
 
-    uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', required: true },
+    // MODIFIED: Store both teacherId and teacherName for persistence
+    uploadedBy: {
+        teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null },
+        teacherName: { type: String, required: true }
+    },
     isFeatured: { type: Boolean, default: false },
-    featuredUntil: { type: Date, required: function() { return this.isFeatured; } },
+    featuredUntil: { type: Date, required: function() { return this.isFeatured; } }, // Only required if isFeatured is true
     createdAt: { type: Date, default: Date.now }
 });
 const PreaderGame = mongoose.model('PreaderGame', preaderGameSchema);
@@ -303,6 +335,53 @@ const preaderGameSessionSchema = new mongoose.Schema({
 });
 const PreaderGameSession = mongoose.model('PreaderGameSession', preaderGameSessionSchema);
 
+// --- Mongoose Schema and Model for StudentActivitySubmission ---
+const studentActivitySubmissionSchema = new mongoose.Schema({
+    student: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Student',
+        required: true
+    },
+    // This will reference EITHER an Activity OR a QuizQuestion
+    // We use a union type and then determine which one is present.
+    activity: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Activity',
+        required: function() { return !this.quizQuestion; } // Required if quizQuestion is not present
+    },
+    quizQuestion: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'QuizQuestion',
+        required: function() { return !this.activity; } // Required if activity is not present
+    },
+
+    // Store the student's answers. Structure depends on the activity/quiz type.
+    // For Activities (long answer), this would be an array of objects:
+    // [{ questionId: ObjectId, studentAnswer: "..." }]
+    // For QuizQuestions, this would be an array of objects, structured based on question type:
+    // e.g., for multiple-choice: [{ questionId: ObjectId, chosenOptionIds: [ObjectId] }]
+    // e.g., for short-answer: [{ questionId: ObjectId, studentAnswer: "..." }]
+    answers: {
+        type: mongoose.Schema.Types.Mixed, // Use Mixed to allow flexible structure
+        required: true
+    },
+
+    score: { type: Number, default: 0 }, // Score for the submission (e.g., percentage, or raw score)
+    bytesEarned: { type: Number, default: 0 }, // Bytes awarded for this specific submission
+
+    // NEW FIELDS for byte re-earning and keyword revelation logic
+    attemptNumber: { type: Number, default: 1 },
+    attemptType: { type: String, enum: ['initial', 'revision'], default: 'initial' }, // 'initial' for byte-eligible, 'revision' for practice
+    lastAttemptDate: { type: Date, default: Date.now },
+    revealedKeywords: [{ type: String }], // Keywords revealed during a revision attempt
+
+    submittedAt: { type: Date, default: Date.now },
+    isGraded: { type: Boolean, default: false }, // For activities, might be true immediately for quizzes
+    // For activities, we might need a flag if it's manually reviewed vs auto-graded
+    // For quizzes, it's always auto-graded.
+});
+const StudentActivitySubmission = mongoose.model('StudentActivitySubmission', studentActivitySubmissionSchema);
+
 
 // --- Mongoose Schema and Model for Administrator ---
 // Defines the structure for administrator data storage.
@@ -335,6 +414,20 @@ if (!JWT_SECRET) {
     console.error('FATAL ERROR: JWT_SECRET is not defined. Please set it in Replit Secrets.');
     process.exit(1); // Exits the Node.js process
 }
+
+// --- Cloudinary Configuration ---
+// Ensure these are set as Replit Secrets: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+console.log('Cloudinary configured successfully.');
+
+// --- Multer Storage Configuration ---
+// We'll use memory storage for Multer, then upload to Cloudinary directly from memory.
+const upload = multer({ storage: multer.memoryStorage() });
+
 
 // --- Middleware to verify JWT (protect routes) ---
 // This function will be used on routes that require authentication.
@@ -607,7 +700,7 @@ app.post('/login-student', [
         // If login is successful, generate a JSON Web Token (JWT).
         // The token payload contains non-sensitive user information.
         const token = jwt.sign(
-            { id: student._id, email: student.email, studentName: student.studentName, indexNumber: student.indexNumber },
+            { id: student._id, email: student.email, studentName: student.studentName, indexNumber: student.indexNumber, role: 'student' }, // Added role
             JWT_SECRET, // The secret key used to sign the token.
             { expiresIn: '1h' } // The token will expire in 1 hour.
         );
@@ -698,7 +791,7 @@ app.put('/student/preferences', authenticateToken, [
             student: {
                 studentName: updatedStudent.studentName,
                 email: updatedStudent.email,
-                preferences: updatedUpdated.preferences
+                preferences: updatedStudent.preferences
             }
         });
 
@@ -778,7 +871,8 @@ app.post('/login-teacher', [
             teacher: {
                 teacherName: teacher.teacherName,
                 email: teacher.email,
-                bytes: teacher.bytes
+                bytes: teacher.bytes,
+                isPasswordSet: teacher.isPasswordSet // Include isPasswordSet in login response
             }
         });
 
@@ -787,6 +881,45 @@ app.post('/login-teacher', [
         res.status(500).json({ message: 'Server error during teacher login.', error: error.message });
     }
 });
+
+// NEW: Endpoint for teacher to set their initial password (after admin creation)
+app.put('/teacher/set-initial-password', authenticateTeacherToken, [
+    body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters long.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { newPassword } = req.body;
+    const teacherId = req.teacher.id; // Get teacher ID from the authenticated token
+
+    try {
+        const teacher = await Teacher.findById(teacherId);
+        if (!teacher) {
+            return res.status(404).json({ message: 'Teacher not found.' });
+        }
+
+        // Only allow setting initial password if it hasn't been set yet
+        if (teacher.isPasswordSet) {
+            return res.status(400).json({ message: 'Password already set. Use password reset if you forgot it.' });
+        }
+
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+        teacher.password = hashedPassword;
+        teacher.isPasswordSet = true;
+        await teacher.save();
+
+        res.status(200).json({ message: 'Initial password set successfully!' });
+
+    } catch (error) {
+        console.error('Error setting initial teacher password:', error);
+        res.status(500).json({ message: 'Server error setting password.', error: error.message });
+    }
+});
+
 
 // Protected route to get teacher dashboard data.
 app.get('/teacher/dashboard', authenticateTeacherToken, async (req, res) => {
@@ -804,7 +937,10 @@ app.get('/teacher/dashboard', authenticateTeacherToken, async (req, res) => {
                 email: teacherData.email,
                 bytes: teacherData.bytes,
                 preferences: teacherData.preferences,
-                createdAt: teacherData.createdAt
+                createdAt: teacherData.createdAt,
+                isPasswordSet: teacherData.isPasswordSet,
+                gender: teacherData.gender, // Include new field
+                physicalDescription: teacherData.physicalDescription // Include new field
             }
         });
 
@@ -851,7 +987,7 @@ app.put('/teacher/preferences', authenticateTeacherToken, [
 
     } catch (error) {
         console.error('Error updating teacher preferences:', error);
-        res.status(500).json({ message: 'Server error updating preferences.', error: error.message });
+        res.status(500).json({ message: 'Server error updating teacher preferences.', error: error.message });
     }
 });
 
@@ -931,17 +1067,19 @@ app.post('/login-admin', [
 
 // NEW: Endpoint for Administrator to create a new Teacher account.
 // This route is protected by authenticateAdminToken.
-app.post('/admin/create-teacher', authenticateAdminToken, [
+app.post('/admin/teachers', authenticateAdminToken, [ // Changed path to /admin/teachers
     body('teacherName').notEmpty().withMessage('Teacher name is required.'),
     body('email').isEmail().withMessage('Please provide a valid email address.'),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long.')
+    body('initialPassword').isLength({ min: 6 }).withMessage('Initial password must be at least 6 characters long.'),
+    body('gender').optional().isIn(['Male', 'Female', 'Other']).withMessage('Gender must be Male, Female, or Other.'), // New validation
+    body('physicalDescription').optional().isString().withMessage('Physical description must be a string.') // New validation
 ], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { teacherName, email, password } = req.body;
+    const { teacherName, email, initialPassword, gender, physicalDescription } = req.body; // Destructure new fields
 
     try {
         const existingTeacher = await Teacher.findOne({ email });
@@ -950,22 +1088,29 @@ app.post('/admin/create-teacher', authenticateAdminToken, [
         }
 
         const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        const hashedPassword = await bcrypt.hash(initialPassword, saltRounds);
 
         const newTeacher = new Teacher({
             teacherName,
             email,
             password: hashedPassword,
-            bytes: 0 // New teachers start with 0 bytes
+            bytes: 0, // New teachers start with 0 bytes
+            isPasswordSet: false, // Admin creates, teacher sets on first login
+            gender, // Assign new field
+            physicalDescription // Assign new field
         });
 
         await newTeacher.save();
 
         res.status(201).json({
-            message: 'Teacher account created successfully by administrator!',
+            message: 'Teacher account created successfully by administrator! Teacher needs to set their password on first login.',
             teacher: {
+                id: newTeacher._id,
                 name: newTeacher.teacherName,
-                email: newTeacher.email
+                email: newTeacher.email,
+                isPasswordSet: newTeacher.isPasswordSet,
+                gender: newTeacher.gender, // Include new field in response
+                physicalDescription: newTeacher.physicalDescription // Include new field in response
             }
         });
 
@@ -974,6 +1119,68 @@ app.post('/admin/create-teacher', authenticateAdminToken, [
         res.status(500).json({ message: 'Server error creating teacher account.', error: error.message });
     }
 });
+
+// NEW: Endpoint for Administrator to get all teachers.
+// This route is protected by authenticateAdminToken.
+app.get('/admin/teachers', authenticateAdminToken, async (req, res) => {
+    try {
+        const teachers = await Teacher.find({}).select('-password'); // Exclude passwords
+        res.status(200).json({
+            message: 'Teachers fetched successfully.',
+            teachers: teachers
+        });
+    } catch (error) {
+        console.error('Error fetching teachers by admin:', error);
+        res.status(500).json({ message: 'Server error fetching teachers.', error: error.message });
+    }
+});
+
+// NEW: Endpoint for Administrator to delete a teacher account.
+// This route is protected by authenticateAdminToken.
+app.delete('/admin/teachers/:id', authenticateAdminToken, async (req, res) => {
+    const teacherIdToDelete = req.params.id;
+
+    try {
+        const teacher = await Teacher.findById(teacherIdToDelete);
+        if (!teacher) {
+            return res.status(404).json({ message: 'Teacher not found.' });
+        }
+
+        // --- Step 1: Update uploaded content to retain teacherName but nullify teacherId ---
+        // Update WorkFiles
+        await WorkFile.updateMany(
+            { 'uploadedBy.teacherId': teacherIdToDelete },
+            { $set: { 'uploadedBy.teacherId': null } }
+        );
+        // Update Activities
+        await Activity.updateMany(
+            { 'uploadedBy.teacherId': teacherIdToDelete },
+            { $set: { 'uploadedBy.teacherId': null } }
+        );
+        // Update QuizQuestions
+        await QuizQuestion.updateMany(
+            { 'uploadedBy.teacherId': teacherIdToDelete },
+            { $set: { 'uploadedBy.teacherId': null } }
+        );
+        // Update PreaderGames
+        await PreaderGame.updateMany(
+            { 'uploadedBy.teacherId': teacherIdToDelete },
+            { $set: { 'uploadedBy.teacherId': null } }
+        );
+
+        // --- Step 2: Delete the Teacher document ---
+        await Teacher.deleteOne({ _id: teacherIdToDelete });
+
+        res.status(200).json({
+            message: `Teacher ${teacher.teacherName} and their associated content references updated/deleted successfully. Content remains attributed by name.`
+        });
+
+    } catch (error) {
+        console.error('Error deleting teacher account by admin:', error);
+        res.status(500).json({ message: 'Server error deleting teacher account.', error: error.message });
+    }
+});
+
 
 // NEW: Manual trigger endpoint for yearly student class upgrade and account deletion
 // This would ideally be triggered by a cron job in a production environment.
@@ -1019,6 +1226,254 @@ app.post('/admin/trigger-yearly-upgrade', authenticateAdminToken, async (req, re
         res.status(500).json({ message: 'Server error during yearly upgrade process.', error: error.message });
     }
 });
+
+// Add this endpoint after your existing teacher routes, e.g., after app.put('/teacher/preferences', ...)
+
+// Endpoint for Teacher to upload a WorkFile PDF and its associated Activity
+// This route will handle multipart/form-data, including the PDF file and JSON data.
+app.post(
+    '/teacher/upload-content',
+    authenticateTeacherToken, // Ensure only authenticated teachers can upload
+    upload.single('workFilePdf'), // 'workFilePdf' is the field name for the PDF file in the form
+    [
+        // --- Validation for WorkFile Metadata ---
+        body('workFileTitle')
+            .notEmpty().withMessage('WorkFile title is required.')
+            .trim()
+            .isLength({ min: 3, max: 200 }).withMessage('WorkFile title must be between 3 and 200 characters.'),
+        body('workFileDescription')
+            .optional()
+            .isString().withMessage('WorkFile description must be a string.')
+            .trim()
+            .isLength({ max: 500 }).withMessage('WorkFile description cannot exceed 500 characters.'),
+        body('workFileSubject')
+            .notEmpty().withMessage('WorkFile subject is required.')
+            .trim()
+            .isLength({ min: 2, max: 100 }).withMessage('WorkFile subject must be between 2 and 100 characters.'),
+        body('workFileIntendedClass')
+            .notEmpty().withMessage('WorkFile intended class is required.')
+            .trim()
+            .isIn(['S.1', 'S.2', 'S.3', 'S.4', 'S.5', 'S.6']).withMessage('Invalid WorkFile intended class.'),
+        body('workFileCostBytes')
+            .isInt({ min: 0 }).withMessage('WorkFile cost bytes must be a non-negative integer.')
+            .notEmpty().withMessage('WorkFile cost bytes is required.'),
+        body('applyDownloadWatermark')
+            .optional()
+            .isBoolean().withMessage('Apply download watermark must be a boolean value (true/false).'),
+
+        // --- Validation for Activity Data ---
+        // Note: activityJson will be a string, so we validate its content after parsing.
+        // For now, we only validate its existence. Detailed validation of its parsed content
+        // will happen inside the route handler.
+        body('activityJson')
+            .notEmpty().withMessage('Activity data is required and must be a JSON string.'),
+
+        // We'll parse activityJson inside the route and validate its structure there.
+        // For example, validating questions array and its contents:
+        // body('activityJson.questions').isArray({ min: 1 }).withMessage('Activity must have at least one question.'),
+        // body('activityJson.questions.*.questionText').notEmpty().withMessage('Question text cannot be empty.'),
+        // ... and so on. This is harder to do with express-validator on a stringified JSON.
+        // So, we'll do this validation *after* JSON.parse inside the try block.
+    ],
+    async (req, res) => {
+        // Check for validation errors from express-validator for initial fields
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        // Ensure a file was uploaded
+        if (!req.file) {
+            return res.status(400).json({ message: 'WorkFile PDF is required.' });
+        }
+
+        // Parse the JSON string from the request body for activity data
+        let activityData;
+        try {
+            activityData = JSON.parse(req.body.activityJson); 
+        } catch (parseError) {
+            console.error('Error parsing activity JSON:', parseError);
+            return res.status(400).json({ message: 'Invalid activity data format. Must be a valid JSON string.' });
+        }
+
+        // --- Additional Validation for Parsed Activity Data ---
+        // These validations are done here because express-validator's 'body' directly
+        // on 'activityJson.questions' etc. doesn't work well when 'activityJson' is a string.
+        if (!activityData.title || typeof activityData.title !== 'string' || activityData.title.trim().length < 3 || activityData.title.trim().length > 200) {
+            return res.status(400).json({ message: 'Activity title is required and must be between 3 and 200 characters.' });
+        }
+        if (activityData.description && (typeof activityData.description !== 'string' || activityData.description.trim().length > 500)) {
+            return res.status(400).json({ message: 'Activity description must be a string and cannot exceed 500 characters.' });
+        }
+        if (!activityData.subject || typeof activityData.subject !== 'string' || activityData.subject.trim().length < 2 || activityData.subject.trim().length > 100) {
+            return res.status(400).json({ message: 'Activity subject is required and must be between 2 and 100 characters.' });
+        }
+        const validClasses = ['S.1', 'S.2', 'S.3', 'S.4', 'S.5', 'S.6'];
+        if (!activityData.intendedClass || typeof activityData.intendedClass !== 'string' || !validClasses.includes(activityData.intendedClass.trim())) {
+            return res.status(400).json({ message: 'Invalid Activity intended class.' });
+        }
+        if (!Array.isArray(activityData.questions) || activityData.questions.length === 0) {
+            return res.status(400).json({ message: 'Activity must have at least one question.' });
+        }
+        for (const [qIndex, question] of activityData.questions.entries()) {
+            if (!question.questionText || typeof question.questionText !== 'string' || question.questionText.trim().length < 10 || question.questionText.trim().length > 1000) {
+                return res.status(400).json({ message: `Question ${qIndex + 1}: Question text is required and must be between 10 and 1000 characters.` });
+            }
+            if (!Array.isArray(question.keywordsForMarking) || question.keywordsForMarking.length === 0) {
+                return res.status(400).json({ message: `Question ${qIndex + 1}: Each question must have at least one keyword for marking.` });
+            }
+            for (const [kIndex, keyword] of question.keywordsForMarking.entries()) {
+                if (!keyword || typeof keyword !== 'string' || keyword.trim().length < 1 || keyword.trim().length > 100) {
+                    return res.status(400).json({ message: `Question ${qIndex + 1}, Keyword ${kIndex + 1}: Keywords cannot be empty and must be between 1 and 100 characters.` });
+                }
+            }
+        }
+
+
+        // Destructure WorkFile metadata from req.body
+        const {
+            workFileTitle,
+            workFileDescription,
+            workFileSubject,
+            workFileIntendedClass,
+            workFileCostBytes,
+            applyDownloadWatermark = true // Default to true if not provided
+        } = req.body;
+
+        // Destructure Activity data (from parsed activityData)
+        const {
+            title: activityTitle, // Renaming to avoid conflict with workFileTitle
+            description: activityDescription, // Renaming
+            subject: activitySubject, // Renaming
+            intendedClass: activityIntendedClass, // Renaming
+            questions
+        } = activityData; 
+
+        // Get teacher info from authenticated token
+        const teacherId = req.teacher.id;
+        const teacherName = req.teacher.teacherName; // Assuming teacherName is in JWT payload
+
+        let uploadedFileUrl = null; // To store Cloudinary URL
+        let workFilePublicId = null; // To store Cloudinary public ID for potential deletion
+
+        // Start a Mongoose session for transactional behavior (if using replica sets)
+        // This ensures atomicity: either both WorkFile and Activity are saved, or neither are.
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            // --- Step 1: Upload WorkFile PDF to Cloudinary ---
+            // Generate a unique public ID for the PDF
+            workFilePublicId = `schoolbyte/workfiles/${teacherId}/workfile-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+
+            // Use a Promise-based approach for upload_stream to await its completion
+            const cloudinaryUploadResult = await new Promise((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream(
+                    {
+                        resource_type: 'raw', // Important: Treat as a raw file (PDF)
+                        public_id: workFilePublicId,
+                        folder: `schoolbyte/workfiles/${teacherId}`, // Organize by teacher ID
+                        format: 'pdf', // Explicitly set format to PDF
+                        // No transformations applied directly on upload, they are done on-the-fly via URL
+                    },
+                    (error, result) => {
+                        if (error) {
+                            return reject(new Error(`Cloudinary upload failed: ${error.message}`));
+                        }
+                        uploadedFileUrl = result.secure_url;
+                        resolve(result);
+                    }
+                );
+                uploadStream.end(req.file.buffer); // Upload the file buffer from multer's memory storage
+            });
+
+
+            // --- Step 2: Create WorkFile Document in MongoDB ---
+            const newWorkFile = new WorkFile({
+                title: workFileTitle,
+                description: workFileDescription,
+                fileUrl: uploadedFileUrl, // Store the Cloudinary URL
+                subject: workFileSubject,
+                intendedClass: workFileIntendedClass,
+                costBytes: workFileCostBytes,
+                uploadedBy: {
+                    teacherId: teacherId,
+                    teacherName: teacherName
+                },
+                applyDownloadWatermark: applyDownloadWatermark // Store teacher's preference
+                // 'activity' field will be linked after Activity creation
+            });
+            await newWorkFile.save({ session }); // Save within the transaction
+
+            // --- Step 3: Create Activity Document in MongoDB ---
+            const newActivity = new Activity({
+                title: activityTitle,
+                description: activityDescription,
+                subject: activitySubject,
+                intendedClass: activityIntendedClass,
+                maxBytesReward: 5, // Fixed at 5 bytes as per your requirement
+                associatedWorkFile: newWorkFile._id, // Link to the newly created WorkFile
+                questions: questions, // Array of questionText and keywordsForMarking
+                uploadedBy: {
+                    teacherId: teacherId,
+                    teacherName: teacherName
+                }
+            });
+            await newActivity.save({ session }); // Save within the transaction
+
+            // --- Step 4: Link Activity ID back to WorkFile ---
+            newWorkFile.activity = newActivity._id;
+            await newWorkFile.save({ session }); // Update WorkFile with Activity ID within the transaction
+
+            // --- Step 5: Commit the transaction ---
+            await session.commitTransaction();
+
+            res.status(201).json({
+                message: 'WorkFile and Activity uploaded successfully!',
+                workFile: {
+                    id: newWorkFile._id,
+                    title: newWorkFile.title,
+                    fileUrl: newWorkFile.fileUrl,
+                    subject: newWorkFile.subject,
+                    intendedClass: newWorkFile.intendedClass,
+                    costBytes: newWorkFile.costBytes,
+                    applyDownloadWatermark: newWorkFile.applyDownloadWatermark
+                },
+                activity: {
+                    id: newActivity._id,
+                    title: newActivity.title,
+                    subject: newActivity.subject,
+                    intendedClass: newActivity.intendedClass,
+                    maxBytesReward: newActivity.maxBytesReward,
+                    questionsCount: newActivity.questions.length
+                }
+            });
+
+        } catch (error) {
+            // --- Rollback on Error ---
+            await session.abortTransaction(); // Abort the transaction if any error occurs
+            console.error('Error during WorkFile/Activity upload transaction:', error);
+
+            // If Cloudinary upload succeeded but DB failed, attempt to delete the Cloudinary file
+            if (uploadedFileUrl && workFilePublicId) {
+                try {
+                    // Cloudinary destroy expects public_id and resource_type
+                    await cloudinary.uploader.destroy(workFilePublicId, { resource_type: 'raw' });
+                    console.log(`Successfully deleted orphaned Cloudinary file: ${workFilePublicId}`);
+                } catch (cloudinaryError) {
+                    console.error(`Failed to delete orphaned Cloudinary file ${workFilePublicId}:`, cloudinaryError);
+                }
+            }
+
+            res.status(500).json({
+                message: 'Failed to upload WorkFile and Activity. Please try again.',
+                error: error.message
+            });
+        } finally {
+            session.endSession(); // End the session
+        }
+    }
+);
 
 
 // Global Error Handling Middleware.
