@@ -1438,8 +1438,7 @@ app.post('/admin/verify-2fa', [
 
     const { email, code } = req.body;
 
-    try {
-        // Find the stored verification code for the given email.
+    try {        // Find the stored verification code for the given email.
         const storedCode = await VerificationCode.findOne({ email });
 
         if (!storedCode) {
@@ -2393,10 +2392,7 @@ app.post('/admin/preader-games', authenticateAdminToken, [
                 ethicalImpact: choice.ethicalImpact,
                 statChanges: choice.statChanges,
                 requiredStats: choice.requiredStats,
-                unavailableReason: choice.unavailableReason,
-                successChanceBase: choice.successChanceBase,
-                luckInfluence: choice.luckInfluence,
-                // nextNode and failNode will be null initially, linked as game progresses
+                unavailableReason: choice.unavailableReason
             })),
             isAiGenerated: true,
             generationPrompt: initialAiPrompt // Store the prompt used for this node
