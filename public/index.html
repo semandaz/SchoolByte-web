@@ -3,132 +3,374 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SchoolByte: Your Profile</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Consolidated and expanded font imports for all pages -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Lato:wght@400;700&family=Nunito+Sans:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&family=Satisfy&family=Dancing+Script:wght@400;700&family=Ubuntu:wght@400;700&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&family=Oswald:wght@400;700&family=Lora:wght@400;700&family=PT+Sans:wght@400;700&family=Source+Sans+Pro:wght@400;700&family=Fira+Sans:wght@400;700&family=Quicksand:wght@400;700&family=Space+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> <!-- Added for Font Awesome icons -->
+    <title>SchoolByte - Welcome</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
+        /* Global CSS Variables for Unified Color Palette */
+        :root {
+            /* Brand Colors */
+            --color-brand-primary: #1a2a6c;    /* Dark Blue - Main brand color */
+            --color-brand-secondary: #b21f1f; /* Deep Red/Maroon - Secondary brand color, accents */
+            --color-brand-gold: #FFD700;       /* Gold - Accent for special elements, highlights */
+            --color-brand-orange: #FFA500;    /* Orange - Used in gradients with gold */
+
+            /* Neutral Palette */
+            --color-neutral-white: #ffffff;
+            --color-neutral-lightest: #f0f4f8; /* Very light gray/blue, good for subtle backgrounds */
+            --color-neutral-light: #d1d5db;    /* Light gray for disabled elements, input borders */
+            --color-neutral-medium: #9ca3af;    /* Medium gray for placeholders, disabled radio accents */
+            --color-neutral-dark: #4b5563;       /* Dark gray for most body text, labels */
+            --color-neutral-darkest: #333333;  /* Very dark gray for prominent text */
+
+            /* Semantic Colors */
+            --color-error-red: #e74c3c;         /* Standard error color */
+            --color-error-red-dark: #c0392b;    /* Darker error red for hover states */
+            --color-success-green: #2ecc71;     /* Success color */
+            --color-info-blue: #3498db;         /* Info color */
+
+            /* Background Gradients */
+            --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            --gradient-background-secondary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
+
+            /* Text Gradients */
+            --gradient-text-gold: linear-gradient(to right, var(--color-brand-gold), var(--color-neutral-white));
+
+            /* Button Gradients */
+            --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
+            --gradient-button-active-hover: linear-gradient(to right, #FFC800, #FF8C00);
+
+            /* Transparent Overlays */
+            --overlay-light: rgba(255, 255, 255, 0.1);
+            --overlay-medium: rgba(0, 0, 0, 0.2);
+            --overlay-dark: rgba(30, 30, 60, 0.95);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
         body {
-            /* Font family will be set by JS based on localStorage */
-            background-image: linear-gradient(to bottom right, #e0e7ff, #f0f4f8);
+            background: var(--gradient-background-secondary);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 2rem;
+            color: var(--color-neutral-white);
+            overflow-x: hidden;
         }
 
-        /* Disabled state styles */
-        .disabled {
-            background-color: #cbd5e1 !important;
-            cursor: not-allowed;
-        }
-
-        .disabled-label {
-            opacity: 0.6;
-            cursor: not-allowed;
+        /* Floating Books Animation */
+        .floating-books {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
+            z-index: 0;
         }
 
-        .disabled-label input[type="radio"] {
+        .book {
+            position: absolute;
+            font-size: 2rem;
+            color: var(--color-brand-gold);
+            opacity: 0.7;
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Main Content */
+        .main-content {
+            position: relative;
+            z-index: 10;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        /* Logo */
+        .logo {
+            font-size: 4rem;
+            font-weight: 900;
+            background: var(--gradient-text-gold);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        /* Avatar */
+        .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--gradient-background-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-neutral-white);
+            font-size: 3rem;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .avatar:hover {
+            transform: scale(1.05) rotate(5deg);
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--color-neutral-white);
+        }
+
+        input[type="text"],
+        input[type="radio"] {
+            accent-color: var(--color-brand-gold);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--overlay-light);
+            border-radius: 10px;
+            font-size: 1rem;
+            background-color: var(--overlay-light);
+            color: var(--color-neutral-white);
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--color-brand-gold);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+            outline: none;
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--color-neutral-light);
+        }
+
+        /* Radio Buttons */
+        .radio-group {
+            margin-top: 1rem;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            cursor: pointer;
+        }
+
+        .radio-option input {
+            margin-right: 0.8rem;
+            width: 1.2rem;
+            height: 1.2rem;
+        }
+
+        .radio-option span {
+            color: var(--color-neutral-white);
+        }
+
+        /* Continue Button */
+        .continue-btn {
+            display: inline-block;
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-top: 1rem;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1.1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .continue-btn:hover {
+            background: var(--gradient-button-active-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .continue-btn:disabled {
+            background: var(--color-neutral-medium);
+            color: var(--color-neutral-dark);
             cursor: not-allowed;
-            accent-color: #94a3b8;
+            transform: none;
+            box-shadow: none;
         }
 
-        /* Focus styles */
-        :focus-visible {
-            outline: 2px solid #3b82f6;
-            outline-offset: 2px;
+        /* Error Message */
+        .error-message {
+            color: var(--color-brand-gold);
+            text-align: center;
+            margin-top: 1rem;
+            min-height: 1.5rem;
+            font-weight: 500;
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Moving Gradient Background */
+        .moving-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
+            background-size: 400% 400%;
+            animation: gradient-shift 15s ease infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradient-shift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            
+            .book, .moving-gradient {
+                display: none !important;
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 2rem 1rem;
+            }
+            
+            .logo {
+                font-size: 3rem;
+            }
+            
+            .avatar {
+                width: 80px;
+                height: 80px;
+                font-size: 2.5rem;
+            }
         }
     </style>
     <script>
-        // IMPORTANT: This script MUST be in the <head> of ALL your HTML files
-        // (index.html, studentsignup.html, studentlogin.html, studentprofile.html, studentdashboard.html, etc.)
         document.addEventListener('DOMContentLoaded', () => {
             const savedFont = localStorage.getItem('preferredFont');
             if (savedFont) {
                 document.body.style.fontFamily = savedFont;
-                // If there's a font select dropdown on this page, set its value
-                const fontSelect = document.getElementById('preferredFont'); // This element might not exist on all pages
-                if (fontSelect) {
-                    fontSelect.value = savedFont;
-                }
             } else {
-                // Default font if nothing saved
                 document.body.style.fontFamily = 'Inter, sans-serif';
             }
         });
     </script>
 </head>
 <body>
-    <main class="w-full max-w-xl bg-white p-8 rounded-3xl shadow-xl space-y-6">
-        <h1 class="text-6xl font-extrabold text-blue-900 text-center">SchoolByte</h1>
-
-        <div class="flex flex-col items-center">
-            <div class="rounded-full mb-2 w-24 h-24 object-cover bg-blue-600 flex items-center justify-center text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-16 h-16">
-                    <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
-                </svg>
-            </div>
-            <h2 class="text-2xl font-semibold text-blue-600 mb-1">Your Profile</h2>
+    <!-- Moving Gradient Background -->
+    <div class="moving-gradient"></div>
+    
+    <!-- Floating Books -->
+    <div class="floating-books" id="floatingBooks"></div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <h1 class="logo">SchoolByte</h1>
+        
+        <div class="avatar">
+            <i class="fas fa-user-graduate"></i>
         </div>
-
-        <p class="text-gray-600 text-center text-base mb-4">Enter your details to personalize your academic experience.</p>
-
+        
+        <h2 class="text-2xl font-semibold mb-6">Welcome to SchoolByte</h2>
+        
         <!-- School Name -->
-        <div>
-            <label for="schoolName" class="block text-lg font-semibold mb-1 text-gray-800">School Name:</label>
-            <input type="text" id="schoolName" placeholder="e.g., Mengo Senior School" 
-                           class="w-full p-3 border border-gray-300 rounded-lg text-gray-700 text-base bg-gray-50 
-                                   focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        <div class="form-group">
+            <label for="schoolName">School Name:</label>
+            <input type="text" id="schoolName" placeholder="e.g., Mengo Senior School" required>
         </div>
-
+        
         <!-- Role Selection -->
-        <fieldset>
-            <legend class="text-lg font-semibold mb-2 text-gray-800">Sign in as:</legend>
-            <div class="space-y-2">
-                <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="radio" name="role" value="teacher" class="accent-blue-600 h-5 w-5" id="roleTeacher">
-                    <span class="text-base text-gray-700">Teacher</span>
+        <div class="form-group">
+            <label>Sign in as:</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" name="role" value="teacher" id="roleTeacher">
+                    <span>Teacher</span>
                 </label>
-                <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="radio" name="role" value="student" class="accent-blue-600 h-5 w-5" id="roleStudent">
-                    <span class="text-base text-gray-700">Student</span>
-                </label>
-            </div>
-        </fieldset>
-
-        <!-- Login/Signup Selection -->
-        <fieldset>
-            <legend class="text-lg font-semibold mb-2 text-gray-800">Login or Sign up</legend>
-            <div class="space-y-2">
-                <label class="flex items-center gap-3 cursor-pointer">
-                    <input type="radio" name="auth" value="login" class="accent-blue-600 h-5 w-5" id="authLogin">
-                    <span class="text-base text-gray-700">Log In</span>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer" id="signupLabel">
-                    <input type="radio" name="auth" value="signup" class="accent-blue-600 h-5 w-5" id="authSignup">
-                    <span class="text-base text-gray-700">Sign Up</span>
+                <label class="radio-option">
+                    <input type="radio" name="role" value="student" id="roleStudent">
+                    <span>Student</span>
                 </label>
             </div>
-        </fieldset>
-
-        <!-- Error Message Display -->
-        <div id="errorMessage" class="text-red-600 text-center text-sm min-h-[1.25rem]" aria-live="polite"></div>
-
-        <!-- Continue Button -->
-        <div class="pt-4 text-right">
-            <button id="continueBtn" disabled 
-                     class="disabled text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 bg-blue-600
-                            hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-                Continue
-            </button>
         </div>
-    </main>
+        
+        <!-- Login/Signup Selection -->
+        <div class="form-group">
+            <label>Login or Sign up</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" name="auth" value="login" id="authLogin">
+                    <span>Log In</span>
+                </label>
+                <label class="radio-option" id="signupLabel">
+                    <input type="radio" name="auth" value="signup" id="authSignup">
+                    <span>Sign Up</span>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Error Message -->
+        <div id="errorMessage" class="error-message" aria-live="polite"></div>
+        
+        <!-- Continue Button -->
+        <button id="continueBtn" class="continue-btn" disabled>Continue</button>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Create floating books
+            createFloatingBooks();
+            
             // Cache DOM elements
             const elements = {
                 schoolNameInput: document.getElementById('schoolName'),
@@ -142,6 +384,35 @@
             };
             
             const REGISTERED_SCHOOL_NAME = "Mengo Senior School";
+            
+            // Create floating books animation
+            function createFloatingBooks() {
+                const container = document.getElementById('floatingBooks');
+                const bookCount = 15;
+                const bookIcons = ['book', 'book-open', 'bookmark', 'graduation-cap', 'scroll', 'file-alt'];
+                
+                // Check for reduced motion preference
+                const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                if (reducedMotion) return;
+                
+                for (let i = 0; i < bookCount; i++) {
+                    const book = document.createElement('i');
+                    book.classList.add('book', 'fas', `fa-${bookIcons[Math.floor(Math.random() * bookIcons.length)]}`);
+                    
+                    // Random position and animation
+                    const posX = Math.random() * 100;
+                    const delay = Math.random() * 10;
+                    const duration = Math.random() * 15 + 10;
+                    const size = Math.random() * 1 + 1;
+                    
+                    book.style.left = `${posX}%`;
+                    book.style.animationDuration = `${duration}s`;
+                    book.style.animationDelay = `${delay}s`;
+                    book.style.fontSize = `${size}rem`;
+                    
+                    container.appendChild(book);
+                }
+            }
             
             // Update UI based on selections
             function updateUI() {
@@ -170,11 +441,9 @@
                 
                 if (allFieldsSelected && isValidCombination && isSchoolRegistered) {
                     elements.continueBtn.disabled = false;
-                    elements.continueBtn.classList.remove('disabled');
                     elements.errorMessage.textContent = '';
                 } else {
                     elements.continueBtn.disabled = true;
-                    elements.continueBtn.classList.add('disabled');
                     
                     // Error messages in priority order
                     if (!isSchoolRegistered && schoolNameFilled) {
@@ -209,11 +478,11 @@
                 
                 const redirectMap = {
                     student: {
-                        login: 'studentlogin.html', // Updated path
-                        signup: 'studentsignup.html' // Updated path
+                        login: 'studentlogin.html',
+                        signup: 'studentsignup.html'
                     },
                     teacher: {
-                        login: 'teacherlogin.html' // Updated path
+                        login: 'teacherlogin.html'
                     }
                 };
                 

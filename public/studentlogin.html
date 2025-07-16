@@ -9,18 +9,41 @@
     <style>
         /* Global CSS Variables for Unified Color Palette */
         :root {
-            --color-brand-primary: #1a2a6c;    /* Dark Blue */
-            --color-brand-secondary: #b21f1f; /* Deep Red/Maroon */
-            --color-brand-gold: #FFD700;       /* Gold */
+            /* Brand Colors */
+            --color-brand-primary: #1a2a6c;    /* Dark Blue - Main brand color */
+            --color-brand-secondary: #b21f1f; /* Deep Red/Maroon - Secondary brand color, accents */
+            --color-brand-gold: #FFD700;       /* Gold - Accent for special elements, highlights */
+            --color-brand-orange: #FFA500;    /* Orange - Used in gradients with gold */
+
+            /* Neutral Palette */
             --color-neutral-white: #ffffff;
-            --color-neutral-lightest: #f0f4f8;
-            --color-neutral-light: #d1d5db;
-            --color-neutral-medium: #9ca3af;
-            --color-neutral-dark: #4b5563;
-            --color-neutral-darkest: #333333;
-            --color-error-red: #e74c3c;
-            --color-success-green: #28a745; /* Added success green for consistency */
+            --color-neutral-lightest: #f0f4f8; /* Very light gray/blue, good for subtle backgrounds */
+            --color-neutral-light: #d1d5db;    /* Light gray for disabled elements, input borders */
+            --color-neutral-medium: #9ca3af;    /* Medium gray for placeholders, disabled radio accents */
+            --color-neutral-dark: #4b5563;       /* Dark gray for most body text, labels */
+            --color-neutral-darkest: #333333;  /* Very dark gray for prominent text */
+
+            /* Semantic Colors */
+            --color-error-red: #e74c3c;         /* Standard error color */
+            --color-error-red-dark: #c0392b;    /* Darker error red for hover states */
+            --color-success-green: #2ecc71;     /* Success color */
+            --color-info-blue: #3498db;         /* Info color */
+
+            /* Background Gradients */
             --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            --gradient-background-secondary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
+
+            /* Text Gradients */
+            --gradient-text-gold: linear-gradient(to right, var(--color-brand-gold), var(--color-neutral-white));
+
+            /* Button Gradients */
+            --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
+            --gradient-button-active-hover: linear-gradient(to right, #FFC800, #FF8C00);
+
+            /* Transparent Overlays */
+            --overlay-light: rgba(255, 255, 255, 0.1);
+            --overlay-medium: rgba(0, 0, 0, 0.2);
+            --overlay-dark: rgba(30, 30, 60, 0.95);
         }
 
         * {
@@ -31,101 +54,218 @@
         }
 
         body {
-            background: var(--gradient-background-primary);
+            background: var(--gradient-background-secondary);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            color: var(--color-neutral-white);
+            overflow-x: hidden;
         }
 
-        .login-container {
-            max-width: 450px;
+        /* Floating Books Animation */
+        .floating-books {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
         }
 
-        .login-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-            padding: 40px;
+        .book {
+            position: absolute;
+            font-size: 2rem;
+            color: var(--color-brand-gold);
+            opacity: 0.7;
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Main Content */
+        .main-content {
+            position: relative;
+            z-index: 10;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
             text-align: center;
         }
 
+        /* Logo */
         .logo {
-            font-size: 3rem;
+            font-size: 4rem;
             font-weight: 900;
-            background: var(--gradient-background-primary);
+            background: var(--gradient-text-gold);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            margin-bottom: 10px;
+            text-decoration: none;
+            margin-bottom: 1rem;
+            display: inline-block;
         }
 
-        .login-header {
-            margin-bottom: 30px;
+        /* Avatar */
+        .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--gradient-background-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-neutral-white);
+            font-size: 3rem;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
         }
 
-        .login-header h2 {
-            color: var(--color-brand-primary);
-            font-size: 1.8rem;
-            margin-bottom: 10px;
+        .avatar:hover {
+            transform: scale(1.05) rotate(5deg);
         }
 
-        .login-header p {
-            color: var(--color-neutral-dark);
-            font-size: 1rem;
-        }
-
+        /* Form Elements */
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 1.5rem;
             text-align: left;
         }
 
-        .form-group label {
+        label {
             display: block;
-            margin-bottom: 8px;
-            color: var(--color-brand-primary);
+            margin-bottom: 0.5rem;
             font-weight: 600;
-            font-size: 0.95rem;
+            color: var(--color-neutral-white);
         }
 
-        .input-group {
-            position: relative;
-        }
-
-        .input-group input {
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select {
             width: 100%;
-            padding: 14px 15px;
-            border: 2px solid var(--color-neutral-light);
-            border-radius: 8px;
+            padding: 1rem;
+            border: 2px solid var(--overlay-light);
+            border-radius: 10px;
             font-size: 1rem;
-            transition: all 0.3s ease;
-            padding-right: 40px;
+            background-color: var(--overlay-light);
+            color: var(--color-neutral-white);
+            transition: all 0.3s;
         }
 
-        .input-group input:focus {
+        select option {
+            background-color: var(--color-brand-primary);
+            color: var(--color-neutral-white);
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--color-brand-gold);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
             outline: none;
-            border-color: var(--color-brand-primary);
-            box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
         }
 
-        .input-group i {
+        input::placeholder {
+            color: var(--color-neutral-light);
+        }
+
+        /* Login Button */
+        .login-btn {
+            display: inline-block;
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-top: 1rem;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1.1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-btn:hover {
+            background: var(--gradient-button-active-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .login-btn:disabled {
+            background: var(--color-neutral-medium);
+            color: var(--color-neutral-dark);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Error Message */
+        .error-message {
+            color: var(--color-brand-gold);
+            text-align: center;
+            margin-top: 1rem;
+            min-height: 1.5rem;
+            font-weight: 500;
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Moving Gradient Background */
+        .moving-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
+            background-size: 400% 400%;
+            animation: gradient-shift 15s ease infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradient-shift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Password toggle */
+        .password-toggle {
             position: absolute;
             right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--color-neutral-medium);
+            top: 40px;
             cursor: pointer;
+            color: var(--color-neutral-light);
+            transition: color 0.3s ease;
         }
 
+        .password-toggle:hover {
+            color: var(--color-brand-gold);
+        }
+
+        /* Options */
         .options {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 20px 0;
-            font-size: 0.9rem;
+            margin: 1.5rem 0;
         }
 
         .remember-me {
@@ -135,374 +275,305 @@
         }
 
         .remember-me input {
-            accent-color: var(--color-brand-primary);
+            accent-color: var(--color-brand-gold);
         }
 
         .forgot-password a {
-            color: var(--color-brand-primary);
+            color: var(--color-brand-gold);
             text-decoration: none;
-            font-weight: 600;
         }
 
         .forgot-password a:hover {
             text-decoration: underline;
         }
 
-        .login-btn {
-            width: 100%;
-            padding: 14px;
-            background: var(--color-brand-primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 20px;
-        }
-
-        .login-btn:hover {
-            background: var(--color-brand-secondary);
-            transform: translateY(-2px);
-        }
-
-        .login-btn:disabled {
-            background: var(--color-neutral-medium);
-            cursor: not-allowed;
-            transform: none;
-        }
-
+        /* Divider */
         .divider {
             display: flex;
             align-items: center;
-            margin: 20px 0;
-            color: var(--color-neutral-medium);
-            font-size: 0.9rem;
+            margin: 1.5rem 0;
+            color: var(--color-neutral-light);
         }
 
-        .divider::before, .divider::after {
+        .divider::before,
+        .divider::after {
             content: "";
             flex: 1;
             border-bottom: 1px solid var(--color-neutral-light);
             margin: 0 10px;
         }
 
+        /* Social Login */
         .social-login {
             display: flex;
             justify-content: center;
             gap: 15px;
-            margin-bottom: 25px;
+            margin-bottom: 1.5rem;
         }
 
         .social-btn {
             width: 45px;
             height: 45px;
             border-radius: 50%;
-            background: var(--color-neutral-lightest);
+            background: var(--overlay-light);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--color-brand-primary);
+            color: var(--color-neutral-white);
             font-size: 1.2rem;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
         }
 
         .social-btn:hover {
-            background: var(--color-neutral-light);
-            transform: translateY(-2px);
+            background: var(--color-brand-gold);
+            color: var(--color-neutral-darkest);
+            transform: translateY(-3px);
         }
 
+        /* Register Link */
         .register-link {
-            font-size: 0.95rem;
-            color: var(--color-neutral-dark);
+            color: var(--color-neutral-white);
         }
 
         .register-link a {
-            color: var(--color-brand-primary);
-            font-weight: 600;
+            color: var(--color-brand-gold);
             text-decoration: none;
+            font-weight: 600;
         }
 
         .register-link a:hover {
             text-decoration: underline;
         }
 
-        /* Custom Message Box Styles (copied from signup/profile for consistency) */
-        .message-box-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease;
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            
+            .book, .moving-gradient {
+                display: none !important;
+            }
         }
 
-        .message-box-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .message-box {
-            background: var(--color-neutral-white);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-            transform: translateY(-20px);
-            transition: transform 0.3s ease;
-        }
-
-        .message-box-overlay.show .message-box {
-            transform: translateY(0);
-        }
-
-        .message-box h3 {
-            color: var(--color-error-red); /* Default to error red for general messages */
-            font-size: 1.8rem;
-            margin-bottom: 15px;
-        }
-        .message-box h3.success-title {
-            color: var(--color-success-green); /* Green for success messages */
-        }
-
-
-        .message-box p {
-            color: var(--color-neutral-darkest);
-            font-size: 1.1rem;
-            line-height: 1.6;
-            margin-bottom: 25px;
-            white-space: pre-wrap; /* Allows newlines from JS to display */
-        }
-
-        .message-box button {
-            background: var(--color-brand-primary);
-            color: var(--color-neutral-white);
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .message-box button:hover {
-            background: var(--color-brand-secondary); /* Consistent hover for primary */
-        }
-        
+        /* Responsive Design */
         @media (max-width: 768px) {
-            .login-card {
-                padding: 30px 25px;
+            .main-content {
+                padding: 2rem 1rem;
             }
             
             .logo {
-                font-size: 2.5rem;
+                font-size: 3rem;
             }
             
-            .login-header h2 {
-                font-size: 1.5rem;
+            .avatar {
+                width: 80px;
+                height: 80px;
+                font-size: 2.5rem;
             }
         }
     </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedFont = localStorage.getItem('preferredFont');
+            if (savedFont) {
+                document.body.style.fontFamily = savedFont;
+            } else {
+                document.body.style.fontFamily = 'Inter, sans-serif';
+            }
+        });
+    </script>
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-card">
-            <div class="logo">SchoolByte</div>
-            
-            <div class="login-header">
-                <h2>Welcome Back</h2>
-                <p>Sign in to your student account</p>
+    <!-- Moving Gradient Background -->
+    <div class="moving-gradient"></div>
+    
+    <!-- Floating Books -->
+    <div class="floating-books" id="floatingBooks"></div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <h1 class="logo">SchoolByte</h1>
+        
+        <div class="avatar">
+            <i class="fas fa-user-graduate"></i>
+        </div>
+        
+        <h2 class="text-2xl font-semibold mb-6">Student Login</h2>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="indexNumber">Index Number</label>
+                <input type="text" id="indexNumber" placeholder="e.g., 23MMS22" pattern="[A-Za-z0-9]+" required>
             </div>
-
-            <form id="loginForm" novalidate> <!-- Added novalidate to prevent default browser validation -->
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <div class="input-group">
-                        <input type="email" id="email" placeholder="Enter your email address" required>
-                        <i class="fas fa-envelope"></i>
-                    </div>
+            
+            <div class="form-group">
+                <label for="class">Class</label>
+                <select id="class" required>
+                    <option value="" disabled selected>Select your class</option>
+                    <option value="S1">S1</option>
+                    <option value="S2">S2</option>
+                    <option value="S3">S3</option>
+                    <option value="S4">S4</option>
+                    <option value="S5">S5</option>
+                    <option value="S6">S6</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="stream">Stream</label>
+                <select id="stream" required>
+                    <option value="" disabled selected>Select your stream</option>
+                    <option value="Annointed">Annointed</option>
+                    <option value="Blue">Blue</option>
+                    <option value="Central">Central</option>
+                    <option value="Diamond">Diamond</option>
+                    <option value="East">East</option>
+                    <option value="Gold">Gold</option>
+                    <option value="Maroon">Maroon</option>
+                    <option value="North">North</option>
+                    <option value="Purple">Purple</option>
+                    <option value="Red">Red</option>
+                    <option value="South">South</option>
+                    <option value="Violet">Violet</option>
+                    <option value="West">West</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="schoolbyte@gmail.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div style="position: relative;">
+                    <input type="password" id="password" placeholder="Enter your password" required>
+                    <i class="fas fa-eye password-toggle" id="togglePassword"></i>
                 </div>
-
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <div class="input-group">
-                        <input type="password" id="password" placeholder="Enter your password" required>
-                        <i class="fas fa-eye" id="togglePassword"></i>
-                    </div>
+            </div>
+            
+            <div class="options">
+                <div class="remember-me">
+                    <input type="checkbox" id="rememberMe">
+                    <label for="rememberMe">Remember me</label>
                 </div>
-
-                <div class="options">
-                    <div class="remember-me">
-                        <input type="checkbox" id="rememberMe">
-                        <label for="rememberMe">Remember me</label>
-                    </div>
-                    <div class="forgot-password">
-                        <a href="#">Forgot password?</a>
-                    </div>
+                <div class="forgot-password">
+                    <a href="#">Forgot password?</a>
                 </div>
-
-                <button type="submit" class="login-btn" id="loginSubmitBtn">Log In</button> <!-- Added ID for easier JS access -->
-
-                <div class="divider">or continue with</div>
-
-                <div class="social-login">
-                    <a href="#" class="social-btn">
-                        <i class="fab fa-google"></i>
-                    </a>
-                    <a href="#" class="social-btn">
-                        <i class="fab fa-microsoft"></i>
-                    </a>
-                    <a href="#" class="social-btn">
-                        <i class="fab fa-apple"></i>
-                    </a>
-                </div>
-
-                <p class="register-link">
-                    Don't have an account? <a href="students'signup.html">Sign up</a> <!-- Corrected link to students'signup.html -->
-                </p>
-            </form>
-        </div>
-    </div>
-
-    <!-- Custom Message Box HTML -->
-    <div id="messageBoxOverlay" class="message-box-overlay">
-        <div class="message-box">
-            <h3 id="messageBoxTitle"></h3>
-            <p id="messageBoxContent"></p>
-            <button id="messageBoxCloseBtn">OK</button>
-        </div>
+            </div>
+            
+            <button type="submit" class="login-btn" id="loginBtn">Log In</button>
+            
+            <div class="divider">or continue with</div>
+            
+            <div class="social-login">
+                <a href="#" class="social-btn">
+                    <i class="fab fa-google"></i>
+                </a>
+                <a href="#" class="social-btn">
+                    <i class="fab fa-microsoft"></i>
+                </a>
+                <a href="#" class="social-btn">
+                    <i class="fab fa-apple"></i>
+                </a>
+            </div>
+            
+            <p class="register-link">
+                Don't have an account? <a href="studentsignup.html">Sign up</a>
+            </p>
+        </form>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Define your backend URL here! Use window.location.origin for dynamic Replit URL.
-            const BACKEND_URL = window.location.origin; 
-
-            // Cached DOM elements
+            // Create floating books
+            createFloatingBooks();
+            
+            // DOM Elements
+            const loginForm = document.getElementById('loginForm');
+            const loginBtn = document.getElementById('loginBtn');
             const togglePassword = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
+            const indexNumberInput = document.getElementById('indexNumber');
+            const classSelect = document.getElementById('class');
+            const streamSelect = document.getElementById('stream');
             const emailInput = document.getElementById('email');
-            const loginForm = document.getElementById('loginForm');
-            const loginSubmitBtn = document.getElementById('loginSubmitBtn'); // Get the login button
+            const rememberMe = document.getElementById('rememberMe');
 
-            // Message Box elements
-            const messageBoxOverlay = document.getElementById('messageBoxOverlay');
-            const messageBoxTitle = document.getElementById('messageBoxTitle');
-            const messageBoxContent = document.getElementById('messageBoxContent');
-            const messageBoxCloseBtn = document.getElementById('messageBoxCloseBtn');
-
-            // Function to display custom message box
-            function showMessageBox(title, message, isSuccess = false) {
-                messageBoxTitle.textContent = title;
-                messageBoxContent.textContent = message;
-                // Set title color based on success/error
-                if (isSuccess) {
-                    messageBoxTitle.classList.add('success-title'); // Add the success-title class for green
-                } else {
-                    messageBoxTitle.classList.remove('success-title'); // Remove if it was previously added
+            // Create floating books animation
+            function createFloatingBooks() {
+                const container = document.getElementById('floatingBooks');
+                const bookCount = 15;
+                const bookIcons = ['book', 'book-open', 'bookmark', 'graduation-cap', 'scroll', 'file-alt'];
+                
+                // Check for reduced motion preference
+                const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                if (reducedMotion) return;
+                
+                for (let i = 0; i < bookCount; i++) {
+                    const book = document.createElement('i');
+                    book.classList.add('book', 'fas', `fa-${bookIcons[Math.floor(Math.random() * bookIcons.length)]}`);
+                    
+                    // Random position and animation
+                    const posX = Math.random() * 100;
+                    const delay = Math.random() * 10;
+                    const duration = Math.random() * 15 + 10;
+                    const size = Math.random() * 1 + 1;
+                    
+                    book.style.left = `${posX}%`;
+                    book.style.animationDuration = `${duration}s`;
+                    book.style.animationDelay = `${delay}s`;
+                    book.style.fontSize = `${size}rem`;
+                    
+                    container.appendChild(book);
                 }
-                messageBoxOverlay.classList.add('show');
             }
 
-            // Close message box
-            messageBoxCloseBtn.addEventListener('click', function() {
-                messageBoxOverlay.classList.remove('show');
+            // Toggle password visibility
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.classList.toggle('fa-eye');
+                this.classList.toggle('fa-eye-slash');
             });
 
-            // Password toggle functionality
-            if (togglePassword && passwordInput) {
-                togglePassword.addEventListener('click', function() {
-                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                    passwordInput.setAttribute('type', type);
-                    this.classList.toggle('fa-eye-slash');
-                    this.classList.toggle('fa-eye'); // Ensure both classes are toggled correctly
-                });
-            }
-
-            // Simple form validation for button state
+            // Validate form inputs
             function validateForm() {
-                const isEmailFilled = emailInput.value.trim() !== '';
-                const isPasswordFilled = passwordInput.value.trim() !== '';
-                loginSubmitBtn.disabled = !(isEmailFilled && isPasswordFilled);
+                const isIndexValid = indexNumberInput.value.trim() !== '';
+                const isClassSelected = classSelect.value !== '';
+                const isStreamSelected = streamSelect.value !== '';
+                const isEmailValid = emailInput.value.trim() !== '';
+                const isPasswordValid = passwordInput.value.trim() !== '';
+                
+                loginBtn.disabled = !(isIndexValid && isClassSelected && isStreamSelected && isEmailValid && isPasswordValid);
             }
 
-            // Add event listeners for input changes to enable/disable button
+            // Form submission
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Simulate login process
+                loginBtn.disabled = true;
+                loginBtn.textContent = 'Logging in...';
+                
+                setTimeout(() => {
+                    alert('Login successful (simulated)\nRedirecting to dashboard...');
+                    window.location.href = 'studentdashboard.html';
+                }, 1500);
+            });
+
+            // Add event listeners for form validation
+            indexNumberInput.addEventListener('input', validateForm);
+            classSelect.addEventListener('change', validateForm);
+            streamSelect.addEventListener('change', validateForm);
             emailInput.addEventListener('input', validateForm);
             passwordInput.addEventListener('input', validateForm);
 
-            // Form submission handler
-            loginForm.addEventListener('submit', async function(e) {
-                e.preventDefault(); // Prevent default form submission
-
-                const email = emailInput.value.trim();
-                const password = passwordInput.value.trim();
-                const rememberMe = document.getElementById('rememberMe').checked; // Still capture this, but not implementing persistent login yet
-
-                // Basic frontend validation
-                if (!email || !password) {
-                    showMessageBox('Input Error', 'Please enter both email and password.');
-                    return;
-                }
-
-                // Disable button and show loading state
-                const originalBtnText = loginSubmitBtn.textContent; // Store original text
-                loginSubmitBtn.textContent = 'Logging In...';
-                loginSubmitBtn.disabled = true;
-
-                try {
-                    const response = await fetch(`${BACKEND_URL}/login-student`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ email, password })
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok) { // Status code 200-299
-                        showMessageBox('Login Successful', data.message + '\nRedirecting to your dashboard...', true); // Pass true for success message
-                        console.log('Login successful:', data);
-                        
-                        // Store the JWT for future authenticated requests
-                        if (data.token) {
-                            localStorage.setItem('jwtToken', data.token);
-                            console.log('JWT stored:', data.token);
-                        } else {
-                            console.warn('No JWT received from login response.');
-                        }
-
-                        // Redirect to student dashboard after a short delay
-                        setTimeout(() => {
-                            // You might want to pass the token or rely on localStorage for the dashboard
-                            // For now, passing name via query param for simple display
-                            window.location.href = `studentdashboard.html?name=${encodeURIComponent(data.student.studentName)}`;
-                        }, 1500); // 1.5 second delay
-                    } else { // Status code outside 200-299 (e.g., 401, 400, 500)
-                        showMessageBox('Login Failed', data.message || 'An unexpected error occurred. Please try again.');
-                        console.error('Login failed:', data);
-                    }
-                } catch (error) {
-                    console.error('Network error during login:', error);
-                    showMessageBox('Network Error', 'Could not connect to the server. Please check your internet connection and try again.');
-                } finally {
-                    // Re-enable button and reset text after API call
-                    loginSubmitBtn.textContent = originalBtnText; // Restore original text
-                    validateForm(); // Re-run validation to set correct disabled state
-                }
-            });
-
-            // Initial validation when page loads
+            // Initial validation
             validateForm();
         });
     </script>

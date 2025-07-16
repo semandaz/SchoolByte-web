@@ -15,11 +15,14 @@ const morgan = require('morgan'); // For logging HTTP requests
 const cloudinary = require('cloudinary').v2; // Use .v2 for Cloudinary SDK
 const multer = require('multer'); // For handling multipart/form-data (file uploads)
 
+// NEW: Google Generative AI SDK for Preader Games
+const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai');
+
 const app = express();
 const PORT = process.env.PORT || 3000; // Use process.env.PORT for Replit
 
 // --- Middleware ---
-app.use(cors());
+app.use(cors()); // Enable CORS for all origins (adjust in production for specific origins)
 app.use(express.json()); // For parsing application/json bodies
 app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
 app.use(express.static('public')); // Serve static files from 'public' directory
@@ -77,7 +80,7 @@ const studentSchema = new mongoose.Schema({
         type: Object, // This allows for flexible key-value pairs
         default: {
             fontSize: "medium", // Default font size preference
-            theme: "light",     // Default theme preference (e.g., 'light', 'dark')
+            theme: "light",       // Default theme preference (e.g., 'light', 'dark')
             notifications_on: true // Default notification preference
         }
     }
@@ -122,7 +125,7 @@ const workFileSchema = new mongoose.Schema({
     // MODIFIED: Store both teacherId and teacherName for persistence
     uploadedBy: {
         teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null }, // Can be null if teacher account is deleted
-        teacherName: { type: String, required: true } // Always retains the name
+        teacherName: { type: String, required: true }
     },
     // This field will link to the associated activity
     activity: { type: mongoose.Schema.Types.ObjectId, ref: 'Activity', required: true, unique: true }, // Each WorkFile must have ONE unique Activity
@@ -219,12 +222,17 @@ const quizQuestionSchema = new mongoose.Schema({
         type: [String],
         // This array is required for types that don't rely on the 'options' array.
         required: function() {
-            return ['short-answer', 'true-false', 'problem-solving'].includes(this.type) || (this.type === 'fill-in-the-blank' && this.correctAnswers && this.correctAnswers.length > 0);
+            return ['short-answer', 'true-false', 'problem-solving'].includes(this.type);
         },
+        // For 'fill-in-the-blank', it's required only if present and not empty, as the questionText might also guide it.
+        // Let's refine this, if fill-in-the-blank uses correctAnswers, it should be required and non-empty.
         validate: {
             validator: function(v) {
-                // Ensure that if it's required, it's not an empty array
-                return !this.correctAnswers || v.length > 0;
+                // If the type is one that requires correctAnswers, ensure it's not an empty array
+                if (['short-answer', 'true-false', 'problem-solving', 'fill-in-the-blank'].includes(this.type)) {
+                    return v && v.length > 0;
+                }
+                return true; // For other types, this validation doesn't apply
             },
             message: props => `${props.path} must contain at least one correct answer for this question type.`
         }
@@ -244,7 +252,7 @@ const quizQuestionSchema = new mongoose.Schema({
         required: function() { return this.type === 'ordering'; },
         validate: {
             validator: function(v) {
-                return !this.orderedItems || v.length > 0;
+                return v && v.length > 0;
             },
             message: 'Ordering questions must have at least one item.'
         }
@@ -255,8 +263,8 @@ const quizQuestionSchema = new mongoose.Schema({
     hint: { type: String, trim: true }, // Optional hint for the student
 
     // The contribution this single question makes to the total quiz bytes.
-    // For a 10-question quiz awarding a max of 5 bytes, each question would be 0.5 bytes.
-    maxBytesRewardPerQuestion: { type: Number, required: true, default: 0.5, min: 0 },
+    // For a 10-question quiz awarding a max of 10 bytes, each question would be 1 byte.
+    maxBytesRewardPerQuestion: { type: Number, required: true, default: 1, min: 0 }, // MODIFIED: Default to 1 byte
 
     // MODIFIED: Store both teacherId and teacherName for persistence
     uploadedBy: {
@@ -268,73 +276,6 @@ const quizQuestionSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 const QuizQuestion = mongoose.model('QuizQuestion', quizQuestionSchema);
-
-// --- Mongoose Schema and Model for PreaderGame (Template for interactive stories) ---
-const preaderGameSchema = new mongoose.Schema({
-    title: { type: String, required: true, trim: true },
-    description: { type: String, trim: true },
-    subject: { type: String, trim: true, default: 'Life Skills' }, // Or 'Ethics', 'General'
-    maxBytesReward: { type: Number, required: true, default: 10, min: 0 }, // Total bytes for successful completion
-
-    // Initial stats for a new game session
-    initialStats: {
-        life: { type: Number, required: true, default: 100 },
-        morale: { type: Number, required: true, default: 50 },
-        mana: { type: Number, required: true, default: 50 },
-        // Add other stats as needed
-    },
-
-    // The initial prompt/seed for the AI to start generating the game narrative
-    gamePrompt: { type: String, required: true, trim: true },
-
-    // MODIFIED: Store both teacherId and teacherName for persistence
-    uploadedBy: {
-        teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null },
-        teacherName: { type: String, required: true }
-    },
-    isFeatured: { type: Boolean, default: false },
-    featuredUntil: { type: Date, required: function() { return this.isFeatured; } }, // Only required if isFeatured is true
-    createdAt: { type: Date, default: Date.now }
-});
-const PreaderGame = mongoose.model('PreaderGame', preaderGameSchema);
-
-// --- Mongoose Schema and Model for PreaderGameSession (Student's active playthrough) ---
-const preaderGameSessionSchema = new mongoose.Schema({
-    student: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
-    game: { type: mongoose.Schema.Types.ObjectId, ref: 'PreaderGame', required: true },
-
-    // Current state of the student's stats in the game
-    currentStats: {
-        life: { type: Number, default: 100 },
-        morale: { type: Number, default: 50 },
-        mana: { type: Number, default: 50 },
-        // Ensure this matches initialStats in PreaderGame
-    },
-
-    // To track the narrative flow generated by AI
-    // Each entry could represent a scene and the choice made to get to the next scene
-    // This might get complex; for now, let's simplify to just tracking the path
-    // For AI-driven games, we might not store *all* scenes, but rather the path taken.
-    pathTaken: [
-        {
-            sceneText: { type: String }, // The text of the scene displayed
-            choiceMade: { type: String }, // The choice the student selected
-            ethicalScoreImpact: { type: Number }, // Ethical score for this choice
-            timestamp: { type: Date, default: Date.now }
-        }
-    ],
-
-    // Total ethical score accumulated during the game
-    totalEthicalScore: { type: Number, default: 0 },
-
-    isCompleted: { type: Boolean, default: false }, // True if student reached the end of the narrative
-    status: { type: String, enum: ['playing', 'completed', 'failed'], default: 'playing' }, // 'failed' if life=0
-    bytesEarned: { type: Number, default: 0 }, // Bytes awarded at the end of the session
-
-    startedAt: { type: Date, default: Date.now },
-    lastUpdated: { type: Date, default: Date.now }
-});
-const PreaderGameSession = mongoose.model('PreaderGameSession', preaderGameSessionSchema);
 
 // --- Mongoose Schema and Model for StudentActivitySubmission ---
 const studentActivitySubmissionSchema = new mongoose.Schema({
@@ -378,7 +319,6 @@ const studentActivitySubmissionSchema = new mongoose.Schema({
 
     submittedAt: { type: Date, default: Date.now },
     isGraded: { type: Boolean, default: false }, // For activities, might be true immediately for quizzes
-    // For activities, we might need a flag if it's manually reviewed vs auto-graded
     // For quizzes, it's always auto-graded.
 });
 const StudentActivitySubmission = mongoose.model('StudentActivitySubmission', studentActivitySubmissionSchema);
@@ -394,6 +334,131 @@ const adminSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 const Administrator = mongoose.model('Administrator', adminSchema);
+
+
+// --- NEW Preader Game Schemas ---
+
+// --- PreaderGame Schema ---
+// This defines the overall interactive story template.
+// No 'questions' or 'keywords' like an Activity.
+// It will primarily hold metadata and a reference to its starting StoryNode.
+const PreaderGameSchema = new mongoose.Schema({
+    title: { type: String, required: true, trim: true, minlength: 3, maxlength: 200 },
+    description: { type: String, trim: true, maxlength: 1000 },
+    genre: { type: String, enum: ['Fantasy', 'Sci-Fi', 'Mystery', 'Adventure', 'Drama', 'Ethical Dilemma', 'School Life', 'Other'], default: 'School Life' },
+    // The initial prompt that will be sent to the AI to generate the first StoryNode
+    initialAiPrompt: { type: String, required: true, minlength: 50, maxlength: 2000 },
+    // A summary of the Ugandan school context to consistently inject into AI prompts
+    ugandanSchoolContext: { type: String, default: "You are an AI generating a chapter for an interactive story game set in a typical, vibrant Ugandan secondary school. Focus on details relevant to this setting. Use common Ugandan names for characters. Incorporate elements like school uniforms, assembly grounds, dormitories (if boarding), specific classroom environments, common school activities (e.g., morning assembly, prep time, sports day), and interactions with 'mwalimu' (teacher) or 'prefects').", maxlength: 2000 },
+    // The starting node of the game. This will be generated by AI upon game creation.
+    initialNode: { type: mongoose.Schema.Types.ObjectId, ref: 'StoryNode' },
+    status: { type: String, enum: ['draft', 'published', 'archived'], default: 'draft' },
+    maxBytesReward: { type: Number, default: 100 }, // Total bytes for completing the game successfully
+    uploadedBy: {
+        teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null }, // Can be null if admin-created
+        teacherName: { type: String, required: true }
+    },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+const PreaderGame = mongoose.model('PreaderGame', PreaderGameSchema);
+
+// --- StoryNode Schema ---
+// Represents a single scene/segment in the interactive story.
+// Its content and choices can be AI-generated.
+const StoryNodeSchema = new mongoose.Schema({
+    game: { type: mongoose.Schema.Types.ObjectId, ref: 'PreaderGame', required: true },
+    nodeType: { type: String, enum: ['text', 'choice', 'ending', 'game_over_scene'], required: true }, // 'game_over_scene' for specific death/failure narratives
+    content: { type: String, required: true, maxlength: 5000 }, // The narrative text for this node (can be long)
+    choices: [ // Array of possible choices leading to other nodes
+        {
+            choiceText: { type: String, required: true, maxlength: 500 },
+            // nextNode will be set by the backend after AI generation or manual linking
+            nextNode: { type: mongoose.Schema.Types.ObjectId, ref: 'StoryNode' },
+            // Ethical impact of making this choice
+            ethicalImpact: {
+                scoreChange: { type: Number, default: 0 }, // e.g., -10, +5
+                ethicalPrinciple: { type: String } // e.g., 'compassion', 'integrity', 'deception', 'aggression'
+            },
+            // Impact on dynamic player stats
+            statChanges: {
+                life: { type: Number, default: 0 },
+                mana: { type: Number, default: 0 },
+                morale: { type: Number, default: 0 },
+                reputation: { type: Number, default: 0 },
+                discipline: { type: Number, default: 0 },
+                knowledge: { type: Number, default: 0 },
+                stress: { type: Number, default: 0 },
+                luck: { type: Number, default: 0 },
+            },
+            // Conditions required for a student to even see/select this choice
+            requiredStats: {
+                life: { type: Number, min: 0 },
+                mana: { type: Number, min: 0 },
+                morale: { type: Number, min: 0 },
+                reputation: { type: Number }, // Can be negative
+                discipline: { type: Number },
+                knowledge: { type: Number, min: 0 },
+                stress: { type: Number },
+                luck: { type: Number },
+            },
+            // Text to display if choice is unavailable (e.g., "Not enough mana")
+            unavailableReason: { type: String, maxlength: 200 },
+            // For probabilistic choices (e.g., "attempt to sneak")
+            successChanceBase: { type: Number, min: 0, max: 100 }, // Base % chance
+            luckInfluence: { type: Number, default: 0 }, // How much player's luck affects chance (e.g., 1 means +1% per luck point)
+            failNode: { type: mongoose.Schema.Types.ObjectId, ref: 'StoryNode' } // Node if probabilistic choice fails
+        }
+    ],
+    // Flag to indicate if this node's content was generated by AI
+    isAiGenerated: { type: Boolean, default: true },
+    // The prompt used to generate this specific node (for debugging/review)
+    generationPrompt: { type: String, maxlength: 5000 },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+const StoryNode = mongoose.model('StoryNode', StoryNodeSchema);
+
+// --- PreaderGameSession Schema ---
+// Tracks a student's active playthrough of a PreaderGame.
+const PreaderGameSessionSchema = new mongoose.Schema({
+    student: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
+    game: { type: mongoose.Schema.Types.ObjectId, ref: 'PreaderGame', required: true },
+    currentNode: { type: mongoose.Schema.Types.ObjectId, ref: 'StoryNode', required: true }, // The node the student is currently on
+    // The full path taken, including state snapshots for rewind
+    pathTaken: [
+        {
+            node: { type: mongoose.Schema.Types.ObjectId, ref: 'StoryNode', required: true },
+            choiceText: { type: String }, // The choice that LED to this node (null for initial node)
+            // Snapshot of player's stats *before* making the choice that led to this node
+            snapshotPlayerStats: {
+                life: Number, mana: Number, morale: Number, reputation: Number,
+                discipline: Number, knowledge: Number, stress: Number, luck: Number
+            },
+            snapshotEthicalScore: Number,
+            timestamp: { type: Date, default: Date.now }
+        }
+    ],
+    // Dynamic Player Stats - Current state
+    playerStats: {
+        life: { type: Number, default: 20, min: 0 }, // Cannot go below 0
+        mana: { type: Number, default: 20, min: 0 },
+        morale: { type: Number, default: 20 }, // Can be negative
+        reputation: { type: Number, default: 0 }, // Can be negative
+        discipline: { type: Number, default: 50, min: 0, max: 100 }, // Keep within bounds
+        knowledge: { type: Number, default: 0, min: 0 },
+        stress: { type: Number, default: 0, min: 0 }, // Can increase
+        luck: { type: Number, default: 10, min: 0 } // Can be influenced
+    },
+    currentEthicalScore: { type: Number, default: 0 }, // Accumulating ethical score
+    startTime: { type: Date, default: Date.now },
+    endTime: { type: Date }, // Set when the game session ends
+    status: { type: String, enum: ['active', 'completed', 'abandoned', 'game_over'], default: 'active' },
+    bytesEarned: { type: Number, default: 0 }, // Bytes awarded upon completion
+    rewindsUsed: { type: Number, default: 0 }, // Track rewind usage
+    // Could add a 'maxRewinds' to the PreaderGame schema if you want game-specific limits
+});
+const PreaderGameSession = mongoose.model('PreaderGameSession', PreaderGameSessionSchema);
 
 
 // --- Nodemailer Transporter Setup ---
@@ -496,6 +561,115 @@ const authenticateAdminToken = (req, res, next) => {
         next();
     });
 };
+
+// --- AI Service Utility (Integrated Directly) ---
+const MODEL_NAME = "gemini-1.5-flash"; // Using the free tier model
+const API_KEY = process.env.GEMINI_API_KEY;
+
+if (!API_KEY) {
+    console.error("GEMINI_API_KEY environment variable is not set. AI features will not work.");
+    // In a production app, you might want to throw an error or exit here.
+}
+
+const genAI = new GoogleGenerativeAI(API_KEY);
+
+// Function to generate a StoryNode's content and choices using AI
+async function generateStoryNode(promptContent, ugandanContext, currentGameState) {
+    if (!API_KEY) {
+        throw new Error("AI service not configured: GEMINI_API_KEY is missing.");
+    }
+
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+
+    // Construct the full prompt for the AI
+    const fullPrompt = `
+        ${ugandanContext}
+
+        **Your Task:** Generate the next scene of the interactive story. Ensure the narrative is rich, descriptive, and novel-like. Introduce hard, unexpected twists that genuinely impact the player's journey.
+
+        **Current Game State:**
+        ${JSON.stringify(currentGameState, null, 2)}
+
+        **Specific Scene Request:**
+        ${promptContent}
+
+        **Output Format:**
+        Respond ONLY with a JSON object.
+        The JSON must have two top-level keys: \`sceneDescription\` (string) and \`choices\` (array of objects).
+        Each choice object must have:
+            - \`choiceText\` (string)
+            - \`nextNodeId\` (string, placeholder like "GEN_NEXT_NODE_X" - this will be replaced by your backend)
+            - \`ethicalImpact\` (object: \`scoreChange\` (number), \`ethicalPrinciple\` (string, e.g., "compassion", "integrity", "deception"))
+            - \`statChanges\` (object: \`life\`, \`mana\`, \`morale\`, \`reputation\`, \`discipline\`, \`knowledge\`, \`stress\`, \`luck\` - all numbers, default to 0 if no change)
+            - \`requiredStats\` (optional object: \`life\`, \`mana\`, \`morale\`, etc. - numbers, if this choice has prerequisites)
+            - \`unavailableReason\` (optional string, if \`requiredStats\` are not met, e.g., "Not enough mana to cast this spell").
+        Ensure all numerical values for stat changes are provided, even if 0.
+        Ensure \`ethicalImpact\` is always present.
+    `;
+
+    try {
+        const result = await model.generateContent({
+            contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
+            generationConfig: {
+                responseMimeType: "application/json",
+                // Safety settings to block harmful content
+                safetySettings: [
+                    {
+                        category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+                        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    },
+                    {
+                        category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    },
+                    {
+                        category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    },
+                    {
+                        category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    },
+                ],
+            },
+        });
+
+        // The AI response is in result.candidates[0].content.parts[0].text
+        const responseText = result.candidates[0].content.parts[0].text;
+        const parsedResponse = JSON.parse(responseText);
+
+        // Basic validation of the parsed structure
+        if (!parsedResponse.sceneDescription || !Array.isArray(parsedResponse.choices)) {
+            throw new Error("AI response did not match expected JSON structure.");
+        }
+
+        return parsedResponse;
+
+    } catch (error) {
+        console.error("Error calling Gemini API:", error.message);
+        // Provide a more graceful fallback or re-prompt strategy here
+        throw new Error(`Failed to generate story content: ${error.message}`);
+    }
+}
+
+// --- Helper function to calculate new stats (to avoid repetition) ---
+function applyStatChanges(currentStats, changes) {
+    const newStats = { ...currentStats };
+    for (const stat in changes) {
+        if (newStats.hasOwnProperty(stat) && typeof changes[stat] === 'number') {
+            newStats[stat] = newStats[stat] + changes[stat];
+            // Apply min/max caps for specific stats
+            if (stat === 'life' || stat === 'mana' || stat === 'knowledge' || stat === 'luck') {
+                newStats[stat] = Math.max(0, newStats[stat]);
+            }
+            if (stat === 'discipline') {
+                newStats[stat] = Math.min(100, Math.max(0, newStats[stat]));
+            }
+            // Morale, Reputation, Stress can be negative or unbounded for now
+        }
+    }
+    return newStats;
+}
 
 
 // --- API Endpoints ---
@@ -693,7 +867,6 @@ app.post('/login-student', [
         // Compare the provided password with the hashed password stored in the database.
         const isMatch = await bcrypt.compare(password, student.password);
 
-        // If passwords do not match, return a generic error.
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
@@ -1200,7 +1373,7 @@ app.get('/teacher/leaderboard', async (req, res) => {
     }
 });
 
-// NEW: Endpoint to log in an administrator.
+// MODIFIED: Endpoint to log in an administrator (now initiates 2FA).
 app.post('/login-admin', [
     body('email').isEmail().withMessage('Please provide a valid email address.'),
     body('password').notEmpty().withMessage('Password is required.')
@@ -1225,27 +1398,89 @@ app.post('/login-admin', [
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
 
-        // Generate JWT for admin
-        const token = jwt.sign(
-            { id: admin._id, email: admin.email, adminName: admin.adminName, role: 'admin' }, // Added role for clarity
-            JWT_SECRET,
-            { expiresIn: '1h' }
+        // --- 2FA Step 1: Generate and Send Code ---
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+        await VerificationCode.findOneAndUpdate(
+            { email },
+            { code, createdAt: Date.now() },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
         );
 
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'SchoolByte Admin 2FA Code',
+            html: `<p>Your SchoolByte Administrator 2FA code is: <strong>${code}</strong></p><p>This code is valid for 10 minutes.</p>`
+        };
+
+        await transporter.sendMail(mailOptions);
+
         res.status(200).json({
-            message: 'Admin login successful!',
-            token: token,
-            admin: {
-                adminName: admin.adminName,
-                email: admin.email
-            }
+            message: 'Admin login successful. A 2FA code has been sent to your email. Please verify it.'
         });
 
     } catch (error) {
-        console.error('Error during admin login:', error);
+        console.error('Error during admin login (2FA initiation):', error);
         res.status(500).json({ message: 'Server error during admin login.', error: error.message });
     }
 });
+
+// NEW: Endpoint for Administrator to verify 2FA code and get JWT.
+app.post('/admin/verify-2fa', [
+    body('email').isEmail().withMessage('Please provide a valid email address.'),
+    body('code').notEmpty().withMessage('2FA code is required.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email, code } = req.body;
+
+    try {
+        // Find the stored verification code for the given email.
+        const storedCode = await VerificationCode.findOne({ email });
+
+        if (!storedCode) {
+            return res.status(400).json({ message: 'No 2FA code found for this email, or it has expired.' });
+        }
+
+        // Check if the provided code matches the stored code.
+        if (storedCode.code === code) {
+            // If codes match, find the admin to generate the JWT.
+            const admin = await Administrator.findOne({ email });
+            if (!admin) {
+                return res.status(404).json({ message: 'Administrator not found.' });
+            }
+
+            // Delete the verification code after successful use.
+            await VerificationCode.deleteOne({ email });
+
+            // Generate JWT for admin
+            const token = jwt.sign(
+                { id: admin._id, email: admin.email, adminName: admin.adminName, role: 'admin' },
+                JWT_SECRET,
+                { expiresIn: '1h' }
+            );
+
+            res.status(200).json({
+                message: 'Admin 2FA successful! You are now logged in.',
+                token: token,
+                admin: {
+                    adminName: admin.adminName,
+                    email: admin.email
+                }
+            });
+        } else {
+            return res.status(400).json({ message: 'Invalid 2FA code.' });
+        }
+    } catch (error) {
+        console.error('Error during admin 2FA verification:', error);
+        res.status(500).json({ message: 'Server error during 2FA verification.', error: error.message });
+    }
+});
+
 
 // NEW: Endpoint for Administrator to create a new Teacher account.
 // This route is protected by authenticateAdminToken.
@@ -1470,7 +1705,7 @@ app.post(
         // Parse the JSON string from the request body for activity data
         let activityData;
         try {
-            activityData = JSON.parse(req.body.activityJson); 
+            activityData = JSON.parse(req.body.activityJson);
         } catch (parseError) {
             console.error('Error parsing activity JSON:', parseError);
             return res.status(400).json({ message: 'Invalid activity data format. Must be a valid JSON string.' });
@@ -1527,7 +1762,7 @@ app.post(
             subject: activitySubject, // Renaming
             intendedClass: activityIntendedClass, // Renaming
             questions
-        } = activityData; 
+        } = activityData;
 
         // Get teacher info from authenticated token
         const teacherId = req.teacher.id;
@@ -1655,21 +1890,557 @@ app.post(
     }
 );
 
+// --- Quiz Management Endpoints (Teacher) ---
 
-// Global Error Handling Middleware.
-// This middleware should be placed at the very end of your middleware stack.
-// It catches any errors that occur in your routes or other middleware.
-app.use((err, req, res, next) => {
-    console.error(err.stack); // Log the full error stack to the console for debugging.
-    // Send a generic error response to the client.
-    res.status(err.statusCode || 500).json({
-        message: err.message || 'An unexpected error occurred on the server.',
-        status: err.statusCode || 500,
-    });
+// 1. Create a New Quiz Question
+app.post(
+    '/teacher/quiz-questions',
+    authenticateTeacherToken,
+    [
+        body('questionText').notEmpty().withMessage('Question text is required.').trim(),
+        body('subject').notEmpty().withMessage('Subject is required.').trim(),
+        body('intendedClass').notEmpty().withMessage('Intended class is required.').trim().isIn(['S.1', 'S.2', 'S.3', 'S.4', 'S.5', 'S.6']).withMessage('Invalid intended class.'),
+        body('type').notEmpty().withMessage('Question type is required.').isIn([
+            'short-answer', 'multiple-choice-single', 'multiple-choice-multi',
+            'true-false', 'fill-in-the-blank', 'matching', 'ordering', 'problem-solving'
+        ]).withMessage('Invalid question type.'),
+        // Add more specific validations based on 'type' here if needed,
+        // or handle within the route logic for conditional fields.
+    ],
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const {
+            questionText, subject, intendedClass, type,
+            options, correctAnswers, matchingPairs, orderedItems,
+            instructions, hint, maxBytesRewardPerQuestion
+        } = req.body;
+
+        const teacherId = req.teacher.id;
+        const teacherName = req.teacher.teacherName;
+
+        try {
+            const newQuizQuestion = new QuizQuestion({
+                questionText,
+                subject,
+                intendedClass,
+                type,
+                options,
+                correctAnswers,
+                matchingPairs,
+                orderedItems,
+                instructions,
+                hint,
+                maxBytesRewardPerQuestion,
+                uploadedBy: {
+                    teacherId,
+                    teacherName
+                }
+            });
+
+            // Specific validation based on type for required fields
+            if (['multiple-choice-single', 'multiple-choice-multi'].includes(type) && (!options || options.length === 0)) {
+                return res.status(400).json({ message: 'Options are required for multiple-choice questions.' });
+            }
+            if (['short-answer', 'true-false', 'fill-in-the-blank', 'problem-solving'].includes(type) && (!correctAnswers || correctAnswers.length === 0)) {
+                return res.status(400).json({ message: 'Correct answers are required for this question type.' });
+            }
+            if (type === 'matching' && (!matchingPairs || matchingPairs.length === 0)) {
+                return res.status(400).json({ message: 'Matching pairs are required for matching questions.' });
+            }
+            if (type === 'ordering' && (!orderedItems || orderedItems.length === 0)) {
+                return res.status(400).json({ message: 'Ordered items are required for ordering questions.' });
+            }
+
+            await newQuizQuestion.save();
+
+            res.status(201).json({
+                message: 'Quiz question created successfully!',
+                question: newQuizQuestion
+            });
+
+        } catch (error) {
+            console.error('Error creating quiz question:', error);
+            res.status(500).json({ message: 'Failed to create quiz question.', error: error.message });
+        }
+    }
+);
+
+// 2. Get All Quiz Questions (for a teacher to manage their questions)
+// Teachers might want to filter by subject or class
+app.get('/teacher/quiz-questions', authenticateTeacherToken, async (req, res) => {
+    const teacherId = req.teacher.id;
+    const { subject, intendedClass } = req.query; // Allow filtering
+
+    let query = { 'uploadedBy.teacherId': teacherId };
+    if (subject) {
+        query.subject = subject;
+    }
+    if (intendedClass) {
+        query.intendedClass = intendedClass;
+    }
+
+    try {
+        const quizQuestions = await QuizQuestion.find(query).sort({ createdAt: -1 });
+        res.status(200).json({
+            message: 'Quiz questions fetched successfully.',
+            questions: quizQuestions
+        });
+    } catch (error) {
+        console.error('Error fetching quiz questions:', error);
+        res.status(500).json({ message: 'Failed to fetch quiz questions.', error: error.message });
+    }
+});
+
+// 3. Get a Single Quiz Question by ID (for editing)
+app.get('/teacher/quiz-questions/:id', authenticateTeacherToken, async (req, res) => {
+    const { id } = req.params;
+    const teacherId = req.teacher.id;
+
+    try {
+        const quizQuestion = await QuizQuestion.findOne({ _id: id, 'uploadedBy.teacherId': teacherId });
+        if (!quizQuestion) {
+            return res.status(404).json({ message: 'Quiz question not found or you do not have permission to view it.' });
+        }
+        res.status(200).json({
+            message: 'Quiz question fetched successfully.',
+            question: quizQuestion
+        });
+    } catch (error) {
+        console.error('Error fetching single quiz question:', error);
+        res.status(500).json({ message: 'Failed to fetch quiz question.', error: error.message });
+    }
+});
+
+// 4. Update a Quiz Question by ID
+app.put(
+    '/teacher/quiz-questions/:id',
+    authenticateTeacherToken,
+    [
+        body('questionText').optional().notEmpty().withMessage('Question text cannot be empty.').trim(),
+        body('subject').optional().notEmpty().withMessage('Subject cannot be empty.').trim(),
+        body('intendedClass').optional().notEmpty().withMessage('Intended class cannot be empty.').trim().isIn(['S.1', 'S.2', 'S.3', 'S.4', 'S.5', 'S.6']).withMessage('Invalid intended class.'),
+        body('type').optional().notEmpty().withMessage('Question type cannot be empty.').isIn([
+            'short-answer', 'multiple-choice-single', 'multiple-choice-multi',
+            'true-false', 'fill-in-the-blank', 'matching', 'ordering', 'problem-solving'
+        ]).withMessage('Invalid question type.'),
+    ],
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { id } = req.params;
+        const teacherId = req.teacher.id;
+        const updateData = req.body;
+
+        try {
+            // Ensure the teacher owns the question
+            const quizQuestion = await QuizQuestion.findOne({ _id: id, 'uploadedBy.teacherId': teacherId });
+            if (!quizQuestion) {
+                return res.status(404).json({ message: 'Quiz question not found or you do not have permission to update it.' });
+            }
+
+            // Apply updates
+            Object.assign(quizQuestion, updateData);
+
+            // Re-validate conditional fields if type is changed or relevant fields are updated
+            if (updateData.type || updateData.options || updateData.correctAnswers || updateData.matchingPairs || updateData.orderedItems) {
+                const type = quizQuestion.type;
+                if (['multiple-choice-single', 'multiple-choice-multi'].includes(type) && (!quizQuestion.options || quizQuestion.options.length === 0)) {
+                    return res.status(400).json({ message: 'Options are required for multiple-choice questions.' });
+                }
+                if (['short-answer', 'true-false', 'fill-in-the-blank', 'problem-solving'].includes(type) && (!quizQuestion.correctAnswers || quizQuestion.correctAnswers.length === 0)) {
+                    return res.status(400).json({ message: 'Correct answers are required for this question type.' });
+                }
+                if (type === 'matching' && (!quizQuestion.matchingPairs || quizQuestion.matchingPairs.length === 0)) {
+                    return res.status(400).json({ message: 'Matching pairs are required for matching questions.' });
+                }
+                if (type === 'ordering' && (!quizQuestion.orderedItems || quizQuestion.orderedItems.length === 0)) {
+                    return res.status(400).json({ message: 'Ordered items are required for ordering questions.' });
+                }
+            }
+
+            await quizQuestion.save(); // Save the updated document
+
+            res.status(200).json({
+                message: 'Quiz question updated successfully!',
+                question: quizQuestion
+            });
+
+        } catch (error) {
+            console.error('Error updating quiz question:', error);
+            res.status(500).json({ message: 'Failed to update quiz question.', error: error.message });
+        }
+    }
+);
+
+// 5. Delete a Quiz Question by ID
+app.delete('/teacher/quiz-questions/:id', authenticateTeacherToken, async (req, res) => {
+    const { id } = req.params;
+    const teacherId = req.teacher.id;
+
+    try {
+        const result = await QuizQuestion.deleteOne({ _id: id, 'uploadedBy.teacherId': teacherId });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: 'Quiz question not found or you do not have permission to delete it.' });
+        }
+        res.status(200).json({ message: 'Quiz question deleted successfully.' });
+    } catch (error) {
+        console.error('Error deleting quiz question:', error);
+        res.status(500).json({ message: 'Failed to delete quiz question.', error: error.message });
+    }
+});
+
+// --- Quiz Endpoints (Student) ---
+
+// 1. Fetch 10 Random Quiz Questions
+app.get('/student/quizzes/fetch-random-set', authenticateToken, async (req, res) => {
+    const { class: studentClass, subject } = req.query; // Get filter criteria from query params
+
+    try {
+        let query = {};
+        if (studentClass) {
+            query.intendedClass = studentClass;
+        }
+        if (subject) {
+            query.subject = subject;
+        }
+
+        // Aggregate pipeline to get 10 random questions
+        const randomQuestions = await QuizQuestion.aggregate([
+            { $match: query }, // Filter by class/subject if provided
+            { $sample: { size: 10 } }, // Select 10 random documents
+            {
+                $project: { // Project only necessary fields for the student (hide answers)
+                    questionText: 1,
+                    subject: 1,
+                    intendedClass: 1,
+                    type: 1,
+                    options: {
+                        $map: { // For multiple-choice, include text and _id, but not isCorrect
+                            input: "$options",
+                            as: "option",
+                            in: { text: "$$option.text", _id: "$$option._id" }
+                        }
+                    },
+                    matchingPairs: 1, // Include these as they are part of the question setup
+                    orderedItems: 1,
+                    instructions: 1,
+                    hint: 1,
+                    uploadedBy: { teacherName: 1 } // Only teacher name
+                }
+            }
+        ]);
+
+        if (randomQuestions.length === 0) {
+            return res.status(404).json({ message: 'No quiz questions found matching your criteria.' });
+        }
+
+        res.status(200).json({
+            message: 'Random quiz questions fetched successfully!',
+            questions: randomQuestions
+        });
+
+    } catch (error) {
+        console.error('Error fetching random quiz questions:', error);
+        res.status(500).json({ message: 'Failed to fetch random quiz questions.', error: error.message });
+    }
+});
+
+// NEW: 2. Submit Quiz Answers and Get Score/Bytes
+app.post('/student/quizzes/submit', authenticateToken, [
+    body('quizSubmissions').isArray({ min: 1 }).withMessage('Quiz submissions array is required and must not be empty.'),
+    body('quizSubmissions.*.questionId').isMongoId().withMessage('Invalid question ID.'),
+    // The structure of studentAnswer depends on the question type.
+    // For simplicity, we'll allow Mixed and validate content within the route.
+    body('quizSubmissions.*.studentAnswer').notEmpty().withMessage('Student answer is required for each question.'),
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { quizSubmissions } = req.body;
+    const studentId = req.student.id;
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const student = await Student.findById(studentId).session(session);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        let totalCorrectQuestions = 0;
+        let totalAttemptedQuestions = quizSubmissions.length;
+        const gradedAnswers = [];
+
+        for (const submission of quizSubmissions) {
+            const questionId = submission.questionId;
+            const studentAnswer = submission.studentAnswer; // This can be a string, array of IDs, array of objects, etc.
+
+            const quizQuestion = await QuizQuestion.findById(questionId).session(session);
+            if (!quizQuestion) {
+                console.warn(`Quiz question with ID ${questionId} not found. Skipping.`);
+                continue; // Skip if question not found
+            }
+
+            let isCorrect = false;
+
+            switch (quizQuestion.type) {
+                case 'short-answer':
+                case 'problem-solving':
+                case 'fill-in-the-blank':
+                    // For these types, studentAnswer is a string. Compare against correctAnswers array.
+                    if (typeof studentAnswer === 'string') {
+                        const normalizedStudentAnswer = studentAnswer.toLowerCase().trim();
+                        isCorrect = quizQuestion.correctAnswers.some(correctAns =>
+                            normalizedStudentAnswer === correctAns.toLowerCase().trim()
+                        );
+                    }
+                    break;
+                case 'true-false':
+                    // studentAnswer is a boolean or string "true"/"false"
+                    if (typeof studentAnswer === 'boolean' || typeof studentAnswer === 'string') {
+                        const normalizedStudentAnswer = String(studentAnswer).toLowerCase();
+                        isCorrect = quizQuestion.correctAnswers.some(correctAns =>
+                            normalizedStudentAnswer === correctAns.toLowerCase().trim()
+                        );
+                    }
+                    break;
+                case 'multiple-choice-single':
+                    // studentAnswer is the _id of the chosen option
+                    if (typeof studentAnswer === 'string' && mongoose.Types.ObjectId.isValid(studentAnswer)) {
+                        isCorrect = quizQuestion.options.some(option =>
+                            option._id.toString() === studentAnswer && option.isCorrect
+                        );
+                    }
+                    break;
+                case 'multiple-choice-multi':
+                    // studentAnswer is an array of _ids of chosen options
+                    if (Array.isArray(studentAnswer)) {
+                        const correctOptionIds = quizQuestion.options
+                            .filter(option => option.isCorrect)
+                            .map(option => option._id.toString());
+                        const chosenOptionIds = studentAnswer.map(id => id.toString());
+
+                        // Check if all correct options are chosen and no incorrect ones are chosen
+                        isCorrect = correctOptionIds.length === chosenOptionIds.length &&
+                                    correctOptionIds.every(id => chosenOptionIds.includes(id)) &&
+                                    chosenOptionIds.every(id => correctOptionIds.includes(id));
+                    }
+                    break;
+                case 'matching':
+                    // studentAnswer is an array of { itemA: string, itemB: string } pairs from student
+                    if (Array.isArray(studentAnswer)) {
+                        // Normalize and sort both arrays for reliable comparison
+                        const normalizedCorrectPairs = quizQuestion.matchingPairs
+                            .map(pair => ({ itemA: pair.itemA.toLowerCase().trim(), itemB: pair.itemB.toLowerCase().trim() }))
+                            .sort((a, b) => a.itemA.localeCompare(b.itemA));
+
+                        const normalizedStudentPairs = studentAnswer
+                            .map(pair => ({ itemA: pair.itemA.toLowerCase().trim(), itemB: pair.itemB.toLowerCase().trim() }))
+                            .sort((a, b) => a.itemA.localeCompare(b.itemA));
+
+                        isCorrect = normalizedCorrectPairs.length === normalizedStudentPairs.length &&
+                                    normalizedCorrectPairs.every((correctPair, index) =>
+                                        correctPair.itemA === normalizedStudentPairs[index].itemA &&
+                                        correctPair.itemB === normalizedStudentPairs[index].itemB
+                                    );
+                    }
+                    break;
+                case 'ordering':
+                    // studentAnswer is an array of strings representing the student's order
+                    if (Array.isArray(studentAnswer)) {
+                        const normalizedCorrectOrder = quizQuestion.orderedItems.map(item => item.toLowerCase().trim());
+                        const normalizedStudentOrder = studentAnswer.map(item => item.toLowerCase().trim());
+
+                        isCorrect = normalizedCorrectOrder.length === normalizedStudentOrder.length &&
+                                    normalizedCorrectOrder.every((item, index) => item === normalizedStudentOrder[index]);
+                    }
+                    break;
+                default:
+                    console.warn(`Unknown quiz question type: ${quizQuestion.type} for question ID: ${questionId}`);
+                    isCorrect = false;
+            }
+
+            if (isCorrect) {
+                totalCorrectQuestions++;
+            }
+
+            gradedAnswers.push({
+                questionId: questionId,
+                studentAnswer: studentAnswer, // Store the raw student answer
+                isCorrect: isCorrect
+            });
+        }
+
+        // Calculate bytes earned for the quiz session
+        const bytesEarned = totalAttemptedQuestions > 0 ?
+            Math.round((totalCorrectQuestions / totalAttemptedQuestions) * 10) : 0; // Max 10 bytes
+
+        // Update student's total bytes
+        student.bytes += bytesEarned;
+        await student.save({ session });
+
+        // Create a new StudentActivitySubmission for this quiz session
+        const newQuizSubmission = new StudentActivitySubmission({
+            student: studentId,
+            quizQuestion: null, // This is a quiz session, not a single quizQuestion
+            answers: gradedAnswers, // Store the detailed graded answers
+            score: (totalCorrectQuestions / totalAttemptedQuestions) * 100, // Percentage score
+            bytesEarned: bytesEarned,
+            attemptNumber: 1, // For quizzes, each submission is a new "session"
+            attemptType: 'initial', // Quizzes are always initial attempts for bytes
+            isGraded: true, // Quizzes are auto-graded
+        });
+        await newQuizSubmission.save({ session });
+
+        await session.commitTransaction();
+
+        res.status(200).json({
+            message: 'Quiz submitted and graded successfully!',
+            totalCorrectQuestions,
+            totalAttemptedQuestions,
+            score: newQuizSubmission.score,
+            bytesEarned: bytesEarned,
+            studentCurrentBytes: student.bytes,
+            gradedAnswers: gradedAnswers // Provide detailed feedback
+        });
+
+    } catch (error) {
+        await session.abortTransaction();
+        console.error('Error submitting quiz:', error);
+        res.status(500).json({ message: 'Failed to submit quiz. Please try again.', error: error.message });
+    } finally {
+        session.endSession();
+    }
 });
 
 
-// Start the server and listen for incoming requests.
+// NEW: Endpoint for Administrator to create a new Preader Game.
+// This route is protected by authenticateAdminToken.
+app.post('/admin/preader-games', authenticateAdminToken, [
+    body('title').notEmpty().withMessage('Game title is required.').trim().isLength({ min: 3, max: 200 }),
+    body('description').optional().isString().trim().isLength({ max: 1000 }),
+    body('genre').optional().isIn(['Fantasy', 'Sci-Fi', 'Mystery', 'Adventure', 'Drama', 'Ethical Dilemma', 'School Life', 'Other']).withMessage('Invalid genre.'),
+    body('initialAiPrompt').notEmpty().withMessage('Initial AI prompt is required.').trim().isLength({ min: 50, max: 2000 }),
+    body('ugandanSchoolContext').optional().isString().trim().isLength({ max: 2000 }),
+    body('maxBytesReward').isInt({ min: 0 }).withMessage('Max bytes reward must be a non-negative integer.'),
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const {
+        title, description, genre, initialAiPrompt,
+        ugandanSchoolContext, maxBytesReward
+    } = req.body;
+
+    const adminId = req.admin.id;
+    const adminName = req.admin.adminName; // Assuming adminName is in JWT payload
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // --- Step 1: Create the PreaderGame document (initially without initialNode) ---
+        const newPreaderGame = new PreaderGame({
+            title,
+            description,
+            genre,
+            initialAiPrompt,
+            ugandanSchoolContext,
+            maxBytesReward,
+            uploadedBy: {
+                teacherId: null, // Admin created, so teacherId is null
+                teacherName: adminName // Attributed to admin's name
+            },
+            status: 'draft' // Start as draft
+        });
+        await newPreaderGame.save({ session });
+
+        // --- Step 2: Generate the initial StoryNode using AI ---
+        const initialGameState = {
+            playerStats: {
+                life: 20, mana: 20, morale: 20, reputation: 0,
+                discipline: 50, knowledge: 0, stress: 0, luck: 10
+            },
+            currentEthicalScore: 0,
+            pathTaken: []
+        };
+        const aiGeneratedContent = await generateStoryNode(
+            initialAiPrompt,
+            ugandanSchoolContext || newPreaderGame.ugandanSchoolContext, // Use provided context or default
+            initialGameState
+        );
+
+        // --- Step 3: Create the initial StoryNode document ---
+        const initialStoryNode = new StoryNode({
+            game: newPreaderGame._id,
+            nodeType: 'choice', // Initial node usually presents choices
+            content: aiGeneratedContent.sceneDescription,
+            choices: aiGeneratedContent.choices.map(choice => ({
+                choiceText: choice.choiceText,
+                ethicalImpact: choice.ethicalImpact,
+                statChanges: choice.statChanges,
+                requiredStats: choice.requiredStats,
+                unavailableReason: choice.unavailableReason,
+                successChanceBase: choice.successChanceBase,
+                luckInfluence: choice.luckInfluence,
+                // nextNode and failNode will be null initially, linked as game progresses
+            })),
+            isAiGenerated: true,
+            generationPrompt: initialAiPrompt // Store the prompt used for this node
+        });
+        await initialStoryNode.save({ session });
+
+        // --- Step 4: Link the initial StoryNode back to the PreaderGame ---
+        newPreaderGame.initialNode = initialStoryNode._id;
+        await newPreaderGame.save({ session });
+
+        await session.commitTransaction();
+
+        res.status(201).json({
+            message: 'Preader Game created and initial story node generated successfully!',
+            game: {
+                id: newPreaderGame._id,
+                title: newPreaderGame.title,
+                genre: newPreaderGame.genre,
+                status: newPreaderGame.status,
+                initialNodeId: newPreaderGame.initialNode,
+                maxBytesReward: newPreaderGame.maxBytesReward
+            },
+            initialStoryNode: {
+                id: initialStoryNode._id,
+                content: initialStoryNode.content,
+                choices: initialStoryNode.choices.map(c => ({
+                    choiceText: c.choiceText,
+                    ethicalImpact: c.ethicalImpact,
+                    statChanges: c.statChanges
+                }))
+            }
+        });
+
+    } catch (error) {
+        await session.abortTransaction();
+        console.error('Error creating Preader Game:', error);
+        res.status(500).json({ message: 'Failed to create Preader Game. Please check AI service configuration and prompt.', error: error.message });
+    } finally {
+        session.endSession();
+    }
+});
+
+
+// Start the server
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });

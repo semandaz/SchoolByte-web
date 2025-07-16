@@ -1,0 +1,887 @@
+app.post(
+    '/student/quizzes/submit-set',
+    authenticateToken,
+    [
+        body('answers').isArray({ min: 1, max: 10 }).withMessage('Answers array is required and must contain 1 to 10 questions.'),
+        body('answers.*.quizQuestionId').isMongoId().withMessage('Invalid quizQuestionId.'),
+        body('answers.*.studentAnswer').exists().withMessage('Student answer is required for each question.'),
+        // Further granular validation based on question type will be done dynamically in the logic
+    ],
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { answers: studentAnswers } = req.body;
+        const studentId = req.student.id;
+
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        let totalCorrectQuestions = 0;
+        let totalBytesEarnedInSession = 0;
+        const submissionResults = []; // To store results for each question
+
+        try {
+            const student = await Student.findById(studentId).session(session);
+            if (!student) {
+                return res.status(404).json({ message: 'Student not found.' });
+            }
+
+            for (const studentAns of studentAnswers) {
+                const quizQuestion = await QuizQuestion.findById(studentAns.quizQuestionId).session(session);
+                if (!quizQuestion) {
+                    submissionResults.push({ quizQuestionId: studentAns.quizQuestionId, message: 'Question not found.', isCorrect: false, bytesEarned: 0 });
+                    continue; // Skip to next question if not found
+                }
+
+                let isCorrect = false;
+                let normalizedStudentAnswer;
+
+                switch (quizQuestion.type) {
+                    case 'short-answer':
+                    case 'fill-in-the-blank':
+                    case 'problem-solving':
+                        // For string-based answers
+                        normalizedStudentAnswer = String(studentAns.studentAnswer).toLowerCase().trim();
+                        isCorrect = quizQuestion.correctAnswers.some(
+                            ca => ca.toLowerCase().trim() === normalizedStudentAnswer
+                        );
+                        break;
+                    case 'true-false':
+                        // For boolean/string true/false answers
+                        normalizedStudentAnswer = String(studentAns.studentAnswer).toLowerCase().trim();
+                        isCorrect = quizQuestion.correctAnswers.some(
+                            ca => ca.toLowerCase().trim() === normalizedStudentAnswer
+                        );
+                        break;
+                    case 'multiple-choice-single':
+                        // studentAnswer is the _id of the chosen option
+                        const chosenOptionId = studentAns.studentAnswer;
+                        const correctOption = quizQuestion.options.find(opt => opt.isCorrect);
+                        isCorrect = correctOption && String(correctOption._id) === String(chosenOptionId);
+                        break;
+                    case 'multiple-choice-multi':
+                        // studentAnswer is an array of _ids of chosen options
+                        const chosenOptionIds = Array.isArray(studentAns.studentAnswer) ? studentAns.studentAnswer.map(id => String(id)) : [];
+                        const correctOptionIds = quizQuestion.options.filter(opt => opt.isCorrect).map(opt => String(opt._id));
+
+                        isCorrect = chosenOptionIds.length === correctOptionIds.length &&
+                                    chosenOptionIds.every(id => correctOptionIds.includes(id));
+                        break;
+                    case 'matching':
+                        // studentAnswer is an array of { itemA: "...", studentItemB: "..." }
+                        const studentPairs = Array.isArray(studentAns.studentAnswer) ? studentAns.studentAnswer : [];
+                        isCorrect = studentPairs.length === quizQuestion.matchingPairs.length &&
+                                    studentPairs.every(sp =>
+                                        quizQuestion.matchingPairs.some(qp =>
+                                            qp.itemA.toLowerCase().trim() === sp.itemA.toLowerCase().trim() &&
+                                            qp.itemB.toLowerCase().trim() === sp.studentItemB.toLowerCase().trim()
+                                        )
+                                    );
+                        break;
+                    case 'ordering':
+                        // studentAnswer is an array of strings in the student's chosen order
+                        const studentOrder = Array.isArray(studentAns.studentAnswer) ? studentAns.studentAnswer.map(item => String(item).toLowerCase().trim()) : [];
+                        const correctOrder = quizQuestion.orderedItems.map(item => String(item).toLowerCase().trim());
+
+                        isCorrect = studentOrder.length === correctOrder.length &&
+                                    studentOrder.every((item, index) => item === correctOrder[index]);
+                        break;
+                    default:
+                        // Unknown type, treat as incorrect
+                        isCorrect = false;
+                        console.warn(`Unknown quiz question type: ${quizQuestion.type} for question ${quizQuestion._id}`);
+                }
+
+                let bytesEarnedForQuestion = isCorrect ? quizQuestion.maxBytesRewardPerQuestion : 0;
+                totalBytesEarnedInSession += bytesEarnedForQuestion;
+                if (isCorrect) {
+                    totalCorrectQuestions++;
+                }
+
+                // Create a submission record for each question
+                const newSubmission = new StudentActivitySubmission({
+                    student: studentId,
+                    quizQuestion: quizQuestion._id,
+                    answers: {
+                        studentAnswer: studentAns.studentAnswer, // Store the raw student answer
+                        isCorrect: isCorrect,
+                        questionType: quizQuestion.type // Store type for context
+                    },
+                    score: isCorrect ? 100 : 0, // Score for individual question is 100 if correct, 0 if incorrect
+                    bytesEarned: bytesEarnedForQuestion,
+                    attemptNumber: 1, // For quizzes, we might simplify attempt tracking per question
+                    attemptType: 'initial', // For now, all quiz attempts are 'initial' for bytes
+                    isGraded: true
+                });
+                await newSubmission.save({ session });
+
+                submissionResults.push({
+                    quizQuestionId: quizQuestion._id,
+                    isCorrect: isCorrect,
+                    bytesEarned: bytesEarnedForQuestion,
+                    message: isCorrect ? 'Correct!' : 'Incorrect.'
+                });
+            }
+
+            // Update student's total bytes
+            student.bytes += totalBytesEarnedInSession;
+            await student.save({ session });
+
+            await session.commitTransaction();
+
+            const overallScorePercentage = studentAnswers.length > 0 ? (totalCorrectQuestions / studentAnswers.length) * 100 : 0;
+
+            res.status(200).json({
+                message: 'Quiz set submitted and graded successfully!',
+                overallScore: overallScorePercentage,
+                totalQuestionsAttempted: studentAnswers.length,
+                totalCorrectQuestions: totalCorrectQuestions,
+                totalBytesEarnedInSession: totalBytesEarnedInSession,
+                studentCurrentBytes: student.bytes,
+                individualResults: submissionResults
+            });
+
+        } catch (error) {
+            await session.abortTransaction();
+            console.error('Error submitting quiz set:', error);
+            res.status(500).json({ message: 'Failed to submit quiz. Please try again.', error: error.message });
+        } finally {
+            session.endSession();
+        }
+    }
+);
+
+// --- Preader Game Endpoints (Student-facing) ---
+
+// 1. Get List of Available Preader Games
+app.get('/student/preadergames', authenticateToken, async (req, res) => {
+    try {
+        const games = await PreaderGame.find({ status: 'published' }).select('title description genre uploadedBy.teacherName maxBytesReward');
+        res.status(200).json({
+            message: 'Available Preader Games fetched successfully.',
+            games
+        });
+    } catch (error) {
+        console.error('Error fetching preader games:', error);
+        res.status(500).json({ message: 'Server error fetching preader games.', error: error.message });
+    }
+});
+
+// 2. Start a New Preader Game Session
+app.post('/student/preadergames/:gameId/start', authenticateToken, async (req, res) => {
+    const { gameId } = req.params;
+    const studentId = req.student.id;
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const game = await PreaderGame.findById(gameId).session(session);
+        if (!game || game.status !== 'published') {
+            await session.abortTransaction();
+            return res.status(404).json({ message: 'Preader Game not found or not published.' });
+        }
+
+        // Check if student already has an active session for this game
+        const existingActiveSession = await PreaderGameSession.findOne({
+            student: studentId,
+            game: gameId,
+            status: 'active'
+        }).session(session);
+
+        if (existingActiveSession) {
+            await session.abortTransaction();
+            return res.status(400).json({
+                message: 'You already have an active session for this game. Continue or abandon it.',
+                sessionId: existingActiveSession._id,
+                currentNodeId: existingActiveSession.currentNode
+            });
+        }
+
+        let initialNode;
+        if (game.initialNode) {
+            // If the initial node is already linked (e.g., from admin creation)
+            initialNode = await StoryNode.findById(game.initialNode).session(session);
+        } else {
+            // This block should ideally not be hit if admin properly creates PreaderGame with initialNode
+            // For safety, we can generate a simple fallback node or throw error.
+            // For truly AI-generated games, the initialNode is created when PreaderGame is created.
+            console.error(`PreaderGame ${gameId} does not have an initialNode set. This indicates an issue with game creation.`);
+            await session.abortTransaction();
+            return res.status(500).json({ message: 'Preader Game setup incomplete: Initial story node missing.' });
+        }
+
+        if (!initialNode) {
+            await session.abortTransaction();
+            return res.status(500).json({ message: 'Failed to retrieve initial story node.' });
+        }
+
+        const initialPlayerStats = { life: 20, mana: 20, morale: 20, reputation: 0, discipline: 50, knowledge: 0, stress: 0, luck: 10 }; // Default initial stats
+
+        const newSession = new PreaderGameSession({
+            student: studentId,
+            game: gameId,
+            currentNode: initialNode._id,
+            playerStats: initialPlayerStats, // Initial stats for a new game
+            currentEthicalScore: 0,
+            pathTaken: [{
+                node: initialNode._id,
+                choiceText: null, // No choice made to reach initial node
+                snapshotPlayerStats: initialPlayerStats, // Snapshot of initial stats
+                snapshotEthicalScore: 0
+            }]
+        });
+        await newSession.save({ session });
+
+        await session.commitTransaction();
+
+        res.status(201).json({
+            message: 'Preader Game session started successfully!',
+            sessionId: newSession._id,
+            currentNode: {
+                _id: initialNode._id,
+                content: initialNode.content,
+                choices: initialNode.choices.map(c => ({
+                    choiceText: c.choiceText,
+                    requiredStats: c.requiredStats,
+                    unavailableReason: c.unavailableReason
+                })) // Only send necessary choice info to frontend
+            },
+            playerStats: newSession.playerStats,
+            ethicalScore: newSession.currentEthicalScore
+        });
+
+    } catch (error) {
+        await session.abortTransaction();
+        console.error('Error starting preader game session:', error);
+        res.status(500).json({ message: 'Failed to start preader game session.', error: error.message });
+    } finally {
+        session.endSession();
+    }
+});
+
+// 3. Get Current Preader Game Session State
+app.get('/student/preadergames/session/:sessionId', authenticateToken, async (req, res) => {
+    const { sessionId } = req.params;
+    const studentId = req.student.id;
+
+    try {
+        const session = await PreaderGameSession.findOne({ _id: sessionId, student: studentId })
+            .populate('currentNode') // Populate the current StoryNode details
+            .populate('game') // Populate game details for context
+            .lean(); // Use lean for faster reads
+
+        if (!session) {
+            return res.status(404).json({ message: 'Preader Game session not found or not yours.' });
+        }
+
+        if (!session.currentNode) {
+            return res.status(500).json({ message: 'Current story node not found for this session.' });
+        }
+
+        // Filter choices to only send what's necessary for the frontend
+        const displayChoices = session.currentNode.choices.map(choice => {
+            const isAvailable = Object.keys(choice.requiredStats || {}).every(stat => {
+                return session.playerStats[stat] >= choice.requiredStats[stat];
+            });
+            return {
+                choiceText: choice.choiceText,
+                isAvailable: isAvailable,
+                unavailableReason: isAvailable ? undefined : choice.unavailableReason
+            };
+        });
+
+        res.status(200).json({
+            message: 'Session state fetched successfully.',
+            sessionId: session._id,
+            gameId: session.game._id,
+            gameTitle: session.game.title,
+            currentNode: {
+                _id: session.currentNode._id,
+                content: session.currentNode.content,
+                choices: displayChoices
+            },
+            playerStats: session.playerStats,
+            ethicalScore: session.currentEthicalScore,
+            status: session.status,
+            bytesEarned: session.bytesEarned,
+            rewindsUsed: session.rewindsUsed
+        });
+
+    } catch (error) {
+        console.error('Error fetching preader game session:', error);
+        res.status(500).json({ message: 'Server error fetching session.', error: error.message });
+    }
+});
+
+// 4. Make a Choice and Progress the Narrative
+app.post('/student/preadergames/session/:sessionId/make-choice', authenticateToken, [
+    body('choiceText').notEmpty().withMessage('Choice text is required.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { sessionId } = req.params;
+    const studentId = req.student.id;
+    const { choiceText } = req.body;
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const gameSession = await PreaderGameSession.findOne({ _id: sessionId, student: studentId }).session(session);
+        if (!gameSession || gameSession.status !== 'active') {
+            await session.abortTransaction();
+            return res.status(404).json({ message: 'Active Preader Game session not found or not yours.' });
+        }
+
+        const currentNode = await StoryNode.findById(gameSession.currentNode).session(session);
+        if (!currentNode) {
+            await session.abortTransaction();
+            return res.status(404).json({ message: 'Current story node not found.' });
+        }
+
+        const chosenOption = currentNode.choices.find(c => c.choiceText === choiceText);
+        if (!chosenOption) {
+            await session.abortTransaction();
+            return res.status(400).json({ message: 'Invalid choice selected for the current node.' });
+        }
+
+        // --- Check Required Stats for Choice ---
+        const isChoiceAvailable = Object.keys(chosenOption.requiredStats || {}).every(stat => {
+            return gameSession.playerStats[stat] >= chosenOption.requiredStats[stat];
+        });
+
+        if (!isChoiceAvailable) {
+            await session.abortTransaction();
+            return res.status(400).json({ message: chosenOption.unavailableReason || 'You do not meet the requirements for this choice.' });
+        }
+
+        // --- Snapshot current state before applying changes ---
+        const snapshotPlayerStats = { ...gameSession.playerStats._doc }; // Use _doc to get plain object
+        const snapshotEthicalScore = gameSession.currentEthicalScore;
+
+        // --- Apply Stat Changes ---
+        gameSession.playerStats = applyStatChanges(gameSession.playerStats, chosenOption.statChanges);
+        gameSession.currentEthicalScore += chosenOption.ethicalImpact.scoreChange;
+
+        // --- Check for Game Over (Life Zero) ---
+        if (gameSession.playerStats.life <= 0) {
+            gameSession.status = 'game_over';
+            gameSession.endTime = new Date();
+            // Find a generic game over node or generate one
+            const gameOverGame = await PreaderGame.findById(gameSession.game).session(session);
+            const gameOverNodeContent = "Your journey ends here. The challenges of school life proved too much, and you collapsed under the weight of it all. Game Over.";
+            let gameOverNode = await StoryNode.findOne({ game: gameSession.game, nodeType: 'game_over_scene' }).session(session);
+            if (!gameOverNode) {
+                 gameOverNode = new StoryNode({
+                    game: gameSession.game,
+                    nodeType: 'game_over_scene',
+                    content: gameOverNodeContent,
+                    choices: [], // No choices from game over
+                    isAiGenerated: false, // This is a fallback
+                    generationPrompt: "Generic game over scene due to life reaching zero."
+                });
+                await gameOverNode.save({ session });
+            }
+            gameSession.currentNode = gameOverNode._id;
+            // Award fewer bytes for game over
+            gameSession.bytesEarned = Math.floor(gameOverGame.maxBytesReward * 0.1); // 10% of max reward
+            const student = await Student.findById(studentId).session(session);
+            if (student) {
+                student.bytes += gameSession.bytesEarned;
+                await student.save({ session });
+            }
+            await gameSession.save({ session });
+            await session.commitTransaction();
+
+            return res.status(200).json({
+                message: "Game Over! Your life reached zero.",
+                sessionStatus: gameSession.status,
+                currentNode: {
+                    _id: gameOverNode._id,
+                    content: gameOverNode.content,
+                    choices: [] // No choices for game over scene
+                },
+                playerStats: gameSession.playerStats,
+                ethicalScore: gameSession.currentEthicalScore,
+                bytesEarned: gameSession.bytesEarned,
+                finalMessage: 'You did not achieve the Student of the Year. Better luck next time!'
+            });
+        }
+
+        let nextNode;
+        let nextNodeContent;
+        let nextNodeChoices;
+        let isNextNodeAiGenerated = false;
+
+        // --- Handle Probabilistic Choices (Luck) ---
+        if (chosenOption.successChanceBase !== undefined) {
+            const studentLuck = gameSession.playerStats.luck;
+            const finalSuccessChance = chosenOption.successChanceBase + (studentLuck * chosenOption.luckInfluence);
+            const randomNumber = Math.random() * 100; // Generate a number between 0 and 100
+
+            if (randomNumber <= finalSuccessChance) {
+                nextNode = await StoryNode.findById(chosenOption.nextNode).session(session); // Success node
+            } else {
+                nextNode = await StoryNode.findById(chosenOption.failNode).session(session); // Failure node
+            }
+        } else {
+            // Standard deterministic choice
+            nextNode = await StoryNode.findById(chosenOption.nextNode).session(session);
+        }
+
+        // --- If nextNode is not found, or is a placeholder for AI generation ---
+        // This logic assumes that if nextNode is not found, it implies AI generation
+        // or if it's a placeholder ID (not implemented here, but could be 'GENERATE_NEXT_NODE_ID')
+        // For fully AI-generated, if nextNode is null, it means AI needs to generate it.
+        if (!nextNode) {
+            const game = await PreaderGame.findById(gameSession.game).session(session);
+            const currentGameStateForAI = {
+                playerName: req.student.studentName,
+                playerStats: gameSession.playerStats,
+                ethicalScore: gameSession.currentEthicalScore,
+                recentHistory: gameSession.pathTaken.slice(-3).map(p => ({
+                    nodeContent: p.node.content ? p.node.content.substring(0, Math.min(p.node.content.length, 100)) + '...' : '...', // Summarize content
+                    choice: p.choiceText
+                })) // Last 3 nodes/choices as context
+            };
+
+            const aiResponse = await generateStoryNode(
+                `The player just chose: "${chosenOption.choiceText}". Their current stats are: ${JSON.stringify(gameSession.playerStats)}. Their ethical score is: ${gameSession.currentEthicalScore}. Generate the next scene, ensuring a hard twist is incorporated.`,
+                game.ugandanSchoolContext,
+                currentGameStateForAI
+            );
+
+            nextNodeContent = aiResponse.sceneDescription;
+            nextNodeChoices = aiResponse.choices.map(c => ({
+                choiceText: c.choiceText,
+                ethicalImpact: c.ethicalImpact,
+                statChanges: c.statChanges,
+                requiredStats: c.requiredStats,
+                unavailableReason: c.unavailableReason
+            }));
+
+            // Create and save the new AI-generated StoryNode
+            nextNode = new StoryNode({
+                game: gameSession.game,
+                nodeType: 'text', // Default to text, AI can generate ending if prompted
+                content: nextNodeContent,
+                choices: nextNodeChoices,
+                isAiGenerated: true,
+                generationPrompt: `Prompt for AI: "${chosenOption.choiceText}" and current state.` // Store the prompt
+            });
+            await nextNode.save({ session });
+            isNextNodeAiGenerated = true; // Flag for response
+        } else {
+            // If nextNode was pre-defined or already generated
+            nextNodeContent = nextNode.content;
+            nextNodeChoices = nextNode.choices;
+        }
+
+        // --- Update Session State ---
+        gameSession.currentNode = nextNode._id;
+        gameSession.pathTaken.push({
+            node: nextNode._id,
+            choiceText: choiceText, // Store the choice that led to this node
+            snapshotPlayerStats: snapshotPlayerStats, // Snapshot *before* this choice's impact
+            snapshotEthicalScore: snapshotEthicalScore
+        });
+
+        // --- Check for Game Completion (Ending Node) ---
+        let finalMessage = '';
+        if (nextNode.nodeType === 'ending') {
+            gameSession.status = 'completed';
+            gameSession.endTime = new Date();
+
+            const game = await PreaderGame.findById(gameSession.game).session(session);
+
+            // Calculate final bytes based on ethical score and other stats
+            let baseBytes = game.maxBytesReward * 0.5; // 50% base for reaching any ending
+            let ethicalBonus = Math.floor(gameSession.currentEthicalScore / 10); // 1 byte for every 10 ethical points
+            let statPerformanceBonus = 0;
+
+            // Example: Bonus for high morale, discipline, knowledge
+            if (gameSession.playerStats.morale >= 40) statPerformanceBonus += 20;
+            if (gameSession.playerStats.discipline >= 70) statPerformanceBonus += 30;
+            if (gameSession.playerStats.knowledge >= 80) statPerformanceBonus += 50;
+
+            gameSession.bytesEarned = baseBytes + ethicalBonus + statPerformanceBonus;
+
+            // Cap bytes at maxBytesReward
+            if (gameSession.bytesEarned > game.maxBytesReward) {
+                gameSession.bytesEarned = game.maxBytesReward;
+            }
+
+            // Update student's total bytes
+            const student = await Student.findById(studentId).session(session);
+            if (student) {
+                student.bytes += gameSession.bytesEarned;
+                await student.save({ session });
+            }
+
+            // Determine final message based on outcome (e.g., Student of the Year)
+            if (gameSession.playerStats.knowledge >= 80 && gameSession.playerStats.reputation >= 50 && gameSession.currentEthicalScore >= 30) {
+                finalMessage = 'Congratulations! You are Student of the Year!';
+            } else {
+                finalMessage = 'You completed the game. Your school journey had its ups and downs!';
+            }
+        }
+
+        await gameSession.save({ session });
+        await session.commitTransaction();
+
+        // Filter choices for display to the student (hide internal nextNode IDs and stat impacts)
+        const displayChoices = nextNodeChoices.map(choice => {
+            const isAvailable = Object.keys(choice.requiredStats || {}).every(stat => {
+                return gameSession.playerStats[stat] >= choice.requiredStats[stat];
+            });
+            return {
+                choiceText: choice.choiceText,
+                isAvailable: isAvailable,
+                unavailableReason: isAvailable ? undefined : choice.unavailableReason
+            };
+        });
+
+        res.status(200).json({
+            message: 'Choice made and narrative progressed.',
+            sessionStatus: gameSession.status,
+            currentNode: {
+                _id: nextNode._id,
+                content: nextNodeContent,
+                choices: displayChoices
+            },
+            playerStats: gameSession.playerStats,
+            ethicalScore: gameSession.currentEthicalScore,
+            bytesEarned: gameSession.bytesEarned, // Will be 0 until completion, then final amount
+            finalMessage: finalMessage // Only present if game is completed
+        });
+
+    } catch (error) {
+        await session.abortTransaction();
+        console.error('Error making choice in preader game:', error);
+        res.status(500).json({ message: 'Failed to progress game. Please try again.', error: error.message });
+    } finally {
+        session.endSession();
+    }
+});
+
+// 5. Rewind Last Decision
+app.post('/student/preadergames/session/:sessionId/rewind', authenticateToken, async (req, res) => {
+    const { sessionId } = req.params;
+    const studentId = req.student.id;
+    const REWIND_COST_BYTES = 5; // Define cost to rewind
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const gameSession = await PreaderGameSession.findOne({ _id: sessionId, student: studentId }).session(session);
+        if (!gameSession || gameSession.status !== 'active') {
+            await session.abortTransaction();
+            return res.status(404).json({ message: 'Active Preader Game session not found or not yours.' });
+        }
+
+        // Need at least 2 entries in pathTaken to rewind one step back
+        // The last entry is the current node, the second to last is the node *before* the last choice.
+        if (gameSession.pathTaken.length < 2) {
+            await session.abortTransaction();
+            return res.status(400).json({ message: 'Cannot rewind: No previous decision to go back to.' });
+        }
+
+        const student = await Student.findById(studentId).session(session);
+        if (!student) {
+            await session.abortTransaction();
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        if (student.bytes < REWIND_COST_BYTES) {
+            await session.abortTransaction();
+            return res.status(400).json({ message: `Not enough bytes to rewind. Cost: ${REWIND_COST_BYTES} bytes.` });
+        }
+
+        // Deduct bytes from student
+        student.bytes -= REWIND_COST_BYTES;
+        await student.save({ session });
+
+        // Deduct from session's earned bytes if you want to reflect net gain
+        gameSession.bytesEarned = Math.max(0, gameSession.bytesEarned - REWIND_COST_BYTES);
+        gameSession.rewindsUsed += 1;
+
+        // Remove the current node from pathTaken
+        gameSession.pathTaken.pop();
+
+        // The new current node is the one before the choice was made
+        const previousPathEntry = gameSession.pathTaken[gameSession.pathTaken.length - 1];
+        gameSession.currentNode = previousPathEntry.node;
+        gameSession.playerStats = { ...previousPathEntry.snapshotPlayerStats._doc }; // Restore stats
+        gameSession.currentEthicalScore = previousPathEntry.snapshotEthicalScore;
+
+        await gameSession.save({ session });
+        await session.commitTransaction();
+
+        // Fetch the restored current node details to send back
+        const restoredNode = await StoryNode.findById(gameSession.currentNode).lean();
+        if (!restoredNode) {
+             console.error(`Rewind: Restored node ${gameSession.currentNode} not found after pop.`);
+             return res.status(500).json({ message: 'Error restoring previous game state.' });
+        }
+
+        const displayChoices = restoredNode.choices.map(choice => {
+            const isAvailable = Object.keys(choice.requiredStats || {}).every(stat => {
+                return gameSession.playerStats[stat] >= choice.requiredStats[stat];
+            });
+            return {
+                choiceText: choice.choiceText,
+                isAvailable: isAvailable,
+                unavailableReason: isAvailable ? undefined : choice.unavailableReason
+            };
+        });
+
+        res.status(200).json({
+            message: `Successfully rewound one decision for ${REWIND_COST_BYTES} bytes.`,
+            sessionId: gameSession._id,
+            currentNode: {
+                _id: restoredNode._id,
+                content: restoredNode.content,
+                choices: displayChoices
+            },
+            playerStats: gameSession.playerStats,
+            ethicalScore: gameSession.currentEthicalScore,
+            studentCurrentBytes: student.bytes, // Send updated student bytes
+            rewindsUsed: gameSession.rewindsUsed
+        });
+
+    } catch (error) {
+        await session.abortTransaction();
+        console.error('Error rewinding preader game:', error);
+        res.status(500).json({ message: 'Failed to rewind game. Please try again.', error: error.message });
+    } finally {
+        session.endSession();
+    }
+});
+
+// 6. Abandon Preader Game Session
+app.post('/student/preadergames/session/:sessionId/abandon', authenticateToken, async (req, res) => {
+    const { sessionId } = req.params;
+    const studentId = req.student.id;
+
+    try {
+        const gameSession = await PreaderGameSession.findOneAndUpdate(
+            { _id: sessionId, student: studentId, status: 'active' },
+            { $set: { status: 'abandoned', endTime: new Date() } },
+            { new: true }
+        );
+
+        if (!gameSession) {
+            return res.status(404).json({ message: 'Active Preader Game session not found or not yours.' });
+        }
+
+        res.status(200).json({ message: 'Preader Game session abandoned successfully.', sessionId: gameSession._id });
+
+    } catch (error) {
+        console.error('Error abandoning preader game session:', error);
+        res.status(500).json({ message: 'Failed to abandon session.', error: error.message });
+    }
+});
+
+// --- Preader Game Endpoints (Admin-facing) ---
+
+// 1. Create a New Preader Game (and its initial AI-generated StoryNode)
+app.post('/admin/preadergames', authenticateAdminToken, [
+    body('title').notEmpty().withMessage('Game title is required.').trim().isLength({ min: 3, max: 200 }),
+    body('description').optional().trim().isLength({ max: 1000 }),
+    body('genre').optional().isIn(['Fantasy', 'Sci-Fi', 'Mystery', 'Adventure', 'Drama', 'Ethical Dilemma', 'School Life', 'Other']).withMessage('Invalid genre.'),
+    body('initialAiPrompt').notEmpty().withMessage('Initial AI prompt is required.').trim().isLength({ min: 50, max: 2000 }),
+    body('ugandanSchoolContext').optional().trim().isLength({ max: 2000 }),
+    body('maxBytesReward').isInt({ min: 1 }).withMessage('Max bytes reward must be a positive integer.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { title, description, genre, initialAiPrompt, ugandanSchoolContext, maxBytesReward } = req.body;
+    const adminId = req.admin.id; // Assuming admin token has ID
+    const adminName = req.admin.adminName; // Assuming admin token has name
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        // Generate the initial StoryNode content using AI
+        const aiResponse = await generateStoryNode(
+            initialAiPrompt,
+            ugandanSchoolContext || PreaderGameSchema.paths.ugandanSchoolContext.defaultValue, // Use default if not provided
+            { playerName: "New Student", playerStats: { life: 20, mana: 20, morale: 20, reputation: 0, discipline: 50, knowledge: 0, stress: 0, luck: 10 }, ethicalScore: 0, recentHistory: "Game just started." }
+        );
+
+        // Create the initial StoryNode
+        const initialNode = new StoryNode({
+            nodeType: 'text',
+            content: aiResponse.sceneDescription,
+            choices: aiResponse.choices.map(c => ({
+                choiceText: c.choiceText,
+                ethicalImpact: c.ethicalImpact,
+                statChanges: c.statChanges,
+                requiredStats: c.requiredStats,
+                unavailableReason: c.unavailableReason
+            })),
+            isAiGenerated: true,
+            generationPrompt: initialAiPrompt,
+            game: null // Will be linked after PreaderGame is created
+        });
+        await initialNode.save({ session });
+
+        // Create the PreaderGame document
+        const newPreaderGame = new PreaderGame({
+            title,
+            description,
+            genre,
+            initialAiPrompt,
+            ugandanSchoolContext: ugandanSchoolContext || PreaderGameSchema.paths.ugandanSchoolContext.defaultValue,
+            maxBytesReward,
+            initialNode: initialNode._id, // Link the initial node
+            uploadedBy: {
+                teacherId: null, // Admins create, not teachers in this context
+                teacherName: adminName
+            },
+            status: 'draft' // Start as draft, admin can publish later
+        });
+        await newPreaderGame.save({ session });
+
+        // Link the game ID back to the initial node
+        initialNode.game = newPreaderGame._id;
+        await initialNode.save({ session });
+
+        await session.commitTransaction();
+
+        res.status(201).json({
+            message: 'Preader Game and initial chapter generated successfully!',
+            game: {
+                _id: newPreaderGame._id,
+                title: newPreaderGame.title,
+                status: newPreaderGame.status,
+                initialNodeId: newPreaderGame.initialNode
+            },
+            initialChapterContent: initialNode.content // Show initial content for review
+        });
+
+    } catch (error) {
+        await session.abortTransaction();
+        console.error('Error creating preader game by admin:', error);
+        res.status(500).json({ message: 'Failed to create preader game. Please try again.', error: error.message });
+    } finally {
+        session.endSession();
+    }
+});
+
+// 2. Get All Preader Games (for Admin Management)
+app.get('/admin/preadergames', authenticateAdminToken, async (req, res) => {
+    try {
+        const games = await PreaderGame.find({}).select('-initialAiPrompt -ugandanSchoolContext'); // Don't send prompts back unless needed
+        res.status(200).json({
+            message: 'All Preader Games fetched successfully.',
+            games
+        });
+    } catch (error) {
+        console.error('Error fetching all preader games by admin:', error);
+        res.status(500).json({ message: 'Server error fetching games.', error: error.message });
+    }
+});
+
+// 3. Update Preader Game Status (e.g., publish/archive)
+app.put('/admin/preadergames/:gameId/status', authenticateAdminToken, [
+    body('status').notEmpty().isIn(['draft', 'published', 'archived']).withMessage('Invalid status.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { gameId } = req.params;
+    const { status } = req.body;
+
+    try {
+        const updatedGame = await PreaderGame.findByIdAndUpdate(
+            gameId,
+            { $set: { status: status, updatedAt: Date.now() } },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedGame) {
+            return res.status(404).json({ message: 'Preader Game not found.' });
+        }
+
+        res.status(200).json({
+            message: `Preader Game status updated to ${updatedGame.status}.`,
+            game: {
+                _id: updatedGame._id,
+                title: updatedGame.title,
+                status: updatedGame.status
+            }
+        });
+
+    } catch (error) {
+        console.error('Error updating preader game status:', error);
+        res.status(500).json({ message: 'Server error updating game status.', error: error.message });
+    }
+});
+
+
+// 4. Delete a Preader Game (and associated StoryNodes and Sessions)
+app.delete('/admin/preadergames/:gameId', authenticateAdminToken, async (req, res) => {
+    const { gameId } = req.params;
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const game = await PreaderGame.findById(gameId).session(session);
+        if (!game) {
+            await session.abortTransaction();
+            return res.status(404).json({ message: 'Preader Game not found.' });
+        }
+
+        // Delete all associated StoryNodes
+        await StoryNode.deleteMany({ game: gameId }).session(session);
+        // Delete all associated PreaderGameSessions
+        await PreaderGameSession.deleteMany({ game: gameId }).session(session);
+        // Delete the PreaderGame itself
+        await PreaderGame.deleteOne({ _id: gameId }).session(session);
+
+        await session.commitTransaction();
+
+        res.status(200).json({ message: `Preader Game '${game.title}' and all associated data deleted successfully.` });
+
+    } catch (error) {
+        await session.abortTransaction();
+        console.error('Error deleting preader game by admin:', error);
+        res.status(500).json({ message: 'Failed to delete preader game.', error: error.message });
+    } finally {
+        session.endSession();
+    }
+});
+
+
+// Global Error Handling Middleware.
+// This middleware should be placed at the very end of your middleware stack.
+// It catches any errors that occur in your routes or other middleware.
+app.use((err, req, res, next) => {
+    console.error(err.stack); // Log the full error stack to the console for debugging.
+    // Send a generic error response to the client.
+    res.status(err.statusCode || 500).json({
+        message: err.message || 'An unexpected error occurred on the server.',
+        status: err.statusCode || 500,
+    });
+});
+
+// Start the server and listen for incoming requests.
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});

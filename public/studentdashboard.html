@@ -57,6 +57,171 @@
             background: var(--gradient-background-secondary);
             min-height: 100vh;
             color: var(--color-neutral-darkest);
+            overflow-x: hidden;
+        }
+
+        /* Floating Particles */
+        .particles-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--color-brand-gold);
+            border-radius: 50%;
+            opacity: 0.7;
+            animation: float-up linear infinite;
+        }
+
+        @keyframes float-up {
+            0% {
+                transform: translateY(100vh) scale(0.5);
+                opacity: 0;
+            }
+            20% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-100px) scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        /* 3D Card Effects */
+        .activity-card {
+            transform-style: preserve-3d;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .activity-card:hover {
+            transform: translateY(-5px) rotateX(5deg) rotateY(5deg);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Animated Icons */
+        .subject-card {
+            transition: all 0.3s;
+        }
+
+        .subject-card:hover .subject-icon {
+            animation: bounce 0.5s ease;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Math icon specific animation */
+        .subject-card[onclick*="mathstudentdashboard"]:hover .subject-icon {
+            animation: spin 0.5s ease;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Science icons specific animation */
+        .subject-card[onclick*="biostudentdashboard"]:hover .subject-icon,
+        .subject-card[onclick*="chestudentdashboard"]:hover .subject-icon,
+        .subject-card[onclick*="phystudentdashboard"]:hover .subject-icon {
+            animation: pulse 0.5s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        /* Live Activity Feed */
+        .activity-feed {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            width: 300px;
+            max-height: 70vh;
+            overflow-y: auto;
+            background: var(--color-neutral-white);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .activity-feed.active {
+            display: block;
+        }
+
+        .activity-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--color-neutral-light);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            margin-right: 10px;
+            color: var(--color-brand-gold);
+        }
+
+        /* Byte Animation */
+        .byte-coin {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background: var(--color-brand-gold);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            animation: fly-to-counter 1s ease-out forwards;
+        }
+
+        @keyframes fly-to-counter {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(0.5) translate(var(--tx), var(--ty));
+                opacity: 0;
+            }
         }
 
         /* Header Styles */
@@ -64,6 +229,8 @@
             background-color: var(--color-neutral-white);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             padding: 1rem 2rem;
+            position: relative;
+            z-index: 100;
         }
 
         .header-container {
@@ -100,12 +267,12 @@
             justify-content: center;
             color: var(--color-neutral-white);
             font-size: 1.5rem;
-            cursor: pointer; /* Add cursor pointer to indicate clickability */
-            transition: transform 0.2s ease-in-out; /* Smooth transition for hover */
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out;
         }
 
         .avatar:hover {
-            transform: scale(1.1); /* Slightly enlarge on hover */
+            transform: scale(1.1);
         }
 
         .student-name {
@@ -118,6 +285,8 @@
             max-width: 1200px;
             margin: 2rem auto;
             padding: 0 2rem;
+            position: relative;
+            z-index: 10;
         }
 
         .welcome-section {
@@ -146,12 +315,6 @@
             padding: 2rem;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
             position: relative;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .activity-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
         }
 
         .activity-title {
@@ -253,7 +416,6 @@
             padding: 1.5rem;
             text-align: center;
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s;
             cursor: pointer;
         }
 
@@ -268,6 +430,7 @@
             font-size: 2.5rem;
             margin-bottom: 1rem;
             color: var(--color-brand-primary);
+            transition: all 0.3s;
         }
 
         .subject-card:hover .subject-icon {
@@ -316,7 +479,8 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            z-index: 100; /* Ensure it's above other content */
+            z-index: 100;
+            cursor: pointer;
         }
 
         .bytes-icon {
@@ -352,6 +516,28 @@
             display: none;
         }
 
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            
+            .activity-card:hover {
+                transform: none !important;
+            }
+            
+            .subject-card:hover .subject-icon {
+                animation: none !important;
+            }
+            
+            .byte-coin {
+                display: none !important;
+            }
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .header-container {
@@ -377,6 +563,11 @@
                 padding: 0.6rem 1rem;
                 font-size: 0.9rem;
             }
+            
+            .activity-feed {
+                width: 250px;
+                right: 10px;
+            }
         }
     </style>
     <script>
@@ -391,6 +582,12 @@
     </script>
 </head>
 <body>
+    <!-- Floating Particles Container -->
+    <div class="particles-container" id="particlesContainer"></div>
+    
+    <!-- Activity Feed -->
+    <div class="activity-feed" id="activityFeed"></div>
+    
     <header>
         <div class="header-container">
             <a href="studentdashboard.html" class="logo">SchoolByte</a>
@@ -398,20 +595,17 @@
                 <div class="avatar" onclick="window.location.href='studentprofile.html'">
                     <i class="fas fa-user-graduate"></i>
                 </div>
-                <span class="student-name" id="studentNameDisplay">Loading...</span>
+                <span class="student-name" id="studentNameDisplay">Student</span>
             </div>
         </div>
     </header>
 
     <div class="container">
-        <div class="message-container" id="loadingMessage">
-            <div class="loading-message">Fetching student data...</div>
-        </div>
         <div class="message-container hidden" id="errorMessage">
             <div class="error-message"></div>
         </div>
 
-        <div id="mainContent" class="hidden">
+        <div id="mainContent">
             <div class="welcome-section">
                 <h1 class="welcome-message" id="welcomeMessage">Hello Student, what do you want to dive into today?</h1>
             </div>
@@ -426,7 +620,7 @@
                         </div>
                     </div>
                     <p>Test your knowledge and earn bytes!</p>
-                    <a href="#" class="activity-btn">Start Quiz</a>
+                    <a href="#" class="activity-btn" id="quizBtn">Start Quiz</a>
                 </div>
                 <div class="activity-card">
                     <div class="activity-title">
@@ -437,7 +631,7 @@
                         </div>
                     </div>
                     <p>Learn through fun educational games!</p>
-                    <a href="#" class="activity-btn">Play Games</a>
+                    <a href="#" class="activity-btn" id="gameBtn">Play Games</a>
                 </div>
             </div>
 
@@ -577,114 +771,205 @@
                     <i class="fas fa-sign-out-alt"></i> Sign Out
                 </button>
             </div>
-        </div> </div>
+        </div>
+    </div>
 
-    <div class="bytes-counter">
+    <div class="bytes-counter" id="bytesCounter">
         <i class="fas fa-coins bytes-icon"></i>
-        <span id="bytesCount">Loading...</span> Bytes
+        <span id="bytesCount">0</span> Bytes
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            const studentNameDisplay = document.getElementById('studentNameDisplay');
-            const welcomeMessage = document.getElementById('welcomeMessage');
-            const bytesCountElement = document.getElementById('bytesCount');
-            const loadingMessage = document.getElementById('loadingMessage');
-            const errorMessage = document.getElementById('errorMessage');
-            const mainContent = document.getElementById('mainContent');
-            const signOutBtn = document.getElementById('signOutBtn');
-
-            // --- IMPORTANT: Retrieve JWT from localStorage ---
-            const jwtToken = localStorage.getItem('jwtToken');
-
-            if (!jwtToken) {
-                loadingMessage.classList.add('hidden');
-                errorMessage.querySelector('.error-message').textContent = 'You are not logged in. Please log in to view your dashboard.';
-                errorMessage.classList.remove('hidden');
-                // Redirect to login page after a delay
-                setTimeout(() => {
-                    window.location.href = 'studentlogin.html';
-                }, 2000);
-                return; // Stop execution
-            }
-
-            // Function to fetch student data from backend
-            async function fetchStudentData() {
-                try {
-                    const apiUrl = `${window.location.origin}/student/dashboard`; // Use the protected endpoint
-
-                    const response = await fetch(apiUrl, {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${jwtToken}` // Send the JWT
-                        }
-                    });
-
-                    const data = await response.json();
-
-                    loadingMessage.classList.add('hidden'); // Hide loading message
-
-                    if (response.ok && data.student) {
-                        const studentName = data.student.studentName || 'Student';
-                        const currentBytes = data.student.bytes || 0; // Get bytes from backend, default to 0
-
-                        studentNameDisplay.textContent = studentName;
-                        welcomeMessage.textContent = `Hello ${studentName}, what do you want to dive into today?`;
-                        bytesCountElement.textContent = currentBytes;
-
-                        // Store bytes in localStorage for other pages if needed (though backend is source of truth)
-                        localStorage.setItem('bytesCount', currentBytes);
-
-                        mainContent.classList.remove('hidden'); // Show main content
-                    } else {
-                        errorMessage.querySelector('.error-message').textContent = data.message || 'Failed to load dashboard. Invalid token or data.';
-                        errorMessage.classList.remove('hidden');
-                        if (response.status === 401 || response.status === 403) {
-                            localStorage.removeItem('jwtToken');
-                            localStorage.removeItem('bytesCount');
-                            localStorage.removeItem('preferredName');
-                            localStorage.removeItem('preferredFont');
-                            setTimeout(() => {
-                                window.location.href = 'studentlogin.html';
-                            }, 2000);
-                        }
-                    }
-
-                } catch (error) {
-                    console.error('Error fetching student dashboard:', error);
-                    loadingMessage.classList.add('hidden');
-                    errorMessage.querySelector('.error-message').textContent = 'An error occurred while fetching your dashboard. Please try again later.';
-                    errorMessage.classList.remove('hidden');
-                }
-            }
-
-            fetchStudentData(); // Call the function to fetch student data
-
-            // Sign out function
-            signOutBtn.addEventListener('click', function() {
-                localStorage.removeItem('jwtToken'); // Crucial: clear JWT
-                localStorage.removeItem('bytesCount'); // Clear bytes
-                localStorage.removeItem('preferredName'); // Clear preferred name (from profile page)
-                localStorage.removeItem('preferredFont'); // Clear font (from profile page)
-
-                // Redirect to login/landing page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize student data
+            const studentName = localStorage.getItem('studentName') || 'Student';
+            document.getElementById('studentNameDisplay').textContent = studentName;
+            document.getElementById('welcomeMessage').textContent = `Hello ${studentName}, what do you want to dive into today?`;
+            
+            // Initialize bytes count
+            let bytesCount = parseInt(localStorage.getItem('bytesCount')) || 0;
+            document.getElementById('bytesCount').textContent = bytesCount;
+            
+            // Create floating particles
+            createParticles();
+            
+            // Set up activity feed
+            setupActivityFeed();
+            
+            // Set up event listeners for earning bytes
+            setupByteEarning();
+            
+            // Set up sign out button
+            document.getElementById('signOutBtn').addEventListener('click', function() {
+                localStorage.removeItem('studentName');
+                localStorage.removeItem('bytesCount');
                 window.location.href = 'index.html';
             });
-
+            
             // Tooltip initialization
             document.querySelectorAll('.info-icon').forEach(icon => {
                 icon.addEventListener('mouseenter', function() {
                     this.querySelector('.info-tooltip').style.opacity = '1';
                     this.querySelector('.info-tooltip').style.visibility = 'visible';
                 });
-
+                
                 icon.addEventListener('mouseleave', function() {
                     this.querySelector('.info-tooltip').style.opacity = '0';
                     this.querySelector('.info-tooltip').style.visibility = 'hidden';
                 });
             });
         });
+        
+        // Create floating golden orbs
+        function createParticles() {
+            const container = document.getElementById('particlesContainer');
+            const particleCount = 30;
+            
+            // Check for reduced motion preference
+            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reducedMotion) return;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random position and size
+                const size = Math.random() * 10 + 5;
+                const posX = Math.random() * 100;
+                const delay = Math.random() * 10;
+                const duration = Math.random() * 10 + 10;
+                
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${posX}%`;
+                particle.style.animationDuration = `${duration}s`;
+                particle.style.animationDelay = `${delay}s`;
+                
+                container.appendChild(particle);
+            }
+        }
+        
+        // Set up activity feed
+        function setupActivityFeed() {
+            const bytesCounter = document.getElementById('bytesCounter');
+            const activityFeed = document.getElementById('activityFeed');
+            
+            bytesCounter.addEventListener('click', function() {
+                activityFeed.classList.toggle('active');
+            });
+            
+            // Close feed when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!bytesCounter.contains(e.target) {
+                    activityFeed.classList.remove('active');
+                }
+            });
+        }
+        
+        // Set up byte earning system
+        function setupByteEarning() {
+            const quizBtn = document.getElementById('quizBtn');
+            const gameBtn = document.getElementById('gameBtn');
+            const bytesCountElement = document.getElementById('bytesCount');
+            const activityFeed = document.getElementById('activityFeed');
+            
+            // Function to add activity to feed
+            function addActivity(message) {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                const activityItem = document.createElement('div');
+                activityItem.classList.add('activity-item');
+                activityItem.innerHTML = `
+                    <i class="fas fa-coins activity-icon"></i>
+                    <span>${message} - ${timeString}</span>
+                `;
+                
+                activityFeed.insertBefore(activityItem, activityFeed.firstChild);
+                
+                // Show feed temporarily
+                activityFeed.classList.add('active');
+                setTimeout(() => {
+                    activityFeed.classList.remove('active');
+                }, 3000);
+            }
+            
+            // Function to animate byte earning
+            function animateByteEarning(amount, sourceElement) {
+                const bytesCounter = document.getElementById('bytesCounter');
+                const counterRect = bytesCounter.getBoundingClientRect();
+                const counterX = counterRect.left + counterRect.width / 2;
+                const counterY = counterRect.top + counterRect.height / 2;
+                
+                // Check for reduced motion preference
+                const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                if (reducedMotion) {
+                    // Just update the count without animation
+                    updateByteCount(amount);
+                    return;
+                }
+                
+                // Create coins that fly to counter
+                for (let i = 0; i < amount; i++) {
+                    setTimeout(() => {
+                        const sourceRect = sourceElement.getBoundingClientRect();
+                        const startX = sourceRect.left + Math.random() * sourceRect.width;
+                        const startY = sourceRect.top + Math.random() * sourceRect.height;
+                        
+                        const coin = document.createElement('div');
+                        coin.classList.add('byte-coin');
+                        
+                        // Calculate final position relative to start
+                        const tx = counterX - startX;
+                        const ty = counterY - startY;
+                        
+                        coin.style.setProperty('--tx', `${tx}px`);
+                        coin.style.setProperty('--ty', `${ty}px`);
+                        coin.style.left = `${startX}px`;
+                        coin.style.top = `${startY}px`;
+                        
+                        document.body.appendChild(coin);
+                        
+                        // Remove coin after animation
+                        setTimeout(() => {
+                            coin.remove();
+                            if (i === amount - 1) {
+                                updateByteCount(amount);
+                            }
+                        }, 1000);
+                    }, i * 100);
+                }
+            }
+            
+            // Function to update byte count
+            function updateByteCount(amount) {
+                let currentBytes = parseInt(bytesCountElement.textContent) || 0;
+                currentBytes += amount;
+                bytesCountElement.textContent = currentBytes;
+                localStorage.setItem('bytesCount', currentBytes);
+            }
+            
+            // Quiz button click handler
+            quizBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const bytesEarned = 3;
+                animateByteEarning(bytesEarned, this);
+                addActivity(`Earned ${bytesEarned} bytes for starting a quiz`);
+            });
+            
+            // Game button click handler
+            gameBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const bytesEarned = 5;
+                animateByteEarning(bytesEarned, this);
+                addActivity(`Earned ${bytesEarned} bytes for playing a game`);
+            });
+            
+            // Simulate some initial activities
+            setTimeout(() => {
+                addActivity("Welcome to SchoolByte! Start learning to earn bytes");
+            }, 1000);
+        }
     </script>
 </body>
 </html>
