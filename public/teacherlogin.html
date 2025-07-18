@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SchoolByte - Student Sign Up</title>
+    <title>SchoolByte - Teacher's Log in</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
@@ -404,7 +404,7 @@
                 <div class="avatar">
                     <i class="fas fa-user-graduate"></i>
                 </div>
-                <h2>Student Sign Up</h2>
+                <h2>Teacher's Login</h2>
             </div>
             
             <form id="studentSignupForm">
@@ -758,7 +758,7 @@
                         console.log('Register Student Response:', response.status, data); // DEBUG LOG
 
                         if (response.ok) {
-                            showMessageBox('Success', data.message + '\nRedirecting to dashboard.');
+                            showMessageBox('Success', data.message + '\nRedirecting to studentdashboard.');
                             setTimeout(() => {
                                 window.location.href = './studentdashboard.html'; 
                             }, 1500);

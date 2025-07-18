@@ -5,49 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SchoolByte - Student Profile</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Consolidated and expanded font imports for all pages -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Lato:wght@400;700&family=Nunito+Sans:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&family=Satisfy&family=Dancing+Script:wght@400;700&family=Ubuntu:wght@400;700&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&family=Oswald:wght@400;700&family=Lora:wght@400;700&family=PT+Sans:wght@400;700&family=Source+Sans+Pro:wght@400;700&family=Fira+Sans:wght@400;700&family=Quicksand:wght@400;700&family=Space+Mono&display=swap" rel="stylesheet">
-    
     <style>
-        /* Global CSS Variables for Unified Color Palette */
         :root {
             /* Brand Colors */
-            --color-brand-primary: #1a2a6c;    /* Dark Blue - Main brand color */
-            --color-brand-secondary: #b21f1f; /* Deep Red/Maroon - Secondary brand color, accents */
-            --color-brand-gold: #FFD700;       /* Gold - Accent for special elements, highlights */
-            --color-brand-orange: #FFA500;     /* Orange - Used in gradients with gold */
+            --color-brand-primary: #1a2a6c;  /* Dark Blue - Main brand color */
+            --color-brand-secondary: #b21111; /* Deep Red/Maroon - Secondary brand color */
+            --color-brand-gold: #FFD700;    /* Gold - Accent for special elements */
+            --color-brand-orange: #FFA500;   /* Orange - Used in gradients with gold */
 
             /* Neutral Palette */
             --color-neutral-white: #ffffff;
-            --color-neutral-lightest: #f0f4f8; /* Very light gray/blue, good for subtle backgrounds */
-            --color-neutral-light: #d1d5db;    /* Light gray for disabled elements, input borders */
-            --color-neutral-medium: #9ca3af;    /* Medium gray for placeholders, disabled radio accents */
-            --color-neutral-dark: #4b5563;      /* Dark gray for most body text, labels */
-            --color-neutral-darkest: #333333;  /* Very dark gray for prominent text */
+            --color-neutral-lightest: #f0f4f8;
+            --color-neutral-light: #d1d5db;
+            --color-neutral-medium: #9ca3af;
+            --color-neutral-dark: #4b5563;
+            --color-neutral-darkest: #333333;
 
             /* Semantic Colors */
-            --color-error-red: #e74c3c;         /* Standard error color */
-            --color-error-red-dark: #c0392b;    /* Darker error red for hover states */
-            --color-success-green: #2ecc71;     /* Success color */
-            --color-info-blue: #3498db;         /* Info color */
+            --color-error-red: #e74c3c;
+            --color-error-red-dark: #c0392b;
+            --color-success-green: #2ecc71;
+            --color-info-blue: #3498db;
 
-            /* Background Gradients */
+            /* Gradients */
             --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
             --gradient-background-secondary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
-
-            /* Text Gradients */
             --gradient-text-gold: linear-gradient(to right, var(--color-brand-gold), var(--color-neutral-white));
-
-            /* Button Gradients */
             --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
             --gradient-button-active-hover: linear-gradient(to right, #FFC800, #FF8C00);
 
-            /* Transparent Overlays */
-            --overlay-light: rgba(255, 255, 255, 0.1);
-            --overlay-medium: rgba(0, 0, 0, 0.2);
-            --overlay-dark: rgba(30, 30, 60, 0.95);
-
-            /* Common Radius for consistency */
+            /* Common Radius */
             --radius-card: 15px;
             --radius-input: 8px;
             --radius-button: 50px;
@@ -57,13 +45,14 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            /* Font family will be set by JS based on localStorage */
         }
 
         body {
             background: var(--gradient-background-secondary);
             min-height: 100vh;
             color: var(--color-neutral-darkest);
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
         }
 
         /* Header Styles */
@@ -71,6 +60,9 @@
             background-color: var(--color-neutral-white);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 50;
         }
 
         .header-container {
@@ -82,7 +74,7 @@
         }
 
         .logo {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 900;
             background: var(--gradient-background-primary);
             -webkit-background-clip: text;
@@ -98,18 +90,18 @@
         }
 
         .avatar {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             background: var(--gradient-background-primary);
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--color-neutral-white);
-            font-size: 1.5rem;
+            font-size: 1.2rem;
         }
 
-        .student-name-header { /* Changed from .student-name to avoid conflict */
+        .student-name-header {
             font-weight: 600;
             color: var(--color-brand-primary);
         }
@@ -121,49 +113,107 @@
             padding: 0 2rem;
         }
 
-        .welcome-section {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        .welcome-message {
-            font-size: 2rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: var(--color-brand-primary);
-        }
-
-        /* Profile Card */
-        .profile-card {
-            background-color: var(--color-neutral-white);
-            border-radius: var(--radius-card); /* Using CSS variable */
+        /* Welcome Card */
+        .welcome-card {
+            background: var(--gradient-background-primary);
+            color: var(--color-neutral-white);
+            border-radius: var(--radius-card);
             padding: 2rem;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .welcome-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .welcome-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .stat-item {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-input);
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Tabs */
+        .tabs {
             margin-bottom: 2rem;
         }
 
-        .section-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--color-brand-primary);
-            margin-bottom: 1.5rem;
-            position: relative;
+        .tabs-list {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
         }
 
-        .section-title::after {
-            content: '';
-            display: block;
-            width: 100px;
-            height: 4px;
-            background: var(--gradient-background-primary);
-            margin: 0.5rem 0 1rem;
-            border-radius: 2px;
+        .tabs-trigger {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-button);
+            background-color: var(--color-neutral-light);
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .tabs-trigger.active {
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-white);
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--color-neutral-white);
+            border-radius: var(--radius-card);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1.5rem 1.5rem 0;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--color-brand-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-content {
+            padding: 1.5rem;
         }
 
         /* Form Elements */
         .form-group {
             margin-bottom: 1.5rem;
-            position: relative; /* For email edit icon */
         }
 
         label {
@@ -173,196 +223,35 @@
             color: var(--color-brand-primary);
         }
 
-        select, input {
+        input, select {
             width: 100%;
             padding: 0.8rem 1rem;
             border: 1px solid var(--color-neutral-light);
-            border-radius: var(--radius-input); /* Using CSS variable */
+            border-radius: var(--radius-input);
             font-size: 1rem;
             background-color: var(--color-neutral-white);
             transition: all 0.3s;
         }
 
-        select:focus, input:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: var(--color-brand-primary);
             box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
         }
 
-        select {
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 1rem;
-        }
-
-        /* Email edit icon */
-        .email-edit-icon {
-            position: absolute;
-            right: 10px;
-            top: 50%; /* Adjust as needed based on label height */
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: var(--color-brand-primary);
-            font-size: 1.1rem;
-            padding: 5px; /* Make it easier to click */
-            transition: color 0.2s ease;
-        }
-
-        .email-edit-icon:hover {
-            color: var(--color-brand-secondary);
-        }
-
-        /* Progress Section */
-        .progress-card-inner { /* Renamed to avoid conflict with .profile-card */
-            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
-            border-radius: var(--radius-card); /* Using CSS variable */
-            padding: 1.5rem;
-            text-align: center;
-            margin-bottom: 2rem;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .bytes-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--color-brand-primary);
-            margin-bottom: 0.5rem;
-        }
-
-        .bytes-label {
-            font-size: 1rem;
-            color: var(--color-neutral-dark);
-        }
-
-        /* Info Icon */
-        .info-icon {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background-color: var(--color-info-blue);
-            color: var(--color-neutral-white);
+        /* Buttons */
+        .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.7rem;
-            font-weight: bold;
-            margin-left: 0.5rem;
-            cursor: help;
-            position: relative;
-        }
-
-        .info-tooltip {
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--color-neutral-darkest);
-            color: var(--color-neutral-white);
-            padding: 0.75rem;
-            border-radius: var(--radius-input); /* Using CSS variable */
-            font-size: 0.9rem;
-            width: 250px;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s;
-            z-index: 10;
-            text-align: center;
-            white-space: normal; /* Allow text to wrap */
-        }
-
-        .info-icon:hover .info-tooltip {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Leaderboard */
-        .leaderboard {
-            background-color: var(--color-neutral-lightest);
-            border-radius: var(--radius-card); /* Using CSS variable */
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .leaderboard-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--color-brand-primary);
-            margin-bottom: 1rem;
-            text-align: center;
-        }
-
-        .leaderboard-item {
-            display: flex;
-            align-items: center;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            background-color: var(--color-neutral-white);
-            border-radius: 10px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .rank {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            margin-right: 1rem;
-            flex-shrink: 0;
-        }
-
-        .rank-1 {
-            background: var(--color-brand-gold);
-            color: var(--color-neutral-darkest);
-        }
-
-        .rank-2 {
-            background: var(--color-neutral-medium);
-            color: var(--color-neutral-white);
-        }
-
-        .rank-3 {
-            background: #cd7f32; /* Bronze */
-            color: var(--color-neutral-white);
-        }
-
-        .student-name-leaderboard { /* Changed from .student-name to avoid conflict */
-            flex-grow: 1;
-            font-weight: 500;
-        }
-
-        .student-bytes-leaderboard { /* Changed from .student-bytes to avoid conflict */
-            font-weight: 600;
-            color: var(--color-brand-primary);
-        }
-
-        .show-more {
-            display: block;
-            text-align: center;
-            margin-top: 1rem;
-            color: var(--color-brand-primary);
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        /* Buttons */
-        .btn {
-            display: inline-flex; /* Changed to inline-flex for icon alignment */
-            align-items: center;
-            justify-content: center;
-            padding: 0.8rem 2rem;
-            border-radius: var(--radius-button); /* Using CSS variable */
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--radius-button);
             font-weight: 600;
             text-decoration: none;
             transition: all 0.3s;
             border: none;
             cursor: pointer;
-            text-align: center;
-            gap: 8px; /* Space between text and icon */
+            gap: 0.5rem;
         }
 
         .btn-primary {
@@ -398,70 +287,115 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
-        /* Coming Soon Badge */
-        .coming-soon {
-            display: inline-block;
-            background-color: var(--color-brand-gold);
-            color: var(--color-neutral-darkest);
-            padding: 0.2rem 0.5rem;
-            border-radius: var(--radius-button); /* Using CSS variable */
-            font-size: 0.7rem;
-            font-weight: 600;
-            margin-left: 0.5rem;
+        /* Progress Bars */
+        .progress {
+            height: 8px;
+            background-color: var(--color-neutral-light);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
         }
 
-        /* Bytes Counter */
+        .progress-bar {
+            height: 100%;
+            background: var(--gradient-background-primary);
+        }
+
+        /* Leaderboard */
+        .leaderboard-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            background-color: var(--color-neutral-lightest);
+            border-radius: 10px;
+        }
+
+        .rank {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 1rem;
+        }
+
+        .rank-1 {
+            background: var(--color-brand-gold);
+            color: var(--color-neutral-darkest);
+        }
+
+        .rank-2 {
+            background: var(--color-neutral-medium);
+            color: var(--color-neutral-white);
+        }
+
+        .rank-3 {
+            background: #cd7f32; /* Bronze */
+            color: var(--color-neutral-white);
+        }
+
+        .student-info {
+            flex-grow: 1;
+        }
+
+        .student-name {
+            font-weight: 500;
+        }
+
+        .student-bytes {
+            font-weight: 600;
+            color: var(--color-brand-primary);
+        }
+
+        /* Floating Bytes Counter */
         .bytes-counter {
             position: fixed;
             bottom: 2rem;
             right: 2rem;
-            background-color: var(--color-brand-primary);
+            background: var(--gradient-background-primary);
             color: var(--color-neutral-white);
             padding: 0.8rem 1.5rem;
-            border-radius: var(--radius-button); /* Using CSS variable */
+            border-radius: var(--radius-button);
             font-weight: 600;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            z-index: 100;
         }
 
         .bytes-icon {
             color: var(--color-brand-gold);
         }
 
-        /* Loading/Error Messages */
-        #loadingMessage, #errorMessage {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 1.1rem;
+        /* Coming Soon Badge */
+        .coming-soon {
+            display: inline-block;
+            background-color: var(--color-brand-gold);
+            color: var(--color-neutral-darkest);
+            padding: 0.2rem 0.5rem;
+            border-radius: var(--radius-button);
+            font-size: 0.7rem;
             font-weight: 600;
+            margin-left: 0.5rem;
         }
-        #errorMessage {
-            color: var(--color-error-red);
-        }
-
 
         /* Responsive Design */
         @media (max-width: 768px) {
-            header {
-                padding: 1rem;
-            }
             .header-container {
                 flex-direction: column;
                 gap: 1rem;
             }
 
-            .logo {
-                font-size: 2rem;
+            .welcome-stats {
+                grid-template-columns: 1fr;
             }
 
-            .welcome-message {
-                font-size: 1.5rem;
-            }
-
-            .container {
-                padding: 0 1rem;
+            .tabs-list {
+                flex-wrap: wrap;
             }
 
             .bytes-counter {
@@ -472,27 +406,9 @@
             }
         }
     </style>
-    <script>
-        // IMPORTANT: This script MUST be in the <head> of ALL your HTML files
-        // (index.html, studentsignup.html, studentlogin.html, studentprofile.html, studentdashboard.html, etc.)
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedFont = localStorage.getItem('preferredFont');
-            if (savedFont) {
-                document.body.style.fontFamily = savedFont;
-                // If there's a font select dropdown on this page, set its value
-                const fontSelect = document.getElementById('preferredFont');
-                if (fontSelect) {
-                    fontSelect.value = savedFont;
-                }
-            } else {
-                // Default font if nothing saved
-                document.body.style.fontFamily = 'Inter, sans-serif';
-            }
-        });
-    </script>
 </head>
 <body>
-    <!-- Header with Logo and Profile -->
+    <!-- Header -->
     <header>
         <div class="header-container">
             <a href="studentdashboard.html" class="logo">SchoolByte</a>
@@ -500,414 +416,434 @@
                 <div class="avatar">
                     <i class="fas fa-user-graduate"></i>
                 </div>
-                <span class="student-name-header" id="studentNameDisplay">Loading...</span>
+                <span class="student-name-header" id="studentNameDisplay">John Doe</span>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
     <div class="container">
-        <!-- Welcome Section -->
-        <div class="welcome-section">
-            <h1 class="welcome-message" id="welcomeMessage">Loading Profile...</h1>
-        </div>
-
-        <!-- Loading and Error Messages -->
-        <div id="loadingMessage" style="display: block;">Fetching student data...</div>
-        <div id="errorMessage" style="display: none;"></div>
-
-        <!-- Profile Card -->
-        <div class="profile-card" id="profileCard" style="display: none;">
-            <h2 class="section-title">Personal Information</h2>
+        <!-- Welcome Card -->
+        <div class="welcome-card">
+            <h2 class="welcome-title">Welcome back, John!</h2>
+            <p>Continue your learning journey and earn more bytes</p>
             
-            <div class="form-group">
-                <label for="studentNameInput">Full Name</label>
-                <input type="text" id="studentNameInput" placeholder="Student Name" readonly>
-            </div>
-
-            <div class="form-group">
-                <label for="indexNumberInput">Index Number</label>
-                <input type="text" id="indexNumberInput" placeholder="e.g., 2023001" readonly>
-            </div>
-
-            <div class="form-group">
-                <label for="preferredName">Preferred Name</label>
-                <select id="preferredName">
-                    <option value="">Select your preferred name</option>
-                    <!-- Options will be populated by JavaScript -->
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="studentEmail">Email Address</label>
-                <input type="email" id="studentEmail" placeholder="student@schoolbyte.com" readonly>
-                <i class="fas fa-edit email-edit-icon" id="editEmailIcon" title="Change Email"></i>
-            </div>
-            
-            <div class="form-group">
-                <label for="studentClass">Class/Grade</label>
-                <input type="text" id="studentClass" placeholder="Grade 10" readonly>
-                <small style="color: var(--color-neutral-dark);"> (Class auto-updates annually. Account deletes after Senior 6.)</small>
+            <div class="welcome-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalBytes">1.2 kB</div>
+                    <div class="stat-label">Total Bytes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">15</div>
+                    <div class="stat-label">Achievements</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">28</div>
+                    <div class="stat-label">Quizzes Done</div>
+                </div>
             </div>
         </div>
 
-        <!-- Progress Section -->
-        <div class="profile-card" id="progressCard" style="display: none;">
-            <div class="section-header">
-                <h2 class="section-title">My Progress</h2>
-                <div class="info-icon">
-                    i
-                    <div class="info-tooltip">
-                        Bytes are the status of your academic progress. Play more quizzes, complete more activities and play more Preader games to accumulate bytes.
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tabs-list">
+                <button class="tabs-trigger active" data-tab="profile">
+                    <i class="fas fa-user"></i> Profile
+                </button>
+                <button class="tabs-trigger" data-tab="progress">
+                    <i class="fas fa-trophy"></i> Progress
+                </button>
+                <button class="tabs-trigger" data-tab="leaderboard">
+                    <i class="fas fa-award"></i> Leaderboard
+                </button>
+                <button class="tabs-trigger" data-tab="resources">
+                    <i class="fas fa-book-open"></i> Resources
+                </button>
+                <button class="tabs-trigger" data-tab="settings">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+            </div>
+
+            <!-- Profile Tab -->
+            <div id="profile" class="tab-content active">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-user"></i> Personal Information
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label for="name">Full Name</label>
+                            <input type="text" id="name" value="John Doe" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="index">Index Number</label>
+                            <input type="text" id="index" value="2024001" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="preferred-name">Preferred Name</label>
+                            <select id="preferred-name">
+                                <option value="John">John</option>
+                                <option value="Doe">Doe</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <div style="position: relative;">
+                                <input type="email" id="email" value="john.doe@schoolbyte.com" readonly>
+                                <button style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer;">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="class">Class/Grade</label>
+                            <input type="text" id="class" value="Grade 11" readonly>
+                            <p style="color: var(--color-neutral-dark); margin-top: 0.5rem; font-size: 0.9rem;">
+                                Class auto-updates annually. Account deletes after Senior 6.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <div class="progress-card-inner">
-                <div class="bytes-value" id="bytesDisplay">0 Bytes</div>
-                <div class="bytes-label">Total Learning Bytes Earned</div>
-            </div>
-            
-            <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
-                <i class="fas fa-trophy" style="margin-right: 8px;"></i>
-                View Achievements
-            </button>
 
-            <h3 class="section-title" style="font-size: 1.4rem; margin-top: 2rem;">Downloadable Resources</h3>
-            <p style="color: var(--color-neutral-dark); margin-bottom: 1rem;">
-                Download study materials for 2 Bytes each, or view them online for free (no auto-refresh).
-            </p>
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button class="btn btn-secondary" id="downloadPdfBtn1">
-                    <i class="fas fa-file-pdf" style="margin-right: 8px;"></i> Download Math Notes (2 Bytes)
-                </button>
-                <button class="btn btn-secondary" id="viewPdfBtn1">
-                    <i class="fas fa-eye" style="margin-right: 8px;"></i> View Math Notes Online
-                </button>
-                <!-- Add more PDF buttons here -->
-            </div>
-            <p style="color: var(--color-neutral-dark); margin-top: 1.5rem; text-align: center;">
-                Need more bytes?
-            </p>
-            <button class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" id="earnBytesBtn">
-                <i class="fas fa-coins" style="margin-right: 8px;"></i> Earn More Bytes (Quizzes: 3 Bytes, Preader Games: 5 Bytes)
-            </button>
-        </div>
+            <!-- Progress Tab -->
+            <div id="progress" class="tab-content">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                    <div class="card">
+                        <div class="card-content">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                                <h3 style="font-weight: 600;">Learning Bytes</h3>
+                                <i class="fas fa-coins" style="color: var(--color-brand-gold);"></i>
+                            </div>
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--color-brand-primary); margin-bottom: 0.5rem;">
+                                1.2 kB
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" style="width: 75%;"></div>
+                            </div>
+                            <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">75% to next level</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-content">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                                <h3 style="font-weight: 600;">Study Hours</h3>
+                                <i class="fas fa-clock" style="color: var(--color-success-green);"></i>
+                            </div>
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--color-success-green); margin-bottom: 0.5rem;">
+                                45h
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" style="width: 60%;"></div>
+                            </div>
+                            <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">This month</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-content">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                                <h3 style="font-weight: 600;">Achievements</h3>
+                                <i class="fas fa-trophy" style="color: var(--color-brand-secondary);"></i>
+                            </div>
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--color-brand-secondary); margin-bottom: 0.5rem;">
+                                15
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" style="width: 85%;"></div>
+                            </div>
+                            <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">Unlocked</p>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- Settings Section -->
-        <div class="profile-card" id="settingsCard" style="display: none;">
-            <h2 class="section-title">Settings</h2>
-            
-            <div class="form-group">
-                <label for="preferredFont">Preferred Font</label>
-                <select id="preferredFont">
-                    <!-- Added a wider range of popular, web-safe, and distinct fonts -->
-                    <option value="Inter, sans-serif">Inter (Default)</option>
-                    <option value="'Roboto', sans-serif">Roboto</option>
-                    <option value="'Open Sans', sans-serif">Open Sans</option>
-                    <option value="'Lato', sans-serif">Lato</option>
-                    <option value="'Montserrat', sans-serif">Montserrat</option>
-                    <option value="'Poppins', sans-serif">Poppins</option>
-                    <option value="'Nunito Sans', sans-serif">Nunito Sans</option>
-                    <option value="'Ubuntu', sans-serif">Ubuntu</option>
-                    <option value="'Merriweather', serif">Merriweather (Serif)</option>
-                    <option value="'Playfair Display', serif">Playfair Display (Serif)</option>
-                    <option value="'Oswald', sans-serif">Oswald (Condensed)</option>
-                    <option value="'Lora', serif">Lora (Serif)</option>
-                    <option value="'PT Sans', sans-serif">PT Sans</option>
-                    <option value="'Source Sans Pro', sans-serif">Source Sans Pro</option>
-                    <option value="'Fira Sans', sans-serif">Fira Sans</option>
-                    <option value="'Quicksand', sans-serif">Quicksand</option>
-                    <option value="'Space Mono', monospace">Space Mono (Monospace)</option>
-                    <option value="'Dancing Script', cursive">Dancing Script (Cursive)</option>
-                    <option value="'Satisfy', cursive">Satisfy (Cursive)</option>
-                </select>
-            </div>
-            
-            <button class="btn btn-secondary" style="width: 100%; margin-top: 1rem;">
-                <i class="fas fa-moon" style="margin-right: 8px;"></i>
-                Dark Mode
-                <span class="coming-soon">Coming Soon</span>
-            </button>
-        </div>
-
-        <!-- Leaderboard Section -->
-        <div class="profile-card" id="leaderboardCard" style="display: none;">
-            <h2 class="section-title">Leaderboard</h2>
-            
-            <div class="leaderboard">
-                <div class="leaderboard-title">Top Performers</div>
-                <div class="leaderboard-item">
-                    <div class="rank rank-1">1</div>
-                    <div class="student-name-leaderboard">Joy</div>
-                    <div class="student-bytes-leaderboard">1.2 MB</div>
-                </div>
-                <div class="leaderboard-item">
-                    <div class="rank rank-2">2</div>
-                    <div class="student-name-leaderboard">Mark</div>
-                    <div class="student-bytes-leaderboard">850 kB</div>
-                </div>
-                <div class="leaderboard-item">
-                    <div class="rank rank-3">3</div>
-                    <div class="student-name-leaderboard">Sarah</div>
-                    <div class="student-bytes-leaderboard">720 kB</div>
-                </div>
-                <div class="show-more" onclick="window.location.href='studentleaderboard.html'">
-                    Show more <i class="fas fa-chevron-right"></i>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-trophy"></i> Recent Achievements
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background-color: var(--color-neutral-lightest); border-radius: var(--radius-input);">
+                                <span style="font-size: 1.5rem;">🎯</span>
+                                <div>
+                                    <h4 style="font-weight: 600;">Quiz Master</h4>
+                                    <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">Completed 25 quizzes</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background-color: var(--color-neutral-lightest); border-radius: var(--radius-input);">
+                                <span style="font-size: 1.5rem;">🔥</span>
+                                <div>
+                                    <h4 style="font-weight: 600;">Streak Champion</h4>
+                                    <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">7-day study streak</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background-color: var(--color-neutral-lightest); border-radius: var(--radius-input);">
+                                <span style="font-size: 1.5rem;">💰</span>
+                                <div>
+                                    <h4 style="font-weight: 600;">Byte Collector</h4>
+                                    <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">Earned 1000 bytes</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Social Section -->
-        <div class="profile-card" id="socialCard" style="display: none;">
-            <h2 class="section-title">Social</h2>
-            
-            <button class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">
-                <i class="fas fa-comments" style="margin-right: 8px;"></i>
-                Chat With Classmates
-                <span class="coming-soon">Coming Soon</span>
-            </button>
-            
-            <button class="btn btn-secondary" style="width: 100%;">
-                <i class="fas fa-users" style="margin-right: 8px;"></i>
-                Study Groups
-                <span class="coming-soon">Coming Soon</span>
-            </button>
-        </div>
+            <!-- Leaderboard Tab -->
+            <div id="leaderboard" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-award"></i> Class Leaderboard
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div class="leaderboard-item">
+                                <div class="rank rank-1">1</div>
+                                <div class="student-info">
+                                    <div class="student-name">Joy</div>
+                                </div>
+                                <div class="student-bytes">1.2 kB</div>
+                            </div>
+                            <div class="leaderboard-item">
+                                <div class="rank rank-2">2</div>
+                                <div class="student-info">
+                                    <div class="student-name">Mark</div>
+                                </div>
+                                <div class="student-bytes">850 Bytes</div>
+                            </div>
+                            <div class="leaderboard-item">
+                                <div class="rank rank-3">3</div>
+                                <div class="student-info">
+                                    <div class="student-name">Sarah</div>
+                                </div>
+                                <div class="student-bytes">720 Bytes</div>
+                            </div>
+                            <div class="leaderboard-item">
+                                <div class="rank">4</div>
+                                <div class="student-info">
+                                    <div class="student-name">Alex</div>
+                                </div>
+                                <div class="student-bytes">680 Bytes</div>
+                            </div>
+                            <div class="leaderboard-item">
+                                <div class="rank">5</div>
+                                <div class="student-info">
+                                    <div class="student-name">Emma</div>
+                                </div>
+                                <div class="student-bytes">650 Bytes</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" style="width: 100%; margin-top: 1rem;" id="showMoreBtn">
+                            Show More
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-        <!-- Sign Out Button -->
-        <div style="text-align: center; margin: 2rem 0;">
-            <button class="btn btn-danger" id="signOutBtn">
-                <i class="fas fa-sign-out-alt" style="margin-right: 8px;"></i>
-                Sign Out
-            </button>
+            <!-- Resources Tab -->
+            <div id="resources" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-book-open"></i> Downloadable Resources
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <p style="color: var(--color-neutral-dark); margin-bottom: 1.5rem;">
+                            Download study materials for bytes, or view them online for free (no auto-refresh).
+                        </p>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                            <div class="card" style="border: 1px solid var(--color-neutral-light);">
+                                <div class="card-content">
+                                    <h4 style="font-weight: 600; margin-bottom: 0.5rem;">Math Notes</h4>
+                                    <span class="badge" style="background-color: var(--color-neutral-light); color: var(--color-neutral-darkest); padding: 0.25rem 0.5rem; border-radius: var(--radius-input); font-size: 0.8rem; margin-bottom: 1rem;">Mathematics</span>
+                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <button class="btn btn-primary" id="downloadMathBtn">
+                                            <i class="fas fa-download"></i> Download (2 Bytes)
+                                        </button>
+                                        <button class="btn btn-secondary" id="viewMathBtn">
+                                            <i class="fas fa-eye"></i> View Online (Free)
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card" style="border: 1px solid var(--color-neutral-light);">
+                                <div class="card-content">
+                                    <h4 style="font-weight: 600; margin-bottom: 0.5rem;">Science Guide</h4>
+                                    <span class="badge" style="background-color: var(--color-neutral-light); color: var(--color-neutral-darkest); padding: 0.25rem 0.5rem; border-radius: var(--radius-input); font-size: 0.8rem; margin-bottom: 1rem;">Science</span>
+                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                        <button class="btn btn-primary" id="downloadScienceBtn">
+                                            <i class="fas fa-download"></i> Download (3 Bytes)
+                                        </button>
+                                        <button class="btn btn-secondary" id="viewScienceBtn">
+                                            <i class="fas fa-eye"></i> View Online (Free)
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <p style="color: var(--color-neutral-dark); margin-bottom: 1rem;">Need more bytes?</p>
+                            <button class="btn btn-primary" id="earnBytesBtn">
+                                <i class="fas fa-coins"></i> Earn More Bytes (Quizzes: 3 Bytes, Games: 5 Bytes)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-cog"></i> Preferences
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label for="font-select">Preferred Font</label>
+                            <select id="font-select">
+                                <option value="Inter, sans-serif">Inter (Default)</option>
+                                <option value="Roboto, sans-serif">Roboto</option>
+                                <option value="Open Sans, sans-serif">Open Sans</option>
+                                <option value="Lato, sans-serif">Lato</option>
+                                <option value="Montserrat, sans-serif">Montserrat</option>
+                                <option value="Poppins, sans-serif">Poppins</option>
+                                <option value="Nunito Sans, sans-serif">Nunito Sans</option>
+                                <option value="Ubuntu, sans-serif">Ubuntu</option>
+                                <option value="Merriweather, serif">Merriweather (Serif)</option>
+                                <option value="Playfair Display, serif">Playfair Display (Serif)</option>
+                                <option value="Space Mono, monospace">Space Mono (Monospace)</option>
+                                <option value="Dancing Script, cursive">Dancing Script (Cursive)</option>
+                            </select>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0;">
+                            <div>
+                                <label>Dark Mode</label>
+                                <p style="color: var(--color-neutral-dark); font-size: 0.9rem; margin-top: 0.25rem;">Toggle between light and dark themes</p>
+                            </div>
+                            <button class="btn btn-secondary" id="toggleDarkMode">
+                                <i class="fas fa-moon"></i> Dark Mode
+                                <span class="coming-soon">Coming Soon</span>
+                            </button>
+                        </div>
+                        
+                        <div style="margin: 2rem 0;">
+                            <h4 style="font-weight: 600; margin-bottom: 1rem;">Social Features</h4>
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <button class="btn btn-secondary" disabled>
+                                    <i class="fas fa-comments"></i> Chat with Classmates
+                                    <span class="coming-soon">Coming Soon</span>
+                                </button>
+                                <button class="btn btn-secondary" disabled>
+                                    <i class="fas fa-users"></i> Study Groups
+                                    <span class="coming-soon">Coming Soon</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-danger" style="width: 100%;" id="signOutBtn">
+                            <i class="fas fa-sign-out-alt"></i> Sign Out
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Bytes Counter -->
+    <!-- Floating Bytes Counter -->
     <div class="bytes-counter">
         <i class="fas fa-coins bytes-icon"></i>
-        <span id="bytesCount">150</span> Bytes
+        <span id="bytesCount">1250</span> Bytes
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Get references to HTML elements
-            const studentNameDisplay = document.getElementById('studentNameDisplay');
-            const welcomeMessage = document.getElementById('welcomeMessage');
-            const studentNameInput = document.getElementById('studentNameInput');
-            const indexNumberInput = document.getElementById('indexNumberInput');
-            const studentEmailInput = document.getElementById('studentEmail');
-            const editEmailIcon = document.getElementById('editEmailIcon'); // New element
-            const studentClassInput = document.getElementById('studentClass'); 
-            const preferredNameSelect = document.getElementById('preferredName');
-            const bytesDisplay = document.getElementById('bytesDisplay');
-            const bytesCountElement = document.getElementById('bytesCount'); // For the fixed counter
-            const loadingMessage = document.getElementById('loadingMessage');
-            const errorMessage = document.getElementById('errorMessage');
-            const profileCards = document.querySelectorAll('.profile-card'); // Select all profile cards
-            const signOutBtn = document.getElementById('signOutBtn'); 
-            const downloadPdfBtn1 = document.getElementById('downloadPdfBtn1'); // PDF download button
-            const viewPdfBtn1 = document.getElementById('viewPdfBtn1'); // PDF view online button
-            const earnBytesBtn = document.getElementById('earnBytesBtn'); // Earn bytes button
-
-            // Function to hide all profile cards initially
-            function hideAllProfileCards() {
-                profileCards.forEach(card => card.style.display = 'none');
-            }
-
-            // Initially hide cards until data is loaded
-            hideAllProfileCards();
-
-            // --- IMPORTANT: Retrieve JWT from localStorage ---
-            const jwtToken = localStorage.getItem('jwtToken');
-
-            if (!jwtToken) {
-                loadingMessage.style.display = 'none';
-                errorMessage.textContent = 'You are not logged in. Please log in to view your profile.';
-                errorMessage.style.display = 'block';
-                // Redirect to login page after a delay
-                setTimeout(() => {
-                    window.location.href = 'studentlogin.html'; // Updated to new name
-                }, 2000);
-                return; // Stop execution
-            }
-
-            // Function to fetch student data from backend
-            async function fetchStudentData() {
-                try {
-                    // Use the protected /student/dashboard endpoint
-                    const apiUrl = `${window.location.origin}/student/dashboard`;
-
-                    const response = await fetch(apiUrl, {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${jwtToken}` // Send the JWT
-                        }
-                    });
-
-                    const data = await response.json();
-
-                    loadingMessage.style.display = 'none'; // Hide loading message
-
-                    if (response.ok && data.student) {
-                        // Populate header and welcome message
-                        studentNameDisplay.textContent = data.student.studentName;
-                        welcomeMessage.textContent = `${data.student.studentName}'s Profile`;
-
-                        // Populate personal information fields
-                        studentNameInput.value = data.student.studentName;
-                        indexNumberInput.value = data.student.indexNumber;
-                        studentEmailInput.value = data.student.email;
-                        studentClassInput.value = data.student.studentClass || 'Not Set'; // Populate class from backend
-
-                        // Populate preferred name dropdown
-                        const nameParts = data.student.studentName.split(' ');
-                        preferredNameSelect.innerHTML = '<option value="">Select your preferred name</option>'; // Clear existing options
-                        nameParts.forEach(part => {
-                            if (part.trim().length > 0) {
-                                const option = document.createElement('option');
-                                option.value = part;
-                                option.textContent = part;
-                                preferredNameSelect.appendChild(option);
-                            }
-                        });
-
-                        // Load saved preferred name (if any)
-                        const savedPreferredName = localStorage.getItem('preferredName');
-                        if (savedPreferredName) {
-                            preferredNameSelect.value = savedPreferredName;
-                        } else {
-                            // Optionally set the first name as default preferred name
-                            if (nameParts.length > 0 && nameParts[0].trim().length > 0) {
-                                preferredNameSelect.value = nameParts[0];
-                                localStorage.setItem('preferredName', nameParts[0]);
-                            }
-                        }
-
-                        // Populate bytes display
-                        const currentBytes = data.student.bytes || 150; // Use bytes from backend, default to 150
-                        bytesDisplay.textContent = formatBytes(currentBytes);
-                        bytesCountElement.textContent = currentBytes; // For the fixed counter
-
-                        // Show all profile cards after data is loaded
-                        profileCards.forEach(card => card.style.display = 'block');
-
-                    } else {
-                        errorMessage.textContent = data.message || 'Failed to load student profile. Invalid token or data.';
-                        errorMessage.style.display = 'block';
-                        // If token is invalid/expired, clear it and redirect to login
-                        if (response.status === 401 || response.status === 403) {
-                            localStorage.removeItem('jwtToken');
-                            // No need to remove loggedInStudentEmail if you're not using it as primary auth identifier
-                            setTimeout(() => {
-                                window.location.href = 'studentlogin.html'; // Updated to new name
-                            }, 2000);
-                        }
-                    }
-
-                } catch (error) {
-                    console.error('Error fetching student profile:', error);
-                    loadingMessage.style.display = 'none';
-                    errorMessage.textContent = 'An error occurred while fetching your profile. Please try again later.';
-                    errorMessage.style.display = 'block';
-                }
-            }
-
-            // Call the function to fetch student data
-            fetchStudentData();
-
-            // Format bytes for display
-            function formatBytes(bytes) {
-                if (bytes === 0) return '0 Bytes';
+        // Tab functionality
+        document.querySelectorAll('.tabs-trigger').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.tabs-trigger').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 
-                const k = 1000;
-                const sizes = ['Bytes', 'kB', 'MB', 'GB', 'TB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-            }
-            
-            // Save preferred name when changed
-            preferredNameSelect.addEventListener('change', function() {
-                localStorage.setItem('preferredName', this.value);
-            });
-            
-            // Font selection logic
-            const fontSelect = document.getElementById('preferredFont');
-            // This part is already handled by the script in the <head> for initial load
-            // Now, only handle the change event
-            fontSelect.addEventListener('change', function() {
-                const selectedFont = this.value;
-                localStorage.setItem('preferredFont', selectedFont);
-                document.body.style.fontFamily = selectedFont;
-            });
-
-            // Email edit icon click handler
-            if (editEmailIcon) {
-                editEmailIcon.addEventListener('click', function() {
-                    window.location.href = 'changeemail.html'; // Redirect to a new page for email change
-                });
-            }
-
-            // PDF Download/View functionality (placeholders for now)
-            if (downloadPdfBtn1) {
-                downloadPdfBtn1.addEventListener('click', async function() {
-                    const cost = 2; // Bytes cost for download
-                    const currentBytes = parseInt(bytesCountElement.textContent);
-
-                    if (currentBytes < cost) {
-                        alert('Insufficient bytes! You need ' + cost + ' bytes to download this file. Play quizzes or games to earn more.');
-                        return;
-                    }
-
-                    // --- Backend interaction for PDF download and byte deduction ---
-                    // This would involve:
-                    // 1. Sending a request to your backend (e.g., POST /download-pdf)
-                    // 2. Backend verifies JWT, deducts bytes from user's record in DB.
-                    // 3. Backend serves the PDF file.
-                    // 4. Frontend updates byte count display after successful deduction.
-                    // For now, a placeholder alert:
-                    alert('Downloading Math Notes for ' + cost + ' bytes. (Backend deduction and file serving needed)');
-                    // Example of how you'd update bytes *after successful backend call*:
-                    // let newBytes = currentBytes - cost;
-                    // localStorage.setItem('bytesCount', newBytes); // Update localStorage for immediate display
-                    // bytesDisplay.textContent = formatBytes(newBytes);
-                    // bytesCountElement.textContent = newBytes;
-                });
-            }
-
-            if (viewPdfBtn1) {
-                viewPdfBtn1.addEventListener('click', function() {
-                    // For "View Online," simply open the PDF in a new tab. No byte cost.
-                    // Replace 'path/to/math_notes.pdf' with the actual URL of your PDF.
-                    window.open('https://www.africau.edu/images/default/sample.pdf', '_blank'); // Example PDF URL
-                    alert('Viewing Math Notes online. (No byte cost, no auto-refresh)');
-                });
-            }
-
-            if (earnBytesBtn) {
-                earnBytesBtn.addEventListener('click', function() {
-                    // Redirect to a page where students can play quizzes or games
-                    alert('Redirecting to Quizzes/Games to earn bytes!');
-                    // window.location.href = 'quizzes_games.html'; // Link to your actual quizzes/games page
-                });
-            }
-            
-            // Sign out function
-            signOutBtn.addEventListener('click', function() {
-                // Clear all relevant session data
-                localStorage.removeItem('jwtToken'); // Crucial: clear JWT
-                localStorage.removeItem('bytesCount'); // Clear bytes
-                localStorage.removeItem('preferredName'); // Clear preferred name
-                localStorage.removeItem('preferredFont'); // Clear font
-                // No need to remove loggedInStudentEmail if you're not using it as primary auth identifier
-                
-                // Redirect to index/login page
-                window.location.href = 'index.html'; // Assuming index.html is your login/landing page
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
             });
         });
+
+        // Preferred name change
+        document.getElementById('preferred-name').addEventListener('change', function() {
+            localStorage.setItem('preferredName', this.value);
+            document.getElementById('studentNameDisplay').textContent = this.value;
+        });
+
+        // Font selection
+        document.getElementById('font-select').addEventListener('change', function() {
+            const selectedFont = this.value;
+            localStorage.setItem('preferredFont', selectedFont);
+            document.body.style.fontFamily = selectedFont;
+        });
+
+        // PDF Download/View functionality
+        document.getElementById('downloadMathBtn').addEventListener('click', function() {
+            const cost = 2;
+            const currentBytes = parseInt(document.getElementById('bytesCount').textContent);
+            
+            if (currentBytes < cost) {
+                alert('Insufficient bytes! You need ' + cost + ' bytes to download this file.');
+                return;
+            }
+            
+            alert('Downloading Math Notes for ' + cost + ' bytes. (Backend integration needed)');
+            // In a real implementation, you would deduct bytes here after successful download
+        });
+
+        document.getElementById('viewMathBtn').addEventListener('click', function() {
+            window.open('https://www.africau.edu/images/default/sample.pdf', '_blank');
+            alert('Viewing Math Notes online. (No byte cost, no auto-refresh)');
+        });
+
+        // Earn Bytes button
+        document.getElementById('earnBytesBtn').addEventListener('click', function() {
+            alert('Redirecting to Quizzes/Games to earn bytes!');
+            // window.location.href = 'quizzes_games.html';
+        });
+
+        // Sign Out button
+        document.getElementById('signOutBtn').addEventListener('click', function() {
+            localStorage.removeItem('preferredName');
+            localStorage.removeItem('preferredFont');
+            window.location.href = 'index.html';
+        });
+
+        // Show More button for leaderboard
+        document.getElementById('showMoreBtn').addEventListener('click', function() {
+            alert('Showing more leaderboard entries. (Full implementation would load more data)');
+        });
+
+        // Initialize preferred name from localStorage
+        const savedPreferredName = localStorage.getItem('preferredName');
+        if (savedPreferredName) {
+            document.getElementById('preferred-name').value = savedPreferredName;
+            document.getElementById('studentNameDisplay').textContent = savedPreferredName;
+        }
+
+        // Initialize preferred font from localStorage
+        const savedFont = localStorage.getItem('preferredFont');
+        if (savedFont) {
+            document.getElementById('font-select').value = savedFont;
+            document.body.style.fontFamily = savedFont;
+        }
     </script>
 </body>
 </html>

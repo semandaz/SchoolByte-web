@@ -20,14 +20,14 @@
             --color-neutral-lightest: #f0f4f8; /* Very light gray/blue, good for subtle backgrounds */
             --color-neutral-light: #d1d5db;    /* Light gray for disabled elements, input borders */
             --color-neutral-medium: #9ca3af;    /* Medium gray for placeholders, disabled radio accents */
-            --color-neutral-dark: #4b5563;       /* Dark gray for most body text, labels */
+            --color-neutral-dark: #4b5563;     /* Dark gray for most body text, labels */
             --color-neutral-darkest: #333333;  /* Very dark gray for prominent text */
 
             /* Semantic Colors */
-            --color-error-red: #e74c3c;         /* Standard error color */
+            --color-error-red: #e74c3c;        /* Standard error color */
             --color-error-red-dark: #c0392b;    /* Darker error red for hover states */
-            --color-success-green: #2ecc71;     /* Success color */
-            --color-info-blue: #3498db;         /* Info color */
+            --color-success-green: #2ecc71;    /* Success color */
+            --color-info-blue: #3498db;        /* Info color */
 
             /* Background Gradients */
             --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
@@ -211,15 +211,22 @@
             box-shadow: none;
         }
 
-        /* Error Message */
-        .error-message {
-            color: var(--color-brand-gold);
+        /* Error/Success Message */
+        .message-display {
+            color: var(--color-brand-gold); /* Default for errors/info */
             text-align: center;
             margin-top: 1rem;
             min-height: 1.5rem;
             font-weight: 500;
             text-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
         }
+        .message-display.success {
+            color: var(--color-success-green);
+        }
+        .message-display.error {
+            color: var(--color-error-red);
+        }
+
 
         /* Moving Gradient Background */
         .moving-gradient {
@@ -423,7 +430,7 @@
             <div class="form-group">
                 <label for="indexNumber">Index Number</label>
                 <input type="text" id="indexNumber" placeholder="e.g., 23MMS22" pattern="[A-Za-z0-9]+" required>
-                <small class="error-message" style="display: block; text-align: left; margin-top: 5px;">Must be alphanumeric</small>
+                <small class="error-message" id="indexNumberError" style="display: block; text-align: left; margin-top: 5px;">Must be alphanumeric</small>
             </div>
             
             <div class="form-group">
@@ -477,11 +484,13 @@
                     <label for="password">Password</label>
                     <input type="password" id="password" placeholder="Min 8 chars, incl. uppercase, lowercase, number, special" required>
                     <i class="fas fa-eye password-toggle" id="togglePassword"></i>
+                    <small class="error-message" id="passwordError" style="display: block; text-align: left; margin-top: 5px;">Password must be at least 8 characters with uppercase, lowercase, number, and special character.</small>
                 </div>
                 <div class="form-group">
                     <label for="confirmPassword">Confirm Password</label>
                     <input type="password" id="confirmPassword" placeholder="Re-enter your password" required>
                     <i class="fas fa-eye password-toggle" id="toggleConfirmPassword"></i>
+                    <small class="error-message" id="confirmPasswordError" style="display: block; text-align: left; margin-top: 5px;">Passwords do not match.</small>
                 </div>
             </div>
             
@@ -501,10 +510,15 @@
                 </button>
             </div>
         </form>
+        <!-- Message Display Area -->
+        <div id="messageDisplay" class="message-display" style="display: none;"></div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // API Base URL - IMPORTANT: Replace with your actual backend URL
+            const API_BASE_URL = 'http://localhost:3000'; // Make sure this matches your server.js PORT
+
             // Create floating books
             createFloatingBooks();
             
@@ -525,9 +539,25 @@
             const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
             const agreeTermsCheckbox = document.getElementById('agreeTerms');
             const submitButton = document.getElementById('submitButton');
+            const messageDisplay = document.getElementById('messageDisplay');
+            const indexNumberError = document.getElementById('indexNumberError');
+            const passwordError = document.getElementById('passwordError');
+            const confirmPasswordError = document.getElementById('confirmPasswordError');
             
             let emailVerified = false;
             let countdownInterval;
+
+            // Function to display messages
+            function showMessage(message, type = 'info') {
+                messageDisplay.textContent = message;
+                messageDisplay.className = `message-display ${type}`; // Add type class for styling
+                messageDisplay.style.display = 'block';
+            }
+
+            function hideMessage() {
+                messageDisplay.style.display = 'none';
+                messageDisplay.textContent = '';
+            }
 
             // Create floating books animation
             function createFloatingBooks() {
@@ -599,16 +629,27 @@
 
             // Validate index number (alphanumeric)
             function isValidIndexNumber(indexNumber) {
-                return /^[A-Za-z0-9]+$/.test(indexNumber);
+                const isValid = /^[A-Za-z0-9]+$/.test(indexNumber);
+                indexNumberError.style.display = isValid ? 'none' : 'block';
+                return isValid;
             }
 
             // Validate password complexity
             function isValidPassword(password) {
-                return password.length >= 8 && 
-                       /[A-Z]/.test(password) && 
-                       /[a-z]/.test(password) && 
-                       /\d/.test(password) && 
-                       /[!@#$%^&*()_+]/.test(password);
+                const isValid = password.length >= 8 && 
+                               /[A-Z]/.test(password) && 
+                               /[a-z]/.test(password) && 
+                               /\d/.test(password) && 
+                               /[!@#$%^&*()_+]/.test(password);
+                passwordError.style.display = isValid ? 'none' : 'block';
+                return isValid;
+            }
+
+            // Validate passwords match
+            function doPasswordsMatch() {
+                const match = passwordInput.value === confirmPasswordInput.value;
+                confirmPasswordError.style.display = match ? 'none' : 'block';
+                return match;
             }
 
             // Validate form and update button states
@@ -623,23 +664,27 @@
                 const isTermsChecked = agreeTermsCheckbox.checked;
 
                 // Enable/disable send code button
-                sendCodeBtn.disabled = !isEmailValid || countdownInterval;
+                sendCodeBtn.disabled = !isEmailValid || (countdownInterval !== undefined && countdownInterval !== null);
 
-                // Enable/disable submit button
+                let canSubmit = false;
+
                 if (!emailVerified) {
-                    submitButton.disabled = !(isNameFilled && isTeacherFilled && isIndexValid && 
-                                           isClassSelected && isStreamSelected && 
-                                           isEmailValid && isCodeFilled && isTermsChecked);
+                    // Phase 1: Email verification
+                    canSubmit = isNameFilled && isTeacherFilled && isIndexValid &&
+                                isClassSelected && isStreamSelected &&
+                                isEmailValid && isCodeFilled && isTermsChecked;
                 } else {
+                    // Phase 2: Registration (after email is verified)
                     const isPasswordValid = isValidPassword(passwordInput.value);
-                    const passwordsMatch = passwordInput.value === confirmPasswordInput.value;
-                    submitButton.disabled = !(isNameFilled && isTeacherFilled && isIndexValid && 
-                                             isClassSelected && isStreamSelected && 
-                                             isEmailValid && isTermsChecked && 
-                                             isPasswordValid && passwordsMatch);
+                    const passwordsMatch = doPasswordsMatch();
+                    canSubmit = isNameFilled && isTeacherFilled && isIndexValid &&
+                                isClassSelected && isStreamSelected &&
+                                isEmailValid && isTermsChecked &&
+                                isPasswordValid && passwordsMatch;
                 }
 
-                // Update button classes
+                // Update submit button state
+                submitButton.disabled = !canSubmit;
                 if (submitButton.disabled) {
                     submitButton.classList.remove('active');
                 } else {
@@ -647,60 +692,159 @@
                 }
             }
 
-            // Simulate sending verification code
-            sendCodeBtn.addEventListener('click', function() {
+            // Send verification code to backend
+            sendCodeBtn.addEventListener('click', async function() {
+                hideMessage(); // Clear previous messages
                 if (!isValidEmail(emailInput.value)) {
-                    alert('Please enter a valid email address');
+                    showMessage('Please enter a valid email address.', 'error');
                     return;
                 }
                 
-                // Simulate sending code
                 sendCodeBtn.disabled = true;
                 sendCodeBtn.textContent = 'Sending...';
-                
-                setTimeout(() => {
-                    startCountdown();
-                    resendCode.style.display = 'none';
-                    alert('Verification code sent to your email (simulated)');
-                }, 1000);
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/send-verification-code`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ email: emailInput.value }),
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        showMessage(data.message, 'success');
+                        startCountdown();
+                        resendCode.style.display = 'none';
+                    } else {
+                        showMessage(data.message || 'Failed to send verification code.', 'error');
+                        sendCodeBtn.disabled = false;
+                        sendCodeBtn.textContent = 'Send Code';
+                    }
+                } catch (error) {
+                    console.error('Error sending verification code:', error);
+                    showMessage('Network error. Could not send verification code.', 'error');
+                    sendCodeBtn.disabled = false;
+                    sendCodeBtn.textContent = 'Send Code';
+                }
             });
 
-            // Resend code
+            // Resend code (re-triggers sendCodeBtn click)
             resendCode.addEventListener('click', function() {
                 sendCodeBtn.click();
             });
 
-            // Form submission
-            submitButton.addEventListener('click', function() {
+            // Form submission (Continue/Register Account)
+            submitButton.addEventListener('click', async function() {
+                hideMessage(); // Clear previous messages
+
                 if (!emailVerified) {
-                    // Simulate email verification
-                    emailVerified = true;
-                    passwordSection.style.display = 'block';
-                    emailInput.readOnly = true;
-                    verificationCodeInput.readOnly = true;
-                    sendCodeBtn.disabled = true;
-                    resendCode.style.display = 'none';
-                    submitButton.textContent = 'Register Account';
-                    alert('Email verified (simulated)');
+                    // Phase 1: Verify email code
+                    if (verificationCodeInput.value.length !== 6) {
+                        showMessage('Please enter the 6-digit verification code.', 'error');
+                        return;
+                    }
+
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Verifying...';
+
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/verify-code`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                email: emailInput.value,
+                                code: verificationCodeInput.value
+                            }),
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok && data.verified) {
+                            emailVerified = true;
+                            passwordSection.style.display = 'block';
+                            emailInput.readOnly = true;
+                            verificationCodeInput.readOnly = true;
+                            sendCodeBtn.disabled = true;
+                            clearInterval(countdownInterval); // Stop countdown
+                            countdownInterval = null; // Clear interval ID
+                            resendCode.style.display = 'none';
+                            submitButton.textContent = 'Register Account';
+                            showMessage(data.message, 'success');
+                            validateForm(); // Re-validate to enable/disable button based on password fields
+                        } else {
+                            showMessage(data.message || 'Verification failed.', 'error');
+                            submitButton.disabled = false;
+                            submitButton.textContent = 'Continue'; // Keep original text if verification fails
+                        }
+                    } catch (error) {
+                        console.error('Error verifying code:', error);
+                        showMessage('Network error. Could not verify code.', 'error');
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Continue';
+                    }
                 } else {
-                    // Simulate registration
+                    // Phase 2: Register student account
                     if (!isValidPassword(passwordInput.value)) {
-                        alert('Password must be at least 8 characters with uppercase, lowercase, number, and special character');
+                        showMessage('Password must be at least 8 characters with uppercase, lowercase, number, and special character.', 'error');
                         return;
                     }
                     
-                    if (passwordInput.value !== confirmPasswordInput.value) {
-                        alert('Passwords do not match');
+                    if (!doPasswordsMatch()) {
+                        showMessage('Passwords do not match.', 'error');
                         return;
                     }
-                    
-                    // Simulate successful registration
-                    alert('Registration successful (simulated)\nRedirecting to login...');
-                    setTimeout(() => {
-                        window.location.href = 'studentlogin.html';
-                    }, 2000);
+
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Registering...';
+
+                    const studentData = {
+                        studentName: studentNameInput.value.trim(),
+                        classTeacher: classTeacherInput.value.trim(),
+                        indexNumber: indexNumberInput.value.trim(),
+                        class: classSelect.value,
+                        stream: streamSelect.value,
+                        email: emailInput.value.trim(),
+                        password: passwordInput.value,
+                    };
+
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/register-student`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(studentData),
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            showMessage(data.message + ' Redirecting to login...', 'success');
+                            setTimeout(() => {
+                                window.location.href = 'studentlogin.html'; // Redirect to student login page
+                            }, 2000);
+                        } else {
+                            // Handle backend validation errors or other server errors
+                            let errorMessage = data.message || 'Registration failed.';
+                            if (data.errors && Array.isArray(data.errors)) {
+                                errorMessage = data.errors.map(err => err.msg).join('; ');
+                            }
+                            showMessage(errorMessage, 'error');
+                            submitButton.disabled = false;
+                            submitButton.textContent = 'Register Account';
+                        }
+                    } catch (error) {
+                        console.error('Error during registration:', error);
+                        showMessage('Network error. Could not register account.', 'error');
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Register Account';
+                    }
                 }
-                
                 validateForm();
             });
 
