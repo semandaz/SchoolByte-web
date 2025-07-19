@@ -553,17 +553,49 @@
             }
 
             // Form submission
-            loginForm.addEventListener('submit', function(e) {
+            loginForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
-                // Simulate login process
+                if (!indexNumberInput.value || !classSelect.value || !streamSelect.value || !emailInput.value || !passwordInput.value) {
+                    alert('Please fill in all fields.');
+                    return;
+                }
+                
                 loginBtn.disabled = true;
                 loginBtn.textContent = 'Logging in...';
                 
-                setTimeout(() => {
-                    alert('Login successful (simulated)\nRedirecting to studentdashboard...');
-                    window.location.href = 'studentdashboard.html';
-                }, 1500);
+                try {
+                    const response = await fetch(`${window.location.origin}/login-student`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            email: emailInput.value,
+                            password: passwordInput.value
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        // Store the JWT token
+                        localStorage.setItem('studentToken', data.token);
+                        localStorage.setItem('studentData', JSON.stringify(data.student));
+                        
+                        alert('Login successful! Redirecting to dashboard...');
+                        window.location.href = 'studentdashboard.html';
+                    } else {
+                        alert(data.message || 'Login failed. Please try again.');
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = 'Log In';
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    alert('Network error. Please check your connection and try again.');
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Log In';
+                }
             });
 
             // Add event listeners for form validation
