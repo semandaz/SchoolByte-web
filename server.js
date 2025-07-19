@@ -859,10 +859,7 @@ app.post('/login-student', [
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
 
-        // RE-ENABLED: Email verification check. Student must verify email to log in.
-        if (!student.isEmailVerified) {
-            return res.status(403).json({ message: 'Please verify your email address before logging in.' });
-        }
+        // Email verification check removed - students can log in without verifying email
 
         // Compare the provided password with the hashed password stored in the database.
         const isMatch = await bcrypt.compare(password, student.password);
