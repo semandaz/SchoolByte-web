@@ -663,13 +663,18 @@
                 const isCodeFilled = verificationCodeInput.value.length === 6;
                 const isTermsChecked = agreeTermsCheckbox.checked;
 
-                // Enable/disable send code button
-                sendCodeBtn.disabled = !isEmailValid || (countdownInterval !== undefined && countdownInterval !== null);
+                // Enable/disable send code button based on email validity and countdown status
+                const isCountdownActive = countdownInterval !== undefined && countdownInterval !== null;
+                sendCodeBtn.disabled = !isEmailValid || isCountdownActive;
 
                 let canSubmit = false;
 
                 if (!emailVerified) {
-                    // Phase 1: Email verification
+                    // Phase 1: Email verification - Continue button should be enabled when:
+                    // 1. All basic fields are filled
+                    // 2. Email is valid 
+                    // 3. 6-digit code is entered
+                    // 4. Terms are accepted
                     canSubmit = isNameFilled && isTeacherFilled && isIndexValid &&
                                 isClassSelected && isStreamSelected &&
                                 isEmailValid && isCodeFilled && isTermsChecked;
@@ -685,10 +690,10 @@
 
                 // Update submit button state
                 submitButton.disabled = !canSubmit;
-                if (submitButton.disabled) {
-                    submitButton.classList.remove('active');
-                } else {
+                if (canSubmit) {
                     submitButton.classList.add('active');
+                } else {
+                    submitButton.classList.remove('active');
                 }
             }
 
