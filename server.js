@@ -74,6 +74,9 @@ const studentSchema = new mongoose.Schema({
 
     // For the leaderboard, if student wants a different first name displayed
     firstNameDisplay: { type: String, trim: true },
+    
+    // For preferred name display (what name to show in profile/dashboard)
+    preferredName: { type: String, trim: true },
 
     // For font preferences and other settings
     preferences: {
@@ -81,7 +84,8 @@ const studentSchema = new mongoose.Schema({
         default: {
             fontSize: "medium", // Default font size preference
             theme: "light",       // Default theme preference (e.g., 'light', 'dark')
-            notifications_on: true // Default notification preference
+            notifications_on: true, // Default notification preference
+            fontFamily: "Inter, sans-serif" // Default font preference
         }
     }
 });
@@ -919,6 +923,7 @@ app.get('/student/dashboard', authenticateToken, async (req, res) => {
                 stream: studentData.stream, // Include stream
                 classTeacher: studentData.classTeacher, // Include classTeacher
                 firstNameDisplay: studentData.firstNameDisplay, // Include firstNameDisplay
+                preferredName: studentData.preferredName, // Include preferredName
                 preferences: studentData.preferences, // Include preferences
                 createdAt: studentData.createdAt
             }
@@ -936,7 +941,8 @@ app.put('/student/preferences', authenticateToken, [
     body('preferences').isObject().withMessage('Preferences must be an object.'),
     body('preferences.fontSize').optional().isString().withMessage('Font size must be a string.'),
     body('preferences.theme').optional().isString().withMessage('Theme must be a string.'),
-    body('preferences.notifications_on').optional().isBoolean().withMessage('Notifications_on must be a boolean.')
+    body('preferences.notifications_on').optional().isBoolean().withMessage('Notifications_on must be a boolean.'),
+    body('preferences.fontFamily').optional().isString().withMessage('Font family must be a string.')
 ], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -969,6 +975,44 @@ app.put('/student/preferences', authenticateToken, [
     } catch (error) {
         console.error('Error updating student preferences:', error);
         res.status(500).json({ message: 'Server error updating preferences.', error: error.message });
+    }
+});
+
+// Endpoint to update student preferred name
+app.put('/student/preferred-name', authenticateToken, [
+    body('preferredName').notEmpty().withMessage('Preferred name is required.').trim().isLength({ min: 1, max: 100 }).withMessage('Preferred name must be between 1 and 100 characters.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { preferredName } = req.body;
+    const studentId = req.student.id;
+
+    try {
+        const updatedStudent = await Student.findByIdAndUpdate(
+            studentId,
+            { $set: { preferredName: preferredName } },
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        if (!updatedStudent) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        res.status(200).json({
+            message: 'Preferred name updated successfully!',
+            student: {
+                studentName: updatedStudent.studentName,
+                preferredName: updatedStudent.preferredName,
+                email: updatedStudent.email
+            }
+        });
+
+    } catch (error) {
+        console.error('Error updating preferred name:', error);
+        res.status(500).json({ message: 'Server error updating preferred name.', error: error.message });
     }
 });
 

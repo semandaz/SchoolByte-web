@@ -767,6 +767,72 @@
     </div>
 
     <script>
+        // Function to fetch and display student data
+        async function fetchStudentData() {
+            try {
+                const token = localStorage.getItem('studentToken');
+                if (!token) {
+                    window.location.href = 'studentlogin.html';
+                    return;
+                }
+
+                const response = await fetch(`${window.location.origin}/student/dashboard`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const student = data.student;
+                    
+                    // Update all the profile fields with real data
+                    const displayName = student.preferredName || student.studentName;
+                    document.getElementById('studentNameDisplay').textContent = displayName;
+                    document.querySelector('.welcome-title').textContent = `Welcome back, ${displayName}!`;
+                    document.getElementById('name').value = student.studentName;
+                    document.getElementById('index').value = student.indexNumber;
+                    document.getElementById('email').value = student.email;
+                    document.getElementById('class').value = `${student.class} ${student.stream}`;
+                    document.getElementById('bytesCount').textContent = student.bytes || 0;
+                    document.getElementById('totalBytes').textContent = student.bytes >= 1000 ? `${(student.bytes/1000).toFixed(1)} kB` : `${student.bytes} Bytes`;
+                    
+                    // Set up preferred name dropdown
+                    const preferredNameSelect = document.getElementById('preferred-name');
+                    preferredNameSelect.innerHTML = '';
+                    const nameParts = student.studentName.split(' ');
+                    nameParts.forEach(part => {
+                        const option = document.createElement('option');
+                        option.value = part;
+                        option.textContent = part;
+                        if (student.preferredName === part) {
+                            option.selected = true;
+                        }
+                        preferredNameSelect.appendChild(option);
+                    });
+                    
+                    // Set font preference
+                    if (student.preferences && student.preferences.fontFamily) {
+                        document.getElementById('font-select').value = student.preferences.fontFamily;
+                        document.body.style.fontFamily = student.preferences.fontFamily;
+                    }
+                    
+                } else if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('studentToken');
+                    window.location.href = 'studentlogin.html';
+                } else {
+                    console.error('Failed to fetch student data');
+                }
+            } catch (error) {
+                console.error('Error fetching student data:', error);
+            }
+        }
+
+        // Load student data on page load
+        fetchStudentData();
+
         // Tab functionality
         document.querySelectorAll('.tabs-trigger').forEach(tab => {
             tab.addEventListener('click', () => {
@@ -782,16 +848,70 @@
         });
 
         // Preferred name change
-        document.getElementById('preferred-name').addEventListener('change', function() {
-            localStorage.setItem('preferredName', this.value);
-            document.getElementById('studentNameDisplay').textContent = this.value;
+        document.getElementById('preferred-name').addEventListener('change', async function() {
+            const newPreferredName = this.value;
+            try {
+                const token = localStorage.getItem('studentToken');
+                const response = await fetch(`${window.location.origin}/student/preferred-name`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ preferredName: newPreferredName })
+                });
+
+                if (response.ok) {
+                    document.getElementById('studentNameDisplay').textContent = newPreferredName;
+                    document.querySelector('.welcome-title').textContent = `Welcome back, ${newPreferredName}!`;
+                    alert('Preferred name updated successfully!');
+                } else {
+                    const error = await response.json();
+                    alert('Error updating preferred name: ' + error.message);
+                }
+            } catch (error) {
+                console.error('Error updating preferred name:', error);
+                alert('Network error updating preferred name');
+            }
         });
 
         // Font selection
-        document.getElementById('font-select').addEventListener('change', function() {
+        document.getElementById('font-select').addEventListener('change', async function() {
             const selectedFont = this.value;
-            localStorage.setItem('preferredFont', selectedFont);
-            document.body.style.fontFamily = selectedFont;
+            try {
+                const token = localStorage.getItem('studentToken');
+                
+                // Get current preferences and update font family
+                const currentData = JSON.parse(localStorage.getItem('studentData') || '{}');
+                const updatedPreferences = {
+                    ...(currentData.preferences || {}),
+                    fontFamily: selectedFont
+                };
+                
+                const response = await fetch(`${window.location.origin}/student/preferences`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ preferences: updatedPreferences })
+                });
+
+                if (response.ok) {
+                    document.body.style.fontFamily = selectedFont;
+                    alert('Font preference saved successfully!');
+                    
+                    // Update local storage
+                    currentData.preferences = updatedPreferences;
+                    localStorage.setItem('studentData', JSON.stringify(currentData));
+                } else {
+                    const error = await response.json();
+                    alert('Error saving font preference: ' + error.message);
+                }
+            } catch (error) {
+                console.error('Error updating font preference:', error);
+                alert('Network error saving font preference');
+            }
         });
 
         // PDF Download/View functionality
@@ -821,9 +941,16 @@
 
         // Sign Out button
         document.getElementById('signOutBtn').addEventListener('click', function() {
+            // Clear all student-related data
+            localStorage.removeItem('studentToken');
+            localStorage.removeItem('studentData');
             localStorage.removeItem('preferredName');
             localStorage.removeItem('preferredFont');
-            window.location.href = 'index.html';
+            localStorage.removeItem('bytesCount');
+            localStorage.removeItem('studentName');
+            
+            // Redirect to login page
+            window.location.href = 'studentlogin.html';
         });
 
         // Show More button for leaderboard

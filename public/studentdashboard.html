@@ -845,18 +845,63 @@
             const feedItems = document.getElementById('feedItems');
             const floatingParticles = document.getElementById('floatingParticles');
             
-            // Initialize bytes count from localStorage or default to 0
-            let bytesCount = parseInt(localStorage.getItem('bytesCount')) || 0;
-            bytesCountElement.textContent = bytesCount;
-            
-            // Set student name from localStorage or default
-            const studentName = localStorage.getItem('studentName') || 'Student';
-            studentNameDisplay.textContent = studentName;
-            welcomeMessage.textContent = `Hello ${studentName}, what do you want to dive into today?`;
-            
-            // Hide loading message and show content
-            loadingMessage.classList.add('hidden');
-            mainContent.classList.remove('hidden');
+            // Function to fetch student data from server
+            async function fetchStudentData() {
+                try {
+                    const token = localStorage.getItem('studentToken');
+                    if (!token) {
+                        window.location.href = 'studentlogin.html';
+                        return;
+                    }
+
+                    const response = await fetch(`${window.location.origin}/student/dashboard`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const student = data.student;
+                        
+                        // Update display with real data
+                        const displayName = student.preferredName || student.studentName;
+                        studentNameDisplay.textContent = displayName;
+                        welcomeMessage.textContent = `Hello ${displayName}, what do you want to dive into today?`;
+                        bytesCountElement.textContent = student.bytes || 0;
+                        
+                        // Apply saved font preference
+                        if (student.preferences && student.preferences.fontFamily) {
+                            document.body.style.fontFamily = student.preferences.fontFamily;
+                        }
+                        
+                        // Store data locally for quick access
+                        localStorage.setItem('studentData', JSON.stringify(student));
+                        
+                        // Hide loading and show content
+                        loadingMessage.classList.add('hidden');
+                        mainContent.classList.remove('hidden');
+                        
+                    } else if (response.status === 401 || response.status === 403) {
+                        // Token is invalid or expired
+                        localStorage.removeItem('studentToken');
+                        localStorage.removeItem('studentData');
+                        window.location.href = 'studentlogin.html';
+                    } else {
+                        throw new Error('Failed to fetch student data');
+                    }
+                } catch (error) {
+                    console.error('Error fetching student data:', error);
+                    errorMessage.querySelector('.error-message').textContent = 'Failed to load dashboard. Please try refreshing the page.';
+                    loadingMessage.classList.add('hidden');
+                    errorMessage.classList.remove('hidden');
+                }
+            }
+
+            // Fetch student data on page load
+            fetchStudentData();
             
             // Create floating particles
             function createParticles() {
@@ -989,10 +1034,16 @@
             
             // Sign out function
             signOutBtn.addEventListener('click', function() {
+                // Clear all student-related data from localStorage
+                localStorage.removeItem('studentToken');
+                localStorage.removeItem('studentData');
                 localStorage.removeItem('bytesCount');
                 localStorage.removeItem('studentName');
                 localStorage.removeItem('preferredFont');
-                window.location.href = 'index.html';
+                localStorage.removeItem('preferredName');
+                
+                // Redirect to login page
+                window.location.href = 'studentlogin.html';
             });
             
             // Tooltip initialization
