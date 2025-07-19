@@ -406,6 +406,11 @@
         
         <form id="loginForm">
             <div class="form-group">
+                <label for="studentName">Student's Full Name</label>
+                <input type="text" id="studentName" placeholder="e.g., Naluwagga Joy" required>
+            </div>
+            
+            <div class="form-group">
                 <label for="indexNumber">Index Number</label>
                 <input type="text" id="indexNumber" placeholder="e.g., 23MMS22" pattern="[A-Za-z0-9]+" required>
             </div>
@@ -441,6 +446,11 @@
                     <option value="Violet">Violet</option>
                     <option value="West">West</option>
                 </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="classTeacher">Class Teacher's Name</label>
+                <input type="text" id="classTeacher" placeholder="e.g., Mr. Katongole" required>
             </div>
             
             <div class="form-group">
@@ -498,9 +508,11 @@
             const loginBtn = document.getElementById('loginBtn');
             const togglePassword = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
+            const studentNameInput = document.getElementById('studentName');
             const indexNumberInput = document.getElementById('indexNumber');
             const classSelect = document.getElementById('class');
             const streamSelect = document.getElementById('stream');
+            const classTeacherInput = document.getElementById('classTeacher');
             const emailInput = document.getElementById('email');
             const rememberMe = document.getElementById('rememberMe');
 
@@ -543,20 +555,22 @@
 
             // Validate form inputs
             function validateForm() {
+                const isNameValid = studentNameInput.value.trim() !== '';
                 const isIndexValid = indexNumberInput.value.trim() !== '';
                 const isClassSelected = classSelect.value !== '';
                 const isStreamSelected = streamSelect.value !== '';
+                const isTeacherValid = classTeacherInput.value.trim() !== '';
                 const isEmailValid = emailInput.value.trim() !== '';
                 const isPasswordValid = passwordInput.value.trim() !== '';
                 
-                loginBtn.disabled = !(isIndexValid && isClassSelected && isStreamSelected && isEmailValid && isPasswordValid);
+                loginBtn.disabled = !(isNameValid && isIndexValid && isClassSelected && isStreamSelected && isTeacherValid && isEmailValid && isPasswordValid);
             }
 
             // Form submission
             loginForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
-                if (!indexNumberInput.value || !classSelect.value || !streamSelect.value || !emailInput.value || !passwordInput.value) {
+                if (!studentNameInput.value || !indexNumberInput.value || !classSelect.value || !streamSelect.value || !classTeacherInput.value || !emailInput.value || !passwordInput.value) {
                     alert('Please fill in all fields.');
                     return;
                 }
@@ -571,6 +585,11 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
+                            studentName: studentNameInput.value,
+                            indexNumber: indexNumberInput.value,
+                            class: classSelect.value,
+                            stream: streamSelect.value,
+                            classTeacher: classTeacherInput.value,
                             email: emailInput.value,
                             password: passwordInput.value
                         })
@@ -599,9 +618,11 @@
             });
 
             // Add event listeners for form validation
+            studentNameInput.addEventListener('input', validateForm);
             indexNumberInput.addEventListener('input', validateForm);
             classSelect.addEventListener('change', validateForm);
             streamSelect.addEventListener('change', validateForm);
+            classTeacherInput.addEventListener('input', validateForm);
             emailInput.addEventListener('input', validateForm);
             passwordInput.addEventListener('input', validateForm);
 
