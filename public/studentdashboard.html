@@ -1,3 +1,4 @@
+studentdashboard.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -665,7 +666,7 @@
                         Quizzes
                         <div class="info-icon">
                             i
-                            <div class="info-tooltip">Get more bytes by completing quizzes. Earn 3 bytes for each quiz completed with a score above 70%.</div>
+                            <div class="info-tooltip">Get more bytes by completing quizzes. Earn 10 bytes for each quiz completed with right answers😃.</div>
                         </div>
                     </div>
                     <p>Test your knowledge and earn bytes!</p>
@@ -1018,18 +1019,28 @@
                 activityFeed.classList.toggle('active');
             });
             
-            // Quiz button click
+            // Quiz button click - UPDATED to redirect after animations
             quizBtn.addEventListener('click', function(e) {
-                e.preventDefault();
+                e.preventDefault(); // Keep this to ensure animations run first
                 addBytes(3, this);
                 addActivity('Completed a quiz', 'quiz');
+
+                // Redirect after 800ms (adjust time if needed)
+                setTimeout(() => {
+                    window.location.href = 'quizzesstudentdashboard.html';
+                }, 800);
             });
-            
-            // Game button click
+
+            // Game button click - UPDATED to redirect after animations
             gameBtn.addEventListener('click', function(e) {
-                e.preventDefault();
+                e.preventDefault(); // Keep this to ensure animations run first
                 addBytes(5, this);
                 addActivity('Played a game', 'game');
+
+                // Redirect after 800ms (adjust time if needed)
+                setTimeout(() => {
+                    window.location.href = 'preadergamesstudentdashboard.html';
+                }, 800);
             });
             
             // Sign out function
@@ -1069,3 +1080,4 @@
     </script>
 </body>
 </html>
+

@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SchoolByte - C.R.E. Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Brand Colors */
+      --color-brand-primary: #1a2a6c;    /* Dark Blue - Main brand color */
+      --color-brand-secondary: #b21f1f;  /* Deep Red/Maroon - Secondary brand color */
+      --color-brand-gold: #FFD700;       /* Gold - Accent for special elements */
+      --color-brand-orange: #FFA500;     /* Orange - Used in gradients with gold */
+      /* Neutral Palette */
+      --color-neutral-white: #ffffff;
+      --color-neutral-lightest: #f0f4f8; /* Very light gray/blue */
+      --color-neutral-light: #d1d5db;    /* Light gray */
+      --color-neutral-medium: #9ca3af;    /* Medium gray */
+      --color-neutral-dark: #4b5563;     /* Dark gray */
+      --color-neutral-darkest: #333333;  /* Very dark gray */
+      /* Semantic Colors */
+      --color-error-red: #e74c3c;        /* Standard error color */
+      --color-error-red-dark: #c0392b;    /* Darker error red */
+      --color-success-green: #2ecc71;    /* Success color */
+      --color-info-blue: #3498db;        /* Info color */
+      /* Background Gradients */
+      --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+      --gradient-background-secondary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
+      /* Text Gradients */
+      --gradient-text-gold: linear-gradient(to right, var(--color-brand-gold), var(--color-neutral-white));
+      /* Button Gradients */
+      --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
+      --gradient-button-active-hover: linear-gradient(to right, #FFC800, #FF8C00);
+      /* Transparent Overlays */
+      --overlay-light: rgba(255, 255, 255, 0.1);
+      --overlay-medium: rgba(0, 0, 0, 0.2);
+      --overlay-dark: rgba(30, 30, 60, 0.95);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background: var(--gradient-background-secondary);
+      min-height: 100vh;
+      color: var(--color-neutral-darkest);
+      overflow-x: hidden;
+    }
+
+    /* Back to Dashboard Button */
+    .back-to-dashboard {
+      position: absolute;
+      top: 1.5rem;
+      left: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      z-index: 20;
+    }
+
+    .back-arrow {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--gradient-background-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-neutral-white);
+      font-size: 1.2rem;
+      transition: all 0.3s;
+    }
+
+    .back-text {
+      color: var(--color-neutral-white);
+      font-weight: 600;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      transition: all 0.3s;
+    }
+
+    .back-to-dashboard:hover .back-arrow {
+      transform: translateX(-5px);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    }
+
+    .back-to-dashboard:hover .back-text {
+      transform: translateX(3px);
+    }
+
+    /* Header Styles */
+    header {
+      background-color: var(--color-neutral-white);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 1rem 2rem;
+      position: relative;
+      z-index: 10;
+    }
+
+    .header-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 2.5rem;
+      font-weight: 900;
+      background: var(--gradient-background-primary);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-decoration: none;
+    }
+
+    .profile-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--gradient-background-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-neutral-white);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    .avatar:hover {
+      transform: scale(1.1);
+    }
+
+    .student-name {
+      font-weight: 600;
+      color: var(--color-brand-primary);
+    }
+
+    /* Main Content */
+    .container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .welcome-section {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .welcome-message {
+      font-size: 2rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--color-brand-primary);
+    }
+
+    /* New Action Section */
+    .action-section {
+      background-color: var(--color-neutral-white);
+      border-radius: 15px;
+      padding: 2rem;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      margin-bottom: 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .action-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--color-brand-primary);
+      margin-bottom: 1.5rem;
+      text-align: center;
+      position: relative;
+    }
+
+    .action-title::after {
+      content: "";
+      display: block;
+      width: 100px;
+      height: 4px;
+      background: var(--gradient-background-primary);
+      margin: 0.5rem auto 0;
+      border-radius: 2px;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .action-card {
+      background-color: var(--color-neutral-white);
+      border-radius: 15px;
+      padding: 2rem;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      position: relative;
+      transition: transform 0.3s, box-shadow 0.3s;
+      transform-style: preserve-3d;
+    }
+
+    .action-card:hover {
+      transform: translateY(-5px) rotateX(5deg) rotateY(5deg);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .action-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: var(--color-brand-primary);
+    }
+
+    .action-card h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--color-brand-primary);
+    }
+
+    .action-card p {
+      color: var(--color-neutral-dark);
+      margin-bottom: 1.5rem;
+    }
+
+    .action-btn {
+      display: inline-block;
+      background: var(--gradient-button-active);
+      color: var(--color-neutral-white);
+      padding: 0.8rem 2rem;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+
+    .action-btn:hover {
+      background: var(--gradient-button-active-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Agriculture Theme Elements */
+    .agri-decoration {
+      position: absolute;
+      opacity: 0.1;
+      z-index: -1;
+      color: var(--color-brand-primary);
+    }
+
+    .agri-decoration.tractor {
+      top: 20px;
+      right: 20px;
+      font-size: 8rem;
+      transform: rotate(-15deg);
+    }
+
+    .agri-decoration.leaf {
+      bottom: 20px;
+      left: 30px;
+      font-size: 6rem;
+      transform: rotate(25deg);
+    }
+
+    .agri-decoration.seedling {
+      top: 50%;
+      left: 40px;
+      font-size: 5rem;
+      transform: rotate(-10deg);
+    }
+
+    /* Floating Particles */
+    .floating-particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .particle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: var(--color-brand-gold);
+      border-radius: 50%;
+      opacity: 0.8;
+      animation: float-up linear infinite;
+      filter: drop-shadow(0 0 5px var(--color-brand-gold));
+    }
+
+    @keyframes float-up {
+      to {
+        transform: translateY(-100vh);
+      }
+    }
+
+    /* Subjects Section */
+    .subjects-section {
+      margin-bottom: 3rem;
+    }
+
+    .section-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--color-brand-primary);
+      margin-bottom: 1.5rem;
+      text-align: center;
+      position: relative;
+    }
+
+    .section-title::after {
+      content: "";
+      display: block;
+      width: 100px;
+      height: 4px;
+      background: var(--gradient-background-primary);
+      margin: 0.5rem auto 0;
+      border-radius: 2px;
+    }
+
+    .subjects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .subject-card {
+      background-color: var(--color-neutral-white);
+      border-radius: 10px;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .subject-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+      background: var(--gradient-background-primary);
+      color: var(--color-neutral-white);
+    }
+
+    .subject-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: var(--color-brand-primary);
+      transition: all 0.3s ease;
+    }
+
+    .subject-card:hover .subject-icon {
+      color: var(--color-neutral-white);
+      transform: scale(1.2) rotate(10deg);
+    }
+
+    .subject-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    /* Bytes Counter */
+    .bytes-counter {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background-color: var(--color-brand-primary);
+      color: var(--color-neutral-white);
+      padding: 0.8rem 1.5rem;
+      border-radius: 50px;
+      font-weight: 600;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 100;
+    }
+
+    .bytes-icon {
+      color: var(--color-brand-gold);
+    }
+
+    /* Byte Coin Animation */
+    .byte-coin {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      background: var(--color-brand-gold);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 99;
+      animation: fly-to-counter 1s forwards;
+      opacity: 0;
+    }
+
+    @keyframes fly-to-counter {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(var(--target-x), var(--target-y)) scale(0.5);
+        opacity: 0;
+      }
+    }
+
+    /* Reduced Motion Styles */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+
+      .action-card:hover {
+        transform: none !important;
+      }
+
+      .subject-card:hover .subject-icon {
+        transform: none !important;
+        animation: none !important;
+      }
+
+      .byte-coin {
+        display: none !important;
+      }
+
+      .particle {
+        display: none !important;
+      }
+
+      .back-to-dashboard:hover .back-arrow,
+      .back-to-dashboard:hover .back-text {
+        transform: none !important;
+      }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .back-to-dashboard {
+        top: 1rem;
+        left: 1rem;
+      }
+
+      .back-arrow {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+      }
+
+      .back-text {
+        font-size: 0.9rem;
+      }
+
+      .header-container {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .logo {
+        font-size: 2rem;
+      }
+
+      .welcome-message {
+        font-size: 1.5rem;
+      }
+
+      .action-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .agri-decoration {
+        display: none;
+      }
+
+      .bytes-counter {
+        bottom: 1rem;
+        right: 1rem;
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Floating Particles -->
+  <div class="floating-particles" id="floatingParticles"></div>
+
+  <!-- Back to Dashboard Button -->
+  <a href="studentdashboard.html" class="back-to-dashboard">
+    <div class="back-arrow">
+      <i class="fas fa-arrow-left"></i>
+    </div>
+    <span class="back-text"></span>
+  </a>
+
+  <header>
+    <div class="header-container">
+      <a href="studentdashboard.html" class="logo">SchoolByte</a>
+      <div class="profile-section">
+        <div class="avatar" onclick="window.location.href='studentprofile.html'">
+          <i class="fas fa-user-graduate"></i>
+        </div>
+        <span class="student-name" id="studentNameDisplay">Student</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="welcome-section">
+      <h1 class="welcome-message" id="welcomeMessage">Hello Student, ready to explore Christian Religious Education?</h1>
+    </div>
+
+    <!-- Agriculture Action Section -->
+    <div class="action-section">
+      <i class="fas fa-tractor agri-decoration tractor"></i>
+      <i class="fas fa-leaf agri-decoration leaf"></i>
+      <i class="fas fa-seedling agri-decoration seedling"></i>
+
+      <h2 class="action-title">C.R.E. Learning Center</h2>
+
+      <div class="action-grid">
+        <div class="action-card">
+          <div class="action-icon">
+            <i class="fas fa-file-pdf"></i>
+          </div>
+          <h3>Download Notes</h3>
+          <p>Access comprehensive PDF notes on C.R.E. topics to enhance your studies.</p>
+          <a href="notesagristudentdashboard.html" class="action-btn">Get Notes</a>
+        </div>
+
+        <div class="action-card">
+          <div class="action-icon">
+            <i class="fas fa-tasks"></i>
+          </div>
+          <h3>Start Activity</h3>
+          <p>Test your knowledge with interactive C.R.E. activities and earn Bytes.</p>
+          <a href="activitiesstudentdashboard.html" class="action-btn">Start Activity</a>
+        </div>
+
+        <div class="action-card">
+          <div class="action-icon">
+            <i class="fas fa-clipboard-list"></i>
+          </div>
+          <h3>View Samples</h3>
+          <p>Explore sample activities to understand what to expect in your assessments.</p>
+          <a href="activityofintegrationstudentdashboard.html" class="action-btn">View Samples</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subjects Section -->
+    <div class="subjects-section">
+      <h2 class="section-title">EXPLORE OTHER SUBJECTS</h2>
+      <div class="subjects-grid">
+        <div class="subject-card" onclick="window.location.href='agristudentdashboard.html'">
+          <div class="subject-icon">
+            <i class="fas fa-tractor"></i>
+          </div>
+          <div class="subject-name">Agriculture</div>
+        </div>
+        <div class="subject-card" onclick="window.location.href='biostudentdashboard.html'">
+          <div class="subject-icon">
+            <i class="fas fa-dna"></i>
+          </div>
+          <div class="subject-name">Biology</div>
+        </div>
+        <div class="subject-card" onclick="window.location.href='chestudentdashboard.html'">
+          <div class="subject-icon">
+            <i class="fas fa-flask"></i>
+          </div>
+          <div class="subject-name">Chemistry</div>
+        </div>
+        <div class="subject-card" onclick="window.location.href='crestudentdashboard.html'">
+          <div class="subject-icon">
+            <i class="fas fa-bible"></i>
+          </div>
+          <div class="subject-name">Christian Religious Education</div>
+        </div>
+        <div class="subject-card" onclick="window.location.href='engstudentdashboard.html'">
+          <div class="subject-icon">
+            <i class="fas fa-language"></i>
+          </div>
+          <div class="subject-name">English Language</div>
+        </div>
+        <div class="subject-card" onclick="window.location.href='entstudentdashboard.html'">
+          <div class="subject-icon">
+            <i class="fas fa-lightbulb"></i>
+          </div>
+          <div class="subject-name">Entrepreneurship Education</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bytes-counter">
+    <i class="fas fa-coins bytes-icon"></i>
+    <span id="bytesCount">125</span> Bytes
+  </div>
+  // This script should be included in the <body> of every HTML page
+  // EXCEPT: index.html, studentsignup.html, and studentlogin.html
+
+  document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Retrieve the student's JWT token from localStorage
+      //    It's assumed your login process stores the token there.
+      const token = localStorage.getItem('token');
+
+      // If no token is found, the student is not logged in, so we cannot fetch preferences.
+      if (!token) {
+          console.warn('No authentication token found. Cannot fetch student font preference.');
+          // You might want to redirect the user to the login page here, or just let the default font apply.
+          return;
+      }
+
+      try {
+          // 2. Fetch student dashboard data from your backend
+          //    The /student/dashboard endpoint already returns the preferences object.
+          const response = await fetch('/student/dashboard', {
+              method: 'GET',
+              headers: {
+                  'Authorization': `Bearer ${token}`, // Include the JWT for authentication
+                  'Content-Type': 'application/json'
+              }
+          });
+
+          // Check if the request was successful
+          if (!response.ok) {
+              const errorData = await response.json();
+              console.error('Failed to fetch student preferences:', errorData.message);
+              // Handle specific errors (e.g., token expired, student not found) as needed.
+              // For now, we'll just log and stop.
+              return;
+          }
+
+          // 3. Parse the JSON response
+          const data = await response.json();
+
+          // 4. Extract the fontFamily from the preferences object
+          //    Using optional chaining (?.) to safely access nested properties.
+          const fontFamily = data.student.preferences?.fontFamily;
+
+          // 5. Apply the font family to the document body if found
+          if (fontFamily) {
+              document.body.style.fontFamily = fontFamily;
+              console.log(`Successfully applied font family: ${fontFamily}`);
+          } else {
+              console.log('No font family preference found for the student. Using default browser font.');
+          }
+
+      } catch (error) {
+          // Catch any network errors or issues during the fetch process
+          console.error('Error fetching or applying font preference:', error);
+      }
+  });
+
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize elements
+      const studentNameDisplay = document.getElementById('studentNameDisplay');
+      const welcomeMessage = document.getElementById('welcomeMessage');
+      const bytesCountElement = document.getElementById('bytesCount');
+
+      // Try to get student data from localStorage
+      const studentData = JSON.parse(localStorage.getItem('studentData'));
+
+      if (studentData) {
+        const displayName = studentData.preferredName || studentData.studentName;
+        studentNameDisplay.textContent = displayName;
+        welcomeMessage.textContent = `Hello ${displayName}, ready to explore C.R.E.?`;
+        bytesCountElement.textContent = studentData.bytes || 125;
+      }
+
+      // Create floating particles
+      function createParticles() {
+        const floatingParticles = document.getElementById('floatingParticles');
+        for (let i = 0; i < 30; i++) {
+          const particle = document.createElement('div');
+          particle.classList.add('particle');
+
+          // Random position
+          const posX = Math.random() * 100;
+          const posY = Math.random() * 100 + 100;
+
+          // Random size and animation duration
+          const size = Math.random() * 5 + 5;
+          const duration = Math.random() * 10 + 10;
+          const delay = Math.random() * 5;
+
+          particle.style.left = `${posX}vw`;
+          particle.style.top = `${posY}vh`;
+          particle.style.width = `${size}px`;
+          particle.style.height = `${size}px`;
+          particle.style.animationDuration = `${duration}s`;
+          particle.style.animationDelay = `${delay}s`;
+
+          floatingParticles.appendChild(particle);
+        }
+      }
+
+      createParticles();
+
+      // Add byte coin animation when buttons are clicked
+      const actionBtns = document.querySelectorAll('.action-btn');
+      actionBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            e.preventDefault();
+            animateByteCoin(this);
+
+            // Simulate navigation after animation
+            setTimeout(() => {
+              window.location.href = this.getAttribute('href');
+            }, 1000);
+          }
+        });
+      });
+
+      function animateByteCoin(fromElement) {
+        const fromRect = fromElement.getBoundingClientRect();
+        const toRect = bytesCountElement.getBoundingClientRect();
+
+        // Calculate start and end positions
+        const startX = fromRect.left + fromRect.width / 2;
+        const startY = fromRect.top + fromRect.height / 2;
+        const endX = toRect.left + toRect.width / 2;
+        const endY = toRect.top + toRect.height / 2;
+
+        // Create coin element
+        const coin = document.createElement('div');
+        coin.classList.add('byte-coin');
+        coin.style.left = `${startX}px`;
+        coin.style.top = `${startY}px`;
+        coin.style.setProperty('--target-x', `${endX - startX}px`);
+        coin.style.setProperty('--target-y', `${endY - startY}px`);
+
+        document.body.appendChild(coin);
+
+        // Remove coin after animation
+        setTimeout(() => {
+          coin.remove();
+        }, 1000);
+      }
+    });
+  </script>
+</body>
+</html>
