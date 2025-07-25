@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,7 +12,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', sans-serif; /* Using Inter as per guidelines */
+            font-family: var(--user-font-family, 'Inter', sans-serif);
         }
         
         body {
@@ -219,10 +220,16 @@
             box-shadow: 0 4px 15px rgba(41, 128, 185, 0.3);
         }
         
-        .btn-login:hover {
+        .btn-login:hover:not(:disabled) {
             background: linear-gradient(to right, #2980b9, #2573a7);
             box-shadow: 0 6px 20px rgba(41, 128, 185, 0.4);
             transform: translateY(-2px);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
         
         /* Divider styling */
@@ -399,6 +406,33 @@
         .message-box button:hover {
             background: #2980b9;
         }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-text {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .error-text.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -413,8 +447,7 @@
             <h1>Educator Portal - Secure Login</h1>
         </div>
         
-        <!-- Changed div to form tag -->
-        <form class="login-form">
+        <form class="login-form" id="login-form">
             <div class="form-group">
                 <label for="teacherName">Full Name</label>
                 <div class="input-with-icon">
@@ -425,8 +458,10 @@
                         class="form-control" 
                         placeholder="Enter your full name"
                         autocomplete="name"
+                        required
                     >
                 </div>
+                <div class="error-text" id="name-error"></div>
             </div>
             
             <div class="form-group">
@@ -439,8 +474,10 @@
                         class="form-control" 
                         placeholder="your.name@school.edu or Admin: your.name@school.edu"
                         autocomplete="email"
+                        required
                     >
                 </div>
+                <div class="error-text" id="email-error"></div>
             </div>
             
             <div class="form-group">
@@ -454,12 +491,14 @@
                             class="form-control" 
                             placeholder="Enter your password"
                             autocomplete="current-password"
+                            required
                         >
                         <button type="button" class="toggle-password" id="togglePassword">
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
                 </div>
+                <div class="error-text" id="password-error"></div>
             </div>
             
             <div class="options">
@@ -470,7 +509,7 @@
                 <a href="#" class="forgot-password">Forgot password?</a>
             </div>
             
-            <button type="submit" class="btn-login">Sign In to Dashboard</button>
+            <button type="submit" class="btn-login" id="login-btn">Sign In to Dashboard</button>
             
             <div class="divider">
                 <div class="divider-text">Or continue with</div>
@@ -489,7 +528,7 @@
             </div>
             
             <div class="signup-link">
-                New to SchoolByte? <a href="#">Sign Up</a>
+                New to SchoolByte? <a href="#">Contact Admin</a>
             </div>
             
             <div class="security-info">
@@ -513,13 +552,23 @@
         document.addEventListener('DOMContentLoaded', function() {
             const togglePassword = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
-            const loginForm = document.querySelector('.login-form'); 
-            const loginBtn = document.querySelector('.btn-login'); 
+            const loginForm = document.getElementById('login-form');
+            const loginBtn = document.getElementById('login-btn');
+            const teacherNameInput = document.getElementById('teacherName');
+            const emailInput = document.getElementById('email');
 
             // Message box elements
             const messageBoxOverlay = document.getElementById('messageBoxOverlay');
             const messageBoxText = document.getElementById('messageBoxText');
             const messageBoxClose = document.getElementById('messageBoxClose');
+
+            // Error elements
+            const nameError = document.getElementById('name-error');
+            const emailError = document.getElementById('email-error');
+            const passwordError = document.getElementById('password-error');
+
+            // Load font preferences
+            loadFontPreferences();
 
             // Function to show custom message box
             function showMessageBox(message) {
@@ -532,16 +581,42 @@
                 messageBoxOverlay.classList.remove('show');
             }
 
+            // Clear error messages
+            function clearErrors() {
+                nameError.classList.remove('show');
+                emailError.classList.remove('show');
+                passwordError.classList.remove('show');
+            }
+
+            // Show error message
+            function showError(element, message) {
+                element.textContent = message;
+                element.classList.add('show');
+            }
+
+            // Load font preferences from localStorage or default
+            function loadFontPreferences() {
+                try {
+                    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                    if (userData.preferences && userData.preferences.fontFamily) {
+                        document.documentElement.style.setProperty('--user-font-family', userData.preferences.fontFamily);
+                    }
+                } catch (error) {
+                    console.error('Error loading font preferences:', error);
+                }
+            }
+
             // Close message box on OK button click
             messageBoxClose.addEventListener('click', hideMessageBox);
-            // Close message box if clicking outside (optional)
+            
+            // Close message box if clicking outside
             messageBoxOverlay.addEventListener('click', function(e) {
                 if (e.target === messageBoxOverlay) {
                     hideMessageBox();
                 }
             });
 
-
+            // Toggle password visibility
             togglePassword.addEventListener('click', function() {
                 const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
                 passwordInput.setAttribute('type', type);
@@ -554,54 +629,112 @@
                 }
             });
             
-            // Add event listener to the form's submit event
-            loginForm.addEventListener('submit', function(e) {
-                e.preventDefault(); // Prevent default form submission
+            // Form submission handler
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                clearErrors();
 
-                const name = document.getElementById('teacherName').value.trim();
-                let email = document.getElementById('email').value.trim(); // Use let as email might be modified
+                const name = teacherNameInput.value.trim();
+                let email = emailInput.value.trim();
                 const password = passwordInput.value;
-                
-                // Determine the redirection URL based on email prefix
-                let redirectUrl = 'teacherdashboard.html'; // Default redirection
-                const adminPrefix = 'Admin: ';
 
-                if (email.startsWith(adminPrefix)) {
-                    // If it's an admin email, remove the prefix and set admin dashboard URL
-                    email = email.substring(adminPrefix.length).trim();
-                    redirectUrl = 'verifyadmindashboard.html';
-                }
+                // Client-side validation
+                let hasError = false;
 
-                // --- Validation checks (using the potentially modified email) ---
                 if (!name) {
-                    showMessageBox('Please enter your full name.');
-                    return;
+                    showError(nameError, 'Please enter your full name.');
+                    hasError = true;
                 }
                 
                 if (!email || !validateEmail(email)) {
-                    showMessageBox('Please enter a valid school email address.');
-                    return;
+                    showError(emailError, 'Please enter a valid school email address.');
+                    hasError = true;
                 }
                 
-                if (!password || password.length < 8) {
-                    showMessageBox('Password must be at least 8 characters long.');
-                    return;
+                if (!password || password.length < 6) {
+                    showError(passwordError, 'Password must be at least 6 characters long.');
+                    hasError = true;
+                }
+
+                if (hasError) return;
+
+                // Determine the redirection URL based on email prefix
+                let redirectUrl = 'teacherdashboard.html';
+                const adminPrefix = 'Admin: ';
+                let isAdmin = false;
+
+                if (email.startsWith(adminPrefix)) {
+                    email = email.substring(adminPrefix.length).trim();
+                    redirectUrl = 'verifyadmindashboard.html';
+                    isAdmin = true;
                 }
                 
-                // Simulate login process
-                loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+                // Show loading state
                 loginBtn.disabled = true;
+                loginBtn.innerHTML = '<span class="loading"></span> Authenticating...';
                 
-                setTimeout(() => {
-                    showMessageBox('Login successful! Redirecting...');
-                    loginBtn.innerHTML = 'Sign In to Dashboard';
-                    loginBtn.disabled = false;
+                try {
+                    let response;
                     
-                    // Redirect to the determined URL after a short delay
-                    setTimeout(() => {
-                        window.location.href = redirectUrl; 
-                    }, 500); // Give user a moment to read success message
-                }, 2000);
+                    if (isAdmin) {
+                        // Admin login - first step (initiate 2FA)
+                        response = await fetch('/login-admin', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ email, password }),
+                        });
+                    } else {
+                        // Teacher login
+                        response = await fetch('/login-teacher', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ email, password }),
+                        });
+                    }
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.message || 'Login failed');
+                    }
+
+                    if (isAdmin) {
+                        // Admin 2FA initiated - redirect to verification page
+                        localStorage.setItem('adminEmail', email);
+                        showMessageBox('2FA code sent to your email. Redirecting to verification...');
+                        setTimeout(() => {
+                            window.location.href = 'admin-2fa-verify.html';
+                        }, 2000);
+                    } else {
+                        // Teacher login successful
+                        localStorage.setItem('token', data.token);
+                        localStorage.setItem('userData', JSON.stringify(data.teacher));
+                        
+                        // Check if teacher needs to set initial password
+                        if (!data.teacher.isPasswordSet) {
+                            showMessageBox('Please set your initial password. Redirecting...');
+                            setTimeout(() => {
+                                window.location.href = 'teacher-set-password.html';
+                            }, 2000);
+                        } else {
+                            showMessageBox('Login successful! Redirecting to dashboard...');
+                            setTimeout(() => {
+                                window.location.href = redirectUrl;
+                            }, 1500);
+                        }
+                    }
+
+                } catch (error) {
+                    console.error('Login error:', error);
+                    showMessageBox(error.message || 'Login failed. Please try again.');
+                } finally {
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = 'Sign In to Dashboard';
+                }
             });
             
             // Email validation function

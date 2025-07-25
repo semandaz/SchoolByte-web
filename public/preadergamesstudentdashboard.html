@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,7 +32,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
+            font-family: var(--user-font-family, 'Inter', sans-serif);
         }
 
         body {
@@ -178,6 +179,12 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .btn-secondary {
             background: var(--color-neutral-light);
             color: var(--color-neutral-darkest);
@@ -185,6 +192,14 @@
 
         .btn-secondary:hover {
             background: var(--color-neutral-medium);
+        }
+
+        .btn-danger {
+            background: var(--color-error-red);
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
         }
 
         /* Game Play Area */
@@ -220,7 +235,7 @@
             overflow: hidden;
         }
 
-        .choice-btn:hover {
+        .choice-btn:hover:not(.disabled) {
             background-color: var(--color-brand-primary);
             color: var(--color-neutral-white);
             transform: translateY(-3px);
@@ -231,13 +246,6 @@
             opacity: 0.6;
             cursor: not-allowed;
             border-color: var(--color-neutral-medium);
-        }
-
-        .choice-btn.disabled:hover {
-            background-color: var(--color-neutral-white);
-            color: inherit;
-            transform: none;
-            box-shadow: none;
         }
 
         .disabled-reason {
@@ -419,6 +427,24 @@
             to { transform: rotate(360deg); }
         }
 
+        .error-message {
+            background-color: #fee;
+            color: var(--color-error-red);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 4px solid var(--color-error-red);
+        }
+
+        .success-message {
+            background-color: #efe;
+            color: var(--color-success-green);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 4px solid var(--color-success-green);
+        }
+
         /* Reduced Motion */
         @media (prefers-reduced-motion: reduce) {
             * {
@@ -464,10 +490,10 @@
     <!-- Header -->
     <header>
         <div class="header-container">
-            <a href="#" class="logo">SchoolByte</a>
+            <a href="studentdashboard.html" class="logo">SchoolByte</a>
             <div class="profile-section">
-                <div class="student-name">John Student</div>
-                <div class="avatar">JS</div>
+                <div class="student-name" id="student-name">Loading...</div>
+                <div class="avatar" id="student-avatar">?</div>
             </div>
         </div>
     </header>
@@ -485,6 +511,9 @@
             <p style="color: var(--color-neutral-lightest);">Interactive story adventures where your choices matter</p>
         </div>
         
+        <!-- Error/Success Messages -->
+        <div id="message-container"></div>
+        
         <!-- Game States -->
         <div id="new-game-state" class="game-state active">
             <div class="start-form">
@@ -493,7 +522,7 @@
                 
                 <div class="form-group">
                     <label for="game-title" class="form-label">Game Title/Theme:</label>
-                    <input type="text" id="game-title" class="form-input" placeholder="Enter a title or theme for your adventure">
+                    <input type="text" id="game-title" class="form-input" placeholder="Enter a title or theme for your adventure (e.g., 'Mystery in the School Library', 'The Science Fair Challenge')">
                 </div>
                 
                 <button class="btn" id="start-game-btn">Start New Game</button>
@@ -518,12 +547,32 @@
                     <div class="stat-value" id="stat-morale">20</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-name">Ethics</div>
-                    <div class="stat-value ethical-score" id="stat-ethics">0</div>
+                    <div class="stat-name">Reputation</div>
+                    <div class="stat-value" id="stat-reputation">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-name">Discipline</div>
+                    <div class="stat-value" id="stat-discipline">50</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-name">Knowledge</div>
                     <div class="stat-value" id="stat-knowledge">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-name">Stress</div>
+                    <div class="stat-value" id="stat-stress">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-name">Luck</div>
+                    <div class="stat-value" id="stat-luck">10</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-name">Ethics</div>
+                    <div class="stat-value ethical-score" id="stat-ethics">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-name">Session Bytes</div>
+                    <div class="stat-value" id="stat-session-bytes">0</div>
                 </div>
             </div>
             
@@ -540,7 +589,7 @@
             
             <!-- Navigation -->
             <div class="game-nav">
-                <button class="btn btn-secondary" id="save-game-btn">Save Progress</button>
+                <button class="btn btn-secondary" id="save-game-btn" style="display: none;">Save Progress</button>
                 <button class="btn btn-danger" id="end-game-btn">End Game Session</button>
             </div>
         </div>
@@ -558,8 +607,8 @@
                         <p id="session-summary">Duration: 0 minutes, Ethics Score: 0</p>
                     </div>
                     <div class="summary-item">
-                        <h3>Path Taken</h3>
-                        <p id="path-summary">No path recorded</p>
+                        <h3>Final Stats</h3>
+                        <p id="final-stats">Your character's final state</p>
                     </div>
                 </div>
                 
@@ -571,30 +620,7 @@
         <div class="history-container">
             <h2 style="color: var(--color-neutral-white); margin-bottom: 1rem;">Your Game History</h2>
             <div id="game-history">
-                <div class="history-item">
-                    <div class="history-title">The Quest for Knowledge</div>
-                    <div class="history-meta">
-                        <span>May 15, 2023</span>
-                        <span>25 minutes</span>
-                    </div>
-                    <div class="history-stats">
-                        <div class="history-stat"><span>+12</span> Bytes</div>
-                        <div class="history-stat"><span>+24</span> Ethics</div>
-                        <div class="history-stat"><span>8</span> Choices</div>
-                    </div>
-                </div>
-                <div class="history-item">
-                    <div class="history-title">Mystery of the Ancient Library</div>
-                    <div class="history-meta">
-                        <span>May 10, 2023</span>
-                        <span>18 minutes</span>
-                    </div>
-                    <div class="history-stats">
-                        <div class="history-stat"><span>+8</span> Bytes</div>
-                        <div class="history-stat"><span>-5</span> Ethics</div>
-                        <div class="history-stat"><span>6</span> Choices</div>
-                    </div>
-                </div>
+                <!-- History will be loaded from API -->
             </div>
         </div>
     </div>
@@ -613,7 +639,9 @@
             luck: 10,
             currentEthicalScore: 0
         };
-        let authToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0YWMxZDFhMWI2YzE1M2U0MTQwMDAwMCIsImVtYWlsIjoiam9obi5zdHVkZW50QHNjaG9vbC5jb20iLCJzdHVkZW50TmFtZSI6IkpvaG4gU3R1ZGVudCIsImluZGV4TnVtYmVyIjoiUzEyMzQ1Iiwicm9sZSI6InN0dWRlbnQiLCJpYXQiOjE2ODc2MjQwMDAsImV4cCI6MTY4NzYyNzYwMH0.3jVqHj0YQ4Lwq8XkY7fF9gTdGz3a7bRc1wJvXyZvKpL0"; // Valid token for demo
+        let totalBytesEarnedInSession = 0;
+        let authToken = localStorage.getItem('token');
+        let studentData = null;
         
         // DOM Elements
         const newGameState = document.getElementById('new-game-state');
@@ -631,19 +659,78 @@
         const totalBytesDisplay = document.getElementById('total-bytes');
         const bytesEarnedDisplay = document.getElementById('bytes-earned');
         const sessionSummary = document.getElementById('session-summary');
-        const pathSummary = document.getElementById('path-summary');
+        const finalStats = document.getElementById('final-stats');
+        const messageContainer = document.getElementById('message-container');
+        const studentNameEl = document.getElementById('student-name');
+        const studentAvatarEl = document.getElementById('student-avatar');
 
         // Stat elements
         const statLife = document.getElementById('stat-life');
         const statMana = document.getElementById('stat-mana');
         const statMorale = document.getElementById('stat-morale');
-        const statEthics = document.getElementById('stat-ethics');
+        const statReputation = document.getElementById('stat-reputation');
+        const statDiscipline = document.getElementById('stat-discipline');
         const statKnowledge = document.getElementById('stat-knowledge');
+        const statStress = document.getElementById('stat-stress');
+        const statLuck = document.getElementById('stat-luck');
+        const statEthics = document.getElementById('stat-ethics');
+        const statSessionBytes = document.getElementById('stat-session-bytes');
+
+        // Utility functions
+        function showMessage(message, type = 'error') {
+            const messageEl = document.createElement('div');
+            messageEl.className = `${type}-message`;
+            messageEl.textContent = message;
+            messageContainer.innerHTML = '';
+            messageContainer.appendChild(messageEl);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                messageEl.remove();
+            }, 5000);
+        }
+
+        function clearMessages() {
+            messageContainer.innerHTML = '';
+        }
+
+        async function fetchWithAuth(url, options = {}) {
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+            
+            if (authToken) {
+                headers.Authorization = `Bearer ${authToken}`;
+            }
+            
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
+            
+            if (response.status === 401) {
+                // Token expired, redirect to login
+                localStorage.removeItem('token');
+                window.location.href = 'studentlogin.html';
+                return null;
+            }
+            
+            return response;
+        }
 
         // Initialize the page
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check if user is logged in
+            if (!authToken) {
+                window.location.href = 'studentlogin.html';
+                return;
+            }
+            
+            await loadStudentData();
+            await loadFontPreferences();
             createParticles();
-            totalBytesDisplay.textContent = "125"; // Demo value
+            await loadGameHistory();
             
             // Event listeners
             startGameBtn.addEventListener('click', startNewGame);
@@ -651,17 +738,56 @@
             newGameAfterEndBtn.addEventListener('click', () => {
                 endGameState.classList.remove('active');
                 newGameState.classList.add('active');
+                clearMessages();
             });
-            saveGameBtn.addEventListener('click', saveGameProgress);
             
-            // Demo: Load a sample game
-            setTimeout(loadSampleGame, 1500);
+            // Allow Enter key to start game
+            gameTitleInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    startNewGame();
+                }
+            });
         });
+
+        // Load student data
+        async function loadStudentData() {
+            try {
+                const response = await fetchWithAuth('/student/dashboard');
+                if (!response) return;
+                
+                const data = await response.json();
+                studentData = data.student;
+                
+                // Update UI
+                studentNameEl.textContent = studentData.preferredName || studentData.studentName;
+                totalBytesDisplay.textContent = studentData.bytes;
+                
+                // Set avatar initials
+                const initials = studentData.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
+                studentAvatarEl.textContent = initials;
+                
+            } catch (error) {
+                console.error('Error loading student data:', error);
+                showMessage('Error loading student data');
+            }
+        }
+
+        // Load font preferences and apply them
+        async function loadFontPreferences() {
+            try {
+                if (studentData && studentData.preferences && studentData.preferences.fontFamily) {
+                    const fontFamily = studentData.preferences.fontFamily;
+                    document.documentElement.style.setProperty('--user-font-family', fontFamily);
+                }
+            } catch (error) {
+                console.error('Error loading font preferences:', error);
+            }
+        }
 
         // Create floating particles
         function createParticles() {
             const particlesContainer = document.getElementById('particles');
-            const particleCount = 50;
+            const particleCount = 30;
             
             for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
@@ -672,184 +798,158 @@
                 particle.style.top = `${Math.random() * 100}%`;
                 
                 // Random size
-                const size = Math.random() * 10 + 5;
+                const size = Math.random() * 8 + 4;
                 particle.style.width = `${size}px`;
                 particle.style.height = `${size}px`;
                 
                 // Random animation duration
-                const duration = Math.random() * 20 + 10;
+                const duration = Math.random() * 15 + 10;
                 particle.style.animationDuration = `${duration}s`;
                 
                 particlesContainer.appendChild(particle);
             }
         }
 
-        // Start a new game (demo version)
-        function startNewGame() {
+        // Start a new game
+        async function startNewGame() {
             const title = gameTitleInput.value.trim();
             if (!title) {
-                alert('Please enter a game title or theme');
+                showMessage('Please enter a game title or theme');
                 return;
             }
 
             startGameBtn.disabled = true;
-            startGameBtn.innerHTML = '<span class="loading"></span> Starting...';
+            startGameBtn.innerHTML = '<span class="loading"></span> Starting Game...';
+            clearMessages();
 
-            // Simulate API call delay
-            setTimeout(() => {
-                // Show loading state for 1.5 seconds
-                setTimeout(() => {
-                    loadSampleGame(title);
-                    startGameBtn.disabled = false;
-                    startGameBtn.textContent = 'Start New Game';
-                }, 1500);
-            }, 500);
+            try {
+                const response = await fetchWithAuth('/student/preader-games/start', {
+                    method: 'POST',
+                    body: JSON.stringify({ gameTitle: title })
+                });
+
+                if (!response) return;
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to start game');
+                }
+
+                const data = await response.json();
+                
+                // Set up game session
+                currentGameSessionId = data.sessionId;
+                currentGameTitle.textContent = title;
+                currentGameStats = data.playerStats;
+                currentGameStats.currentEthicalScore = data.currentEthicalScore;
+                totalBytesEarnedInSession = 0;
+                
+                // Update display
+                updateStatsDisplay();
+                displayScene(data.scene, data.choices);
+                
+                // Switch to active game state
+                newGameState.classList.remove('active');
+                activeGameState.classList.add('active');
+                
+                showMessage('Game started successfully!', 'success');
+
+            } catch (error) {
+                console.error('Error starting game:', error);
+                showMessage(error.message || 'Failed to start game');
+            } finally {
+                startGameBtn.disabled = false;
+                startGameBtn.textContent = 'Start New Game';
+            }
         }
 
-        // Load sample game data
-        function loadSampleGame(title = "The Mysterious Library") {
-            currentGameTitle.textContent = title;
+        // Display scene and choices
+        function displayScene(sceneContent, choices) {
+            gameContent.innerHTML = `<p>${sceneContent}</p>`;
             
-            // Update stats
-            currentGameStats = {
-                life: 18,
-                mana: 22,
-                morale: 19,
-                reputation: 2,
-                discipline: 48,
-                knowledge: 5,
-                stress: 3,
-                luck: 12,
-                currentEthicalScore: 3
-            };
-            updateStatsDisplay();
-            
-            // Set game content
-            gameContent.innerHTML = `
-                <p>You stand before the ancient Library of Alexandria, its towering columns reaching towards the sky. The air is thick with the scent of old parchment and mystery. A librarian approaches you, their eyes filled with wisdom and a hint of concern.</p>
-                <p>"Welcome, seeker of knowledge," they say. "Our library holds countless secrets, but a darkness has fallen upon one of our most precious sections. Will you help us restore the light?"</p>
-            `;
-            
-            // Create choice buttons
             choicesContainer.innerHTML = '';
-            const choices = [
-                {
-                    text: "Agree to help without hesitation",
-                    statChanges: { morale: 2, stress: 1 },
-                    ethicalImpact: { scoreChange: 2, principle: "courage" }
-                },
-                {
-                    text: "Ask what dangers you might face",
-                    statChanges: { knowledge: 1, stress: -1 },
-                    ethicalImpact: { scoreChange: 1, principle: "prudence" }
-                },
-                {
-                    text: "Demand payment for your services",
-                    statChanges: { reputation: -1 },
-                    ethicalImpact: { scoreChange: -1, principle: "greed" },
-                    disabled: false
-                },
-                {
-                    text: "Use your magic to scan the library (Requires Mana)",
-                    statChanges: { mana: -5, knowledge: 3 },
-                    ethicalImpact: { scoreChange: 0, principle: "curiosity" },
-                    required: { mana: 10 },
-                    disabledReason: "Not enough mana"
-                }
-            ];
             
             choices.forEach((choice, index) => {
                 const choiceBtn = document.createElement('button');
                 choiceBtn.className = 'choice-btn';
-                choiceBtn.textContent = choice.text;
-                choiceBtn.dataset.index = index;
                 
-                if (choice.disabled || (choice.required && currentGameStats.mana < choice.required.mana)) {
-                    choiceBtn.classList.add('disabled');
-                    const reason = document.createElement('div');
-                    reason.className = 'disabled-reason';
-                    reason.textContent = choice.disabledReason || "Requirement not met";
-                    choiceBtn.appendChild(reason);
-                    choiceBtn.disabled = true;
+                // Check if choice is available based on required stats
+                let isDisabled = false;
+                let disabledReason = '';
+                
+                if (choice.requiredStats) {
+                    for (const [stat, required] of Object.entries(choice.requiredStats)) {
+                        if (currentGameStats[stat] < required) {
+                            isDisabled = true;
+                            disabledReason = choice.unavailableReason || `Requires ${stat}: ${required}`;
+                            break;
+                        }
+                    }
                 }
                 
-                choiceBtn.addEventListener('click', () => makeChoice(index));
+                choiceBtn.innerHTML = choice.choiceText;
+                
+                if (isDisabled) {
+                    choiceBtn.classList.add('disabled');
+                    choiceBtn.disabled = true;
+                    const reasonEl = document.createElement('div');
+                    reasonEl.className = 'disabled-reason';
+                    reasonEl.textContent = disabledReason;
+                    choiceBtn.appendChild(reasonEl);
+                } else {
+                    choiceBtn.addEventListener('click', () => makeChoice(index));
+                }
+                
                 choicesContainer.appendChild(choiceBtn);
             });
-            
-            // Switch to active game state
-            newGameState.classList.remove('active');
-            activeGameState.classList.add('active');
         }
 
         // Make a choice in the game
-        function makeChoice(choiceIndex) {
+        async function makeChoice(choiceIndex) {
+            // Disable all choice buttons
             const choiceBtns = document.querySelectorAll('.choice-btn');
             choiceBtns.forEach(btn => btn.disabled = true);
             
             // Show loading state
-            gameContent.innerHTML = '<p class="scene-text"><span class="loading"></span> Your story continues...</p>';
-            
-            // Simulate API delay
-            setTimeout(() => {
-                // Update game state based on choice
-                switch(choiceIndex) {
-                    case 0:
-                        gameContent.innerHTML = `
-                            <p>The librarian smiles warmly. "Your courage does you credit. Follow me to the Forbidden Archives."</p>
-                            <p>As you walk through the grand halls, you notice shadows moving between the bookshelves. The librarian hands you an ancient lantern. "This will protect you from the darkness," they explain.</p>
-                        `;
-                        currentGameStats.morale += 2;
-                        currentGameStats.stress += 1;
-                        currentGameStats.currentEthicalScore += 2;
-                        break;
-                    case 1:
-                        gameContent.innerHTML = `
-                            <p>"Wise to ask," the librarian nods. "The darkness manifests as shadow creatures that feed on fear. They corrupt knowledge, turning wisdom into nonsense."</p>
-                            <p>They hand you a silver quill. "This weapon banishes shadows with truth. Use it well."</p>
-                        `;
-                        currentGameStats.knowledge += 1;
-                        currentGameStats.stress -= 1;
-                        currentGameStats.currentEthicalScore += 1;
-                        break;
-                    case 2:
-                        gameContent.innerHTML = `
-                            <p>The librarian's expression cools. "Knowledge should be its own reward. Very well, we offer 10 gold pieces for your service."</p>
-                            <p>You notice other scholars frowning at your demand. Your reputation here may suffer.</p>
-                        `;
-                        currentGameStats.reputation -= 1;
-                        currentGameStats.currentEthicalScore -= 1;
-                        break;
-                    case 3:
-                        gameContent.innerHTML = `
-                            <p>You channel your magical energy, sending waves of blue light through the library. The magic reveals hidden inscriptions on the walls and a pulsing darkness in the east wing.</p>
-                            <p>"Fascinating!" the librarian exclaims. "You've located the epicenter!"</p>
-                        `;
-                        currentGameStats.mana -= 5;
-                        currentGameStats.knowledge += 3;
-                        break;
-                }
-                
-                // Update stats display
-                updateStatsDisplay();
-                
-                // Create new choices
-                choicesContainer.innerHTML = '';
-                const newChoices = [
-                    { text: "Head directly to the east wing" },
-                    { text: "Study the inscriptions first" },
-                    { text: "Ask the librarian for more information" },
-                    { text: "Gather other scholars to help" }
-                ];
-                
-                newChoices.forEach((choice, index) => {
-                    const choiceBtn = document.createElement('button');
-                    choiceBtn.className = 'choice-btn';
-                    choiceBtn.textContent = choice.text;
-                    choiceBtn.addEventListener('click', () => makeChoice(index));
-                    choicesContainer.appendChild(choiceBtn);
+            gameContent.innerHTML = '<p><span class="loading"></span> Your story continues...</p>';
+            clearMessages();
+
+            try {
+                const response = await fetchWithAuth(`/student/preader-games/${currentGameSessionId}/make-choice`, {
+                    method: 'POST',
+                    body: JSON.stringify({ choiceIndex })
                 });
-            }, 1500);
+
+                if (!response) return;
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to make choice');
+                }
+
+                const data = await response.json();
+                
+                // Update game state
+                currentGameStats = data.playerStats;
+                currentGameStats.currentEthicalScore = data.currentEthicalScore;
+                totalBytesEarnedInSession = data.totalBytesEarnedInSession;
+                
+                // Update displays
+                updateStatsDisplay();
+                displayScene(data.scene, data.choices);
+                
+                // Show bytes earned this turn if any
+                if (data.bytesEarnedThisTurn > 0) {
+                    showMessage(`+${data.bytesEarnedThisTurn} bytes earned!`, 'success');
+                }
+
+            } catch (error) {
+                console.error('Error making choice:', error);
+                showMessage(error.message || 'Failed to make choice');
+                
+                // Re-enable buttons on error
+                choiceBtns.forEach(btn => btn.disabled = false);
+            }
         }
 
         // Update stats display
@@ -857,56 +957,139 @@
             statLife.textContent = currentGameStats.life;
             statMana.textContent = currentGameStats.mana;
             statMorale.textContent = currentGameStats.morale;
-            statEthics.textContent = currentGameStats.currentEthicalScore;
+            statReputation.textContent = currentGameStats.reputation;
+            statDiscipline.textContent = currentGameStats.discipline;
             statKnowledge.textContent = currentGameStats.knowledge;
+            statStress.textContent = currentGameStats.stress;
+            statLuck.textContent = currentGameStats.luck;
+            statEthics.textContent = currentGameStats.currentEthicalScore;
+            statSessionBytes.textContent = totalBytesEarnedInSession;
             
-            // Color coding for stats
+            // Color coding for critical stats
             statLife.style.color = currentGameStats.life <= 5 ? '#dc2626' : '#4f46e5';
             statMana.style.color = currentGameStats.mana <= 5 ? '#dc2626' : '#4f46e5';
             statMorale.style.color = currentGameStats.morale <= 5 ? '#dc2626' : '#4f46e5';
             
-            // Ethics color (red for negative, blue for positive)
+            // Ethics color
             statEthics.style.color = currentGameStats.currentEthicalScore < 0 ? '#dc2626' : 
-                                     currentGameStats.currentEthicalScore > 0 ? '#4f46e5' : '#64748b';
-        }
+                                     currentGameStats.currentEthicalScore > 0 ? '#2ecc71' : '#64748b';
 
-        // Save game progress
-        function saveGameProgress() {
-            saveGameBtn.innerHTML = '<span class="loading"></span> Saving...';
-            
-            setTimeout(() => {
-                saveGameBtn.textContent = 'Progress Saved!';
-                setTimeout(() => {
-                    saveGameBtn.textContent = 'Save Progress';
-                }, 2000);
-            }, 1000);
+            // Stress color (red for high stress)
+            statStress.style.color = currentGameStats.stress > 15 ? '#dc2626' : '#4f46e5';
         }
 
         // End the current game session
-        function endGameSession() {
-            if (!confirm('Are you sure you want to end this game session?')) return;
+        async function endGameSession() {
+            if (!currentGameSessionId) {
+                showMessage('No active game session to end');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to end this game session? Your progress will be saved.')) {
+                return;
+            }
             
             endGameBtn.disabled = true;
-            endGameBtn.innerHTML = '<span class="loading"></span> Ending...';
+            endGameBtn.innerHTML = '<span class="loading"></span> Ending Game...';
+            clearMessages();
 
-            // Simulate API delay
-            setTimeout(() => {
+            try {
+                const response = await fetchWithAuth(`/student/preader-games/${currentGameSessionId}/end`, {
+                    method: 'POST'
+                });
+
+                if (!response) return;
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to end game');
+                }
+
+                const data = await response.json();
+                
+                // Update total bytes display
+                totalBytesDisplay.textContent = data.studentCurrentBytes;
+                
                 // Show end game state
                 activeGameState.classList.remove('active');
                 endGameState.classList.add('active');
                 
                 // Update summary
-                bytesEarnedDisplay.textContent = "+15 Bytes";
-                sessionSummary.textContent = "Duration: 12 minutes, Ethics Score: 3";
-                pathSummary.textContent = "Started adventure → Helped librarian → Fought shadows → Recovered lost tome";
+                bytesEarnedDisplay.textContent = `+${data.totalBytesEarned} Bytes`;
+                sessionSummary.textContent = `Duration: ${data.sessionDurationMinutes} minutes, Ethics Score: ${data.finalEthicalScore}`;
                 
-                // Reset end button
+                // Display final stats
+                finalStats.innerHTML = `
+                    Life: ${currentGameStats.life}, Mana: ${currentGameStats.mana}, 
+                    Morale: ${currentGameStats.morale}, Knowledge: ${currentGameStats.knowledge}
+                `;
+                
+                // Reset session
+                currentGameSessionId = null;
+                gameTitleInput.value = '';
+                
+                // Reload game history
+                await loadGameHistory();
+                
+                showMessage('Game session ended successfully!', 'success');
+
+            } catch (error) {
+                console.error('Error ending game:', error);
+                showMessage(error.message || 'Failed to end game');
+            } finally {
                 endGameBtn.disabled = false;
                 endGameBtn.textContent = 'End Game Session';
+            }
+        }
+
+        // Load game history
+        async function loadGameHistory() {
+            try {
+                const response = await fetchWithAuth('/student/preader-games/history');
+                if (!response) return;
+
+                if (!response.ok) {
+                    throw new Error('Failed to load game history');
+                }
+
+                const data = await response.json();
+                displayGameHistory(data.history);
+
+            } catch (error) {
+                console.error('Error loading game history:', error);
+                gameHistory.innerHTML = '<p>Unable to load game history</p>';
+            }
+        }
+
+        // Display game history
+        function displayGameHistory(history) {
+            if (!history || history.length === 0) {
+                gameHistory.innerHTML = '<p style="color: var(--color-neutral-light);">No game history yet. Start your first adventure!</p>';
+                return;
+            }
+
+            gameHistory.innerHTML = '';
+            
+            history.forEach(session => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
                 
-                // Update total bytes
-                totalBytesDisplay.textContent = "140";
-            }, 1500);
+                const startDate = new Date(session.startTime).toLocaleDateString();
+                
+                historyItem.innerHTML = `
+                    <div class="history-title">${session.initialTitle}</div>
+                    <div class="history-meta">
+                        <span>${startDate}</span>
+                        <span>${session.durationMinutes} minutes</span>
+                    </div>
+                    <div class="history-stats">
+                        <div class="history-stat"><span>+${session.bytesEarned}</span> Bytes</div>
+                        <div class="history-stat"><span>${session.finalEthicalScore}</span> Ethics</div>
+                    </div>
+                `;
+                
+                gameHistory.appendChild(historyItem);
+            });
         }
     </script>
 </body>
