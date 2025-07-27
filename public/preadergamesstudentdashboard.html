@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,6 +6,7 @@
     <title>SchoolByte - Preader Games</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Your CSS from preadergames.html */
         /* SchoolByte Brand Colors */
         :root {
             --color-brand-primary: #1a2a6c;
@@ -411,7 +411,7 @@
         .bytes-icon {
             color: var(--color-brand-gold);
         }
-        
+
         /* Loading spinner */
         .loading {
             display: inline-block;
@@ -423,7 +423,7 @@
             animation: spin 1s ease-in-out infinite;
             vertical-align: middle;
         }
-        
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
@@ -477,7 +477,7 @@
             .stats-container {
                 grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             }
-            
+
             .container {
                 padding: 0 1rem;
             }
@@ -485,10 +485,8 @@
     </style>
 </head>
 <body>
-    <!-- Floating particles background -->
     <div class="floating-particles" id="particles"></div>
-    
-    <!-- Header -->
+
     <header>
         <div class="header-container">
             <a href="studentdashboard.html" class="logo">SchoolByte</a>
@@ -498,42 +496,37 @@
             </div>
         </div>
     </header>
-    
-    <!-- Bytes Counter -->
+
     <div class="bytes-counter">
         <span class="bytes-icon">★</span>
         <span id="total-bytes">0</span> Bytes
     </div>
-    
-    <!-- Main Content -->
+
     <div class="container">
         <div class="welcome-section">
             <h1 class="welcome-message">Welcome to Preader Games</h1>
             <p style="color: var(--color-neutral-lightest);">Interactive story adventures where your choices matter</p>
         </div>
-        
-        <!-- Error/Success Messages -->
+
         <div id="message-container"></div>
-        
-        <!-- Game States -->
+
         <div id="new-game-state" class="game-state active">
             <div class="start-form">
                 <h2>Start a New Adventure</h2>
                 <p style="margin-bottom: 1.5rem; color: var(--color-neutral-medium);">Choose a theme for your interactive story</p>
-                
+
                 <div class="form-group">
                     <label for="game-title" class="form-label">Game Title/Theme:</label>
                     <input type="text" id="game-title" class="form-input" placeholder="Enter a title or theme for your adventure (e.g., 'Mystery in the School Library', 'The Science Fair Challenge')">
                 </div>
-                
+
                 <button class="btn" id="start-game-btn">Start New Game</button>
             </div>
         </div>
-        
+
         <div id="active-game-state" class="game-state">
             <h2 id="current-game-title">Your Adventure</h2>
-            
-            <!-- Stats Display -->
+
             <div class="stats-container">
                 <div class="stat-card">
                     <div class="stat-name">Life</div>
@@ -576,32 +569,28 @@
                     <div class="stat-value" id="stat-session-bytes">0</div>
                 </div>
             </div>
-            
-            <!-- Game Scene -->
+
             <div class="game-scene">
                 <div class="scene-text" id="game-content">
-                    <!-- Game content will be loaded here -->
-                </div>
-                
+                    </div>
+
                 <div class="choices-container" id="choices-container">
-                    <!-- Choices will be loaded here -->
-                </div>
+                    </div>
             </div>
-            
-            <!-- Navigation -->
+
             <div class="game-nav">
                 <button class="btn btn-secondary" id="save-game-btn" style="display: none;">Save Progress</button>
                 <button class="btn btn-danger" id="end-game-btn">End Game Session</button>
             </div>
         </div>
-        
+
         <div id="end-game-state" class="game-state">
             <div class="end-screen">
                 <h2>Game Session Complete!</h2>
                 <p>You've completed your adventure</p>
-                
+
                 <div class="bytes-earned" id="bytes-earned">+0 Bytes</div>
-                
+
                 <div class="game-summary">
                     <div class="summary-item">
                         <h3>Session Summary</h3>
@@ -612,17 +601,15 @@
                         <p id="final-stats">Your character's final state</p>
                     </div>
                 </div>
-                
+
                 <button class="btn" id="new-game-after-end">Start New Game</button>
             </div>
         </div>
-        
-        <!-- Game History -->
+
         <div class="history-container">
             <h2 style="color: var(--color-neutral-white); margin-bottom: 1rem;">Your Game History</h2>
             <div id="game-history">
-                <!-- History will be loaded from API -->
-            </div>
+                </div>
         </div>
     </div>
 
@@ -641,10 +628,10 @@
             currentEthicalScore: 0
         };
         let totalBytesEarnedInSession = 0;
-        let authToken = localStorage.getItem('token');
+        let authToken = localStorage.getItem('token'); // Get token early
         let studentData = null;
-        
-        // DOM Elements
+
+        // DOM Elements (rest of your DOM elements as is)
         const newGameState = document.getElementById('new-game-state');
         const activeGameState = document.getElementById('active-game-state');
         const endGameState = document.getElementById('end-game-state');
@@ -684,8 +671,7 @@
             messageEl.textContent = message;
             messageContainer.innerHTML = '';
             messageContainer.appendChild(messageEl);
-            
-            // Auto remove after 5 seconds
+
             setTimeout(() => {
                 messageEl.remove();
             }, 5000);
@@ -700,37 +686,37 @@
                 'Content-Type': 'application/json',
                 ...options.headers
             };
-            
+
             if (authToken) {
                 headers.Authorization = `Bearer ${authToken}`;
             }
-            
+
             const response = await fetch(url, {
                 ...options,
                 headers
             });
-            
+
             if (response.status === 401 || response.status === 403) {
-                // Token expired or invalid, redirect to login
                 console.log('Authentication failed, redirecting to login');
                 localStorage.removeItem('token');
-                localStorage.removeItem('userData');
-                window.location.href = 'studentlogin.html';
-                return null;
+                localStorage.removeItem('userData'); // Clear any stored user data
+                window.location.href = 'studentlogin.html'; // Ensure this is the correct login page
+                return null; // Important: return null so subsequent code knows authentication failed
             }
-            
+
             return response;
         }
 
         // Check authentication status
         async function checkAuthenticationStatus() {
             if (!authToken) {
-                console.log('No token found, redirecting to login');
+                console.log('No token found, redirecting to login immediately');
                 window.location.href = 'studentlogin.html';
                 return false;
             }
 
             try {
+                // Call a protected endpoint to validate the token
                 const response = await fetch('/student/dashboard', {
                     headers: {
                         'Authorization': `Bearer ${authToken}`,
@@ -739,34 +725,47 @@
                 });
 
                 if (!response.ok) {
-                    console.log('Token validation failed, redirecting to login');
+                    // If the token is invalid or expired, the server will return a non-200 status (e.g., 401, 403)
+                    console.log('Token validation failed on server, redirecting to login');
                     localStorage.removeItem('token');
                     localStorage.removeItem('userData');
                     window.location.href = 'studentlogin.html';
                     return false;
                 }
 
+                // If authentication is successful, you might want to load student data here
+                const data = await response.json();
+                studentData = data.student; // Assuming your dashboard returns student data
+                studentNameEl.textContent = studentData.preferredName || studentData.studentName;
+                totalBytesDisplay.textContent = studentData.bytes;
+                const initials = studentData.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
+                studentAvatarEl.textContent = initials;
+
                 return true;
             } catch (error) {
-                console.error('Error checking authentication:', error);
+                console.error('Error checking authentication status:', error);
+                // For network errors or other unexpected issues, still redirect to login
                 window.location.href = 'studentlogin.html';
                 return false;
             }
         }
 
+
         // Initialize the page
         document.addEventListener('DOMContentLoaded', async () => {
-            // Check authentication first
+            // Perform authentication check at the very beginning
             const isAuthenticated = await checkAuthenticationStatus();
             if (!isAuthenticated) {
-                return; // Will redirect to login
+                // If not authenticated, the function already redirected, so just return
+                return;
             }
-            
-            await loadStudentData();
+
+            // If authenticated, proceed with loading other data and setting up the page
+            // await loadStudentData(); // This is already done inside checkAuthenticationStatus now
             await loadFontPreferences();
             createParticles();
             await loadGameHistory();
-            
+
             // Event listeners
             startGameBtn.addEventListener('click', startNewGame);
             endGameBtn.addEventListener('click', endGameSession);
@@ -775,7 +774,7 @@
                 newGameState.classList.add('active');
                 clearMessages();
             });
-            
+
             // Allow Enter key to start game
             gameTitleInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
@@ -784,27 +783,11 @@
             });
         });
 
-        // Load student data
+        // The loadStudentData function can be removed or simplified since checkAuthenticationStatus now handles it
         async function loadStudentData() {
-            try {
-                const response = await fetchWithAuth('/student/dashboard');
-                if (!response) return;
-                
-                const data = await response.json();
-                studentData = data.student;
-                
-                // Update UI
-                studentNameEl.textContent = studentData.preferredName || studentData.studentName;
-                totalBytesDisplay.textContent = studentData.bytes;
-                
-                // Set avatar initials
-                const initials = studentData.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
-                studentAvatarEl.textContent = initials;
-                
-            } catch (error) {
-                console.error('Error loading student data:', error);
-                showMessage('Error loading student data');
-            }
+            // This function is largely redundant if checkAuthenticationStatus populates studentData
+            // and updates UI elements. Keep if other parts of your app explicitly call it.
+            // Otherwise, remove it.
         }
 
         // Load font preferences and apply them
@@ -823,29 +806,29 @@
         function createParticles() {
             const particlesContainer = document.getElementById('particles');
             const particleCount = 30;
-            
+
             for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
                 particle.classList.add('particle');
-                
+
                 // Random position
                 particle.style.left = `${Math.random() * 100}%`;
                 particle.style.top = `${Math.random() * 100}%`;
-                
+
                 // Random size
                 const size = Math.random() * 8 + 4;
                 particle.style.width = `${size}px`;
                 particle.style.height = `${size}px`;
-                
+
                 // Random animation duration
                 const duration = Math.random() * 15 + 10;
                 particle.style.animationDuration = `${duration}s`;
-                
+
                 particlesContainer.appendChild(particle);
             }
         }
 
-        // Start a new game
+        // Start a new game (your existing function)
         async function startNewGame() {
             const title = gameTitleInput.value.trim();
             if (!title) {
@@ -863,7 +846,7 @@
                     body: JSON.stringify({ gameTitle: title })
                 });
 
-                if (!response) return;
+                if (!response) return; // fetchWithAuth handled redirection
 
                 if (!response.ok) {
                     const errorData = await response.json();
@@ -871,22 +854,22 @@
                 }
 
                 const data = await response.json();
-                
+
                 // Set up game session
                 currentGameSessionId = data.sessionId;
                 currentGameTitle.textContent = title;
                 currentGameStats = data.playerStats;
                 currentGameStats.currentEthicalScore = data.currentEthicalScore;
                 totalBytesEarnedInSession = 0;
-                
+
                 // Update display
                 updateStatsDisplay();
                 displayScene(data.scene, data.choices);
-                
+
                 // Switch to active game state
                 newGameState.classList.remove('active');
                 activeGameState.classList.add('active');
-                
+
                 showMessage('Game started successfully!', 'success');
 
             } catch (error) {
@@ -898,20 +881,19 @@
             }
         }
 
-        // Display scene and choices
+        // Display scene and choices (your existing function)
         function displayScene(sceneContent, choices) {
             gameContent.innerHTML = `<p>${sceneContent}</p>`;
-            
+
             choicesContainer.innerHTML = '';
-            
+
             choices.forEach((choice, index) => {
                 const choiceBtn = document.createElement('button');
                 choiceBtn.className = 'choice-btn';
-                
-                // Check if choice is available based on required stats
+
                 let isDisabled = false;
                 let disabledReason = '';
-                
+
                 if (choice.requiredStats) {
                     for (const [stat, required] of Object.entries(choice.requiredStats)) {
                         if (currentGameStats[stat] < required) {
@@ -921,9 +903,9 @@
                         }
                     }
                 }
-                
+
                 choiceBtn.innerHTML = choice.choiceText;
-                
+
                 if (isDisabled) {
                     choiceBtn.classList.add('disabled');
                     choiceBtn.disabled = true;
@@ -934,18 +916,16 @@
                 } else {
                     choiceBtn.addEventListener('click', () => makeChoice(index));
                 }
-                
+
                 choicesContainer.appendChild(choiceBtn);
             });
         }
 
-        // Make a choice in the game
+        // Make a choice in the game (your existing function)
         async function makeChoice(choiceIndex) {
-            // Disable all choice buttons
             const choiceBtns = document.querySelectorAll('.choice-btn');
             choiceBtns.forEach(btn => btn.disabled = true);
-            
-            // Show loading state
+
             gameContent.innerHTML = '<p><span class="loading"></span> Your story continues...</p>';
             clearMessages();
 
@@ -955,7 +935,7 @@
                     body: JSON.stringify({ choiceIndex })
                 });
 
-                if (!response) return;
+                if (!response) return; // fetchWithAuth handled redirection
 
                 if (!response.ok) {
                     const errorData = await response.json();
@@ -963,17 +943,14 @@
                 }
 
                 const data = await response.json();
-                
-                // Update game state
+
                 currentGameStats = data.playerStats;
                 currentGameStats.currentEthicalScore = data.currentEthicalScore;
                 totalBytesEarnedInSession = data.totalBytesEarnedInSession;
-                
-                // Update displays
+
                 updateStatsDisplay();
                 displayScene(data.scene, data.choices);
-                
-                // Show bytes earned this turn if any
+
                 if (data.bytesEarnedThisTurn > 0) {
                     showMessage(`+${data.bytesEarnedThisTurn} bytes earned!`, 'success');
                 }
@@ -981,13 +958,11 @@
             } catch (error) {
                 console.error('Error making choice:', error);
                 showMessage(error.message || 'Failed to make choice');
-                
-                // Re-enable buttons on error
-                choiceBtns.forEach(btn => btn.disabled = false);
+                choiceBtns.forEach(btn => btn.disabled = false); // Re-enable buttons on error
             }
         }
 
-        // Update stats display
+        // Update stats display (your existing function)
         function updateStatsDisplay() {
             statLife.textContent = currentGameStats.life;
             statMana.textContent = currentGameStats.mana;
@@ -999,31 +974,28 @@
             statLuck.textContent = currentGameStats.luck;
             statEthics.textContent = currentGameStats.currentEthicalScore;
             statSessionBytes.textContent = totalBytesEarnedInSession;
-            
-            // Color coding for critical stats
+
             statLife.style.color = currentGameStats.life <= 5 ? '#dc2626' : '#4f46e5';
             statMana.style.color = currentGameStats.mana <= 5 ? '#dc2626' : '#4f46e5';
             statMorale.style.color = currentGameStats.morale <= 5 ? '#dc2626' : '#4f46e5';
-            
-            // Ethics color
-            statEthics.style.color = currentGameStats.currentEthicalScore < 0 ? '#dc2626' : 
-                                     currentGameStats.currentEthicalScore > 0 ? '#2ecc71' : '#64748b';
 
-            // Stress color (red for high stress)
+            statEthics.style.color = currentGameStats.currentEthicalScore < 0 ? '#dc2626' :
+                                    currentGameStats.currentEthicalScore > 0 ? '#2ecc71' : '#64748b';
+
             statStress.style.color = currentGameStats.stress > 15 ? '#dc2626' : '#4f46e5';
         }
 
-        // End the current game session
+        // End the current game session (your existing function)
         async function endGameSession() {
             if (!currentGameSessionId) {
                 showMessage('No active game session to end');
                 return;
             }
-            
+
             if (!confirm('Are you sure you want to end this game session? Your progress will be saved.')) {
                 return;
             }
-            
+
             endGameBtn.disabled = true;
             endGameBtn.innerHTML = '<span class="loading"></span> Ending Game...';
             clearMessages();
@@ -1033,7 +1005,7 @@
                     method: 'POST'
                 });
 
-                if (!response) return;
+                if (!response) return; // fetchWithAuth handled redirection
 
                 if (!response.ok) {
                     const errorData = await response.json();
@@ -1041,31 +1013,25 @@
                 }
 
                 const data = await response.json();
-                
-                // Update total bytes display
+
                 totalBytesDisplay.textContent = data.studentCurrentBytes;
-                
-                // Show end game state
+
                 activeGameState.classList.remove('active');
                 endGameState.classList.add('active');
-                
-                // Update summary
+
                 bytesEarnedDisplay.textContent = `+${data.totalBytesEarned} Bytes`;
                 sessionSummary.textContent = `Duration: ${data.sessionDurationMinutes} minutes, Ethics Score: ${data.finalEthicalScore}`;
-                
-                // Display final stats
+
                 finalStats.innerHTML = `
-                    Life: ${currentGameStats.life}, Mana: ${currentGameStats.mana}, 
+                    Life: ${currentGameStats.life}, Mana: ${currentGameStats.mana},
                     Morale: ${currentGameStats.morale}, Knowledge: ${currentGameStats.knowledge}
                 `;
-                
-                // Reset session
+
                 currentGameSessionId = null;
                 gameTitleInput.value = '';
-                
-                // Reload game history
+
                 await loadGameHistory();
-                
+
                 showMessage('Game session ended successfully!', 'success');
 
             } catch (error) {
@@ -1077,11 +1043,11 @@
             }
         }
 
-        // Load game history
+        // Load game history (your existing function)
         async function loadGameHistory() {
             try {
                 const response = await fetchWithAuth('/student/preader-games/history');
-                if (!response) return;
+                if (!response) return; // fetchWithAuth handled redirection
 
                 if (!response.ok) {
                     throw new Error('Failed to load game history');
@@ -1096,7 +1062,7 @@
             }
         }
 
-        // Display game history
+        // Display game history (your existing function)
         function displayGameHistory(history) {
             if (!history || history.length === 0) {
                 gameHistory.innerHTML = '<p style="color: var(--color-neutral-light);">No game history yet. Start your first adventure!</p>';
@@ -1104,13 +1070,13 @@
             }
 
             gameHistory.innerHTML = '';
-            
+
             history.forEach(session => {
                 const historyItem = document.createElement('div');
                 historyItem.className = 'history-item';
-                
+
                 const startDate = new Date(session.startTime).toLocaleDateString();
-                
+
                 historyItem.innerHTML = `
                     <div class="history-title">${session.initialTitle}</div>
                     <div class="history-meta">
@@ -1122,7 +1088,7 @@
                         <div class="history-stat"><span>${session.finalEthicalScore}</span> Ethics</div>
                     </div>
                 `;
-                
+
                 gameHistory.appendChild(historyItem);
             });
         }
