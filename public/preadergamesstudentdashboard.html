@@ -641,7 +641,7 @@
             currentEthicalScore: 0
         };
         let totalBytesEarnedInSession = 0;
-        let authToken = localStorage.getItem('token'); // Get token early
+        let authToken = null; // Will be set during initialization
         let studentData = null;
 
         // DOM Elements (rest of your DOM elements as is)
@@ -695,14 +695,25 @@
         }
 
         async function fetchWithAuth(url, options = {}) {
+            // Always get fresh token from localStorage before making requests
+            authToken = localStorage.getItem('token');
+            
+            if (!authToken) {
+                console.log('No token available, redirecting to login');
+                showMessage('Please log in to continue.');
+                setTimeout(() => {
+                    window.location.href = 'studentlogin.html';
+                }, 2000);
+                return null;
+            }
+
             const headers = {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`,
                 ...options.headers
             };
 
-            if (authToken) {
-                headers.Authorization = `Bearer ${authToken}`;
-            }
+            console.log('Making authenticated request to:', url);
 
             const response = await fetch(url, {
                 ...options,
@@ -713,6 +724,7 @@
                 console.log('Authentication failed, redirecting to login');
                 localStorage.removeItem('token');
                 localStorage.removeItem('userData');
+                authToken = null;
                 showMessage('Your session has expired. Please log in again.');
                 setTimeout(() => {
                     window.location.href = 'studentlogin.html';
@@ -725,6 +737,9 @@
 
         // Check authentication status
         async function checkAuthenticationStatus() {
+            // Get fresh token from localStorage
+            authToken = localStorage.getItem('token');
+            
             if (!authToken) {
                 console.log('No token found, redirecting to student login');
                 showMessage('Please log in to access Preader Games.');
@@ -748,6 +763,7 @@
                     console.log('Token validation failed on server, redirecting to login');
                     localStorage.removeItem('token');
                     localStorage.removeItem('userData');
+                    authToken = null; // Clear the token
                     showMessage('Your session has expired. Please log in again.');
                     setTimeout(() => {
                         window.location.href = 'studentlogin.html';
@@ -763,10 +779,10 @@
                 const initials = studentData.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
                 studentAvatarEl.textContent = initials;
 
+                console.log('Authentication successful, token valid');
                 return true;
             } catch (error) {
                 console.error('Error checking authentication status:', error);
-                // For network errors, show error message but don't redirect immediately
                 showMessage('Network error. Please check your connection and try again.');
                 return false;
             }
@@ -857,9 +873,24 @@
                 return;
             }
 
+            // Check if we have valid authentication before proceeding
+            if (!authToken) {
+                authToken = localStorage.getItem('token');
+                if (!authToken) {
+                    showMessage('Authentication required. Please log in.');
+                    setTimeout(() => {
+                        window.location.href = 'studentlogin.html';
+                    }, 2000);
+                    return;
+                }
+            }
+
             startGameBtn.disabled = true;
             startGameBtn.innerHTML = '<span class="loading"></span> Starting Game...';
             clearMessages();
+
+            console.log('Starting new game with title:', title);
+            console.log('Auth token present:', !!authToken);
 
             try {
                 const response = await fetchWithAuth('/student/preader-games/start', {
@@ -867,14 +898,21 @@
                     body: JSON.stringify({ gameTitle: title })
                 });
 
-                if (!response) return; // fetchWithAuth handled redirection
+                if (!response) {
+                    console.log('No response received from fetchWithAuth');
+                    return; // fetchWithAuth handled redirection
+                }
+
+                console.log('Response status:', response.status);
 
                 if (!response.ok) {
                     const errorData = await response.json();
+                    console.error('Server error response:', errorData);
                     throw new Error(errorData.message || 'Failed to start game');
                 }
 
                 const data = await response.json();
+                console.log('Game start response:', data);
 
                 // Set up game session
                 currentGameSessionId = data.sessionId;
