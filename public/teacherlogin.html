@@ -665,7 +665,7 @@
 
                 if (email.startsWith(adminPrefix)) {
                     email = email.substring(adminPrefix.length).trim();
-                    redirectUrl = 'verifyadmindashboard.html';
+                    redirectUrl = 'admin-2fa-verify.html';
                     isAdmin = true;
                 }
                 
@@ -675,24 +675,27 @@
                 
                 try {
                     let response;
+                    let requestBody;
                     
                     if (isAdmin) {
                         // Admin login - first step (initiate 2FA)
+                        requestBody = { email, password };
                         response = await fetch('/login-admin', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                             },
-                            body: JSON.stringify({ email, password }),
+                            body: JSON.stringify(requestBody),
                         });
                     } else {
-                        // Teacher login
+                        // Teacher login - include name in request
+                        requestBody = { teacherName: name, email, password };
                         response = await fetch('/login-teacher', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                             },
-                            body: JSON.stringify({ email, password }),
+                            body: JSON.stringify(requestBody),
                         });
                     }
 
