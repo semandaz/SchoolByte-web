@@ -614,6 +614,19 @@
     </div>
 
     <script>
+        // Define the missing showMessageBox function
+        window.showMessageBox = function(title, message, type = 'alert') {
+            return new Promise((resolve) => {
+                if (type === 'confirm') {
+                    const result = confirm(`${title}\n\n${message}`);
+                    resolve(result);
+                } else {
+                    alert(`${title}\n\n${message}`);
+                    resolve(true);
+                }
+            });
+        };
+
         // Global variables
         let currentGameSessionId = null;
         let currentGameStats = {
@@ -697,12 +710,12 @@
             });
 
             if (response.status === 401 || response.status === 403) {
-                console.log('Authentication failed, redirecting to student dashboard');
+                console.log('Authentication failed, redirecting to login');
                 localStorage.removeItem('token');
                 localStorage.removeItem('userData');
                 showMessage('Your session has expired. Please log in again.');
                 setTimeout(() => {
-                    window.location.href = 'studentdashboard.html';
+                    window.location.href = 'studentlogin.html';
                 }, 2000);
                 return null;
             }
@@ -713,8 +726,11 @@
         // Check authentication status
         async function checkAuthenticationStatus() {
             if (!authToken) {
-                console.log('No token found, redirecting to student dashboard');
-                window.location.href = 'studentdashboard.html';
+                console.log('No token found, redirecting to student login');
+                showMessage('Please log in to access Preader Games.');
+                setTimeout(() => {
+                    window.location.href = 'studentlogin.html';
+                }, 2000);
                 return false;
             }
 
@@ -728,11 +744,14 @@
                 });
 
                 if (!response.ok) {
-                    // If the token is invalid or expired, redirect to student dashboard
-                    console.log('Token validation failed on server, redirecting to student dashboard');
+                    // If the token is invalid or expired, redirect to login
+                    console.log('Token validation failed on server, redirecting to login');
                     localStorage.removeItem('token');
                     localStorage.removeItem('userData');
-                    window.location.href = 'studentdashboard.html';
+                    showMessage('Your session has expired. Please log in again.');
+                    setTimeout(() => {
+                        window.location.href = 'studentlogin.html';
+                    }, 2000);
                     return false;
                 }
 
