@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SchoolByte - Biology Teacher Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Updated Color Palette to match login page */
+    :root {
+      /* Primary Colors */
+      --color-primary: #2c3e50;        /* Deep Navy */
+      --color-primary-dark: #1a2530;    /* Darker Navy */
+      --color-primary-light: #3c546d;   /* Lighter Navy */
+
+      /* Accent Colors */
+      --color-accent: #3498db;          /* Professional Blue */
+      --color-accent-secondary: #2980b9;/* Darker Blue */
+
+      /* Neutral Colors */
+      --color-light: #1e2837;           /* Dark background */
+      --color-light-alt: #252f3e;       /* Alternate dark */
+      --color-medium: #7f8c8d;          /* Medium gray */
+      --color-dark: #ecf0f1;            /* Light text */
+      --color-darker: #bdc3c7;          /* Lighter elements */
+
+      /* Status Colors */
+      --color-success: #2ecc71;         /* Green */
+      --color-warning: #f39c12;         /* Orange */
+      --color-error: #e74c3c;           /* Red */
+
+      /* Gradients */
+      --gradient-primary: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+      --gradient-accent: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #2c3e50, #1a2530);
+      color: var(--color-dark);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Header Styles */
+    header {
+      background: linear-gradient(to right, #3498db, #2c3e50);
+      color: white;
+      padding: 1.2rem 2rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      position: relative;
+      z-index: 100;
+    }
+
+    .header-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 2.2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      text-decoration: none;
+      color: white;
+    }
+
+    .logo-icon {
+      background: rgba(255, 255, 255, 0.15);
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+    }
+
+    .profile-section {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--gradient-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .avatar:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+    }
+
+    .teacher-info {
+      text-align: right;
+    }
+
+    .teacher-name {
+      font-weight: 600;
+      font-size: 1.2rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .teacher-role {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    /* Back to Dashboard Button */
+    .back-to-dashboard {
+      position: absolute;
+      top: 1.5rem;
+      left: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      z-index: 20;
+      color: white;
+      font-weight: 600;
+    }
+
+    .back-arrow {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      transition: all 0.3s;
+    }
+
+    .back-to-dashboard:hover .back-arrow {
+      transform: translateX(-5px);
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Main Layout */
+    .dashboard-container {
+      max-width: 1400px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: rgba(30, 40, 56, 0.85);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+      padding: 1.8rem 1.2rem;
+      height: fit-content;
+      border: 1px solid rgba(127, 140, 163, 0.2);
+    }
+
+    .sidebar-section {
+      margin-bottom: 2.2rem;
+    }
+
+    .sidebar-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--color-accent);
+      margin-bottom: 1.2rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid rgba(127, 140, 163, 0.3);
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.9rem 1rem;
+      border-radius: 10px;
+      margin-bottom: 0.6rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--color-dark);
+      text-decoration: none;
+      background: rgba(25, 35, 50, 0.6);
+      border: 1px solid rgba(127, 140, 163, 0.2);
+    }
+
+    .sidebar-item:hover {
+      background: rgba(52, 152, 219, 0.2);
+      transform: translateX(5px);
+      color: var(--color-accent);
+    }
+
+    .sidebar-item.active {
+      background: rgba(52, 152, 219, 0.3);
+      color: white;
+      border-color: var(--color-accent);
+    }
+
+    .sidebar-item i {
+      width: 24px;
+      text-align: center;
+      font-size: 1.1rem;
+    }
+
+    .stats-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .stat-card {
+      background: rgba(25, 35, 50, 0.6);
+      border-radius: 12px;
+      padding: 1.2rem;
+      text-align: center;
+      border: 1px solid rgba(127, 140, 163, 0.2);
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--color-accent);
+      margin: 0.5rem 0;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--color-medium);
+    }
+
+    /* Main Content */
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .welcome-section {
+      background: rgba(30, 40, 56, 0.85);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(127, 140, 163, 0.2);
+      border-top: 4px solid var(--color-accent);
+    }
+
+    .welcome-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .welcome-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--color-accent);
+    }
+
+    .date-display {
+      font-size: 1rem;
+      color: var(--color-medium);
+      font-weight: 500;
+    }
+
+    .welcome-message {
+      font-size: 1.1rem;
+      line-height: 1.7;
+      color: var(--color-dark);
+      max-width: 800px;
+      margin-bottom: 1.5rem;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .btn {
+      padding: 0.9rem 1.8rem;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .btn-primary {
+      background: var(--gradient-accent);
+      color: white;
+      box-shadow: 0 4px 12px rgba(41, 128, 185, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(41, 128, 185, 0.4);
+      background: linear-gradient(to right, #2980b9, #2573a7);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--color-accent);
+      color: var(--color-accent);
+    }
+
+    .btn-outline:hover {
+      background: rgba(52, 152, 219, 0.1);
+    }
+
+    /* Quick Stats - Only keeping Resources Uploaded */
+    .quick-stats {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .stat-card-lg {
+      background: rgba(30, 40, 56, 0.85);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+      padding: 1.8rem;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(127, 140, 163, 0.2);
+    }
+
+    .stat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--color-dark);
+    }
+
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      background: rgba(52, 152, 219, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: var(--color-accent);
+    }
+
+    .stat-value-lg {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--color-dark);
+      margin: 0.5rem 0;
+    }
+
+    .stat-trend {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.95rem;
+      margin-top: 0.5rem;
+      color: var(--color-medium);
+    }
+
+    .trend-up {
+      color: var(--color-success);
+    }
+
+    .trend-down {
+      color: var(--color-error);
+    }
+
+    /* Recent Activity */
+    .activity-section {
+      background: rgba(30, 40, 56, 0.85);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+      padding: 2rem;
+      border: 1px solid rgba(127, 140, 163, 0.2);
+      border-top: 4px solid var(--color-accent);
+    }
+
+    .activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .activity-item {
+      display: flex;
+      gap: 1.2rem;
+      padding: 1.2rem;
+      border-radius: 12px;
+      background: rgba(25, 35, 50, 0.6);
+      transition: all 0.3s ease;
+      border: 1px solid rgba(127, 140, 163, 0.2);
+    }
+
+    .activity-item:hover {
+      transform: translateX(5px);
+      background: rgba(52, 152, 219, 0.1);
+    }
+
+    .activity-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      background: rgba(52, 152, 219, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      color: var(--color-accent);
+      flex-shrink: 0;
+    }
+
+    .activity-content {
+      flex: 1;
+    }
+
+    .activity-title {
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: var(--color-dark);
+    }
+
+    .activity-description {
+      color: var(--color-darker);
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .activity-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--color-medium);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1100px) {
+      .dashboard-container {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header-container {
+        flex-direction: column;
+        gap: 1.2rem;
+        text-align: center;
+      }
+
+      .teacher-info {
+        text-align: center;
+      }
+
+      .action-buttons {
+        flex-direction: column;
+      }
+
+      .quick-stats {
+        grid-template-columns: 1fr;
+      }
+
+      .back-to-dashboard {
+        top: 1rem;
+        left: 1rem;
+      }
+
+      .back-arrow {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+      }
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--color-medium);
+      font-size: 0.9rem;
+      border-top: 1px solid rgba(127, 140, 163, 0.3);
+      margin-top: 3rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-container">
+      <a href="teacherdashboard.html" class="back-to-dashboard">
+        <div class="back-arrow">
+          <i class="fas fa-arrow-left"></i>
+        </div>
+      </a>
+      <a href="teacherdashboard.html" class="logo">
+        <div class="logo-icon">
+          <i class="fas fa-graduation-cap"></i>
+        </div>
+        SchoolByte
+      </a>
+      <div class="profile-section">
+        <div class="teacher-info">
+          <div class="teacher-name">Dr. Jane Smith</div>
+          <div class="teacher-role">Biology Department</div>
+        </div>
+        <div class="avatar" onclick="window.location.href='teacherprofile.html'">
+          <i class="fas fa-user-tie"></i>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="dashboard-container">
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-title">Biology Navigation</div>
+        <a href="#" class="sidebar-item active">
+          <i class="fas fa-home"></i>
+          Dashboard
+        </a>
+        <a href="#" class="sidebar-item">
+          <i class="fas fa-book"></i>
+          Lesson Materials
+        </a>
+        <a href="#" class="sidebar-item">
+          <i class="fas fa-tasks"></i>
+          Assignments
+        </a>
+        <a href="#" class="sidebar-item">
+          <i class="fas fa-users"></i>
+          Student Progress
+        </a>
+        <a href="#" class="sidebar-item">
+          <i class="fas fa-chart-line"></i>
+          Performance Analytics
+        </a>
+        <a href="#" class="sidebar-item">
+          <i class="fas fa-calendar-alt"></i>
+          Class Schedule
+        </a>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">Content Management</div>
+        <a href="uploadquizzesteacherdashboard.html" class="sidebar-item">
+          <i class="fas fa-cloud-upload-alt"></i>
+          Upload Resources
+        </a>
+        <a href="uploadnotesteacherdashboard.html" class="sidebar-item">
+          <i class="fas fa-file-alt"></i>
+          Create Lesson Plan
+        </a>
+        <a href="#" class="sidebar-item">
+          <i class="fas fa-video"></i>
+          Record Lecture
+        </a>
+        <a href="#" class="sidebar-item">
+          <i class="fas fa-question-circle"></i>
+          Create Quiz
+        </a>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">Quick Stats</div>
+        <div class="stats-container">
+          <div class="stat-card">
+            <i class="fas fa-users"></i>
+            <div class="stat-value">142</div>
+            <div class="stat-label">Students</div>
+          </div>
+          <div class="stat-card">
+            <i class="fas fa-book-open"></i>
+            <div class="stat-value">18</div>
+            <div class="stat-label">Resources</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <a href="#" class="sidebar-item">
+          <i class="fas fa-cog"></i>
+          Settings
+        </a>
+        <a href="#" class="sidebar-item" id="signOutBtn">
+          <i class="fas fa-sign-out-alt"></i>
+          Sign Out
+        </a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <section class="welcome-section">
+        <div class="welcome-header">
+          <h1 class="welcome-title">Biology Teacher Dashboard</h1>
+          <div class="date-display" id="currentDate">Monday, September 18, 2023</div>
+        </div>
+        <p class="welcome-message">
+          Welcome back, Dr. Smith. You have 24 assignments to review and 3 upcoming classes scheduled. 
+          The student performance dashboard shows an 8% improvement in test scores compared to last month.
+        </p>
+        <div class="action-buttons">
+          <button class="btn btn-primary" onclick="window.location.href='uploadquizzesteacherdashboard.html'">
+            <i class="fas fa-cloud-upload-alt"></i>
+            Upload New Content
+          </button>
+          <button class="btn btn-outline" onclick="window.location.href='uploadnotesteacherdashboard.html'">
+            <i class="fas fa-calendar-check"></i>
+            View Class Schedule
+          </button>
+        </div>
+      </section>
+
+      <section class="quick-stats">
+        <div class="stat-card-lg">
+          <div class="stat-header">
+            <h3 class="stat-title">Resources Uploaded</h3>
+            <div class="stat-icon">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+          </div>
+          <div class="stat-value-lg">42</div>
+          <div class="stat-trend trend-up">
+            <i class="fas fa-arrow-up"></i>
+            8 this month
+          </div>
+        </div>
+      </section>
+
+      <section class="activity-section">
+        <div class="section-header">
+          <h2 class="section-title">Recent Activity</h2>
+          <a href="#" class="view-all">
+            View All
+            <i class="fas fa-chevron-right"></i>
+          </a>
+        </div>
+        <div class="activity-list">
+          <div class="activity-item">
+            <div class="activity-icon">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">New Resource Uploaded</div>
+              <div class="activity-description">You uploaded the "DNA Replication" presentation for Grade 11</div>
+              <div class="activity-meta">
+                <span><i class="far fa-clock"></i> 2 hours ago</span>
+                <span><i class="fas fa-download"></i> 24 downloads</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="activity-item">
+            <div class="activity-icon">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">New Resource Uploaded</div>
+              <div class="activity-description">You uploaded the "Human Anatomy" lab guide for Grade 12</div>
+              <div class="activity-meta">
+                <span><i class="far fa-clock"></i> 5 hours ago</span>
+                <span><i class="fas fa-download"></i> 18 downloads</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="activity-item">
+            <div class="activity-icon">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">New Resource Uploaded</div>
+              <div class="activity-description">You uploaded the "Photosynthesis" worksheet for Grade 10</div>
+              <div class="activity-meta">
+                <span><i class="far fa-clock"></i> Yesterday</span>
+                <span><i class="fas fa-download"></i> 32 downloads</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="activity-item">
+            <div class="activity-icon">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <div class="activity-content">
+              <div class="activity-title">New Resource Uploaded</div>
+              <div class="activity-description">You uploaded the "Evolution Theory" quiz for Grade 11</div>
+              <div class="activity-meta">
+                <span><i class="far fa-clock"></i> Yesterday</span>
+                <span><i class="fas fa-download"></i> 15 downloads</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <p>SchoolByte Biology Teacher Dashboard &copy; 2023 | Designed for Educators</p>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set current date
+      const now = new Date();
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+
+      // Sign out functionality
+      document.getElementById('signOutBtn').addEventListener('click', function() {
+        if (confirm('Are you sure you want to sign out?')) {
+          // Clear teacher-related data
+          localStorage.removeItem('teacherToken');
+          window.location.href = 'teacherlogin.html';
+        }
+      });
+
+      // Add click effect to buttons
+      const buttons = document.querySelectorAll('.btn');
+      buttons.forEach(button => {
+        button.addEventListener('click', function() {
+          this.style.transform = 'scale(0.98)';
+          setTimeout(() => {
+            this.style.transform = '';
+          }, 150);
+        });
+      });
+    });
+  </script>
+</body>
+</html>

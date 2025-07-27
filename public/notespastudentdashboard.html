@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolByte - Performing Arts Resources</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* SchoolByte Brand Colors */
+        :root {
+            --color-brand-primary: #1a2a6c;
+            --color-brand-secondary: #b21f1f;
+            --color-brand-gold: #FFD700;
+            --color-brand-orange: #FFA500;
+            --color-neutral-white: #ffffff;
+            --color-neutral-lightest: #f8f9fa;
+            --color-neutral-light: #e9ecef;
+            --color-neutral-medium: #adb5bd;
+            --color-neutral-dark: #495057;
+            --color-neutral-darkest: #212529;
+            --color-error-red: #e74c3c;
+            --color-success-green: #2ecc71;
+            --color-info-blue: #3498db;
+            --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            --gradient-background-secondary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
+            --gradient-text-gold: linear-gradient(to right, var(--color-brand-gold), var(--color-neutral-white));
+            --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--gradient-background-secondary);
+            min-height: 100vh;
+            color: var(--color-neutral-darkest);
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        header {
+            background-color: var(--color-neutral-white);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 2rem;
+            position: relative;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-btn {
+            margin-right: 1rem;
+            color: var(--color-brand-primary);
+            font-size: 1.5rem;
+            text-decoration: none;
+            transition: transform 0.3s;
+        }
+
+        .back-btn:hover {
+            transform: translateX(-3px);
+        }
+
+        .logo {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: var(--gradient-background-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-left: auto;
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--gradient-background-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-neutral-white);
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+        }
+
+        .student-name {
+            font-weight: 600;
+            color: var(--color-brand-primary);
+            font-size: 1.1rem;
+        }
+
+        /* Main Content Container */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            position: relative;
+        }
+
+        /* Subject Header */
+        .subject-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .subject-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--color-neutral-white);
+            margin-bottom: 0.5rem;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .subject-icon {
+            font-size: 2rem;
+            color: var(--color-brand-gold);
+        }
+
+        .subject-subtitle {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.9);
+            max-width: 700px;
+            margin: 0 auto 1.5rem;
+        }
+
+        /* Search Section */
+        .search-section {
+            max-width: 800px;
+            margin: 0 auto 3rem;
+            position: relative;
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            border: none;
+            font-size: 1.1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--color-brand-primary);
+            font-size: 1.2rem;
+        }
+
+        .search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .search-suggestions.active {
+            display: block;
+        }
+
+        .suggestion-item {
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .suggestion-item:hover {
+            background: var(--color-neutral-lightest);
+        }
+
+        /* Resources Content */
+        .resources-content {
+            background-color: var(--color-neutral-white);
+            border-radius: 12px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .resources-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: var(--gradient-background-primary);
+        }
+
+        /* Popular Resources Section */
+        .popular-resources {
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--color-neutral-white);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .section-title i {
+            color: var(--color-brand-gold);
+        }
+
+        /* Resource Cards */
+        .resource-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .resource-card {
+            background-color: var(--color-neutral-lightest);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border-left: 4px solid var(--color-brand-primary);
+            position: relative;
+        }
+
+        .resource-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .resource-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--color-brand-primary);
+        }
+
+        .resource-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: var(--color-neutral-medium);
+        }
+
+        .resource-class {
+            background-color: var(--color-brand-primary);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .resource-description {
+            margin-bottom: 1.5rem;
+            color: var(--color-neutral-dark);
+        }
+
+        .resource-stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: var(--color-neutral-medium);
+        }
+
+        .stat-item i {
+            color: var(--color-brand-gold);
+        }
+
+        .download-btn {
+            display: inline-block;
+            padding: 0.6rem 1.2rem;
+            background: var(--gradient-button-active);
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            width: 100%;
+            text-align: center;
+        }
+
+        .download-btn:hover {
+            background: var(--gradient-background-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Search Results Section */
+        .search-results {
+            display: none;
+        }
+
+        .search-results.active {
+            display: block;
+        }
+
+        .results-count {
+            color: var(--color-neutral-white);
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        /* No Results Message */
+        .no-results {
+            text-align: center;
+            padding: 2rem;
+            color: var(--color-neutral-medium);
+            font-size: 1.1rem;
+        }
+
+        /* Floating Particles */
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--color-brand-gold);
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: float-up linear infinite;
+            filter: drop-shadow(0 0 3px var(--color-brand-gold));
+        }
+
+        @keyframes float-up {
+            to {
+                transform: translateY(-100vh);
+            }
+        }
+
+        /* Bytes Counter */
+        .bytes-counter {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background-color: var(--color-brand-primary);
+            color: var(--color-neutral-white);
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 100;
+        }
+
+        .bytes-icon {
+            color: var(--color-brand-gold);
+        }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+
+            .particle {
+                display: none !important;
+            }
+
+            .resource-card:hover {
+                transform: none !important;
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: row;
+                gap: 1rem;
+            }
+
+            .logo {
+                font-size: 1.8rem;
+                text-align: left;
+                margin-left: 1rem;
+            }
+
+            .subject-title {
+                font-size: 1.8rem;
+            }
+
+            .resources-content {
+                padding: 1.5rem;
+            }
+
+            .resource-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Particles -->
+    <div class="floating-particles" id="floatingParticles"></div>
+
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="studentdashboard.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <a href="studentdashboard.html" class="logo">SchoolByte</a>
+            <div class="profile-section">
+                <div class="avatar" onclick="window.location.href='studentprofile.html'">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <span class="student-name" id="studentNameDisplay">Student</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Subject Header -->
+        <div class="subject-header">
+            <h1 class="subject-title">
+                <i class="fas fa-theater-masks subject-icon"></i>
+                Performing Arts Resources
+            </h1>
+            <p class="subject-subtitle">Search for study materials by topic, or browse popular resources below</p>
+        </div>
+
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="search-container">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search for topics (e.g., Drama, Dance, Music, Acting)...">
+                <i class="fas fa-search search-icon"></i>
+                <div class="search-suggestions" id="searchSuggestions">
+                    <!-- Suggestions will be added here dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Resources Content -->
+        <div class="resources-content">
+            <!-- Popular Resources Section -->
+            <div class="popular-resources">
+                <h2 class="section-title">
+                    <i class="fas fa-fire"></i>
+                    Most Downloaded Resources
+                </h2>
+                <div class="resource-cards">
+                    <!-- Resource Card 1 -->
+                    <div class="resource-card">
+                        <h3 class="resource-name">Introduction to Drama</h3>
+                        <div class="resource-meta">
+                            <span><i class="fas fa-file-pdf"></i> PDF</span>
+                            <span class="resource-class">Senior 3</span>
+                        </div>
+                        <p class="resource-description">Fundamentals of dramatic arts including stagecraft, acting techniques, and script analysis.</p>
+                        <div class="resource-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-download"></i> 312 downloads
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-star"></i> 4.7 (42)
+                            </div>
+                        </div>
+                        <a href="#" class="download-btn" onclick="downloadResource('introduction_to_drama.pdf')">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </div>
+
+                    <!-- Resource Card 2 -->
+                    <div class="resource-card">
+                        <h3 class="resource-name">Traditional Dance Forms</h3>
+                        <div class="resource-meta">
+                            <span><i class="fas fa-file-pdf"></i> PDF</span>
+                            <span class="resource-class">Senior 4</span>
+                        </div>
+                        <p class="resource-description">Guide to African traditional dances with step-by-step instructions and cultural significance.</p>
+                        <div class="resource-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-download"></i> 278 downloads
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-star"></i> 4.8 (39)
+                            </div>
+                        </div>
+                        <a href="#" class="download-btn" onclick="downloadResource('traditional_dance_forms.pdf')">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </div>
+
+                    <!-- Resource Card 3 -->
+                    <div class="resource-card">
+                        <h3 class="resource-name">Music Theory Basics</h3>
+                        <div class="resource-meta">
+                            <span><i class="fas fa-file-word"></i> DOCX</span>
+                            <span class="resource-class">Senior 5</span>
+                        </div>
+                        <p class="resource-description">Introduction to musical notation, rhythm, and harmony for beginners.</p>
+                        <div class="resource-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-download"></i> 245 downloads
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-star"></i> 4.6 (35)
+                            </div>
+                        </div>
+                        <a href="#" class="download-btn" onclick="downloadResource('music_theory_basics.docx')">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Rated Resources Section -->
+            <div class="popular-resources">
+                <h2 class="section-title">
+                    <i class="fas fa-star"></i>
+                    Top Rated Resources
+                </h2>
+                <div class="resource-cards">
+                    <!-- Resource Card 1 -->
+                    <div class="resource-card">
+                        <h3 class="resource-name">Acting Techniques</h3>
+                        <div class="resource-meta">
+                            <span><i class="fas fa-file-pdf"></i> PDF</span>
+                            <span class="resource-class">Senior 4</span>
+                        </div>
+                        <p class="resource-description">Stanislavski, Brecht, and other acting methods explained with exercises.</p>
+                        <div class="resource-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-download"></i> 198 downloads
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-star"></i> 4.9 (51)
+                            </div>
+                        </div>
+                        <a href="#" class="download-btn" onclick="downloadResource('acting_techniques.pdf')">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </div>
+
+                    <!-- Resource Card 2 -->
+                    <div class="resource-card">
+                        <h3 class="resource-name">Stage Lighting Guide</h3>
+                        <div class="resource-meta">
+                            <span><i class="fas fa-file-pdf"></i> PDF</span>
+                            <span class="resource-class">Senior 6</span>
+                        </div>
+                        <p class="resource-description">Technical guide to stage lighting design and equipment operation.</p>
+                        <div class="resource-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-download"></i> 187 downloads
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-star"></i> 4.8 (44)
+                            </div>
+                        </div>
+                        <a href="#" class="download-btn" onclick="downloadResource('stage_lighting_guide.pdf')">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </div>
+
+                    <!-- Resource Card 3 -->
+                    <div class="resource-card">
+                        <h3 class="resource-name">Costume Design Handbook</h3>
+                        <div class="resource-meta">
+                            <span><i class="fas fa-file-word"></i> DOCX</span>
+                            <span class="resource-class">Senior 3</span>
+                        </div>
+                        <p class="resource-description">Principles of costume design for theater and performance.</p>
+                        <div class="resource-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-download"></i> 156 downloads
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-star"></i> 4.7 (32)
+                            </div>
+                        </div>
+                        <a href="#" class="download-btn" onclick="downloadResource('costume_design_handbook.docx')">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Results Section -->
+            <div class="search-results" id="searchResults">
+                <h2 class="section-title">
+                    <i class="fas fa-search"></i>
+                    Search Results
+                </h2>
+                <div class="results-count" id="resultsCount">3 results found for "Drama"</div>
+                <div class="resource-cards" id="resultsContainer">
+                    <!-- Search results will be added here dynamically -->
+                </div>
+            </div>
+
+            <!-- No Results Message -->
+            <div class="no-results hidden" id="noResults">
+                <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; color: var(--color-neutral-medium);"></i>
+                <p>No resources found matching your search.</p>
+                <p>Try different keywords or browse the popular resources above.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bytes Counter -->
+    <div class="bytes-counter">
+        <i class="fas fa-coins bytes-icon"></i>
+        <span id="bytesCount">0</span> Bytes
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const studentNameDisplay = document.getElementById('studentNameDisplay');
+            const bytesCountElement = document.getElementById('bytesCount');
+            const floatingParticles = document.getElementById('floatingParticles');
+            const searchInput = document.getElementById('searchInput');
+            const searchSuggestions = document.getElementById('searchSuggestions');
+            const searchResults = document.getElementById('searchResults');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsCount = document.getElementById('resultsCount');
+            const noResults = document.getElementById('noResults');
+
+            // Sample data - Performing Arts topics and resources
+            const allTopics = [
+                "Drama", "Dance", "Music", 
+                "Acting", "Stagecraft", "Costume Design",
+                "Theater History", "Choreography", "Vocal Techniques", 
+                "Improvisation", "Script Writing", "Lighting Design",
+                "Sound Design", "Directing", "African Theater",
+                "Performance Analysis", "Character Development", "Stage Management"
+            ];
+
+            const allResources = [
+                {
+                    name: "Introduction to Drama",
+                    class: "Senior 3",
+                    type: "PDF",
+                    description: "Fundamentals of dramatic arts including stagecraft, acting techniques, and script analysis.",
+                    downloads: 312,
+                    rating: 4.7,
+                    reviews: 42,
+                    topics: ["Drama", "Acting"]
+                },
+                {
+                    name: "Traditional Dance Forms",
+                    class: "Senior 4",
+                    type: "PDF",
+                    description: "Guide to African traditional dances with step-by-step instructions and cultural significance.",
+                    downloads: 278,
+                    rating: 4.8,
+                    reviews: 39,
+                    topics: ["Dance", "Choreography"]
+                },
+                {
+                    name: "Music Theory Basics",
+                    class: "Senior 5",
+                    type: "DOCX",
+                    description: "Introduction to musical notation, rhythm, and harmony for beginners.",
+                    downloads: 245,
+                    rating: 4.6,
+                    reviews: 35,
+                    topics: ["Music"]
+                },
+                {
+                    name: "Acting Techniques",
+                    class: "Senior 4",
+                    type: "PDF",
+                    description: "Stanislavski, Brecht, and other acting methods explained with exercises.",
+                    downloads: 198,
+                    rating: 4.9,
+                    reviews: 51,
+                    topics: ["Acting", "Drama"]
+                },
+                {
+                    name: "Stage Lighting Guide",
+                    class: "Senior 6",
+                    type: "PDF",
+                    description: "Technical guide to stage lighting design and equipment operation.",
+                    downloads: 187,
+                    rating: 4.8,
+                    reviews: 44,
+                    topics: ["Stagecraft", "Lighting Design"]
+                },
+                {
+                    name: "Costume Design Handbook",
+                    class: "Senior 3",
+                    type: "DOCX",
+                    description: "Principles of costume design for theater and performance.",
+                    downloads: 156,
+                    rating: 4.7,
+                    reviews: 32,
+                    topics: ["Costume Design"]
+                }
+            ];
+
+            // Student Data
+            const studentName = localStorage.getItem('studentName') || 'Student';
+            studentNameDisplay.textContent = studentName;
+
+            let bytesCount = parseInt(localStorage.getItem('bytesCount')) || 0;
+            bytesCountElement.textContent = bytesCount;
+
+            // Create floating particles
+            function createParticles() {
+                for (let i = 0; i < 30; i++) {
+                    const particle = document.createElement('div');
+                    particle.classList.add('particle');
+
+                    const posX = Math.random() * 100;
+                    const posY = Math.random() * 100;
+                    const size = Math.random() * 4 + 4;
+                    const duration = Math.random() * 15 + 10;
+                    const delay = Math.random() * 5;
+
+                    particle.style.left = `${posX}vw`;
+                    particle.style.top = `${posY}vh`;
+                    particle.style.width = `${size}px`;
+                    particle.style.height = `${size}px`;
+                    particle.style.animationDuration = `${duration}s`;
+                    particle.style.animationDelay = `${delay}s`;
+
+                    floatingParticles.appendChild(particle);
+                }
+            }
+
+            // Show search suggestions
+            function showSuggestions(query) {
+                searchSuggestions.innerHTML = '';
+
+                if (query.length < 2) {
+                    searchSuggestions.classList.remove('active');
+                    return;
+                }
+
+                const filtered = allTopics.filter(topic => 
+                    topic.toLowerCase().includes(query.toLowerCase())
+                );
+
+                if (filtered.length > 0) {
+                    filtered.forEach(topic => {
+                        const item = document.createElement('div');
+                        item.classList.add('suggestion-item');
+                        item.textContent = topic;
+                        item.addEventListener('click', () => {
+                            searchInput.value = topic;
+                            searchSuggestions.classList.remove('active');
+                            performSearch(topic);
+                        });
+                        searchSuggestions.appendChild(item);
+                    });
+                    searchSuggestions.classList.add('active');
+                } else {
+                    searchSuggestions.classList.remove('active');
+                }
+            }
+
+            // Perform search
+            function performSearch(query) {
+                if (query.length < 2) {
+                    searchResults.classList.remove('active');
+                    noResults.classList.add('hidden');
+                    return;
+                }
+
+                const filtered = allResources.filter(resource => 
+                    resource.name.toLowerCase().includes(query.toLowerCase()) ||
+                    resource.topics.some(topic => topic.toLowerCase().includes(query.toLowerCase()))
+                ).sort((a, b) => b.downloads - a.downloads);
+
+                resultsContainer.innerHTML = '';
+
+                if (filtered.length > 0) {
+                    resultsCount.textContent = `${filtered.length} result${filtered.length === 1 ? '' : 's'} found for "${query}"`;
+
+                    filtered.forEach(resource => {
+                        const card = createResourceCard(resource);
+                        resultsContainer.appendChild(card);
+                    });
+
+                    searchResults.classList.add('active');
+                    noResults.classList.add('hidden');
+                } else {
+                    searchResults.classList.remove('active');
+                    noResults.classList.remove('hidden');
+                }
+            }
+
+            // Create resource card element
+            function createResourceCard(resource) {
+                const card = document.createElement('div');
+                card.classList.add('resource-card');
+
+                card.innerHTML = `
+                    <h3 class="resource-name">${resource.name}</h3>
+                    <div class="resource-meta">
+                        <span><i class="fas fa-file-${resource.type.toLowerCase() === 'pdf' ? 'pdf' : 'word'}"></i> ${resource.type}</span>
+                        <span class="resource-class">${resource.class}</span>
+                    </div>
+                    <p class="resource-description">${resource.description}</p>
+                    <div class="resource-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-download"></i> ${resource.downloads} downloads
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-star"></i> ${resource.rating} (${resource.reviews})
+                        </div>
+                    </div>
+                    <a href="#" class="download-btn" onclick="downloadResource('${resource.name.replace(/\s+/g, '_').toLowerCase()}.${resource.type.toLowerCase()}')">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                `;
+
+                return card;
+            }
+
+            // Simulate download (will be replaced with Cloudinary integration)
+            window.downloadResource = function(filename) {
+                // In production, this would trigger the Cloudinary download
+                alert(`Downloading ${filename}... (This will connect to Cloudinary in production)`);
+
+                // Add some bytes for downloading (optional)
+                bytesCount += 2;
+                bytesCountElement.textContent = bytesCount;
+                localStorage.setItem('bytesCount', bytesCount);
+
+                return false; // Prevent default link behavior
+            }
+
+            // Event listeners
+            searchInput.addEventListener('input', (e) => {
+                showSuggestions(e.target.value);
+            });
+
+            searchInput.addEventListener('focus', () => {
+                if (searchInput.value.length >= 2) {
+                    showSuggestions(searchInput.value);
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target)) {
+                    searchSuggestions.classList.remove('active');
+                }
+            });
+
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performSearch(searchInput.value);
+                }
+            });
+
+            // Initialize
+            createParticles();
+        });
+    </script>
+</body>
+</html>
