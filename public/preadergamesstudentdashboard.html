@@ -696,6 +696,8 @@
         }
 
         async function fetchWithAuth(url, options = {}) {
+            console.log('Making authenticated request to:', url);
+            
             const headers = {
                 'Content-Type': 'application/json',
                 ...options.headers
@@ -703,29 +705,45 @@
             
             if (authToken) {
                 headers.Authorization = `Bearer ${authToken}`;
-            }
-            
-            const response = await fetch(url, {
-                ...options,
-                headers
-            });
-            
-            if (response.status === 401 || response.status === 403) {
-                // Token expired or invalid, redirect to login
-                console.log('Authentication failed, redirecting to login');
-                localStorage.removeItem('token');
-                localStorage.removeItem('userData');
+                console.log('Token attached to request');
+            } else {
+                console.warn('No token available for request');
+                clearAuthData();
                 window.location.href = 'studentlogin.html';
                 return null;
             }
             
-            return response;
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers
+                });
+                
+                console.log('Response status:', response.status);
+                
+                if (response.status === 401 || response.status === 403) {
+                    console.log('Authentication failed, redirecting to login');
+                    clearAuthData();
+                    window.location.href = 'studentlogin.html';
+                    return null;
+                }
+                
+                return response;
+            } catch (error) {
+                console.error('Network error in fetchWithAuth:', error);
+                showMessage('Network error. Please check your connection.');
+                return null;
+            }
         }
 
         // Check authentication status
         async function checkAuthenticationStatus() {
+            console.log('Checking authentication status...');
+            console.log('Current token:', authToken ? 'Present' : 'Missing');
+            
             if (!authToken) {
                 console.log('No token found, redirecting to login');
+                clearAuthData();
                 window.location.href = 'studentlogin.html';
                 return false;
             }
@@ -738,20 +756,31 @@
                     }
                 });
 
+                console.log('Dashboard response status:', response.status);
+
                 if (!response.ok) {
                     console.log('Token validation failed, redirecting to login');
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('userData');
+                    clearAuthData();
                     window.location.href = 'studentlogin.html';
                     return false;
                 }
 
+                const data = await response.json();
+                console.log('Authentication successful, student data received');
                 return true;
             } catch (error) {
                 console.error('Error checking authentication:', error);
+                clearAuthData();
                 window.location.href = 'studentlogin.html';
                 return false;
             }
+        }
+
+        // Helper function to clear authentication data
+        function clearAuthData() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userData');
+            authToken = null;
         }
 
         // Initialize the page
