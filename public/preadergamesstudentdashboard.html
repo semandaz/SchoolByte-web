@@ -697,11 +697,14 @@
             });
 
             if (response.status === 401 || response.status === 403) {
-                console.log('Authentication failed, redirecting to login');
+                console.log('Authentication failed, redirecting to student dashboard');
                 localStorage.removeItem('token');
-                localStorage.removeItem('userData'); // Clear any stored user data
-                window.location.href = 'studentlogin.html'; // Ensure this is the correct login page
-                return null; // Important: return null so subsequent code knows authentication failed
+                localStorage.removeItem('userData');
+                showMessage('Your session has expired. Please log in again.');
+                setTimeout(() => {
+                    window.location.href = 'studentdashboard.html';
+                }, 2000);
+                return null;
             }
 
             return response;
@@ -710,8 +713,8 @@
         // Check authentication status
         async function checkAuthenticationStatus() {
             if (!authToken) {
-                console.log('No token found, redirecting to login immediately');
-                window.location.href = 'studentlogin.html';
+                console.log('No token found, redirecting to student dashboard');
+                window.location.href = 'studentdashboard.html';
                 return false;
             }
 
@@ -725,17 +728,17 @@
                 });
 
                 if (!response.ok) {
-                    // If the token is invalid or expired, the server will return a non-200 status (e.g., 401, 403)
-                    console.log('Token validation failed on server, redirecting to login');
+                    // If the token is invalid or expired, redirect to student dashboard
+                    console.log('Token validation failed on server, redirecting to student dashboard');
                     localStorage.removeItem('token');
                     localStorage.removeItem('userData');
-                    window.location.href = 'studentlogin.html';
+                    window.location.href = 'studentdashboard.html';
                     return false;
                 }
 
-                // If authentication is successful, you might want to load student data here
+                // If authentication is successful, load student data
                 const data = await response.json();
-                studentData = data.student; // Assuming your dashboard returns student data
+                studentData = data.student;
                 studentNameEl.textContent = studentData.preferredName || studentData.studentName;
                 totalBytesDisplay.textContent = studentData.bytes;
                 const initials = studentData.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -744,8 +747,8 @@
                 return true;
             } catch (error) {
                 console.error('Error checking authentication status:', error);
-                // For network errors or other unexpected issues, still redirect to login
-                window.location.href = 'studentlogin.html';
+                // For network errors, show error message but don't redirect immediately
+                showMessage('Network error. Please check your connection and try again.');
                 return false;
             }
         }
@@ -753,20 +756,7 @@
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', async () => {
-            // Perform authentication check at the very beginning
-            const isAuthenticated = await checkAuthenticationStatus();
-            if (!isAuthenticated) {
-                // If not authenticated, the function already redirected, so just return
-                return;
-            }
-
-            // If authenticated, proceed with loading other data and setting up the page
-            // await loadStudentData(); // This is already done inside checkAuthenticationStatus now
-            await loadFontPreferences();
-            createParticles();
-            await loadGameHistory();
-
-            // Event listeners
+            // Set up event listeners first
             startGameBtn.addEventListener('click', startNewGame);
             endGameBtn.addEventListener('click', endGameSession);
             newGameAfterEndBtn.addEventListener('click', () => {
@@ -781,6 +771,18 @@
                     startNewGame();
                 }
             });
+
+            // Check authentication
+            const isAuthenticated = await checkAuthenticationStatus();
+            if (!isAuthenticated) {
+                // If not authenticated, stop initialization
+                return;
+            }
+
+            // If authenticated, proceed with loading other data and setting up the page
+            await loadFontPreferences();
+            createParticles();
+            await loadGameHistory();
         });
 
         // The loadStudentData function can be removed or simplified since checkAuthenticationStatus now handles it
