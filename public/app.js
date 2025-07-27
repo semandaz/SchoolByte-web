@@ -4,10 +4,7 @@ import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
 // Backend API URL (adjust if your Replit server is on a different URL/port)
 const API_BASE_URL = window.location.origin; // Assumes backend is on the same origin
 
-// Custom Message Box Functionality (replaces alert/confirm)
-// This needs to be defined globally or passed down, but for a single-file HTML,
-// it's often easiest to have it accessible by the React app.
-// We'll ensure it's defined in the HTML before the React app runs.
+// IMPORTANT: window.showMessageBox is now defined in index.html before React loads.
 
 function App() {
     // User and Auth states
@@ -37,17 +34,6 @@ function App() {
     const initialLoadRef = useRef(true);
 
     // --- Authentication and Initial Data Fetch ---
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            setIsLoggedIn(true);
-            // Fetch student dashboard data if already logged in
-            fetchStudentDashboardData(token);
-        } else {
-            setViewMode('login'); // Show login screen if no token
-        }
-    }, []); // Run once on component mount
-
     const fetchStudentDashboardData = useCallback(async (token) => {
         try {
             const response = await fetch(`${API_BASE_URL}/student/dashboard`, {
@@ -78,6 +64,48 @@ function App() {
         }
     }, []);
 
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            setIsLoggedIn(true);
+            fetchStudentDashboardData(token);
+        } else {
+            setViewMode('login'); // Show login screen if no token
+        }
+
+        // Listen for custom events from vanilla JS navigation buttons
+        const handleViewModeChange = (event) => {
+            const newMode = event.detail;
+            if (newMode === 'history') {
+                fetchSessionHistory(); // Call history fetch directly
+            } else if (newMode === 'profile') {
+                // Re-fetch profile data to ensure it's fresh if navigating back
+                const token = localStorage.getItem('token');
+                if (token) {
+                    fetchStudentDashboardData(token);
+                }
+                setViewMode('profile');
+            } else {
+                setViewMode(newMode);
+            }
+        };
+
+        window.addEventListener('changeViewMode', handleViewModeChange);
+
+        return () => {
+            window.removeEventListener('changeViewMode', handleViewModeChange);
+        };
+    }, [fetchStudentDashboardData]); // Dependency added for safety
+
+    // Update global header elements when React state changes
+    useEffect(() => {
+        const nameElement = document.getElementById('studentNameDisplay');
+        const bytesElement = document.getElementById('bytesCount');
+        if (nameElement) nameElement.textContent = studentNameDisplay;
+        if (bytesElement) bytesElement.textContent = bytesCount;
+    }, [studentNameDisplay, bytesCount]);
+
+
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoginError('');
@@ -97,14 +125,11 @@ function App() {
 
             const data = await response.json();
             localStorage.setItem('token', data.token);
-            // Update the display elements directly as they are outside React's root
-            document.getElementById('studentNameDisplay').textContent = data.student.studentName;
-            document.getElementById('bytesCount').textContent = data.student.bytes;
 
             setIsLoggedIn(true);
             setLoginEmail('');
             setLoginPassword('');
-            setStudentNameDisplay(data.student.studentName); // Update React state as well
+            setStudentNameDisplay(data.student.studentName); // Update React state
             setBytesCount(data.student.bytes); // Update React state
             setStudentProfileData(data.student);
             setViewMode('start'); // Go to game start screen
@@ -127,7 +152,6 @@ function App() {
         setGameEndedSummary(null);
 
         if (!gameTitle.trim()) {
-            // Use the global showMessageBox function
             window.showMessageBox('Input Required', 'Please enter a title for your story.', 'alert');
             setIsLoading(false);
             return;
@@ -257,9 +281,8 @@ function App() {
             setViewMode('ended');
             setGameMessage(data.message);
 
-            // Update global bytes counter
+            // Update bytesCount state, which will then update the global header via useEffect
             setBytesCount(data.studentCurrentBytes);
-            document.getElementById('bytesCount').textContent = data.studentCurrentBytes;
             localStorage.setItem('bytesCount', data.studentCurrentBytes);
 
             // Refresh student profile data to show updated total game time
@@ -310,6 +333,7 @@ function App() {
         }
     }, [fetchStudentDashboardData]); // Dependency added for safety
 
+
     // Render logic based on viewMode
     const renderContent = () => {
         if (!isLoggedIn) {
@@ -359,8 +383,8 @@ function App() {
                 return (
                     <div className="game-state active" id="startState">
                         <div className="start-form">
-                            <h2 style={{color: 'var(--color-brand-primary)', marginBottom: '1.5rem'}}>Create Your Adventure</h2>
-                            <p style={{marginBottom: '2rem'}}>Begin your unique story by giving it a title. The AI will generate a thrilling adventure based on your input!</p>
+                            <h2 className="text-3xl font-bold text-indigo-700 mb-6">Create Your Adventure</h2>
+                            <p className="mb-8 text-gray-600">Begin your unique story by giving it a title. The AI will generate a thrilling adventure based on your input!</p>
 
                             <div className="form-group">
                                 <label htmlFor="gameTitle" className="form-label">Your Story Title</label>
@@ -432,12 +456,12 @@ function App() {
                 return (
                     <div className="game-state active" id="endState">
                         <div className="end-screen">
-                            <h2 style={{color: 'var(--color-brand-primary)', marginBottom: '1rem'}}>Game Completed!</h2>
-                            <p>You've earned:</p>
+                            <h2 className="text-3xl font-bold text-indigo-700 mb-4">Game Completed!</h2>
+                            <p className="text-gray-700 mb-2">You've earned:</p>
                             <div className="bytes-earned" id="bytesEarned">{gameEndedSummary?.totalBytesEarned || 0} Bytes</div>
 
                             <div className="game-summary">
-                                <h3 style={{color: 'var(--color-brand-primary)', marginBottom: '1rem'}}>Game Summary</h3>
+                                <h3 className="text-xl font-semibold text-indigo-600 mb-3">Game Summary</h3>
                                 <div className="summary-item">
                                     <strong>Title:</strong> <span id="summaryTitle">{gameEndedSummary?.initialTitle || 'N/A'}</span>
                                 </div>
@@ -447,10 +471,6 @@ function App() {
                                 <div className="summary-item">
                                     <strong>Final Ethical Score:</strong> <span id="summaryEthicalScore">{gameEndedSummary?.finalEthicalScore || 0}</span>
                                 </div>
-                                {/* The backend doesn't return choicesCount directly in summary, so we remove it here */}
-                                {/* <div className="summary-item">
-                                    <strong>Choices Made:</strong> <span id="summaryChoices">{gameEndedSummary?.choicesCount || 'N/A'}</span>
-                                </div> */}
                             </div>
 
                             <button className="btn" onClick={() => setViewMode('start')} style={{marginTop: '2rem'}}>Start New Game</button>
@@ -460,16 +480,16 @@ function App() {
             case 'history':
                 return (
                     <div className="game-state active" id="historyState">
-                        <h2 style={{color: 'var(--color-brand-primary)', marginBottom: '1.5rem'}}>Your Game History</h2>
+                        <h2 className="text-3xl font-bold text-indigo-700 mb-6 text-center">Your Game History</h2>
                         {studentProfileData && (
-                            <p style={{marginBottom: '1.5rem', color: 'var(--color-neutral-dark)'}}>
+                            <p className="mb-6 text-center text-gray-700">
                                 Total Preader Game Time: <span className="font-semibold">{studentProfileData.totalPreaderGameTimeMinutes || 0} minutes</span>
                             </p>
                         )}
 
                         <div className="history-container" id="historyContainer">
                             {sessionHistory.length === 0 ? (
-                                <p style={{color: 'var(--color-neutral-medium)', textAlign: 'center'}}>No game history yet. Start a new game to begin your adventures!</p>
+                                <p className="text-gray-500 text-center">No game history yet. Start a new game to begin your adventures!</p>
                             ) : (
                                 sessionHistory.map((session, index) => (
                                     <div className="history-item" key={index}>
@@ -481,7 +501,6 @@ function App() {
                                         <div className="history-stats">
                                             <div className="history-stat"><span>{session.bytesEarned}</span> bytes earned</div>
                                             <div className="history-stat"><span>{session.finalEthicalScore}</span> ethical score</div>
-                                            {/* Choices length is not directly in log, but could be added if needed */}
                                         </div>
                                     </div>
                                 ))
@@ -494,9 +513,9 @@ function App() {
             case 'profile':
                 return (
                     <div className="game-state active" id="profileState">
-                        <h2 style={{color: 'var(--color-brand-primary)', marginBottom: '1.5rem', textAlign: 'center'}}>Your Profile</h2>
+                        <h2 className="text-3xl font-bold text-indigo-700 mb-6 text-center">Your Profile</h2>
                         {studentProfileData ? (
-                            <div className="space-y-3 p-4 bg-gray-50 rounded-lg shadow-sm text-gray-700">
+                            <div className="space-y-3 p-6 bg-gray-50 rounded-lg shadow-sm text-gray-700">
                                 <p><strong>Name:</strong> {studentProfileData.studentName}</p>
                                 <p><strong>Email:</strong> {studentProfileData.email}</p>
                                 <p><strong>Class:</strong> {studentProfileData.class}</p>
@@ -505,7 +524,7 @@ function App() {
                                 <p><strong>Total Preader Game Time:</strong> {studentProfileData.totalPreaderGameTimeMinutes || 0} minutes</p>
                             </div>
                         ) : (
-                            <p style={{textAlign: 'center', color: 'var(--color-neutral-medium)'}}>Loading profile data...</p>
+                            <p className="text-gray-500 text-center">Loading profile data...</p>
                         )}
                         <button className="btn" onClick={() => setViewMode('start')} style={{marginTop: '2rem'}}>Back to Main Menu</button>
                     </div>
@@ -517,31 +536,6 @@ function App() {
 
     return (
         <>
-            {/* These buttons are outside the React root, so they will be managed by vanilla JS or directly in HTML */}
-            {/* <div className="flex space-x-4 mb-6 justify-center">
-                <button
-                    onClick={() => setViewMode('start')}
-                    className={`px-6 py-2 rounded-full font-semibold transition duration-300 ${viewMode === 'start' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-blue-800 hover:bg-blue-50'}`}
-                    disabled={!isLoggedIn}
-                >
-                    New Game
-                </button>
-                <button
-                    onClick={fetchSessionHistory}
-                    className={`px-6 py-2 rounded-full font-semibold transition duration-300 ${viewMode === 'history' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-blue-800 hover:bg-blue-50'}`}
-                    disabled={!isLoggedIn}
-                >
-                    Game History
-                </button>
-                <button
-                    onClick={() => setViewMode('profile')}
-                    className={`px-6 py-2 rounded-full font-semibold transition duration-300 ${viewMode === 'profile' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-blue-800 hover:bg-blue-50'}`}
-                    disabled={!isLoggedIn}
-                >
-                    My Profile
-                </button>
-            </div> */}
-
             {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md relative mb-4 max-w-lg w-full mx-auto" role="alert">
                     <strong className="font-bold">Error!</strong>
