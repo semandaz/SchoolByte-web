@@ -696,7 +696,7 @@
 
         async function fetchWithAuth(url, options = {}) {
             // Always get fresh token from localStorage before making requests
-            authToken = localStorage.getItem('token');
+            authToken = localStorage.getItem('token') || localStorage.getItem('studentToken');
             
             if (!authToken) {
                 console.log('No token available, redirecting to login');
@@ -723,7 +723,9 @@
             if (response.status === 401 || response.status === 403) {
                 console.log('Authentication failed, redirecting to login');
                 localStorage.removeItem('token');
+                localStorage.removeItem('studentToken');
                 localStorage.removeItem('userData');
+                localStorage.removeItem('studentData');
                 authToken = null;
                 showMessage('Your session has expired. Please log in again.');
                 setTimeout(() => {
@@ -737,8 +739,8 @@
 
         // Check authentication status
         async function checkAuthenticationStatus() {
-            // Get fresh token from localStorage
-            authToken = localStorage.getItem('token');
+            // Try both token storage keys (for compatibility)
+            authToken = localStorage.getItem('token') || localStorage.getItem('studentToken');
             
             if (!authToken) {
                 console.log('No token found, redirecting to student login');
@@ -762,7 +764,9 @@
                     // If the token is invalid or expired, redirect to login
                     console.log('Token validation failed on server, redirecting to login');
                     localStorage.removeItem('token');
+                    localStorage.removeItem('studentToken');
                     localStorage.removeItem('userData');
+                    localStorage.removeItem('studentData');
                     authToken = null; // Clear the token
                     showMessage('Your session has expired. Please log in again.');
                     setTimeout(() => {

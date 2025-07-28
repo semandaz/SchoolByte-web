@@ -599,8 +599,8 @@
                     
                     if (response.ok) {
                         // Store the JWT token
-                        localStorage.setItem('studentToken', data.token);
-                        localStorage.setItem('studentData', JSON.stringify(data.student));
+                        localStorage.setItem('token', data.token);
+                        localStorage.setItem('userData', JSON.stringify(data.student));
                         
                         alert('Login successful! Redirecting to dashboard...');
                         window.location.href = 'studentdashboard.html';
