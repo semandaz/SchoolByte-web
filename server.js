@@ -787,26 +787,26 @@ async function generateStoryNode(basePrompt, currentGameState, studentClass, pre
         const result = await model.generateContent({
             contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
             generationConfig: {
-                responseMimeType: "application/json",
-                safetySettings: [
-                    {
-                        category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-                        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                    },
-                    {
-                        category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                    },
-                    {
-                        category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                    },
-                    {
-                        category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                    },
-                ]
-            }
+                responseMimeType: "application/json"
+            },
+            safetySettings: [
+                {
+                    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                },
+                {
+                    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                },
+                {
+                    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                },
+                {
+                    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                },
+            ]
         });
 
 
