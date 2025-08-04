@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>SchoolByte - Biology Teacher Dashboard</title>
+        <title>SchoolByte - Agriculture Teacher Dashboard</title>
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -353,7 +353,7 @@
                     You have 24 assignments to review and 3 upcoming classes scheduled. 
                     The student performance dashboard shows an 8% improvement in test scores compared to last month.
                 </p>
-                
+
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-value">24</div>
@@ -436,14 +436,14 @@
                 const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
                 const today = new Date();
                 document.getElementById('currentDate').textContent = today.toLocaleDateString('en-US', options);
-                
+
                 // Initialize tooltips
                 document.querySelectorAll('.info-icon').forEach(icon => {
                     icon.addEventListener('mouseenter', function() {
                         this.querySelector('.info-tooltip').style.opacity = '1';
                         this.querySelector('.info-tooltip').style.visibility = 'visible';
                     });
-                    
+
                     icon.addEventListener('mouseleave', function() {
                         this.querySelector('.info-tooltip').style.opacity = '0';
                         this.querySelector('.info-tooltip').style.visibility = 'hidden';
