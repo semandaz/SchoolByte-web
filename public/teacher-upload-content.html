@@ -1,0 +1,495 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolByte - Upload Content</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --color-brand-primary: #0d1b3e;
+            --color-brand-secondary: #1e3a5f;
+            --color-brand-accent: #d4af37;
+            --color-neutral-white: #ffffff;
+            --color-neutral-light: #e4e7eb;
+            --color-neutral-dark: #52606d;
+            --color-error-red: #c0392b;
+            --color-success-green: #27ae60;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--color-neutral-white);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .title {
+            font-size: 2rem;
+            color: var(--color-brand-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--color-brand-primary);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid var(--color-neutral-light);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--color-brand-accent);
+        }
+
+        .file-upload {
+            border: 2px dashed var(--color-neutral-light);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: var(--color-brand-accent);
+            background-color: #fafafa;
+        }
+
+        .questions-section {
+            border: 1px solid var(--color-neutral-light);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .question-item {
+            border: 1px solid var(--color-neutral-light);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .keyword-input {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--color-brand-accent);
+            color: var(--color-neutral-white);
+        }
+
+        .btn-secondary {
+            background: var(--color-neutral-light);
+            color: var(--color-neutral-dark);
+        }
+
+        .btn-danger {
+            background: var(--color-error-red);
+            color: var(--color-neutral-white);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Upload Educational Content</h1>
+            <p>Upload PDF materials and create associated activities for students</p>
+        </div>
+
+        <div id="messageBox" class="message hidden"></div>
+
+        <form id="uploadForm" enctype="multipart/form-data">
+            <!-- WorkFile Section -->
+            <h3 style="color: var(--color-brand-primary); margin-bottom: 1rem;">PDF Material Information</h3>
+            
+            <div class="form-group">
+                <label for="workFileTitle">Title *</label>
+                <input type="text" id="workFileTitle" name="workFileTitle" required>
+            </div>
+
+            <div class="form-group">
+                <label for="workFileDescription">Description</label>
+                <textarea id="workFileDescription" name="workFileDescription" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="workFileSubject">Subject *</label>
+                <select id="workFileSubject" name="workFileSubject" required>
+                    <option value="">Select Subject</option>
+                    <option value="Agriculture">Agriculture</option>
+                    <option value="Biology">Biology</option>
+                    <option value="Chemistry">Chemistry</option>
+                    <option value="Christian Religious Education">Christian Religious Education</option>
+                    <option value="English Language">English Language</option>
+                    <option value="Entrepreneurship Education">Entrepreneurship Education</option>
+                    <option value="Food and Nutrition">Food and Nutrition</option>
+                    <option value="Geography">Geography</option>
+                    <option value="German">German</option>
+                    <option value="History">History</option>
+                    <option value="Kiswahili">Kiswahili</option>
+                    <option value="Literature in English">Literature in English</option>
+                    <option value="Luganda">Luganda</option>
+                    <option value="Mathematics">Mathematics</option>
+                    <option value="Performing Arts">Performing Arts</option>
+                    <option value="Physical Education">Physical Education</option>
+                    <option value="Physics">Physics</option>
+                    <option value="Technology and Design">Technology and Design</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="workFileIntendedClass">Intended Class *</label>
+                <select id="workFileIntendedClass" name="workFileIntendedClass" required>
+                    <option value="">Select Class</option>
+                    <option value="S.1">S.1</option>
+                    <option value="S.2">S.2</option>
+                    <option value="S.3">S.3</option>
+                    <option value="S.4">S.4</option>
+                    <option value="S.5">S.5</option>
+                    <option value="S.6">S.6</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="workFileCostBytes">Cost in Bytes *</label>
+                <input type="number" id="workFileCostBytes" name="workFileCostBytes" min="1" max="20" value="2" required>
+            </div>
+
+            <div class="form-group">
+                <label>Apply Watermark on Download</label>
+                <input type="checkbox" id="applyDownloadWatermark" name="applyDownloadWatermark" checked>
+                <label for="applyDownloadWatermark" style="margin-left: 0.5rem; font-weight: normal;">Yes, apply watermark to downloaded PDFs</label>
+            </div>
+
+            <div class="form-group">
+                <label for="workFilePdf">PDF File *</label>
+                <div class="file-upload" onclick="document.getElementById('workFilePdf').click()">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: var(--color-brand-accent);"></i>
+                    <p>Click to select PDF file</p>
+                    <input type="file" id="workFilePdf" name="workFilePdf" accept=".pdf" required hidden>
+                </div>
+                <p id="fileName" style="margin-top: 0.5rem; color: var(--color-success-green);"></p>
+            </div>
+
+            <!-- Activity Section -->
+            <h3 style="color: var(--color-brand-primary); margin: 2rem 0 1rem 0;">Associated Activity</h3>
+            
+            <div class="form-group">
+                <label for="activityTitle">Activity Title *</label>
+                <input type="text" id="activityTitle" name="activityTitle" required>
+            </div>
+
+            <div class="form-group">
+                <label for="activityDescription">Activity Description</label>
+                <textarea id="activityDescription" name="activityDescription" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="activitySubject">Activity Subject *</label>
+                <select id="activitySubject" name="activitySubject" required>
+                    <option value="">Select Subject</option>
+                    <option value="Agriculture">Agriculture</option>
+                    <option value="Biology">Biology</option>
+                    <option value="Chemistry">Chemistry</option>
+                    <option value="Christian Religious Education">Christian Religious Education</option>
+                    <option value="English Language">English Language</option>
+                    <option value="Entrepreneurship Education">Entrepreneurship Education</option>
+                    <option value="Food and Nutrition">Food and Nutrition</option>
+                    <option value="Geography">Geography</option>
+                    <option value="German">German</option>
+                    <option value="History">History</option>
+                    <option value="Kiswahili">Kiswahili</option>
+                    <option value="Literature in English">Literature in English</option>
+                    <option value="Luganda">Luganda</option>
+                    <option value="Mathematics">Mathematics</option>
+                    <option value="Performing Arts">Performing Arts</option>
+                    <option value="Physical Education">Physical Education</option>
+                    <option value="Physics">Physics</option>
+                    <option value="Technology and Design">Technology and Design</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="activityIntendedClass">Activity Intended Class *</label>
+                <select id="activityIntendedClass" name="activityIntendedClass" required>
+                    <option value="">Select Class</option>
+                    <option value="S.1">S.1</option>
+                    <option value="S.2">S.2</option>
+                    <option value="S.3">S.3</option>
+                    <option value="S.4">S.4</option>
+                    <option value="S.5">S.5</option>
+                    <option value="S.6">S.6</option>
+                </select>
+            </div>
+
+            <!-- Questions Section -->
+            <div class="form-group">
+                <label>Activity Questions *</label>
+                <div id="questionsContainer">
+                    <div class="question-item">
+                        <label>Question 1:</label>
+                        <textarea class="question-text" rows="2" placeholder="Enter your question here..." required></textarea>
+                        <label style="margin-top: 1rem;">Keywords for Marking:</label>
+                        <div class="keywords-container">
+                            <div class="keyword-input">
+                                <input type="text" class="keyword" placeholder="Enter keyword..." required>
+                                <button type="button" class="btn btn-secondary" onclick="addKeyword(this)">Add</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="addQuestion()">Add Another Question</button>
+            </div>
+
+            <div class="form-group" style="text-align: center; margin-top: 2rem;">
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <i class="fas fa-upload"></i> Upload Content
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='teacherdashboard.html'" style="margin-left: 1rem;">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadForm = document.getElementById('uploadForm');
+            const messageBox = document.getElementById('messageBox');
+            const fileInput = document.getElementById('workFilePdf');
+            const fileName = document.getElementById('fileName');
+
+            // File input change handler
+            fileInput.addEventListener('change', function() {
+                if (this.files[0]) {
+                    fileName.textContent = `Selected: ${this.files[0].name}`;
+                }
+            });
+
+            // Form submission
+            uploadForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    showMessage('Please log in first', 'error');
+                    setTimeout(() => window.location.href = 'teacherlogin.html', 2000);
+                    return;
+                }
+
+                // Collect form data
+                const formData = new FormData();
+                
+                // WorkFile data
+                formData.append('workFileTitle', document.getElementById('workFileTitle').value);
+                formData.append('workFileDescription', document.getElementById('workFileDescription').value);
+                formData.append('workFileSubject', document.getElementById('workFileSubject').value);
+                formData.append('workFileIntendedClass', document.getElementById('workFileIntendedClass').value);
+                formData.append('workFileCostBytes', document.getElementById('workFileCostBytes').value);
+                formData.append('applyDownloadWatermark', document.getElementById('applyDownloadWatermark').checked);
+                formData.append('workFilePdf', fileInput.files[0]);
+
+                // Activity data - collect questions
+                const questions = [];
+                const questionItems = document.querySelectorAll('.question-item');
+                
+                questionItems.forEach((item, index) => {
+                    const questionText = item.querySelector('.question-text').value.trim();
+                    const keywords = [];
+                    
+                    item.querySelectorAll('.keyword').forEach(keywordInput => {
+                        if (keywordInput.value.trim()) {
+                            keywords.push(keywordInput.value.trim());
+                        }
+                    });
+
+                    if (questionText && keywords.length > 0) {
+                        questions.push({
+                            questionText: questionText,
+                            keywordsForMarking: keywords
+                        });
+                    }
+                });
+
+                if (questions.length === 0) {
+                    showMessage('Please add at least one question with keywords', 'error');
+                    return;
+                }
+
+                const activityData = {
+                    title: document.getElementById('activityTitle').value,
+                    description: document.getElementById('activityDescription').value,
+                    subject: document.getElementById('activitySubject').value,
+                    intendedClass: document.getElementById('activityIntendedClass').value,
+                    questions: questions
+                };
+
+                formData.append('activityJson', JSON.stringify(activityData));
+
+                // Submit form
+                try {
+                    document.getElementById('submitBtn').disabled = true;
+                    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+                    const response = await fetch('/teacher/upload-content', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        showMessage('Content uploaded successfully!', 'success');
+                        setTimeout(() => {
+                            window.location.href = 'teacherdashboard.html';
+                        }, 2000);
+                    } else {
+                        showMessage(result.message || 'Upload failed', 'error');
+                    }
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    showMessage('Network error. Please try again.', 'error');
+                } finally {
+                    document.getElementById('submitBtn').disabled = false;
+                    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-upload"></i> Upload Content';
+                }
+            });
+        });
+
+        function showMessage(text, type) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = text;
+            messageBox.className = `message ${type}`;
+            messageBox.classList.remove('hidden');
+            
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 5000);
+        }
+
+        function addQuestion() {
+            const container = document.getElementById('questionsContainer');
+            const questionCount = container.querySelectorAll('.question-item').length + 1;
+            
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'question-item';
+            questionDiv.innerHTML = `
+                <label>Question ${questionCount}:</label>
+                <textarea class="question-text" rows="2" placeholder="Enter your question here..." required></textarea>
+                <label style="margin-top: 1rem;">Keywords for Marking:</label>
+                <div class="keywords-container">
+                    <div class="keyword-input">
+                        <input type="text" class="keyword" placeholder="Enter keyword..." required>
+                        <button type="button" class="btn btn-secondary" onclick="addKeyword(this)">Add</button>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-danger" onclick="removeQuestion(this)" style="margin-top: 0.5rem;">Remove Question</button>
+            `;
+            
+            container.appendChild(questionDiv);
+        }
+
+        function removeQuestion(button) {
+            button.closest('.question-item').remove();
+            
+            // Renumber questions
+            const questions = document.querySelectorAll('.question-item');
+            questions.forEach((item, index) => {
+                item.querySelector('label').textContent = `Question ${index + 1}:`;
+            });
+        }
+
+        function addKeyword(button) {
+            const container = button.closest('.keywords-container');
+            const keywordDiv = document.createElement('div');
+            keywordDiv.className = 'keyword-input';
+            keywordDiv.innerHTML = `
+                <input type="text" class="keyword" placeholder="Enter keyword..." required>
+                <button type="button" class="btn btn-danger" onclick="removeKeyword(this)">Remove</button>
+            `;
+            container.appendChild(keywordDiv);
+        }
+
+        function removeKeyword(button) {
+            button.closest('.keyword-input').remove();
+        }
+    </script>
+</body>
+</html>

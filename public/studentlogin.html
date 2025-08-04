@@ -585,11 +585,6 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            studentName: studentNameInput.value,
-                            indexNumber: indexNumberInput.value,
-                            class: classSelect.value,
-                            stream: streamSelect.value,
-                            classTeacher: classTeacherInput.value,
                             email: emailInput.value,
                             password: passwordInput.value
                         })
@@ -598,8 +593,8 @@
                     const data = await response.json();
                     
                     if (response.ok) {
-                        // Store the JWT token
-                        localStorage.setItem('token', data.token);
+                        // Store the JWT token with correct key name
+                        localStorage.setItem('studentToken', data.token);
                         localStorage.setItem('userData', JSON.stringify(data.student));
                         
                         alert('Login successful! Redirecting to dashboard...');

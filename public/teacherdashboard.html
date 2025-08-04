@@ -947,151 +947,61 @@
                 const floatingParticles =
                     document.getElementById("floatingParticles");
 
-                // Simulated teacher data
-                let teacherData = {
-                    name: "Dr. Jane Smith",
-                    resources: 42,
-                    subjects: ["Biology", "Chemistry"],
-                };
+                // Function to fetch teacher data from server
+                async function fetchTeacherData() {
+                    try {
+                        const token = localStorage.getItem('token');
+                        if (!token) {
+                            window.location.href = 'teacherlogin.html';
+                            return;
+                        }
 
-                // Initialize resource count
-                let resourceCount = teacherData.resources;
+                        const response = await fetch(`${window.location.origin}/teacher/dashboard`, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
 
-                // Update display with teacher data
-                function initializeDashboard() {
-                    teacherNameDisplay.textContent = teacherData.name;
-                    welcomeMessage.textContent = `Welcome, ${teacherData.name}. Ready to inspire today?`;
-                    resourceCountElement.textContent = resourceCount;
+                        if (response.ok) {
+                            const data = await response.json();
+                            const teacher = data.teacher;
 
-                    // Hide loading and show content
-                    setTimeout(() => {
-                        loadingMessage.classList.add("hidden");
-                        mainContent.classList.remove("hidden");
-                    }, 1200);
-                }
+                            // Update display with real data
+                            teacherNameDisplay.textContent = teacher.teacherName;
+                            welcomeMessage.textContent = `Welcome, ${teacher.teacherName}. Ready to inspire today?`;
+                            resourceCountElement.textContent = teacher.bytes || 0;
 
-                // Initialize the dashboard
-                initializeDashboard();
+                            // Store data locally for quick access
+                            localStorage.setItem('userData', JSON.stringify(teacher));
 
-                // Create floating particles
-                function createParticles() {
-                    for (let i = 0; i < 25; i++) {
-                        const particle = document.createElement("div");
-                        particle.classList.add("particle");
+                            // Hide loading and show content
+                            loadingMessage.classList.add('hidden');
+                            mainContent.classList.remove('hidden');
 
-                        // Random position
-                        const posX = Math.random() * 100;
-                        const posY = Math.random() * 100 + 100; // Start below viewport
-
-                        // Random size and animation duration
-                        const size = Math.random() * 4 + 4;
-                        const duration = Math.random() * 15 + 15;
-                        const delay = Math.random() * 7;
-
-                        particle.style.left = `${posX}vw`;
-                        particle.style.top = `${posY}vh`;
-                        particle.style.width = `${size}px`;
-                        particle.style.height = `${size}px`;
-                        particle.style.animationDuration = `${duration}s`;
-                        particle.style.animationDelay = `${delay}s`;
-
-                        floatingParticles.appendChild(particle);
+                        } else if (response.status === 401 || response.status === 403) {
+                            // Token is invalid or expired
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('userData');
+                            window.location.href = 'teacherlogin.html';
+                        } else {
+                            throw new Error('Failed to fetch teacher data');
+                        }
+                    } catch (error) {
+                        console.error('Error fetching teacher data:', error);
+                        errorMessage.querySelector('.error-message').textContent = 'Failed to load dashboard. Please try refreshing the page.';
+                        loadingMessage.classList.add('hidden');
+                        errorMessage.classList.remove('hidden');
                     }
                 }
 
-                // Add resources to counter
-                function addResources(amount) {
-                    resourceCount += amount;
-                    resourceCountElement.textContent = resourceCount;
-
-                    // Animate the counter
-                    resourceCountElement.animate(
-                        [
-                            {
-                                transform: "scale(1)",
-                                color: "var(--color-neutral-white)",
-                            },
-                            {
-                                transform: "scale(1.2)",
-                                color: "var(--color-brand-accent)",
-                            },
-                            {
-                                transform: "scale(1)",
-                                color: "var(--color-neutral-white)",
-                            },
-                        ],
-                        {
-                            duration: 600,
-                            iterations: 1,
-                        },
-                    );
-                }
-
-                // Add activity to feed
-                function addActivity(text, iconType) {
-                    const now = new Date();
-                    const timeString = now.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                    });
-
-                    const icons = {
-                        upload: "fas fa-cloud-upload-alt",
-                        student: "fas fa-user-graduate",
-                        resource: "fas fa-book",
-                        subject: "fas fa-book-open",
-                    };
-
-                    const iconClass = icons[iconType] || "fas fa-bell";
-
-                    const activityItem = document.createElement("div");
-                    activityItem.classList.add("activity-item");
-                    activityItem.innerHTML = `
-                    <i class="${iconClass}" style="margin-right: 10px; color: var(--color-info-blue);"></i>
-                    <span class="activity-text">${text}</span>
-                    <div class="activity-time">${timeString}</div>
-                `;
-
-                    feedItems.insertBefore(activityItem, feedItems.firstChild);
-
-                    // Show notification
-                    showNotification();
-                }
-
-                // Show notification
-                function showNotification() {
-                    // Flash the toggle button
-                    toggleFeed.animate(
-                        [
-                            { backgroundColor: "var(--color-brand-primary)" },
-                            { backgroundColor: "var(--color-brand-accent)" },
-                            { backgroundColor: "var(--color-brand-primary)" },
-                        ],
-                        {
-                            duration: 800,
-                            iterations: 1,
-                        },
-                    );
-                }
-
-                // Toggle activity feed
-                toggleFeed.addEventListener("click", function () {
-                    activityFeed.classList.toggle("active");
-                });
+                // Initialize dashboard
+                fetchTeacherData();
 
                 // Upload content button click
                 uploadContentBtn.addEventListener("click", function () {
-                    // Simulate upload process
-                    addActivity(
-                        "Uploaded new lesson materials to Cloudinary",
-                        "upload",
-                    );
-                    addResources(3);
-
-                    // Show success message
-                    setTimeout(() => {
-                        alert("Content uploaded successfully to Cloudinary!");
-                    }, 800);
+                    window.location.href = 'teacher-upload-content.html';
                 });
 
                 // Manage students button click
