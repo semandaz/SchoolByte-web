@@ -1,494 +1,555 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SchoolByte - Upload Content</title>
+    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root {
-            --color-brand-primary: #0d1b3e;
-            --color-brand-secondary: #1e3a5f;
-            --color-brand-accent: #d4af37;
-            --color-neutral-white: #ffffff;
-            --color-neutral-light: #e4e7eb;
-            --color-neutral-dark: #52606d;
-            --color-error-red: #c0392b;
-            --color-success-green: #27ae60;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* Custom styles can be added here if needed, but we'll primarily use Tailwind */
+        body {
             font-family: 'Inter', sans-serif;
         }
-
-        body {
-            background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
-            min-height: 100vh;
-            padding: 2rem;
+        .confirmation-dialog {
+            background-color: rgba(0, 0, 0, 0.5);
         }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: var(--color-neutral-white);
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        @keyframes dots {
+            0%, 20% { content: "."; }
+            40% { content: ".."; }
+            60% { content: "..."; }
+            80%, 100% { content: ""; }
         }
-
-        .header {
-            text-align: center;
-            margin-bottom: 2rem;
+        .uploading-dots::after {
+            content: "";
+            animation: dots 1.5s steps(1, end) infinite;
         }
-
-        .title {
-            font-size: 2rem;
-            color: var(--color-brand-primary);
-            margin-bottom: 0.5rem;
+        @keyframes arrowUp {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
         }
-
-        .form-group {
-            margin-bottom: 1.5rem;
+        .upload-arrow {
+            animation: arrowUp 1s infinite;
         }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: var(--color-brand-primary);
+        .highlight-question {
+            animation: highlight 1.5s ease-in-out;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
         }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 0.8rem;
-            border: 2px solid var(--color-neutral-light);
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--color-brand-accent);
-        }
-
-        .file-upload {
-            border: 2px dashed var(--color-neutral-light);
-            border-radius: 8px;
-            padding: 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .file-upload:hover {
-            border-color: var(--color-brand-accent);
-            background-color: #fafafa;
-        }
-
-        .questions-section {
-            border: 1px solid var(--color-neutral-light);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-top: 1rem;
-        }
-
-        .question-item {
-            border: 1px solid var(--color-neutral-light);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .keyword-input {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .btn {
-            padding: 0.8rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-primary {
-            background: var(--color-brand-accent);
-            color: var(--color-neutral-white);
-        }
-
-        .btn-secondary {
-            background: var(--color-neutral-light);
-            color: var(--color-neutral-dark);
-        }
-
-        .btn-danger {
-            background: var(--color-error-red);
-            color: var(--color-neutral-white);
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .message {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            text-align: center;
-        }
-
-        .message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .hidden {
-            display: none;
+        @keyframes highlight {
+            0%, 100% { box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5); }
+            50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.8); }
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1 class="title">Upload Educational Content</h1>
-            <p>Upload PDF materials and create associated activities for students</p>
+<body class="bg-gradient-to-br from-gray-800 to-gray-900 min-h-screen p-4 sm:p-8 flex items-center justify-center">
+
+    <div class="container max-w-4xl mx-auto bg-white rounded-xl p-6 sm:p-8 shadow-2xl">
+        <!-- Header Section -->
+        <div class="header text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">Upload Educational Content</h1>
+            <p class="text-gray-600">Upload PDF materials and create associated activities for students</p>
         </div>
 
-        <div id="messageBox" class="message hidden"></div>
+        <!-- Message Box for notifications -->
+        <div id="messageBox" class="hidden p-4 mb-4 text-sm text-center rounded-lg" role="alert">
+            <!-- Message content will be set by JavaScript -->
+        </div>
 
         <form id="uploadForm" enctype="multipart/form-data">
-            <!-- WorkFile Section -->
-            <h3 style="color: var(--color-brand-primary); margin-bottom: 1rem;">PDF Material Information</h3>
-            
-            <div class="form-group">
-                <label for="workFileTitle">Title *</label>
-                <input type="text" id="workFileTitle" name="workFileTitle" required>
-            </div>
+            <!-- PDF Material Section -->
+            <div class="mb-8 border-b pb-8 border-gray-200">
+                <h3 class="text-xl font-semibold text-gray-800 mb-6">1. PDF Material Information</h3>
 
-            <div class="form-group">
-                <label for="workFileDescription">Description</label>
-                <textarea id="workFileDescription" name="workFileDescription" rows="3"></textarea>
-            </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-group">
+                        <label for="workFileTitle" class="block mb-2 font-semibold text-gray-700">Title *</label>
+                        <input type="text" id="workFileTitle" name="workFileTitle" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                    </div>
 
-            <div class="form-group">
-                <label for="workFileSubject">Subject *</label>
-                <select id="workFileSubject" name="workFileSubject" required>
-                    <option value="">Select Subject</option>
-                    <option value="Agriculture">Agriculture</option>
-                    <option value="Biology">Biology</option>
-                    <option value="Chemistry">Chemistry</option>
-                    <option value="Christian Religious Education">Christian Religious Education</option>
-                    <option value="English Language">English Language</option>
-                    <option value="Entrepreneurship Education">Entrepreneurship Education</option>
-                    <option value="Food and Nutrition">Food and Nutrition</option>
-                    <option value="Geography">Geography</option>
-                    <option value="German">German</option>
-                    <option value="History">History</option>
-                    <option value="Kiswahili">Kiswahili</option>
-                    <option value="Literature in English">Literature in English</option>
-                    <option value="Luganda">Luganda</option>
-                    <option value="Mathematics">Mathematics</option>
-                    <option value="Performing Arts">Performing Arts</option>
-                    <option value="Physical Education">Physical Education</option>
-                    <option value="Physics">Physics</option>
-                    <option value="Technology and Design">Technology and Design</option>
-                </select>
-            </div>
+                    <div class="form-group">
+                        <label for="workFileSubject" class="block mb-2 font-semibold text-gray-700">Subject *</label>
+                        <select id="workFileSubject" name="workFileSubject" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                            <option value="">Select Subject</option>
+                            <option value="Agriculture">Agriculture</option>
+                            <option value="Biology">Biology</option>
+                            <option value="Chemistry">Chemistry</option>
+                            <option value="Christian Religious Education">Christian Religious Education</option>
+                            <option value="English Language">English Language</option>
+                            <option value="Entrepreneurship Education">Entrepreneurship Education</option>
+                            <option value="Food and Nutrition">Food and Nutrition</option>
+                            <option value="Geography">Geography</option>
+                            <option value="German">German</option>
+                            <option value="History">History</option>
+                            <option value="Kiswahili">Kiswahili</option>
+                            <option value="Literature in English">Literature in English</option>
+                            <option value="Luganda">Luganda</option>
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Performing Arts">Performing Arts</option>
+                            <option value="Physical Education">Physical Education</option>
+                            <option value="Physics">Physics</option>
+                            <option value="Technology and Design">Technology and Design</option>
+                        </select>
+                    </div>
 
-            <div class="form-group">
-                <label for="workFileIntendedClass">Intended Class *</label>
-                <select id="workFileIntendedClass" name="workFileIntendedClass" required>
-                    <option value="">Select Class</option>
-                    <option value="S.1">S.1</option>
-                    <option value="S.2">S.2</option>
-                    <option value="S.3">S.3</option>
-                    <option value="S.4">S.4</option>
-                    <option value="S.5">S.5</option>
-                    <option value="S.6">S.6</option>
-                </select>
-            </div>
+                    <div class="form-group md:col-span-2">
+                        <label for="workFileDescription" class="block mb-2 font-semibold text-gray-700">Description</label>
+                        <textarea id="workFileDescription" name="workFileDescription" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"></textarea>
+                    </div>
 
-            <div class="form-group">
-                <label for="workFileCostBytes">Cost in Bytes *</label>
-                <input type="number" id="workFileCostBytes" name="workFileCostBytes" min="1" max="20" value="2" required>
-            </div>
+                    <div class="form-group">
+                        <label for="workFileIntendedClass" class="block mb-2 font-semibold text-gray-700">Intended Class *</label>
+                        <select id="workFileIntendedClass" name="workFileIntendedClass" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                            <option value="">Select Class</option>
+                            <option value="S.1">S.1</option>
+                            <option value="S.2">S.2</option>
+                            <option value="S.3">S.3</option>
+                            <option value="S.4">S.4</option>
+                            <option value="S.5">S.5</option>
+                            <option value="S.6">S.6</option>
+                        </select>
+                    </div>
 
-            <div class="form-group">
-                <label>Apply Watermark on Download</label>
-                <input type="checkbox" id="applyDownloadWatermark" name="applyDownloadWatermark" checked>
-                <label for="applyDownloadWatermark" style="margin-left: 0.5rem; font-weight: normal;">Yes, apply watermark to downloaded PDFs</label>
-            </div>
+                    <div class="form-group">
+                        <label for="workFileCostBytes" class="block mb-2 font-semibold text-gray-700">Cost in Bytes * (5-20 Bytes)</label>
+                        <input type="number" id="workFileCostBytes" name="workFileCostBytes" min="5" max="20" value="5" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" required>
+                    </div>
 
-            <div class="form-group">
-                <label for="workFilePdf">PDF File *</label>
-                <div class="file-upload" onclick="document.getElementById('workFilePdf').click()">
-                    <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: var(--color-brand-accent);"></i>
-                    <p>Click to select PDF file</p>
-                    <input type="file" id="workFilePdf" name="workFilePdf" accept=".pdf" required hidden>
+                    <div class="form-group md:col-span-2 flex items-center mt-2">
+                        <input type="checkbox" id="applyDownloadWatermark" name="applyDownloadWatermark" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" checked>
+                        <label for="applyDownloadWatermark" class="ml-2 text-gray-700">Apply Watermark on Download</label>
+                    </div>
+
+                    <div class="form-group md:col-span-2">
+                        <label for="workFilePdf" class="block mb-2 font-semibold text-gray-700">PDF File * (max 20MB)</label>
+                        <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500 hover:bg-gray-50 transition-all" onclick="document.getElementById('workFilePdf').click()">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-blue-500"></i>
+                            <p class="mt-2 text-gray-600">Click to select or drag & drop PDF file</p>
+                            <input type="file" id="workFilePdf" name="workFilePdf" accept=".pdf" required class="hidden">
+                            <img id="pdfThumbnail" class="hidden mx-auto mt-4 max-h-32" alt="PDF Preview">
+                        </div>
+                        <p id="fileName" class="mt-2 text-green-600 font-medium"></p>
+                        <p id="fileSize" class="mt-1 text-sm text-gray-500"></p>
+                    </div>
                 </div>
-                <p id="fileName" style="margin-top: 0.5rem; color: var(--color-success-green);"></p>
             </div>
 
             <!-- Activity Section -->
-            <h3 style="color: var(--color-brand-primary); margin: 2rem 0 1rem 0;">Associated Activity</h3>
-            
-            <div class="form-group">
-                <label for="activityTitle">Activity Title *</label>
-                <input type="text" id="activityTitle" name="activityTitle" required>
-            </div>
+            <div class="mb-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-6">2. Associated Activity</h3>
 
-            <div class="form-group">
-                <label for="activityDescription">Activity Description</label>
-                <textarea id="activityDescription" name="activityDescription" rows="3"></textarea>
-            </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-group">
+                        <label for="activityTitle" class="block mb-2 font-semibold text-gray-700">Activity Title</label>
+                        <input type="text" id="activityTitle" name="activityTitle" class="w-full p-3 border bg-gray-100 border-gray-300 rounded-lg cursor-not-allowed" readonly>
+                    </div>
 
-            <div class="form-group">
-                <label for="activitySubject">Activity Subject *</label>
-                <select id="activitySubject" name="activitySubject" required>
-                    <option value="">Select Subject</option>
-                    <option value="Agriculture">Agriculture</option>
-                    <option value="Biology">Biology</option>
-                    <option value="Chemistry">Chemistry</option>
-                    <option value="Christian Religious Education">Christian Religious Education</option>
-                    <option value="English Language">English Language</option>
-                    <option value="Entrepreneurship Education">Entrepreneurship Education</option>
-                    <option value="Food and Nutrition">Food and Nutrition</option>
-                    <option value="Geography">Geography</option>
-                    <option value="German">German</option>
-                    <option value="History">History</option>
-                    <option value="Kiswahili">Kiswahili</option>
-                    <option value="Literature in English">Literature in English</option>
-                    <option value="Luganda">Luganda</option>
-                    <option value="Mathematics">Mathematics</option>
-                    <option value="Performing Arts">Performing Arts</option>
-                    <option value="Physical Education">Physical Education</option>
-                    <option value="Physics">Physics</option>
-                    <option value="Technology and Design">Technology and Design</option>
-                </select>
-            </div>
+                     <div class="form-group">
+                        <label class="block mb-2 font-semibold text-gray-700">Bytes Awarded</label>
+                        <p class="w-full p-3 border bg-gray-100 border-gray-300 rounded-lg"><span id="bytesAwarded" class="font-bold">5</span> Bytes</p>
+                    </div>
 
-            <div class="form-group">
-                <label for="activityIntendedClass">Activity Intended Class *</label>
-                <select id="activityIntendedClass" name="activityIntendedClass" required>
-                    <option value="">Select Class</option>
-                    <option value="S.1">S.1</option>
-                    <option value="S.2">S.2</option>
-                    <option value="S.3">S.3</option>
-                    <option value="S.4">S.4</option>
-                    <option value="S.5">S.5</option>
-                    <option value="S.6">S.6</option>
-                </select>
-            </div>
-
-            <!-- Questions Section -->
-            <div class="form-group">
-                <label>Activity Questions *</label>
-                <div id="questionsContainer">
-                    <div class="question-item">
-                        <label>Question 1:</label>
-                        <textarea class="question-text" rows="2" placeholder="Enter your question here..." required></textarea>
-                        <label style="margin-top: 1rem;">Keywords for Marking:</label>
-                        <div class="keywords-container">
-                            <div class="keyword-input">
-                                <input type="text" class="keyword" placeholder="Enter keyword..." required>
-                                <button type="button" class="btn btn-secondary" onclick="addKeyword(this)">Add</button>
-                            </div>
-                        </div>
+                    <div class="form-group md:col-span-2">
+                        <label for="activityDescription" class="block mb-2 font-semibold text-gray-700">Activity Description</label>
+                        <textarea id="activityDescription" name="activityDescription" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"></textarea>
                     </div>
                 </div>
-                <button type="button" class="btn btn-secondary" onclick="addQuestion()">Add Another Question</button>
+
+                <!-- Questions Section -->
+                <div class="form-group mt-6">
+                    <label class="block mb-2 font-semibold text-gray-700">Activity Questions * (Exactly 5 required)</label>
+                    <div id="questionsContainer" class="space-y-4">
+                        <!-- Questions will be dynamically added here -->
+                    </div>
+                    <button type="button" id="addQuestionBtn" class="mt-4 px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-plus mr-2"></i>Add Another Question
+                    </button>
+                </div>
             </div>
 
-            <div class="form-group" style="text-align: center; margin-top: 2rem;">
-                <button type="submit" class="btn btn-primary" id="submitBtn">
-                    <i class="fas fa-upload"></i> Upload Content
-                </button>
-                <button type="button" class="btn btn-secondary" onclick="window.location.href='teacherdashboard.html'" style="margin-left: 1rem;">
+            <!-- Form Actions -->
+            <div class="flex justify-center items-center gap-4 mt-8">
+                <button type="button" class="px-6 py-3 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition" onclick="window.location.href='teacherdashboard.html'">
                     Cancel
+                </button>
+                <button type="submit" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:bg-blue-400 disabled:cursor-not-allowed" id="submitBtn" disabled>
+                    <i class="fas fa-upload mr-2"></i> Upload Content
                 </button>
             </div>
         </form>
     </div>
 
+    <!-- Delete Confirmation Dialog -->
+    <div id="confirmationDialog" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 confirmation-dialog">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+            <h3 class="text-xl font-bold text-gray-800">Delete Question?</h3>
+            <p class="text-gray-600 my-4">Are you sure you want to delete this question? This action cannot be undone.</p>
+            <div class="flex justify-center gap-4">
+                <button class="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition" onclick="cancelDelete()">No, Keep It</button>
+                <button class="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition" onclick="confirmDelete()">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyword Requirement Dialog -->
+    <div id="keywordRequirementDialog" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 confirmation-dialog">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+            <h3 class="text-xl font-bold text-gray-800">Keywords Required</h3>
+            <p class="text-gray-600 my-4">Please add at least 5 keywords for the current question before adding another one.</p>
+            <button class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition" onclick="closeKeywordDialog()">OK</button>
+        </div>
+    </div>
+
+    <!-- Keyword Validation Dialog -->
+    <div id="keywordValidationDialog" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 confirmation-dialog">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+            <h3 class="text-xl font-bold text-gray-800">Keywords Missing</h3>
+            <p id="validationMessage" class="text-gray-600 my-4"></p>
+            <button class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition" onclick="closeValidationDialog()">OK</button>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // --- DOM Element References ---
             const uploadForm = document.getElementById('uploadForm');
             const messageBox = document.getElementById('messageBox');
             const fileInput = document.getElementById('workFilePdf');
-            const fileName = document.getElementById('fileName');
+            const fileNameDisplay = document.getElementById('fileName');
+            const fileSizeDisplay = document.getElementById('fileSize');
+            const pdfThumbnail = document.getElementById('pdfThumbnail');
+            const dropZone = document.getElementById('dropZone');
+            const workFileTitle = document.getElementById('workFileTitle');
+            const activityTitle = document.getElementById('activityTitle');
+            const workFileCostBytes = document.getElementById('workFileCostBytes');
+            const bytesAwarded = document.getElementById('bytesAwarded');
+            const addQuestionBtn = document.getElementById('addQuestionBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const questionsContainer = document.getElementById('questionsContainer');
+            const confirmationDialog = document.getElementById('confirmationDialog');
+            const keywordRequirementDialog = document.getElementById('keywordRequirementDialog');
+            const keywordValidationDialog = document.getElementById('keywordValidationDialog');
+            const validationMessage = document.getElementById('validationMessage');
 
-            // File input change handler
-            fileInput.addEventListener('change', function() {
-                if (this.files[0]) {
-                    fileName.textContent = `Selected: ${this.files[0].name}`;
-                }
+            // --- State Variable ---
+            let questionToDelete = null;
+            let highlightedQuestion = null;
+
+            // --- Initial Setup ---
+            addQuestion();
+
+            // --- Event Listeners ---
+            workFileTitle.addEventListener('input', () => {
+                activityTitle.value = workFileTitle.value;
+                validateForm();
             });
 
-            // Form submission
-            uploadForm.addEventListener('submit', async function(e) {
+            workFileCostBytes.addEventListener('input', () => {
+                bytesAwarded.textContent = workFileCostBytes.value || '0';
+                validateForm();
+            });
+
+            fileInput.addEventListener('change', () => handleFileSelection(fileInput.files[0]));
+
+            dropZone.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    showMessage('Please log in first', 'error');
-                    setTimeout(() => window.location.href = 'teacherlogin.html', 2000);
-                    return;
-                }
+                dropZone.classList.add('border-blue-500', 'bg-gray-50');
+            });
 
-                // Collect form data
-                const formData = new FormData();
-                
-                // WorkFile data
-                formData.append('workFileTitle', document.getElementById('workFileTitle').value);
-                formData.append('workFileDescription', document.getElementById('workFileDescription').value);
-                formData.append('workFileSubject', document.getElementById('workFileSubject').value);
-                formData.append('workFileIntendedClass', document.getElementById('workFileIntendedClass').value);
-                formData.append('workFileCostBytes', document.getElementById('workFileCostBytes').value);
-                formData.append('applyDownloadWatermark', document.getElementById('applyDownloadWatermark').checked);
-                formData.append('workFilePdf', fileInput.files[0]);
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('border-blue-500', 'bg-gray-50');
+            });
 
-                // Activity data - collect questions
-                const questions = [];
-                const questionItems = document.querySelectorAll('.question-item');
-                
-                questionItems.forEach((item, index) => {
-                    const questionText = item.querySelector('.question-text').value.trim();
-                    const keywords = [];
-                    
-                    item.querySelectorAll('.keyword').forEach(keywordInput => {
-                        if (keywordInput.value.trim()) {
-                            keywords.push(keywordInput.value.trim());
-                        }
-                    });
-
-                    if (questionText && keywords.length > 0) {
-                        questions.push({
-                            questionText: questionText,
-                            keywordsForMarking: keywords
-                        });
-                    }
-                });
-
-                if (questions.length === 0) {
-                    showMessage('Please add at least one question with keywords', 'error');
-                    return;
-                }
-
-                const activityData = {
-                    title: document.getElementById('activityTitle').value,
-                    description: document.getElementById('activityDescription').value,
-                    subject: document.getElementById('activitySubject').value,
-                    intendedClass: document.getElementById('activityIntendedClass').value,
-                    questions: questions
-                };
-
-                formData.append('activityJson', JSON.stringify(activityData));
-
-                // Submit form
-                try {
-                    document.getElementById('submitBtn').disabled = true;
-                    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
-
-                    const response = await fetch('/teacher/upload-content', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: formData
-                    });
-
-                    const result = await response.json();
-
-                    if (response.ok) {
-                        showMessage('Content uploaded successfully!', 'success');
-                        setTimeout(() => {
-                            window.location.href = 'teacherdashboard.html';
-                        }, 2000);
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-blue-500', 'bg-gray-50');
+                if (e.dataTransfer.files.length) {
+                    const file = e.dataTransfer.files[0];
+                    if (file.type === 'application/pdf') {
+                        fileInput.files = e.dataTransfer.files;
+                        handleFileSelection(file);
                     } else {
-                        showMessage(result.message || 'Upload failed', 'error');
+                        showMessage('Please upload a PDF file only.', 'error');
                     }
-                } catch (error) {
-                    console.error('Upload error:', error);
-                    showMessage('Network error. Please try again.', 'error');
-                } finally {
-                    document.getElementById('submitBtn').disabled = false;
-                    document.getElementById('submitBtn').innerHTML = '<i class="fas fa-upload"></i> Upload Content';
                 }
             });
+
+            addQuestionBtn.addEventListener('click', () => {
+                const questionItems = document.querySelectorAll('.question-item');
+                const lastQuestion = questionItems[questionItems.length - 1];
+
+                if (lastQuestion) {
+                    const keywordCount = lastQuestion.querySelectorAll('.keyword-tag').length;
+                    if (keywordCount < 5) {
+                        keywordRequirementDialog.classList.remove('hidden');
+                        highlightQuestion(lastQuestion);
+                        return;
+                    }
+                }
+
+                addQuestion();
+            });
+
+            uploadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                // First validate all questions have enough keywords
+                const invalidQuestions = validateAllQuestions();
+
+                if (invalidQuestions.length > 0) {
+                    // Show message about which questions need more keywords
+                    const questionNumbers = invalidQuestions.map(q => `Question ${q}`).join(' and ');
+                    validationMessage.textContent = `${questionNumbers} - please make sure the keywords of each question are at least 5.`;
+                    keywordValidationDialog.classList.remove('hidden');
+
+                    // Highlight the invalid questions after a short delay
+                    setTimeout(() => {
+                        invalidQuestions.forEach(num => {
+                            const questions = document.querySelectorAll('.question-item');
+                            if (questions[num-1]) {
+                                highlightQuestion(questions[num-1]);
+                            }
+                        });
+                    }, 100);
+
+                    return;
+                }
+
+                // If validation passes, proceed to cloudinary.html
+                window.location.href = 'cloudinary.html';
+            });
+
+            validateForm();
         });
 
-        function showMessage(text, type) {
+        // --- Core Functions ---
+        function handleFileSelection(file) {
+            const fileNameDisplay = document.getElementById('fileName');
+            const fileSizeDisplay = document.getElementById('fileSize');
+            const pdfThumbnail = document.getElementById('pdfThumbnail');
+
+            if (file && file.type === 'application/pdf') {
+                fileNameDisplay.textContent = `Selected: ${file.name}`;
+                fileSizeDisplay.textContent = `Size: ${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+                pdfThumbnail.src = 'https://placehold.co/150x200/E9D5FF/3730A3?text=PDF';
+                pdfThumbnail.classList.remove('hidden');
+
+                if (file.size > 20 * 1024 * 1024) {
+                    showMessage('PDF file must be less than 20MB.', 'error');
+                }
+            } else if (file) {
+                 showMessage('Please select a valid PDF file.', 'error');
+            } else {
+                fileNameDisplay.textContent = '';
+                fileSizeDisplay.textContent = '';
+                pdfThumbnail.classList.add('hidden');
+            }
+            validateForm();
+        }
+
+        function validateForm() {
+            const workFileTitle = document.getElementById('workFileTitle');
+            const workFileSubject = document.getElementById('workFileSubject');
+            const workFileIntendedClass = document.getElementById('workFileIntendedClass');
+            const workFilePdf = document.getElementById('workFilePdf');
+            const workFileCostBytes = document.getElementById('workFileCostBytes');
+            const submitBtn = document.getElementById('submitBtn');
+            const addQuestionBtn = document.getElementById('addQuestionBtn');
+
+            const isTitleValid = workFileTitle.value.trim() !== '';
+            const isSubjectValid = workFileSubject.value !== '';
+            const isClassValid = workFileIntendedClass.value !== '';
+            const isPdfValid = workFilePdf.files.length > 0 && workFilePdf.files[0].size <= 20 * 1024 * 1024;
+            const isCostValid = workFileCostBytes.value >= 5 && workFileCostBytes.value <= 20;
+
+            const questionItems = document.querySelectorAll('.question-item');
+            const hasFiveQuestions = questionItems.length === 5;
+            let allQuestionsValid = hasFiveQuestions;
+            if (hasFiveQuestions) {
+                questionItems.forEach(item => {
+                    const questionText = item.querySelector('.question-text').value.trim();
+                    const keywordCount = item.querySelectorAll('.keyword-tag').length;
+                    if (questionText === '' || keywordCount < 5) {
+                        allQuestionsValid = false;
+                    }
+                });
+            } else {
+                allQuestionsValid = false;
+            }
+
+            submitBtn.disabled = !(isTitleValid && isSubjectValid && isClassValid && isPdfValid && isCostValid && allQuestionsValid);
+            addQuestionBtn.disabled = questionItems.length >= 5;
+        }
+
+        function showMessage(text, type = 'success') {
             const messageBox = document.getElementById('messageBox');
-            messageBox.textContent = text;
-            messageBox.className = `message ${type}`;
+            messageBox.innerHTML = text;
+
+            if (type === 'success') {
+                messageBox.className = 'p-4 mb-4 text-sm text-center rounded-lg bg-green-100 text-green-700';
+            } else if (type === 'error') {
+                messageBox.className = 'p-4 mb-4 text-sm text-center rounded-lg bg-red-100 text-red-700';
+            } else if (type === 'uploading') {
+                messageBox.className = 'p-4 mb-4 text-sm text-center rounded-lg bg-blue-100 text-blue-700';
+            }
+
             messageBox.classList.remove('hidden');
-            
-            setTimeout(() => {
-                messageBox.classList.add('hidden');
-            }, 5000);
+
+            if (type !== 'uploading') {
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                }, 3000);
+            }
+        }
+
+        function showUploadingMessage(text) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.innerHTML = `
+                <div class="flex items-center justify-center">
+                    <i class="fas fa-arrow-up upload-arrow mr-2"></i>
+                    <span>${text}</span>
+                    <span class="uploading-dots ml-1"></span>
+                </div>
+            `;
+            messageBox.className = 'p-4 mb-4 text-sm text-center rounded-lg bg-blue-100 text-blue-700';
+            messageBox.classList.remove('hidden');
         }
 
         function addQuestion() {
             const container = document.getElementById('questionsContainer');
             const questionCount = container.querySelectorAll('.question-item').length + 1;
-            
+
+            if (questionCount > 5) return;
+
             const questionDiv = document.createElement('div');
-            questionDiv.className = 'question-item';
+            questionDiv.className = 'question-item bg-gray-50 border border-gray-200 rounded-lg p-4';
             questionDiv.innerHTML = `
-                <label>Question ${questionCount}:</label>
-                <textarea class="question-text" rows="2" placeholder="Enter your question here..." required></textarea>
-                <label style="margin-top: 1rem;">Keywords for Marking:</label>
-                <div class="keywords-container">
-                    <div class="keyword-input">
-                        <input type="text" class="keyword" placeholder="Enter keyword..." required>
-                        <button type="button" class="btn btn-secondary" onclick="addKeyword(this)">Add</button>
-                    </div>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="font-semibold text-gray-700">Question ${questionCount}:</label>
+                    ${questionCount > 1 ? `<button type="button" class="text-red-500 hover:text-red-700" onclick="requestDeleteQuestion(this)"><i class="fas fa-trash-alt"></i></button>` : ''}
                 </div>
-                <button type="button" class="btn btn-danger" onclick="removeQuestion(this)" style="margin-top: 0.5rem;">Remove Question</button>
+                <textarea class="question-text w-full p-2 border border-gray-300 rounded-lg" rows="2" placeholder="Enter your question here..." required></textarea>
+                <label class="block mt-3 mb-1 font-semibold text-gray-600 text-sm">Keywords for Marking (min 5):</label>
+                <div class="keywords-container">
+                    <div class="flex gap-2">
+                        <input type="text" class="new-keyword flex-grow p-2 border border-gray-300 rounded-lg" placeholder="Enter keyword and press Add">
+                        <button type="button" class="btn-add-keyword px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600">Add</button>
+                    </div>
+                    <div class="keywords-display flex flex-wrap gap-2 mt-2"></div>
+                </div>
             `;
-            
+
             container.appendChild(questionDiv);
+
+            const questionTextarea = questionDiv.querySelector('.question-text');
+            questionTextarea.addEventListener('input', validateForm);
+
+            const keywordInput = questionDiv.querySelector('.new-keyword');
+            const addKeywordBtn = questionDiv.querySelector('.btn-add-keyword');
+
+            addKeywordBtn.addEventListener('click', () => addKeyword(addKeywordBtn));
+            keywordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addKeyword(addKeywordBtn);
+                }
+            });
+
+            validateForm();
         }
 
-        function removeQuestion(button) {
-            button.closest('.question-item').remove();
-            
-            // Renumber questions
-            const questions = document.querySelectorAll('.question-item');
-            questions.forEach((item, index) => {
-                item.querySelector('label').textContent = `Question ${index + 1}:`;
-            });
+        function highlightQuestion(questionElement) {
+            if (highlightedQuestion) {
+                highlightedQuestion.classList.remove('highlight-question');
+            }
+
+            questionElement.classList.add('highlight-question');
+            highlightedQuestion = questionElement;
+
+            setTimeout(() => {
+                questionElement.classList.remove('highlight-question');
+            }, 3000);
+        }
+
+        function requestDeleteQuestion(button) {
+            questionToDelete = button.closest('.question-item');
+            document.getElementById('confirmationDialog').classList.remove('hidden');
+        }
+
+        function cancelDelete() {
+            questionToDelete = null;
+            document.getElementById('confirmationDialog').classList.add('hidden');
+        }
+
+        function confirmDelete() {
+            if (questionToDelete) {
+                questionToDelete.remove();
+                questionToDelete = null;
+
+                const questions = document.querySelectorAll('.question-item');
+                questions.forEach((item, index) => {
+                    item.querySelector('label').textContent = `Question ${index + 1}:`;
+                });
+
+                document.getElementById('confirmationDialog').classList.add('hidden');
+                showMessage('Question deleted successfully.', 'success');
+                validateForm();
+            }
+        }
+
+        function closeKeywordDialog() {
+            document.getElementById('keywordRequirementDialog').classList.add('hidden');
+        }
+
+        function closeValidationDialog() {
+            document.getElementById('keywordValidationDialog').classList.add('hidden');
         }
 
         function addKeyword(button) {
             const container = button.closest('.keywords-container');
-            const keywordDiv = document.createElement('div');
-            keywordDiv.className = 'keyword-input';
-            keywordDiv.innerHTML = `
-                <input type="text" class="keyword" placeholder="Enter keyword..." required>
-                <button type="button" class="btn btn-danger" onclick="removeKeyword(this)">Remove</button>
+            const input = container.querySelector('.new-keyword');
+            const keyword = input.value.trim();
+
+            if (keyword === '') return;
+
+            const keywordsDisplay = container.querySelector('.keywords-display');
+
+            const keywordTag = document.createElement('div');
+            keywordTag.className = 'keyword-tag flex items-center bg-gray-200 text-gray-800 text-sm font-medium px-2 py-1 rounded-full';
+            keywordTag.innerHTML = `
+                <span>${keyword}</span>
+                <button type="button" class="ml-2 text-gray-500 hover:text-gray-800" onclick="removeKeyword(this)"><i class="fas fa-times"></i></button>
             `;
-            container.appendChild(keywordDiv);
+
+            keywordsDisplay.appendChild(keywordTag);
+            input.value = '';
+            input.focus();
+            validateForm();
         }
 
         function removeKeyword(button) {
-            button.closest('.keyword-input').remove();
+            const keywordTag = button.closest('.keyword-tag');
+            keywordTag.remove();
+            validateForm();
+        }
+
+        function validateAllQuestions() {
+            const invalidQuestions = [];
+            const questions = document.querySelectorAll('.question-item');
+
+            questions.forEach((question, index) => {
+                const keywordCount = question.querySelectorAll('.keyword-tag').length;
+                if (keywordCount < 5) {
+                    invalidQuestions.push(index + 1);
+                }
+            });
+
+            return invalidQuestions;
         }
     </script>
 </body>

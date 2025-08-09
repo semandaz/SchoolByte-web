@@ -21,6 +21,8 @@ const multer = require('multer'); // For handling multipart/form-data (file uplo
 // NEW: Google Generative AI SDK for Preader Games
 const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai');
 
+// NEW: crypto for generating unique IDs (for recentQuizIds reset etc.)
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000; // Use process.env.PORT for Replit
@@ -73,6 +75,84 @@ const verificationCodeSchema = new mongoose.Schema({
 });
 const VerificationCode = mongoose.model('VerificationCode', verificationCodeSchema);
 
+// --- NEW SCHEMA: Subject ---
+// This static collection defines all the subjects available in the SchoolByte curriculum.
+const subjectSchema = new mongoose.Schema({
+    name: { type: String, required: true, unique: true, trim: true }, // E.g., "Mathematics", "Biology"
+    serialNumber: { type: Number, unique: true }, // Optional numerical identifier
+    isCompulsory: { type: Boolean, default: false }, // True if one of the 7 compulsory O'Level subjects
+    applicableLevels: { // Specifies which academic levels this subject's content is generally relevant to
+        type: [String],
+        enum: ["O_Level_Lower", "O_Level_Middle", "A_Level"],
+        default: []
+    },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+subjectSchema.pre('save', function(next) {
+    this.updatedAt = Date.now();
+    next();
+});
+const Subject = mongoose.model('Subject', subjectSchema);
+
+// --- NEW SCHEMA: CompletedQuizAttempt ---
+// This collection serves as an immutable log of every successfully completed quiz question by any student.
+const completedQuizAttemptSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true, index: true },
+    quizId: { type: mongoose.Schema.Types.ObjectId, ref: 'QuizQuestion', required: true, index: true },
+    studentClassAtAttempt: { type: String, required: true },
+    questionSubject: { type: String, required: true },
+    questionIntendedClass: { type: String, required: true },
+    bytesAwarded: { type: Number, default: 0, min: 0 },
+    isSuccessful: { type: Boolean, required: true },
+    attemptDate: { type: Date, default: Date.now },
+    quizSessionId: { type: mongoose.Schema.Types.ObjectId, ref: 'QuizSession' } // Reference to the 180-question cycle
+});
+const CompletedQuizAttempt = mongoose.model('CompletedQuizAttempt', completedQuizAttemptSchema);
+
+// --- NEW SCHEMA: QuizSession ---
+// This new collection will encapsulate all real-time progress tracking for the "Fats and Beef" balancing mechanism.
+const quizSessionSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true, unique: true }, // One active session per user
+    questionsCompletedCount: { type: Number, default: 0, min: 0, max: 180 }, // Tracks progress in 180-question cycle
+    subjectProgress: { // Tracks questions completed from each subject within specific class-level categories
+        type: mongoose.Schema.Types.Mixed, // Flexible object to store subject and class-level counts
+        default: {} // E.g., { "Mathematics": { "ownClass": 0, "lowerClass": 0, "higherClass": 0 } }
+    },
+    startedAt: { type: Date, default: Date.now },
+    completedAt: { type: Date }, // Set when the 180-question cycle is complete
+    updatedAt: { type: Date, default: Date.now }
+    // --- NEW FIELDS (from report) ---
+    isActive: { type: Boolean, default: true }, // Flag to enable/disable question for use in quizzes. (For manual review)
+    timesServedOverall: { type: Number, default: 0, min: 0, index: true }, // Global counter for question exposure
+    lastServedTimestamp: { type: Date, index: true }, // Timestamp of last global serving
+
+    // Enhancement: Grading Keywords for Free-Form Answers
+    keywordsForGrading: { // For 'short-answer', 'problem-solving' - essential keywords for NLP-lite grading
+        type: [String],
+        default: [],
+        set: (v) => v.map(s => s.toLowerCase().trim()) // Store normalized
+    },
+    negativeKeywords: { // Optional - terms that, if present, suggest incorrect understanding
+        type: [String],
+        default: [],
+        set: (v) => v.map(s => s.toLowerCase().trim()) // Store normalized
+    },
+
+    // Enhancement: Granular Content Tagging
+    topic: { type: String, trim: true, index: true },
+    subTopic: { type: String, trim: true, index: true },
+    skillType: { // E.g., ["Memorization", "Application", "Analysis"]
+        type: [String],
+        enum: ["Memorization", "Application", "Analysis", "Problem-Solving", "Evaluation", "Creation"], // Example skills
+        default: []
+    }
+});
+quizSessionSchema.pre('save', function(next) {
+    this.updatedAt = Date.now();
+    next();
+});
+const QuizSession = mongoose.model('QuizSession', quizSessionSchema);
 
 // --- Mongoose Schema and Model for Student ---
 // Defines the structure for student data storage.
@@ -86,35 +166,54 @@ const studentSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },
 
 
-    // --- NEW FIELDS FOR STUDENT DATA ---
-    class: { type: String, required: true, trim: true }, // E.g., "S.1", "S.2"
-    stream: { type: String, required: true, trim: true }, // E.g., "Arts", "Science", "Blue"
-    classTeacher: { type: String, required: true, trim: true }, // For now, stores the teacher's name as a string
+// --- NEW/MODIFIED FIELDS FOR STUDENT DATA (from report) ---
+class: { type: String, required: true, trim: true }, // E.g., "S.1", "S.2"
+stream: { type: String, required: true, trim: true }, // E.g., "Arts", "Science", "Blue"
+classTeacher: { type: String, required: true, trim: true }, // For now, stores the teacher's name as a string
 
+subjectsEnrolled: { // Array of subjects student is enrolled in, for dashboard filtering and quiz selection
+    type: [String],
+    required: true,
+    default: []
+},
+quizzesCompletedThisWeek: { // Counter for weekly quiz limits
+    type: Number,
+    default: 0,
+    min: 0
+},
+lastQuizResetDate: { // Timestamp for weekly quiz limit reset
+    type: Date,
+    default: Date.now
+},
+recentQuizIds: { // Sliding window of recently completed quiz question IDs to prevent immediate repetition
+    type: [mongoose.Schema.Types.ObjectId],
+    default: [],
+    maxlength: 200 // Max size as per report (100-200 questions)
+},
+currentQuizSessionId: { // Reference to the active QuizSession document for "Fats and Beef"
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'QuizSession',
+    default: null
+},
 
-    // For the leaderboard, if student wants a different first name displayed
-    firstNameDisplay: { type: String, trim: true },
+// For the leaderboard, if student wants a different first name displayed
+firstNameDisplay: { type: String, trim: true },
 
+// For preferred name display (what name to show in profile/dashboard)
+preferredName: { type: String, trim: true },
 
-    // For preferred name display (what name to show in profile/dashboard)
-    preferredName: { type: String, trim: true },
-
-
-    // For font preferences and other settings
-    preferences: {
-        type: Object, // This allows for flexible key-value pairs
-        default: {
-            fontSize: "medium", // Default font size preference
-            theme: "light",       // Default theme preference (e.g., 'light', 'dark')
-            notifications_on: true, // Default notification preference
-            fontFamily: "Inter, sans-serif" // Default font preference
-        }
-    },
-    // NEW: Total time spent in Preader Games (minutes)
-    totalPreaderGameTimeMinutes: { type: Number, default: 0 }
-});
-const Student = mongoose.model('Student', studentSchema);
-
+// For font preferences and other settings
+preferences: {
+    type: Object, // This allows for flexible key-value pairs
+    default: {
+        fontSize: "medium", // Default font size preference
+        theme: "light",       // Default theme preference (e.g., 'light', 'dark')
+        notifications_on: true, // Default notification preference
+        fontFamily: "Inter, sans-serif" // Default font preference
+    }
+},
+// Total time spent in Preader Games (minutes)
+totalPreaderGameTimeMinutes: { type: Number, default: 0 }
 
 
 
@@ -322,7 +421,35 @@ const quizQuestionSchema = new mongoose.Schema({
     isFeatured: { type: Boolean, default: false }, // For the "10 bytes for a month" feature
     featuredUntil: { type: Date, required: function() { return this.isFeatured; } }, // Only required if isFeatured is true
     createdAt: { type: Date, default: Date.now }
+    // --- NEW FIELDS (from report) ---
+    isActive: { type: Boolean, default: true }, // Flag to enable/disable question for use in quizzes. (For manual review)
+    timesServedOverall: { type: Number, default: 0, min: 0, index: true }, // Global counter for question exposure
+    lastServedTimestamp: { type: Date, index: true }, // Timestamp of last global serving
+
+    // Enhancement: Grading Keywords for Free-Form Answers
+    keywordsForGrading: { // For 'short-answer', 'problem-solving' - essential keywords for NLP-lite grading
+        type: [String],
+        default: [],
+        set: (v) => v.map(s => s.toLowerCase().trim()) // Store normalized
+    },
+    negativeKeywords: { // Optional - terms that, if present, suggest incorrect understanding
+        type: [String],
+        default: [],
+        set: (v) => v.map(s => s.toLowerCase().trim()) // Store normalized
+    },
+
+    // Enhancement: Granular Content Tagging
+    topic: { type: String, trim: true, index: true },
+    subTopic: { type: String, trim: true, index: true },
+    skillType: { // E.g., ["Memorization", "Application", "Analysis"]
+        type: [String],
+        enum: ["Memorization", "Application", "Analysis", "Problem-Solving", "Evaluation", "Creation"], // Example skills
+        default: []
+    }
 });
+
+
+
 const QuizQuestion = mongoose.model('QuizQuestion', quizQuestionSchema);
 
 
