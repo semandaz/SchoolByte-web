@@ -121,7 +121,7 @@ const quizSessionSchema = new mongoose.Schema({
     },
     startedAt: { type: Date, default: Date.now },
     completedAt: { type: Date }, // Set when the 180-question cycle is complete
-    updatedAt: { type: Date, default: Date.now }
+    updatedAt: { type: Date, default: Date.now },
     // --- NEW FIELDS (from report) ---
     isActive: { type: Boolean, default: true }, // Flag to enable/disable question for use in quizzes. (For manual review)
     timesServedOverall: { type: Number, default: 0, min: 0, index: true }, // Global counter for question exposure
@@ -411,6 +411,25 @@ const quizQuestionSchema = new mongoose.Schema({
     // The contribution this single question makes to the total quiz bytes.
     // For a 10-question quiz awarding a max of 10 bytes, each question would be 1 byte.
     maxBytesRewardPerQuestion: { type: Number, required: true, default: 1, min: 0 }, // MODIFIED: Default to 1 byte
+    // NEW FIELDS (from report) - For enhanced grading and content management
+    keywordsForGrading: { // For 'short-answer', 'problem-solving' - essential keywords for NLP-lite grading
+        type: [String],
+        default: [],
+        set: (v) => v.map(s => s.toLowerCase().trim()) // Store normalized
+    },
+    negativeKeywords: { // Optional - terms that, if present, suggest incorrect understanding
+        type: [String],
+        default: [],
+        set: (v) => v.map(s => s.toLowerCase().trim()) // Store normalized
+    },
+    // Enhancement: Granular Content Tagging
+    topic: { type: String, trim: true, index: true },
+    subTopic: { type: String, trim: true, index: true },
+    skillType: { // E.g., ["Memorization", "Application", "Analysis"]
+        type: [String],
+        enum: ["Memorization", "Application", "Analysis", "Problem-Solving", "Evaluation", "Creation"], // Example skills
+        default: []
+    },
 
 
     // MODIFIED: Store both teacherId and teacherName for persistence
@@ -422,30 +441,9 @@ const quizQuestionSchema = new mongoose.Schema({
     featuredUntil: { type: Date, required: function() { return this.isFeatured; } }, // Only required if isFeatured is true
     createdAt: { type: Date, default: Date.now }
     // --- NEW FIELDS (from report) ---
-    isActive: { type: Boolean, default: true }, // Flag to enable/disable question for use in quizzes. (For manual review)
-    timesServedOverall: { type: Number, default: 0, min: 0, index: true }, // Global counter for question exposure
-    lastServedTimestamp: { type: Date, index: true }, // Timestamp of last global serving
-
-    // Enhancement: Grading Keywords for Free-Form Answers
-    keywordsForGrading: { // For 'short-answer', 'problem-solving' - essential keywords for NLP-lite grading
-        type: [String],
-        default: [],
-        set: (v) => v.map(s => s.toLowerCase().trim()) // Store normalized
-    },
-    negativeKeywords: { // Optional - terms that, if present, suggest incorrect understanding
-        type: [String],
-        default: [],
-        set: (v) => v.map(s => s.toLowerCase().trim()) // Store normalized
-    },
-
-    // Enhancement: Granular Content Tagging
-    topic: { type: String, trim: true, index: true },
-    subTopic: { type: String, trim: true, index: true },
-    skillType: { // E.g., ["Memorization", "Application", "Analysis"]
-        type: [String],
-        enum: ["Memorization", "Application", "Analysis", "Problem-Solving", "Evaluation", "Creation"], // Example skills
-        default: []
-    }
+    // isActive: { type: Boolean, default: true }, // Flag to enable/disable question for use in quizzes. (For manual review)
+    // timesServedOverall: { type: Number, default: 0, min: 0, index: true }, // Global counter for question exposure
+    // lastServedTimestamp: { type: Date, index: true }, // Timestamp of last global serving
 });
 
 
@@ -675,6 +673,32 @@ function applyStatChanges(currentStats, changes) {
         }
     }
     return newStats;
+}
+
+// Placeholder for NLP grading function (implementation would be complex)
+async function gradeNLPAnswer(studentAnswer, quizQuestion) {
+    // In a real application, this would involve:
+    // 1. Preprocessing studentAnswer (tokenization, lowercasing, stemming/lemmatization).
+    // 2. Comparing processed answer against quizQuestion.keywordsForGrading.
+    // 3. Potentially using semantic similarity or keyword density.
+    // 4. Considering quizQuestion.negativeKeywords.
+    // 5. Returning a score between 0 and 1.
+
+    // For now, a simple keyword presence check:
+    let matchedKeywords = 0;
+    const normalizedAnswer = studentAnswer.toLowerCase().trim();
+    for (const keyword of quizQuestion.keywordsForGrading) {
+        if (normalizedAnswer.includes(keyword.toLowerCase().trim())) {
+            matchedKeywords++;
+        }
+    }
+
+    // Basic scoring: proportion of keywords found.
+    // This is a simplified placeholder. Real NLP would be much more sophisticated.
+    if (quizQuestion.keywordsForGrading.length === 0) return 1; // If no keywords, assume correct
+
+    const score = matchedKeywords / quizQuestion.keywordsForGrading.length;
+    return score;
 }
 
 
@@ -2689,20 +2713,14 @@ app.post('/student/quizzes/submit', authenticateToken, [
     // The structure of studentAnswer depends on the question type.
     // For simplicity, we'll allow Mixed and validate content within the route.
     body('quizSubmissions.*.studentAnswer').notEmpty().withMessage('Student answer is required for each question.'),
+    // Add sessionId to the request body for quiz session tracking
+    body('sessionId').isMongoId().withMessage('Quiz session ID is required.')
 ], async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-
-
-    const { quizSubmissions } = req.body;
+    const { quizSubmissions, sessionId } = req.body;
     const studentId = req.student.id;
-
 
     const session = await mongoose.startSession();
     session.startTransaction();
-
 
     try {
         const student = await Student.findById(studentId).session(session);
@@ -2710,159 +2728,239 @@ app.post('/student/quizzes/submit', authenticateToken, [
             return res.status(404).json({ message: 'Student not found.' });
         }
 
+        const quizSession = await QuizSession.findById(sessionId).session(session);
+        if (!quizSession || !quizSession.userId.equals(studentId)) {
+            return res.status(404).json({ message: 'Quiz session not found or unauthorized.' });
+        }
 
-        let totalCorrectQuestions = 0;
-        let totalAttemptedQuestions = quizSubmissions.length;
+        let totalBytesEarned = 0;
         const gradedAnswers = [];
-
+        const completedAttempts = [];
 
         for (const submission of quizSubmissions) {
             const questionId = submission.questionId;
-            const studentAnswer = submission.studentAnswer; // This can be a string, array of IDs, array of objects, etc.
-
+            const studentAnswer = submission.studentAnswer;
 
             const quizQuestion = await QuizQuestion.findById(questionId).session(session);
             if (!quizQuestion) {
                 console.warn(`Quiz question with ID ${questionId} not found. Skipping.`);
-                continue; // Skip if question not found
+                continue;
             }
 
-
             let isCorrect = false;
+            let questionBytes = 0;
 
-
+            // Enhanced grading system
             switch (quizQuestion.type) {
                 case 'short-answer':
                 case 'problem-solving':
+                    if (typeof studentAnswer === 'string') {
+                        if (quizQuestion.keywordsForGrading && quizQuestion.keywordsForGrading.length > 0) {
+                            // NLP-based grading using keywords
+                            questionBytes = await gradeNLPAnswer(studentAnswer, quizQuestion);
+                            isCorrect = questionBytes >= 0.7; // 70% threshold
+                        } else {
+                            // Fallback to simple string matching
+                            const normalizedStudentAnswer = studentAnswer.toLowerCase().trim();
+                            isCorrect = quizQuestion.correctAnswers.some(correctAns =>
+                                normalizedStudentAnswer.includes(correctAns.toLowerCase().trim())
+                            );
+                            questionBytes = isCorrect ? 1 : 0;
+                        }
+                    }
+                    break;
                 case 'fill-in-the-blank':
-                    // For these types, studentAnswer is a string. Compare against correctAnswers array.
                     if (typeof studentAnswer === 'string') {
                         const normalizedStudentAnswer = studentAnswer.toLowerCase().trim();
                         isCorrect = quizQuestion.correctAnswers.some(correctAns =>
                             normalizedStudentAnswer === correctAns.toLowerCase().trim()
                         );
+                        questionBytes = isCorrect ? 1 : 0;
                     }
                     break;
                 case 'true-false':
-                    // studentAnswer is a boolean or string "true"/"false"
                     if (typeof studentAnswer === 'boolean' || typeof studentAnswer === 'string') {
                         const normalizedStudentAnswer = String(studentAnswer).toLowerCase();
                         isCorrect = quizQuestion.correctAnswers.some(correctAns =>
                             normalizedStudentAnswer === correctAns.toLowerCase().trim()
                         );
+                        questionBytes = isCorrect ? 1 : 0;
                     }
                     break;
                 case 'multiple-choice-single':
-                    // studentAnswer is the _id of the chosen option
                     if (typeof studentAnswer === 'string' && mongoose.Types.ObjectId.isValid(studentAnswer)) {
                         isCorrect = quizQuestion.options.some(option =>
                             option._id.toString() === studentAnswer && option.isCorrect
                         );
+                        questionBytes = isCorrect ? 1 : 0;
                     }
                     break;
                 case 'multiple-choice-multi':
-                    // studentAnswer is an array of _ids of chosen options
                     if (Array.isArray(studentAnswer)) {
                         const correctOptionIds = quizQuestion.options
                             .filter(option => option.isCorrect)
                             .map(option => option._id.toString());
                         const chosenOptionIds = studentAnswer.map(id => id.toString());
 
+                        // Partial credit for multi-select
+                        const correctChoices = chosenOptionIds.filter(id => correctOptionIds.includes(id)).length;
+                        const incorrectChoices = chosenOptionIds.filter(id => !correctOptionIds.includes(id)).length;
+                        const missedChoices = correctOptionIds.filter(id => !chosenOptionIds.includes(id)).length;
 
-                        // Check if all correct options are chosen and no incorrect ones are chosen
-                        isCorrect = correctOptionIds.length === chosenOptionIds.length &&
-                                    correctOptionIds.every(id => chosenOptionIds.includes(id)) &&
-                                    chosenOptionIds.every(id => correctOptionIds.includes(id));
+                        questionBytes = Math.max(0, (correctChoices - incorrectChoices) / correctOptionIds.length);
+                        isCorrect = questionBytes >= 0.7;
                     }
                     break;
                 case 'matching':
-                    // studentAnswer is an array of { itemA: string, itemB: string } pairs from student
                     if (Array.isArray(studentAnswer)) {
-                        // Normalize and sort both arrays for reliable comparison
                         const normalizedCorrectPairs = quizQuestion.matchingPairs
-                            .map(pair => ({ itemA: pair.itemA.toLowerCase().trim(), itemB: pair.itemB.toLowerCase().trim() }))
-                            .sort((a, b) => a.itemA.localeCompare(b.itemA));
-
-
+                            .map(pair => ({ itemA: pair.itemA.toLowerCase().trim(), itemB: pair.itemB.toLowerCase().trim() }));
                         const normalizedStudentPairs = studentAnswer
-                            .map(pair => ({ itemA: pair.itemA.toLowerCase().trim(), itemB: pair.itemB.toLowerCase().trim() }))
-                            .sort((a, b) => a.itemA.localeCompare(b.itemA));
+                            .map(pair => ({ itemA: pair.itemA.toLowerCase().trim(), itemB: pair.itemB.toLowerCase().trim() }));
 
+                        let correctMatches = 0;
+                        normalizedStudentPairs.forEach(studentPair => {
+                            if (normalizedCorrectPairs.some(correctPair => 
+                                correctPair.itemA === studentPair.itemA && correctPair.itemB === studentPair.itemB)) {
+                                correctMatches++;
+                            }
+                        });
 
-                        isCorrect = normalizedCorrectPairs.length === normalizedStudentPairs.length &&
-                                    normalizedCorrectPairs.every((correctPair, index) =>
-                                        correctPair.itemA === normalizedStudentPairs[index].itemA &&
-                                        correctPair.itemB === normalizedStudentPairs[index].itemB
-                                    );
+                        questionBytes = correctMatches / normalizedCorrectPairs.length;
+                        isCorrect = questionBytes >= 0.7;
                     }
                     break;
                 case 'ordering':
-                    // studentAnswer is an array of strings representing the student's order
                     if (Array.isArray(studentAnswer)) {
                         const normalizedCorrectOrder = quizQuestion.orderedItems.map(item => item.toLowerCase().trim());
                         const normalizedStudentOrder = studentAnswer.map(item => item.toLowerCase().trim());
 
+                        let correctPositions = 0;
+                        normalizedStudentOrder.forEach((item, index) => {
+                            if (normalizedCorrectOrder[index] === item) {
+                                correctPositions++;
+                            }
+                        });
 
-                        isCorrect = normalizedCorrectOrder.length === normalizedStudentOrder.length &&
-                                    normalizedCorrectOrder.every((item, index) => item === normalizedStudentOrder[index]);
+                        questionBytes = correctPositions / normalizedCorrectOrder.length;
+                        isCorrect = questionBytes >= 0.7;
+                    }
+                    break;
+                case 'numeric-entry':
+                    if (typeof studentAnswer === 'string' || typeof studentAnswer === 'number') {
+                        const numericAnswer = parseFloat(studentAnswer);
+                        if (!isNaN(numericAnswer)) {
+                            isCorrect = quizQuestion.correctAnswers.some(correctAns => {
+                                const correctNum = parseFloat(correctAns);
+                                return Math.abs(numericAnswer - correctNum) < 0.01; // Allow small floating point errors
+                            });
+                            questionBytes = isCorrect ? 1 : 0;
+                        }
                     }
                     break;
                 default:
                     console.warn(`Unknown quiz question type: ${quizQuestion.type} for question ID: ${questionId}`);
+                    questionBytes = 0;
                     isCorrect = false;
             }
 
-
-            if (isCorrect) {
-                totalCorrectQuestions++;
-            }
-
+            totalBytesEarned += questionBytes;
 
             gradedAnswers.push({
                 questionId: questionId,
-                studentAnswer: studentAnswer, // Store the raw student answer
-                isCorrect: isCorrect
+                studentAnswer: studentAnswer,
+                isCorrect: isCorrect,
+                bytesEarned: questionBytes,
+                subject: quizQuestion.subject,
+                intendedClass: quizQuestion.intendedClass
+            });
+
+            // Log each completed attempt
+            completedAttempts.push({
+                userId: studentId,
+                quizId: questionId,
+                studentClassAtAttempt: student.class,
+                questionSubject: quizQuestion.subject,
+                questionIntendedClass: quizQuestion.intendedClass,
+                bytesAwarded: questionBytes,
+                isSuccessful: isCorrect,
+                attemptDate: new Date(),
+                quizSessionId: sessionId
             });
         }
 
+        // Round total bytes earned
+        const finalBytesEarned = Math.round(totalBytesEarned);
 
-        // Calculate bytes earned for the quiz session
-        const bytesEarned = totalAttemptedQuestions > 0 ?
-            Math.round((totalCorrectQuestions / totalAttemptedQuestions) * 10) : 0; // Max 10 bytes
+        // Update student data
+        student.bytes += finalBytesEarned;
+        student.quizzesCompletedThisWeek += 1;
 
+        // Update recent quiz IDs (sliding window)
+        const newQuizIds = quizSubmissions.map(sub => new mongoose.Types.ObjectId(sub.questionId));
+        student.recentQuizIds = [...newQuizIds, ...student.recentQuizIds].slice(0, 200);
 
-        // Update student's total bytes
-        student.bytes += bytesEarned;
         await student.save({ session });
 
+        // Update quiz session
+        quizSession.questionsCompletedCount += quizSubmissions.length;
+        quizSession.totalBytesEarnedInSession += finalBytesEarned;
+        quizSession.updatedAt = new Date();
 
-        // Create a new StudentActivitySubmission for this quiz session
-        const newQuizSubmission = new StudentActivitySubmission({
-            student: studentId,
-            quizQuestion: null, // This is a quiz session, not a single quizQuestion
-            answers: gradedAnswers, // Store the detailed graded answers
-            score: (totalCorrectQuestions / totalAttemptedQuestions) * 100, // Percentage score
-            bytesEarned: bytesEarned,
-            attemptNumber: 1, // For quizzes, each submission is a new "session"
-            attemptType: 'initial', // Quizzes are always initial attempts for bytes
-            isGraded: true, // Quizzes are auto-graded
-        });
-        await newQuizSubmission.save({ session });
+        // Check if 180-question cycle is complete
+        if (quizSession.questionsCompletedCount >= 180) {
+            quizSession.completedAt = new Date();
 
+            // Create new quiz session
+            const allSubjects = [
+                "Mathematics", "English Language", "Biology", "Chemistry", "Physics", 
+                "History", "Geography", "Computer Science", "Agriculture", "Literature in English",
+                "French", "German", "Kiswahili", "Luganda", "Fine Art", "Performing Arts",
+                "Physical Education", "Technology and Design"
+            ];
+
+            const initialSubjectProgress = {};
+            allSubjects.forEach(subj => {
+                initialSubjectProgress[subj] = {
+                    ownClass: 0,
+                    lowerClass: 0,
+                    higherClass: 0
+                };
+            });
+
+            const newQuizSession = new QuizSession({
+                userId: studentId,
+                questionsCompletedCount: 0,
+                subjectProgress: initialSubjectProgress,
+                startedAt: new Date()
+            });
+            await newQuizSession.save({ session });
+
+            student.currentQuizSessionId = newQuizSession._id;
+            await student.save({ session });
+        }
+
+        await quizSession.save({ session });
+
+        // Bulk insert completed attempts
+        await CompletedQuizAttempt.insertMany(completedAttempts, { session });
 
         await session.commitTransaction();
 
-
         res.status(200).json({
             message: 'Quiz submitted and graded successfully!',
-            totalCorrectQuestions,
-            totalAttemptedQuestions,
-            score: newQuizSubmission.score,
-            bytesEarned: bytesEarned,
+            totalCorrectQuestions: gradedAnswers.filter(a => a.isCorrect).length,
+            totalAttemptedQuestions: gradedAnswers.length,
+            score: Math.round((gradedAnswers.filter(a => a.isCorrect).length / gradedAnswers.length) * 100),
+            bytesEarned: finalBytesEarned,
             studentCurrentBytes: student.bytes,
-            gradedAnswers: gradedAnswers // Provide detailed feedback
+            gradedAnswers: gradedAnswers,
+            cycleProgress: {
+                questionsCompleted: quizSession.questionsCompletedCount,
+                totalCycleQuestions: 180,
+                cycleComplete: quizSession.completedAt ? true : false
+            }
         });
-
 
     } catch (error) {
         await session.abortTransaction();

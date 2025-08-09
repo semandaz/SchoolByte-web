@@ -590,6 +590,113 @@
             color: var(--color-brand-gold);
         }
 
+        /* Loading Message */
+        .loading-message {
+            text-align: center;
+            padding: 3rem;
+            color: var(--color-neutral-dark);
+        }
+
+        .loading-message i {
+            font-size: 3rem;
+            color: var(--color-brand-primary);
+            margin-bottom: 1rem;
+            animation: spin 1.5s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Dynamic question styling */
+        .quiz-questions {
+            margin-bottom: 2rem;
+        }
+
+        .quiz-question {
+            margin-bottom: 2rem;
+        }
+
+        .quiz-question h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--color-neutral-darkest);
+            line-height: 1.4;
+        }
+
+        .quiz-question .instructions,
+        .quiz-question .hint {
+            font-size: 0.95rem;
+            margin-bottom: 0.8rem;
+            color: var(--color-neutral-dark);
+            font-style: italic;
+        }
+
+        .quiz-question .instructions i,
+        .quiz-question .hint i {
+            margin-right: 0.5rem;
+            color: var(--color-brand-primary);
+        }
+
+        .quiz-question .options .option {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.2rem;
+            background-color: var(--color-neutral-lightest);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            margin-bottom: 0.8rem;
+        }
+
+        .quiz-question .options .option:hover {
+            background-color: var(--color-neutral-light);
+            transform: translateY(-2px);
+        }
+
+        .quiz-question .options .option.selected {
+            border-color: var(--color-brand-primary);
+            background-color: rgba(26, 42, 108, 0.05);
+            box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
+        }
+
+        .quiz-question .options .option-input {
+            margin-right: 1rem;
+            width: 20px;
+            height: 20px;
+            accent-color: var(--color-brand-primary);
+        }
+
+        .quiz-question .options .option-text {
+            font-weight: 500;
+            flex-grow: 1;
+        }
+
+        .quiz-question .text-answer,
+        .quiz-question .numeric-answer {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 2px solid var(--color-neutral-light);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .quiz-question .text-answer:focus,
+        .quiz-question .numeric-answer:focus {
+            outline: none;
+            border-color: var(--color-brand-primary);
+            box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
+        }
+
+        .quiz-question .text-answer {
+            min-height: 120px;
+            resize: vertical;
+        }
+
         /* Reduced Motion */
         @media (prefers-reduced-motion: reduce) {
             * {
@@ -672,105 +779,38 @@
 
         <!-- Quiz Header -->
         <div class="quiz-header">
-            <h1 class="quiz-title" id="quizTitle">QUIZZES: They are random questions you can try to get bytes</h1>
-            <p class="quiz-subtitle">Test your knowledge of cellular biology concepts. Answer all questions to earn bytes!</p>
+            <h1 class="quiz-title" id="quizTitle">SchoolByte Quizzes</h1>
+            <p class="quiz-subtitle">Test your knowledge and earn bytes!</p>
 
             <div class="quiz-progress">
-                <span id="currentQuestionNum">1</span>
+                <span id="currentQuestionNum">0</span>
                 <div class="progress-bar">
                     <div class="progress-fill" id="progressFill"></div>
                 </div>
-                <span id="totalQuestions">5</span>
+                <span id="totalQuestions">0</span>
             </div>
         </div>
 
         <!-- Quiz Content -->
         <div class="quiz-content" id="quizContent">
-            <!-- Question 1: Multiple Choice -->
-            <div class="question-container active" id="question1">
-                <div class="question-number">1</div>
-                <h3 class="question-text">Which organelle is known as the "powerhouse" of the cell?</h3>
-
-                <div class="options-container">
-                    <label class="option">
-                        <input type="radio" name="q1" class="option-input" value="A">
-                        <span class="option-label">A. Nucleus</span>
-                    </label>
-                    <label class="option">
-                        <input type="radio" name="q1" class="option-input" value="B">
-                        <span class="option-label">B. Mitochondrion</span>
-                    </label>
-                    <label class="option">
-                        <input type="radio" name="q1" class="option-input" value="C">
-                        <span class="option-label">C. Ribosome</span>
-                    </label>
-                    <label class="option">
-                        <input type="radio" name="q1" class="option-input" value="D">
-                        <span class="option-label">D. Golgi Apparatus</span>
-                    </label>
-                </div>
+            <div id="loadingMessage" class="loading-message">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Generating your personalized quiz...</p>
             </div>
 
-            <!-- Question 2: Fill in the Blank -->
-            <div class="question-container" id="question2">
-                <div class="question-number">2</div>
-                <h3 class="question-text">The process by which plants convert sunlight into energy is called ____________.</h3>
-
-                <div class="fill-blank-container">
-                    <input type="text" class="fill-blank-input" id="q2Answer" placeholder="Type your answer here...">
-                </div>
+            <div id="quizQuestions" class="quiz-questions" style="display: none;">
+                <!-- Questions will be dynamically rendered here -->
             </div>
 
-            <!-- Question 3: True/False -->
-            <div class="question-container" id="question3">
-                <div class="question-number">3</div>
-                <h3 class="question-text">Animal cells have cell walls.</h3>
-
-                <div class="true-false-container">
-                    <button type="button" class="true-false-btn" data-value="true">True</button>
-                    <button type="button" class="true-false-btn" data-value="false">False</button>
-                </div>
-            </div>
-
-            <!-- Question 4: Matching -->
-            <div class="question-container" id="question4">
-                <div class="question-number">4</div>
-                <h3 class="question-text">Match each organelle with its function:</h3>
-
-                <div class="matching-container">
-                    <div class="matching-column" id="matchingItems">
-                        <div class="matching-item" data-id="1">Nucleus</div>
-                        <div class="matching-item" data-id="2">Mitochondrion</div>
-                        <div class="matching-item" data-id="3">Chloroplast</div>
-                    </div>
-                    <div class="matching-column" id="matchingTargets">
-                        <div class="matching-item" data-id="a">Photosynthesis</div>
-                        <div class="matching-item" data-id="b">Genetic control</div>
-                        <div class="matching-item" data-id="c">Energy production</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Question 5: Short Answer -->
-            <div class="question-container" id="question5">
-                <div class="question-number">5</div>
-                <h3 class="question-text">Explain the difference between prokaryotic and eukaryotic cells.</h3>
-
-                <div class="short-answer-container">
-                    <textarea id="q5Answer" placeholder="Type your answer here..."></textarea>
-                </div>
-            </div>
-
-            <!-- Navigation Buttons -->
-            <div class="quiz-navigation">
-                <button type="button" class="nav-btn prev-btn" id="prevBtn" disabled>
-                    <i class="fas fa-arrow-left"></i> Previous
+            <div class="quiz-navigation" id="quizNavigation" style="display: none;">
+                <button class="nav-btn prev-btn" onclick="previousQuestion()" style="display: none;">
+                    <i class="fas fa-chevron-left"></i> Previous
                 </button>
-                <button type="button" class="nav-btn next-btn" id="nextBtn">
-                    Next <i class="fas fa-arrow-right"></i>
+                <button class="nav-btn next-btn" onclick="nextQuestion()">
+                    Next <i class="fas fa-chevron-right"></i>
                 </button>
-                <button type="button" class="nav-btn submit-btn" id="submitBtn" style="display: none;">
-                    Submit Quiz <i class="fas fa-paper-plane"></i>
+                <button class="nav-btn submit-btn" onclick="submitQuiz()" style="display: none;">
+                    Submit Quiz <i class="fas fa-check"></i>
                 </button>
             </div>
         </div>
@@ -781,31 +821,31 @@
                 <i class="fas fa-trophy"></i>
             </div>
             <h2 class="results-title">Quiz Completed!</h2>
-            <div class="results-score" id="resultsScore">85%</div>
+            <div class="results-score" id="resultsScore">0%</div>
 
             <div class="results-details">
                 <div class="results-stats">
                     <div class="stat-item">
-                        <div class="stat-value" id="correctAnswers">4</div>
+                        <div class="stat-value" id="correctAnswers">0</div>
                         <div class="stat-label">Correct Answers</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value" id="totalQuestionsResult">5</div>
+                        <div class="stat-value" id="totalQuestionsResult">0</div>
                         <div class="stat-label">Total Questions</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value" id="timeTaken">4:32</div>
+                        <div class="stat-value" id="timeTaken">0:00</div>
                         <div class="stat-label">Time Taken</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-value" id="percentageScore">85%</div>
+                        <div class="stat-value" id="percentageScore">0%</div>
                         <div class="stat-label">Score</div>
                     </div>
                 </div>
 
                 <div class="results-bytes">
                     <i class="fas fa-coins"></i>
-                    You earned <span id="bytesEarnedResult">15</span> bytes!
+                    You earned <span id="bytesEarnedResult">0</span> bytes!
                 </div>
             </div>
 
@@ -827,252 +867,416 @@
     </div>
 
     <script>
+        // Quiz functionality
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let studentAnswers = [];
+        let quizSessionId = null;
+        let timeRemaining = 20 * 60; // 20 minutes in seconds
+        const timerDisplay = document.getElementById('timerDisplay');
+        let timerInterval;
+
         document.addEventListener('DOMContentLoaded', function() {
-            // DOM Elements
+            // Load student data
             const studentNameDisplay = document.getElementById('studentNameDisplay');
-            const bytesCountElement = document.getElementById('bytesCount');
-            const floatingParticles = document.getElementById('floatingParticles');
-            const quizTimer = document.getElementById('quizTimer');
-            const timerDisplay = document.getElementById('timerDisplay');
-            const quizTitle = document.getElementById('quizTitle');
-            const currentQuestionNum = document.getElementById('currentQuestionNum');
-            const totalQuestions = document.getElementById('totalQuestions');
-            const progressFill = document.getElementById('progressFill');
-            const quizContent = document.getElementById('quizContent');
-            const quizResults = document.getElementById('quizResults');
-            const prevBtn = document.getElementById('prevBtn');
-            const nextBtn = document.getElementById('nextBtn');
-            const submitBtn = document.getElementById('submitBtn');
-            const resultsScore = document.getElementById('resultsScore');
-            const correctAnswers = document.getElementById('correctAnswers');
-            const totalQuestionsResult = document.getElementById('totalQuestionsResult');
-            const timeTaken = document.getElementById('timeTaken');
-            const percentageScore = document.getElementById('percentageScore');
-            const bytesEarnedResult = document.getElementById('bytesEarnedResult');
-            const reviewBtn = document.getElementById('reviewBtn');
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
-            // Quiz Data
-            const questions = document.querySelectorAll('.question-container');
-            const totalQuestionsCount = questions.length;
-            let currentQuestionIndex = 0;
-            let quizStartTime = null;
-            let timerInterval = null;
-            let timeRemaining = 20 * 60; // 20 minutes in seconds
+            if (userData.studentName) {
+                studentNameDisplay.textContent = userData.studentName;
+            }
 
-            // Student Data
-            const studentName = localStorage.getItem('studentName') || 'Student';
-            studentNameDisplay.textContent = studentName;
-
+            // Initialize bytes count
             let bytesCount = parseInt(localStorage.getItem('bytesCount')) || 0;
-            bytesCountElement.textContent = bytesCount;
+            document.getElementById('bytesCount').textContent = bytesCount;
 
-            // Initialize quiz
-            function initQuiz() {
-                totalQuestions.textContent = totalQuestionsCount;
-                totalQuestionsResult.textContent = totalQuestionsCount;
-                quizStartTime = new Date();
-                startTimer();
+            // Generate quiz
+            generateQuiz();
+        });
 
-                // Set up matching question drag and drop
+        async function generateQuiz() {
+            try {
+                const token = localStorage.getItem('studentToken');
+                if (!token) {
+                    window.location.href = 'studentlogin.html';
+                    return;
+                }
+
+                // Assuming the backend endpoint for generating quizzes is '/student/quizzes/generate-quiz'
+                // Replace with your actual API endpoint
+                const response = await fetch('/api/student/quizzes/generate-quiz', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentQuestions = data.questions;
+                    quizSessionId = data.sessionId;
+                    studentAnswers = new Array(currentQuestions.length).fill(null);
+
+                    document.getElementById('loadingMessage').style.display = 'none';
+                    document.getElementById('quizQuestions').style.display = 'block';
+                    document.getElementById('quizNavigation').style.display = 'flex';
+
+                    renderCurrentQuestion();
+                    updateProgress();
+                    startTimer();
+                } else {
+                    const errorData = await response.json();
+                    alert(errorData.message || 'Failed to generate quiz');
+                    window.location.href = 'studentdashboard.html';
+                }
+            } catch (error) {
+                console.error('Error generating quiz:', error);
+                alert('Network error. Please try again.');
+                window.location.href = 'studentdashboard.html';
+            }
+        }
+
+        function renderCurrentQuestion() {
+            const question = currentQuestions[currentQuestionIndex];
+            const questionsContainer = document.getElementById('quizQuestions');
+
+            let questionHTML = `
+                <div class="question-container ${currentQuestionIndex === 0 ? 'active' : ''}" id="question${currentQuestionIndex + 1}">
+                    <div class="question-number">${currentQuestionIndex + 1}</div>
+                    <h3 class="question-text">${question.questionText}</h3>
+            `;
+
+            if (question.instructions) {
+                questionHTML += `<p class="instructions"><i class="fas fa-info-circle"></i> ${question.instructions}</p>`;
+            }
+
+            if (question.hint) {
+                questionHTML += `<p class="hint"><i class="fas fa-lightbulb"></i> Hint: ${question.hint}</p>`;
+            }
+
+            questionHTML += '<div class="options">';
+
+            switch (question.questionType) {
+                case 'multiple-choice-single':
+                    question.options.forEach((option, index) => {
+                        const isChecked = studentAnswers[currentQuestionIndex] === option._id ? 'checked' : '';
+                        questionHTML += `
+                            <label class="option">
+                                <input type="radio" name="answer" value="${option._id}" ${isChecked} onchange="saveAnswer('${option._id}')">
+                                <span class="option-label">${option.text}</span>
+                            </label>
+                        `;
+                    });
+                    break;
+
+                case 'multiple-choice-multi':
+                    question.options.forEach((option, index) => {
+                        const isChecked = studentAnswers[currentQuestionIndex] && studentAnswers[currentQuestionIndex].includes(option._id) ? 'checked' : '';
+                        questionHTML += `
+                            <label class="option">
+                                <input type="checkbox" name="answer-${currentQuestionIndex}" value="${option._id}" ${isChecked} onchange="saveMultiAnswer('${option._id}')">
+                                <span class="option-label">${option.text}</span>
+                            </label>
+                        `;
+                    });
+                    break;
+
+                case 'true-false':
+                    const trueChecked = studentAnswers[currentQuestionIndex] === 'true' ? 'checked' : '';
+                    const falseChecked = studentAnswers[currentQuestionIndex] === 'false' ? 'checked' : '';
+                    questionHTML += `
+                        <button type="button" class="true-false-btn ${trueChecked ? 'selected' : ''}" onclick="saveAnswer('true')">True</button>
+                        <button type="button" class="true-false-btn ${falseChecked ? 'selected' : ''}" onclick="saveAnswer('false')">False</button>
+                    `;
+                    break;
+
+                case 'fill-in-the-blank':
+                    const textValue = studentAnswers[currentQuestionIndex] || '';
+                    questionHTML += `
+                        <div class="fill-blank-container">
+                            <input type="text" class="fill-blank-input" placeholder="Enter your answer here..." value="${textValue}" oninput="saveAnswer(this.value)">
+                        </div>
+                    `;
+                    break;
+
+                case 'short-answer':
+                    const shortAnswerValue = studentAnswers[currentQuestionIndex] || '';
+                    questionHTML += `
+                        <div class="short-answer-container">
+                            <textarea placeholder="Enter your answer here..." oninput="saveAnswer(this.value)">${shortAnswerValue}</textarea>
+                        </div>
+                    `;
+                    break;
+
+                case 'numeric-entry':
+                    const numValue = studentAnswers[currentQuestionIndex] || '';
+                    questionHTML += `
+                        <div class="fill-blank-container">
+                            <input type="number" class="fill-blank-input" placeholder="Enter your answer" value="${numValue}" oninput="saveAnswer(this.value)">
+                        </div>
+                    `;
+                    break;
+
+                case 'matching':
+                    questionHTML += '<div class="matching-container">';
+                    const leftColumn = question.options.filter(opt => opt.type === 'item');
+                    const rightColumn = question.options.filter(opt => opt.type === 'target');
+                    
+                    questionHTML += '<div class="matching-column" id="matchingItems">';
+                    leftColumn.forEach(item => {
+                        questionHTML += `<div class="matching-item" data-id="${item._id}">${item.text}</div>`;
+                    });
+                    questionHTML += '</div>';
+
+                    questionHTML += '<div class="matching-column" id="matchingTargets">';
+                    rightColumn.forEach(item => {
+                        questionHTML += `<div class="matching-item" data-id="${item._id}">${item.text}</div>`;
+                    });
+                    questionHTML += '</div>';
+                    questionHTML += '</div>';
+                    break;
+
+                default:
+                    questionHTML += '<p>Question type not supported in this demo.</p>';
+            }
+
+            questionHTML += '</div></div>';
+            questionsContainer.innerHTML = questionHTML;
+            
+            // Re-setup drag and drop for matching if it's a matching question
+            if (question.questionType === 'matching') {
                 setupMatchingQuestion();
             }
+        }
 
-            // Create floating particles
-            function createParticles() {
-                for (let i = 0; i < 30; i++) {
-                    const particle = document.createElement('div');
-                    particle.classList.add('particle');
+        function saveAnswer(value) {
+            studentAnswers[currentQuestionIndex] = value;
+        }
 
-                    const posX = Math.random() * 100;
-                    const posY = Math.random() * 100;
-                    const size = Math.random() * 4 + 4;
-                    const duration = Math.random() * 15 + 10;
-                    const delay = Math.random() * 5;
-
-                    particle.style.left = `${posX}vw`;
-                    particle.style.top = `${posY}vh`;
-                    particle.style.width = `${size}px`;
-                    particle.style.height = `${size}px`;
-                    particle.style.animationDuration = `${duration}s`;
-                    particle.style.animationDelay = `${delay}s`;
-
-                    floatingParticles.appendChild(particle);
-                }
+        function saveMultiAnswer(value) {
+            if (!studentAnswers[currentQuestionIndex]) {
+                studentAnswers[currentQuestionIndex] = [];
             }
 
-            // Start the quiz timer
-            function startTimer() {
-                updateTimerDisplay();
-                timerInterval = setInterval(function() {
-                    timeRemaining--;
-                    updateTimerDisplay();
+            const answerArray = studentAnswers[currentQuestionIndex];
+            const index = answerArray.indexOf(value);
 
-                    if (timeRemaining <= 0) {
-                        clearInterval(timerInterval);
-                        submitQuiz();
-                    }
-                }, 1000);
+            if (index > -1) {
+                answerArray.splice(index, 1);
+            } else {
+                answerArray.push(value);
             }
+            // Update the specific checkbox state visually if needed
+        }
 
-            // Update timer display
-            function updateTimerDisplay() {
+
+        function startTimer() {
+            function updateTimer() {
                 const minutes = Math.floor(timeRemaining / 60);
                 const seconds = timeRemaining % 60;
                 timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-                // Change color when time is running low
-                if (timeRemaining <= 300) { // 5 minutes
-                    quizTimer.style.backgroundColor = 'rgba(231, 76, 60, 0.7)';
+                if (timeRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    submitQuiz();
+                } else {
+                    timeRemaining--;
                 }
             }
 
-            // Calculate time taken
-            function getTimeTaken() {
-                const endTime = new Date();
-                const duration = Math.floor((endTime - quizStartTime) / 1000); // in seconds
-                const minutes = Math.floor(duration / 60);
-                const seconds = duration % 60;
-                return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            timerInterval = setInterval(updateTimer, 1000);
+            updateTimer(); // Initial call
+        }
+
+        function updateProgress() {
+            document.getElementById('currentQuestionNum').textContent = currentQuestionIndex + 1;
+            document.getElementById('totalQuestions').textContent = currentQuestions.length;
+
+            const progressPercentage = currentQuestions.length > 0 ? ((currentQuestionIndex + 1) / currentQuestions.length) * 100 : 0;
+            document.getElementById('progressFill').style.width = progressPercentage + '%';
+
+            // Update navigation buttons visibility
+            const prevBtn = document.querySelector('.prev-btn');
+            const nextBtn = document.querySelector('.next-btn');
+            const submitBtn = document.querySelector('.submit-btn');
+
+            prevBtn.style.display = currentQuestionIndex > 0 ? 'block' : 'none';
+
+            if (currentQuestionIndex === currentQuestions.length - 1) {
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'block';
+            } else {
+                nextBtn.style.display = 'block';
+                submitBtn.style.display = 'none';
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderCurrentQuestion();
+                updateProgress();
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < currentQuestions.length - 1) {
+                currentQuestionIndex++;
+                renderCurrentQuestion();
+                updateProgress();
+            }
+        }
+
+        async function submitQuiz() {
+            if (!confirm('Are you sure you want to submit your quiz? This action cannot be undone.')) {
+                return;
             }
 
-            // Navigate to question
-            function goToQuestion(index) {
-                // Hide all questions
-                questions.forEach(question => {
-                    question.classList.remove('active');
+            clearInterval(timerInterval);
+
+            try {
+                const token = localStorage.getItem('studentToken');
+                const quizSubmissions = currentQuestions.map((question, index) => ({
+                    questionId: question._id,
+                    studentAnswer: studentAnswers[index] || (question.questionType === 'multiple-choice-multi' ? [] : '')
+                }));
+
+                // Assuming the backend endpoint for submitting quizzes is '/student/quizzes/submit'
+                // Replace with your actual API endpoint
+                const response = await fetch('/api/student/quizzes/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        quizSubmissions,
+                        sessionId: quizSessionId
+                    })
                 });
 
-                // Show selected question
-                questions[index].classList.add('active');
-                currentQuestionIndex = index;
-                currentQuestionNum.textContent = index + 1;
+                if (response.ok) {
+                    const data = await response.json();
+                    // Update results display
+                    document.getElementById('resultsScore').textContent = `${data.score}%`;
+                    document.getElementById('correctAnswers').textContent = data.correctAnswers;
+                    document.getElementById('totalQuestionsResult').textContent = data.totalQuestions;
+                    document.getElementById('timeTaken').textContent = getTimeTaken(); // This function needs to be implemented
+                    document.getElementById('percentageScore').textContent = `${data.score}%`;
+                    document.getElementById('bytesEarnedResult').textContent = data.bytesEarned;
 
-                // Update progress bar
-                const progressPercent = ((index + 1) / totalQuestionsCount) * 100;
-                progressFill.style.width = `${progressPercent}%`;
+                    // Update total bytes
+                    let currentBytes = parseInt(localStorage.getItem('bytesCount')) || 0;
+                    currentBytes += data.bytesEarned;
+                    localStorage.setItem('bytesCount', currentBytes);
+                    document.getElementById('bytesCount').textContent = currentBytes;
 
-                // Update navigation buttons
-                prevBtn.disabled = index === 0;
-                nextBtn.style.display = index === totalQuestionsCount - 1 ? 'none' : 'block';
-                submitBtn.style.display = index === totalQuestionsCount - 1 ? 'block' : 'none';
+                    // Show results
+                    document.getElementById('quizContent').style.display = 'none';
+                    document.getElementById('quizResults').style.display = 'block';
+                } else {
+                    const errorData = await response.json();
+                    alert(errorData.message || 'Failed to submit quiz');
+                    window.location.href = 'studentdashboard.html'; // Redirect if submission fails critically
+                }
+            } catch (error) {
+                console.error('Error submitting quiz:', error);
+                alert('Network error while submitting quiz. Please try again.');
+                window.location.href = 'studentdashboard.html'; // Redirect on network error
             }
+        }
+        
+        function getTimeTaken() {
+            const quizStartTime = new Date(); // This needs to be set when quiz generation starts
+            // For now, we'll use a placeholder or assume it's available globally
+            // In a real scenario, quizStartTime should be captured when generateQuiz() is called.
+            const now = new Date();
+            const timeDiffSeconds = Math.floor((now - quizStartTime) / 1000); // Placeholder for actual start time
+            
+            const minutes = Math.floor(timeDiffSeconds / 60);
+            const seconds = timeDiffSeconds % 60;
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
 
-            // Setup matching question drag and drop
-            function setupMatchingQuestion() {
-                const matchingItems = document.querySelectorAll('.matching-item');
+        function createParticles() {
+            const floatingParticles = document.getElementById('floatingParticles');
+            if (!floatingParticles) return;
 
-                matchingItems.forEach(item => {
-                    item.setAttribute('draggable', 'true');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
 
-                    item.addEventListener('dragstart', function(e) {
-                        e.dataTransfer.setData('text/plain', this.dataset.id);
-                        setTimeout(() => this.classList.add('dragging'), 0);
-                    });
+                const posX = Math.random() * 100;
+                const posY = Math.random() * 100;
+                const size = Math.random() * 4 + 4;
+                const duration = Math.random() * 15 + 10;
+                const delay = Math.random() * 5;
 
-                    item.addEventListener('dragend', function() {
-                        this.classList.remove('dragging');
-                    });
+                particle.style.left = `${posX}vw`;
+                particle.style.top = `${posY}vh`;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.animationDuration = `${duration}s`;
+                particle.style.animationDelay = `${delay}s`;
+
+                floatingParticles.appendChild(particle);
+            }
+        }
+        
+        // Initialize particles on load
+        createParticles();
+
+
+        // Setup matching question drag and drop functionality
+        function setupMatchingQuestion() {
+            const matchingItems = document.querySelectorAll('.matching-item');
+
+            matchingItems.forEach(item => {
+                item.setAttribute('draggable', 'true');
+
+                item.addEventListener('dragstart', function(e) {
+                    e.dataTransfer.setData('text/plain', this.dataset.id);
+                    this.classList.add('dragging');
                 });
 
-                const matchingColumns = document.querySelectorAll('.matching-column');
+                item.addEventListener('dragend', function() {
+                    this.classList.remove('dragging');
+                });
+            });
 
-                matchingColumns.forEach(column => {
-                    column.addEventListener('dragover', function(e) {
-                        e.preventDefault();
-                        const draggingItem = document.querySelector('.dragging');
-                        if (draggingItem && draggingItem.parentElement !== this) {
-                            const afterElement = getDragAfterElement(this, e.clientY);
-                            if (afterElement) {
-                                this.insertBefore(draggingItem, afterElement);
-                            } else {
-                                this.appendChild(draggingItem);
-                            }
+            const matchingTargets = document.querySelectorAll('.matching-column');
+
+            matchingTargets.forEach(column => {
+                column.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    const draggingItem = document.querySelector('.dragging');
+                    if (draggingItem && draggingItem.parentElement !== this) {
+                        const afterElement = getDragAfterElement(this, e.clientY);
+                        if (afterElement) {
+                            this.insertBefore(draggingItem, afterElement);
+                        } else {
+                            this.appendChild(draggingItem);
                         }
-                    });
-                });
-            }
-
-            function getDragAfterElement(container, y) {
-                const draggableElements = [...container.querySelectorAll('.matching-item:not(.dragging)')];
-
-                return draggableElements.reduce((closest, child) => {
-                    const box = child.getBoundingClientRect();
-                    const offset = y - box.top - box.height / 2;
-
-                    if (offset < 0 && offset > closest.offset) {
-                        return { offset: offset, element: child };
-                    } else {
-                        return closest;
                     }
-                }, { offset: Number.NEGATIVE_INFINITY }).element;
-            }
-
-            // Submit quiz
-            function submitQuiz() {
-                clearInterval(timerInterval);
-
-                // Calculate score (simulated for this demo)
-                const score = Math.floor(Math.random() * 30) + 70; // Random score between 70-100%
-                const correct = Math.floor((score / 100) * totalQuestionsCount);
-                const bytesEarned = Math.floor(score / 10) * 2; // 2 bytes per 10%
-
-                // Update results
-                resultsScore.textContent = `${score}%`;
-                correctAnswers.textContent = correct;
-                percentageScore.textContent = `${score}%`;
-                timeTaken.textContent = getTimeTaken();
-                bytesEarnedResult.textContent = bytesEarned;
-
-                // Update total bytes
-                bytesCount += bytesEarned;
-                bytesCountElement.textContent = bytesCount;
-                localStorage.setItem('bytesCount', bytesCount);
-
-                // Show results
-                quizContent.style.display = 'none';
-                quizResults.style.display = 'block';
-            }
-
-            // Event Listeners
-            prevBtn.addEventListener('click', function() {
-                if (currentQuestionIndex > 0) {
-                    goToQuestion(currentQuestionIndex - 1);
-                }
-            });
-
-            nextBtn.addEventListener('click', function() {
-                if (currentQuestionIndex < totalQuestionsCount - 1) {
-                    goToQuestion(currentQuestionIndex + 1);
-                }
-            });
-
-            submitBtn.addEventListener('click', submitQuiz);
-
-            // Option selection for multiple choice
-            document.querySelectorAll('.option-input').forEach(input => {
-                input.addEventListener('change', function() {
-                    const option = this.closest('.option');
-                    document.querySelectorAll(`.option[name="${this.name}"]`).forEach(opt => {
-                        opt.classList.remove('selected');
-                    });
-                    option.classList.add('selected');
                 });
             });
+        }
 
-            // True/False button selection
-            document.querySelectorAll('.true-false-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.true-false-btn').forEach(b => {
-                        b.classList.remove('selected');
-                    });
-                    this.classList.add('selected');
-                });
-            });
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.matching-item:not(.dragging)')];
 
-            // Initialize
-            createParticles();
-            initQuiz();
-        });
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
     </script>
 </body>
 </html>

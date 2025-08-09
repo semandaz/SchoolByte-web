@@ -493,7 +493,54 @@
                 <p>Select a question type above to configure its options.</p>
             </div>
 
-            <button type="submit" class="btn-upload">Upload Question?</button>
+            <!-- Content Tagging Section -->
+            <div class="collapsible-section">
+                <div class="collapsible-header" onclick="toggleCollapsible('contentTaggingContent', 'contentTaggingArrow')">
+                    <span>Content Tagging (Optional - for better organization)</span>
+                    <i id="contentTaggingArrow" class="fas fa-chevron-down"></i>
+                </div>
+                <div id="contentTaggingContent" class="collapsible-content">
+                    <div class="form-group mt-4">
+                        <label for="topic" class="form-label">Topic</label>
+                        <input type="text" id="topic" class="form-control" placeholder="e.g., Algebra, Ecology, World War II">
+                    </div>
+                    <div class="form-group">
+                        <label for="subTopic" class="form-label">Sub-Topic</label>
+                        <input type="text" id="subTopic" class="form-control" placeholder="e.g., Quadratic Equations, Food Chains">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Skill Type (Select all that apply)</label>
+                        <div class="flex flex-wrap gap-4 mt-2">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="skillType" value="Memorization" class="form-checkbox">
+                                <span class="ml-2">Memorization</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="skillType" value="Application" class="form-checkbox">
+                                <span class="ml-2">Application</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="skillType" value="Analysis" class="form-checkbox">
+                                <span class="ml-2">Analysis</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="skillType" value="Problem-Solving" class="form-checkbox">
+                                <span class="ml-2">Problem-Solving</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="skillType" value="Evaluation" class="form-checkbox">
+                                <span class="ml-2">Evaluation</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="skillType" value="Creation" class="form-checkbox">
+                                <span class="ml-2">Creation</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-upload">Upload Question</button>
         </form>
     </div>
 
@@ -561,7 +608,11 @@
                         <label for="questionText" class="form-label">Question Text <span class="text-red-500">*</span></label>
                         <textarea id="questionText" class="form-control h-28 mb-6" placeholder="Enter the full question text here..." required></textarea>
                         <label for="correctAnswers" class="form-label">Correct Answer(s) (Comma-separated for multiple possibilities)</label>
-                        <textarea id="correctAnswers" class="form-control" rows="3" placeholder="e.g., Photosynthesis, Cell Respiration"></textarea>
+                        <textarea id="correctAnswers" class="form-control mb-4" rows="3" placeholder="e.g., Photosynthesis, Cell Respiration"></textarea>
+                        <label for="keywordsForGrading" class="form-label">Keywords for NLP Grading (Optional)</label>
+                        <textarea id="keywordsForGrading" class="form-control mb-4" rows="2" placeholder="e.g., sunlight, chlorophyll, carbon dioxide, glucose"></textarea>
+                        <label for="negativeKeywords" class="form-label">Negative Keywords (Optional - deduct points if present)</label>
+                        <textarea id="negativeKeywords" class="form-control" rows="2" placeholder="e.g., night, animals, dark"></textarea>
                     `;
                     break;
                 case 'true-false':
@@ -701,7 +752,7 @@
             }
         }
 
-        function handleFormSubmission(event) {
+        async function handleFormSubmission(event) {
             event.preventDefault(); // Prevent default form submission
 
             const subject = document.getElementById('subject').value;
@@ -791,6 +842,17 @@
                         break;
                     }
                     quizData.correctAnswers = correctAnswersSA;
+                    
+                    // Check for keywords for grading (enhanced NLP feature)
+                    const keywordsInput = document.getElementById('keywordsForGrading');
+                    if (keywordsInput && keywordsInput.value.trim()) {
+                        quizData.keywordsForGrading = keywordsInput.value.split(',').map(k => k.trim()).filter(k => k !== '');
+                    }
+                    
+                    const negativeKeywordsInput = document.getElementById('negativeKeywords');
+                    if (negativeKeywordsInput && negativeKeywordsInput.value.trim()) {
+                        quizData.negativeKeywords = negativeKeywordsInput.value.split(',').map(k => k.trim()).filter(k => k !== '');
+                    }
                     break;
 
                 case 'true-false':
@@ -912,39 +974,64 @@
 
             quizData.questionText = questionTextForPayload;
 
-            console.log('Quiz Question Data Prepared:', quizData);
-            showMessageBox('Success', 'Quiz question data prepared for submission! Check console for payload.');
+            // Add optional content tagging fields if present
+            const topicInput = document.getElementById('topic');
+            if (topicInput && topicInput.value.trim()) {
+                quizData.topic = topicInput.value.trim();
+            }
+            
+            const subTopicInput = document.getElementById('subTopic');
+            if (subTopicInput && subTopicInput.value.trim()) {
+                quizData.subTopic = subTopicInput.value.trim();
+            }
 
-            // --- Simulating Backend Submission ---
-            /*
-            fetch('/teacher/upload-quiz-question', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer YOUR_TEACHER_AUTH_TOKEN` 
-                },
-                body: JSON.stringify(quizData)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => { throw new Error(err.message || 'Server error'); });
+            const skillTypeInputs = document.querySelectorAll('input[name="skillType"]:checked');
+            if (skillTypeInputs.length > 0) {
+                quizData.skillType = Array.from(skillTypeInputs).map(input => input.value);
+            }
+
+            console.log('Quiz Question Data Prepared:', quizData);
+
+            // Disable submit button and show loading
+            const submitBtn = document.querySelector('.btn-upload');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading"></span> Uploading...';
+
+            try {
+                // Get auth token
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    showMessageBox('Authentication Error', 'Please log in to upload quiz questions.');
+                    return;
                 }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) { 
+
+                const response = await fetch(`${window.location.origin}/teacher/quiz-questions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(quizData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
                     showMessageBox('Success', 'Quiz question uploaded successfully!');
-                    quizUploadForm.reset(); 
-                    renderQuestionTypeFields(); 
+                    document.getElementById('quizUploadForm').reset();
+                    renderQuestionTypeFields();
                 } else {
                     showMessageBox('Upload Failed', data.message || 'Something went wrong during upload.');
                 }
-            })
-            .catch(error => {
+
+            } catch (error) {
                 console.error('Error uploading quiz:', error);
                 showMessageBox('Network Error', error.message || 'Could not connect to the server. Please try again.');
-            });
-            */
+            } finally {
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Upload Question';
+            }
         }
 
         // Custom Message Box Functions
