@@ -1981,7 +1981,7 @@ app.post(
         if (!activityData.title || typeof activityData.title !== 'string' || activityData.title.trim().length < 3 || activityData.title.trim().length > 200) {
             return res.status(400).json({ message: 'Activity title is required and must be between 3 and 200 characters.' });
         }
-        if (activityData.description && (typeof activityData.description !== 'string' || activityData.description.trim().length > 500)) {
+        if (activityData.description !== undefined && activityData.description !== null && activityData.description !== '' && (typeof activityData.description !== 'string' || activityData.description.trim().length > 500)) {
             return res.status(400).json({ message: 'Activity description must be a string and cannot exceed 500 characters.' });
         }
         if (!activityData.subject || typeof activityData.subject !== 'string' || activityData.subject.trim().length < 2 || activityData.subject.trim().length > 100) {
@@ -2073,7 +2073,7 @@ app.post(
 
             const newActivity = new Activity({
                 title: activityTitle,
-                description: activityDescription,
+                description: activityDescription || '',
                 subject: activitySubject,
                 intendedClass: activityIntendedClass,
                 maxBytesReward: 5,
