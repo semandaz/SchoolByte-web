@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,14 +21,14 @@
             --color-neutral-lightest: #f0f4f8; /* Very light gray/blue, good for subtle backgrounds */
             --color-neutral-light: #d1d5db;    /* Light gray for disabled elements, input borders */
             --color-neutral-medium: #9ca3af;    /* Medium gray for placeholders, disabled radio accents */
-            --color-neutral-dark: #4b5563;     /* Dark gray for most body text, labels */
+            --color-neutral-dark: #4b5563;       /* Dark gray for most body text, labels */
             --color-neutral-darkest: #333333;  /* Very dark gray for prominent text */
 
             /* Semantic Colors */
-            --color-error-red: #e74c3c;        /* Standard error color */
+            --color-error-red: #e74c3c;         /* Standard error color */
             --color-error-red-dark: #c0392b;    /* Darker error red for hover states */
-            --color-success-green: #2ecc71;    /* Success color */
-            --color-info-blue: #3498db;        /* Info color */
+            --color-success-green: #2ecc71;     /* Success color */
+            --color-info-blue: #3498db;         /* Info color */
 
             /* Background Gradients */
             --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
@@ -697,9 +698,10 @@
                 const isCodeFilled = verificationCodeInput.value.length === 6;
                 const isTermsChecked = agreeTermsCheckbox.checked;
 
-                // Enable/disable send code button based on email validity and countdown status
-                const isCountdownActive = countdownInterval !== undefined && countdownInterval !== null;
-                sendCodeBtn.disabled = !isEmailValid || isCountdownActive;
+                // Enable/disable send code button based on filled fields
+                const allFieldsFilled = isNameFilled && isTeacherFilled && isIndexValid &&
+                                       isClassSelected && isStreamSelected && isEmailValid;
+                sendCodeBtn.disabled = !allFieldsFilled;
 
                 let canSubmit = false;
 
@@ -806,6 +808,7 @@
                         if (response.ok && data.verified) {
                             emailVerified = true;
                             passwordSection.style.display = 'block';
+                            subjectsSection.style.display = 'block';
                             emailInput.readOnly = true;
                             verificationCodeInput.readOnly = true;
                             sendCodeBtn.disabled = true;
@@ -814,6 +817,10 @@
                             resendCode.style.display = 'none';
                             submitButton.textContent = 'Register Account';
                             showMessage(data.message, 'success');
+                            
+                            // Initialize subjects when email is verified
+                            handleClassChange();
+                            
                             validateForm(); // Re-validate to enable/disable button based on password fields
                         } else {
                             showMessage(data.message || 'Verification failed.', 'error');
@@ -888,31 +895,37 @@
                 validateForm();
             });
 
-            // Subject definitions
+            // Subject definitions (removed French, Economics, General Paper, Subsidiary Mathematics from O-level)
             const compulsorySubjects = [
                 "Mathematics", "English Language", "Physics", "Chemistry", 
                 "Biology", "History", "Geography"
             ];
 
-            const allSubjects = [
+            const oLevelElectiveSubjects = [
+                "Computer Science", "Agriculture", "Literature in English",
+                "German", "Kiswahili", "Luganda", "Fine Art", "Performing Arts",
+                "Physical Education", "Technology and Design"
+            ];
+
+            const aLevelSubjects = [
                 "Mathematics", "English Language", "Biology", "Chemistry", "Physics", 
                 "History", "Geography", "Computer Science", "Agriculture", "Literature in English",
-                "French", "German", "Kiswahili", "Luganda", "Fine Art", "Performing Arts",
-                "Physical Education", "Technology and Design"
+                "German", "Kiswahili", "Luganda", "Fine Art", "Performing Arts",
+                "Physical Education", "Technology and Design", "Economics", "General Paper", "Subsidiary Mathematics"
             ];
 
             let selectedSubjects = [];
 
             // Class selection change handler
-            classSelect.addEventListener('change', function() {
-                const selectedClass = this.value;
+            function handleClassChange() {
+                const selectedClass = classSelect.value;
                 const subjectsSection = document.getElementById('subjectsSection');
                 const compulsoryContainer = document.getElementById('compulsorySubjects');
                 const subsidiaryContainer = document.getElementById('subsidiarySubjects');
                 const subjectsLabel = document.getElementById('subjectsLabel');
                 const subsidiaryTitle = document.getElementById('subsidiaryTitle');
                 
-                if (selectedClass) {
+                if (selectedClass && emailVerified) {
                     subjectsSection.style.display = 'block';
                     selectedSubjects = [];
                     
@@ -933,8 +946,7 @@
                         });
                         
                         // Add subsidiary subjects
-                        const subsidiaryOptions = allSubjects.filter(s => !compulsorySubjects.includes(s));
-                        subsidiaryOptions.forEach(subject => {
+                        oLevelElectiveSubjects.forEach(subject => {
                             const subjectDiv = createSubjectCheckbox(subject, false, false);
                             subsidiaryContainer.appendChild(subjectDiv);
                         });
@@ -952,8 +964,7 @@
                         });
                         
                         // Add subsidiary subjects
-                        const subsidiaryOptions = allSubjects.filter(s => !compulsorySubjects.includes(s));
-                        subsidiaryOptions.forEach(subject => {
+                        oLevelElectiveSubjects.forEach(subject => {
                             const subjectDiv = createSubjectCheckbox(subject, false, false);
                             subsidiaryContainer.appendChild(subjectDiv);
                         });
@@ -964,7 +975,7 @@
                         compulsoryContainer.style.display = 'none';
                         subsidiaryTitle.textContent = 'Select any 5 subjects';
                         
-                        allSubjects.forEach(subject => {
+                        aLevelSubjects.forEach(subject => {
                             const subjectDiv = createSubjectCheckbox(subject, false, false);
                             subsidiaryContainer.appendChild(subjectDiv);
                         });
@@ -974,7 +985,9 @@
                 }
                 
                 validateForm();
-            });
+            }
+
+            classSelect.addEventListener('change', handleClassChange);
 
             function createSubjectCheckbox(subject, isChecked, isDisabled) {
                 const div = document.createElement('div');
@@ -1045,48 +1058,6 @@
                 } else {
                     subjectError.style.display = 'none';
                     return true;
-                }
-            }
-
-            // Update validateForm function to include subject validation
-            function validateForm() {
-                const isEmailValid = isValidEmail(emailInput.value);
-                const isNameFilled = studentNameInput.value.trim() !== '';
-                const isTeacherFilled = classTeacherInput.value.trim() !== '';
-                const isIndexValid = isValidIndexNumber(indexNumberInput.value);
-                const isClassSelected = classSelect.value !== '';
-                const isStreamSelected = streamSelect.value !== '';
-                const isCodeFilled = verificationCodeInput.value.length === 6;
-                const isTermsChecked = agreeTermsCheckbox.checked;
-                const isSubjectsValid = !isClassSelected || validateSubjectSelection();
-
-                // Enable/disable send code button based on email validity and countdown status
-                const isCountdownActive = countdownInterval !== undefined && countdownInterval !== null;
-                sendCodeBtn.disabled = !isEmailValid || isCountdownActive;
-
-                let canSubmit = false;
-
-                if (!emailVerified) {
-                    // Phase 1: Email verification
-                    canSubmit = isNameFilled && isTeacherFilled && isIndexValid &&
-                                isClassSelected && isStreamSelected && isSubjectsValid &&
-                                isEmailValid && isCodeFilled && isTermsChecked;
-                } else {
-                    // Phase 2: Registration (after email is verified)
-                    const isPasswordValid = isValidPassword(passwordInput.value);
-                    const passwordsMatch = doPasswordsMatch();
-                    canSubmit = isNameFilled && isTeacherFilled && isIndexValid &&
-                                isClassSelected && isStreamSelected && isSubjectsValid &&
-                                isEmailValid && isTermsChecked &&
-                                isPasswordValid && passwordsMatch;
-                }
-
-                // Update submit button state
-                submitButton.disabled = !canSubmit;
-                if (canSubmit) {
-                    submitButton.classList.add('active');
-                } else {
-                    submitButton.classList.remove('active');
                 }
             }
 
