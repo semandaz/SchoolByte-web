@@ -1,4 +1,3 @@
-studentdashboard.html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -403,6 +402,13 @@ studentdashboard.html
             font-size: 1.1rem;
         }
 
+        .no-subjects {
+            text-align: center;
+            color: var(--color-neutral-medium);
+            font-style: italic;
+            margin-top: 20px;
+        }
+
         /* Sign Out Button */
         .sign-out-section {
             text-align: center;
@@ -541,20 +547,20 @@ studentdashboard.html
                 transition-duration: 0.01ms !important;
                 scroll-behavior: auto !important;
             }
-            
+
             .activity-card:hover {
                 transform: none !important;
             }
-            
+
             .subject-card:hover .subject-icon {
                 transform: none !important;
                 animation: none !important;
             }
-            
+
             .byte-coin {
                 display: none !important;
             }
-            
+
             .particle {
                 display: none !important;
             }
@@ -614,7 +620,7 @@ studentdashboard.html
                 padding: 0.6rem 1rem;
                 font-size: 0.9rem;
             }
-            
+
             .activity-feed {
                 width: 250px;
                 right: 10px;
@@ -655,7 +661,7 @@ studentdashboard.html
             <div class="error-message"></div>
         </div>
 
-        <div id="mainContent">
+        <div id="mainContent" class="hidden">
             <div class="welcome-section">
                 <h1 class="welcome-message" id="welcomeMessage">Hello Student, what do you want to dive into today?</h1>
             </div>
@@ -687,132 +693,8 @@ studentdashboard.html
 
             <div class="subjects-section">
                 <h2 class="section-title">SUBJECTS</h2>
-                <div class="subjects-grid">
-                    <div class="subject-card" onclick="window.location.href='agristudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-tractor"></i>
-                        </div>
-                        <div class="subject-name">Agriculture</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='biostudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-dna"></i>
-                        </div>
-                        <div class="subject-name">Biology</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='chestudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-flask"></i>
-                        </div>
-                        <div class="subject-name">Chemistry</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='crestudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-bible"></i>
-                        </div>
-                        <div class="subject-name">Christian Religious Education</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='engstudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-language"></i>
-                        </div>
-                        <div class="subject-name">English Language</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='entstudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-lightbulb"></i>
-                        </div>
-                        <div class="subject-name">Entrepreneurship Education</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='fnstudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-utensils"></i>
-                        </div>
-                        <div class="subject-name">Food and Nutrition</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='geostudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-globe-africa"></i>
-                        </div>
-                        <div class="subject-name">Geography</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='gerstudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-language"></i>
-                        </div>
-                        <div class="subject-name">German</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='hisstudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-landmark"></i>
-                        </div>
-                        <div class="subject-name">History</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='kiswastudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-language"></i>
-                        </div>
-                        <div class="subject-name">Kiswahili</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='litstudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-book-open"></i>
-                        </div>
-                        <div class="subject-name">Literature in English</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='lugstudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-language"></i>
-                        </div>
-                        <div class="subject-name">Luganda</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='mathstudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-square-root-alt"></i>
-                        </div>
-                        <div class="subject-name">Mathematics</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='pastudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-theater-masks"></i>
-                        </div>
-                        <div class="subject-name">Performing Arts</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='pestudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-running"></i>
-                        </div>
-                        <div class="subject-name">Physical Education</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='phystudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-atom"></i>
-                        </div>
-                        <div class="subject-name">Physics</div>
-                    </div>
-
-                    <div class="subject-card" onclick="window.location.href='tdstudentdashboard.html'">
-                        <div class="subject-icon">
-                            <i class="fas fa-laptop-code"></i>
-                        </div>
-                        <div class="subject-name">Technology and Design</div>
-                    </div>
+                <div class="subjects-grid" id="subjectsContainer">
+                    <!-- Subject cards will be rendered here by JavaScript -->
                 </div>
             </div>
 
@@ -845,7 +727,36 @@ studentdashboard.html
             const activityFeed = document.getElementById('activityFeed');
             const feedItems = document.getElementById('feedItems');
             const floatingParticles = document.getElementById('floatingParticles');
-            
+            const subjectsContainer = document.getElementById('subjectsContainer');
+
+            let bytesCount = 0; // Initialize bytes count
+
+            // Subject cards data with redirect URLs
+            const subjectCards = [
+                { name: 'Mathematics', icon: 'fa-calculator', url: 'mathstudentdashboard.html' },
+                { name: 'English Language', icon: 'fa-book', url: 'engstudentdashboard.html' },
+                { name: 'Biology', icon: 'fa-leaf', url: 'biostudentdashboard.html' },
+                { name: 'Chemistry', icon: 'fa-flask', url: 'chestudentdashboard.html' },
+                { name: 'Physics', icon: 'fa-atom', url: 'phystudentdashboard.html' },
+                { name: 'History', icon: 'fa-landmark', url: 'hisstudentdashboard.html' },
+                { name: 'Geography', icon: 'fa-globe-americas', url: 'geostudentdashboard.html' },
+                { name: 'Computer Science', icon: 'fa-laptop-code', url: 'crestudentdashboard.html' },
+                { name: 'Agriculture', icon: 'fa-seedling', url: 'agristudentdashboard.html' },
+                { name: 'Literature in English', icon: 'fa-feather-alt', url: 'litstudentdashboard.html' },
+                { name: 'French', icon: 'fa-language', url: 'frenchstudentdashboard.html' },
+                { name: 'German', icon: 'fa-language', url: 'gerstudentdashboard.html' },
+                { name: 'Kiswahili', icon: 'fa-language', url: 'kiswastudentdashboard.html' },
+                { name: 'Luganda', icon: 'fa-language', url: 'lugstudentdashboard.html' },
+                { name: 'Fine Art', icon: 'fa-palette', url: 'fnstudentdashboard.html' },
+                { name: 'Performing Arts', icon: 'fa-theater-masks', url: 'pastudentdashboard.html' },
+                { name: 'Physical Education', icon: 'fa-running', url: 'pestudentdashboard.html' },
+                { name: 'Technology and Design', icon: 'fa-tools', url: 'tdstudentdashboard.html' },
+                { name: 'Economics', icon: 'fa-chart-line', url: 'econstudentdashboard.html' },
+                { name: 'General Paper', icon: 'fa-newspaper', url: 'gpstudentdashboard.html' },
+                { name: 'Subsidiary Mathematics', icon: 'fa-square-root-alt', url: 'submathstudentdashboard.html' },
+                { name: 'Entertainment', icon: 'fa-gamepad', url: 'entstudentdashboard.html' }
+            ];
+
             // Function to fetch student data from server
             async function fetchStudentData() {
                 try {
@@ -866,131 +777,189 @@ studentdashboard.html
                     if (response.ok) {
                         const data = await response.json();
                         const student = data.student;
-                        
+
                         // Update display with real data
                         const displayName = student.preferredName || student.studentName;
                         studentNameDisplay.textContent = displayName;
                         welcomeMessage.textContent = `Hello ${displayName}, what do you want to dive into today?`;
                         bytesCountElement.textContent = student.bytes || 0;
-                        
+                        bytesCount = student.bytes || 0; // Update global bytesCount
+
                         // Apply saved font preference
                         if (student.preferences && student.preferences.fontFamily) {
                             document.body.style.fontFamily = student.preferences.fontFamily;
                         }
-                        
+
                         // Store data locally for quick access
                         localStorage.setItem('studentData', JSON.stringify(student));
-                        
+
+                        // Render subject cards based on enrollment
+                        renderSubjectCards(data);
+
                         // Hide loading and show content
                         loadingMessage.classList.add('hidden');
                         mainContent.classList.remove('hidden');
-                        
+
                     } else if (response.status === 401 || response.status === 403) {
                         // Token is invalid or expired
                         localStorage.removeItem('studentToken');
                         localStorage.removeItem('studentData');
                         window.location.href = 'studentlogin.html';
                     } else {
-                        throw new Error('Failed to fetch student data');
+                        throw new Error(`Server error: ${response.status}`);
                     }
                 } catch (error) {
                     console.error('Error fetching student data:', error);
-                    errorMessage.querySelector('.error-message').textContent = 'Failed to load dashboard. Please try refreshing the page.';
+                    let errorMessageText = 'Failed to load dashboard. Please try refreshing the page.';
+                    if (error.message.includes('Server error')) {
+                        errorMessageText = 'Server error during registration. Please try again later.';
+                    }
+                    errorMessage.querySelector('.error-message').textContent = errorMessageText;
                     loadingMessage.classList.add('hidden');
                     errorMessage.classList.remove('hidden');
+                    mainContent.classList.add('hidden'); // Hide main content on error
                 }
             }
 
-            // Fetch student data on page load
-            fetchStudentData();
-            
+            // Function to create a single subject card element
+            function createSubjectCard(card, studentData) {
+                const cardElement = document.createElement('div');
+                cardElement.classList.add('subject-card');
+                cardElement.style.cursor = 'pointer'; // Ensure cursor is pointer
+                cardElement.setAttribute('data-subject-name', card.name); // Store subject name
+
+                // Add onclick to redirect to the subject's dashboard
+                cardElement.onclick = function() {
+                    // Check if the subject is enrolled before redirecting
+                    const enrolledSubjects = studentData.student.subjectsEnrolled || [];
+                    if (enrolledSubjects.includes(card.name)) {
+                        window.location.href = card.url;
+                    } else {
+                        // Optionally provide feedback if the subject is not enrolled
+                        console.warn(`Subject "${card.name}" is not enrolled.`);
+                        // Maybe show a small notification or alert
+                    }
+                };
+
+                cardElement.innerHTML = `
+                    <div class="subject-icon">
+                        <i class="fas ${card.icon}"></i>
+                    </div>
+                    <div class="subject-name">${card.name}</div>
+                `;
+                return cardElement;
+            }
+
+            // Function to render subject cards based on student's enrollment
+            function renderSubjectCards(data) {
+                subjectsContainer.innerHTML = ''; // Clear existing content
+
+                const student = data.student;
+                const enrolledSubjects = student.subjectsEnrolled || [];
+
+                if (enrolledSubjects.length === 0) {
+                    subjectsContainer.innerHTML = '<p class="no-subjects">No subjects enrolled. Please contact your teacher.</p>';
+                    return;
+                }
+
+                // Filter and render only the enrolled subjects
+                enrolledSubjects.forEach(subjectName => {
+                    const cardData = subjectCards.find(card => card.name === subjectName);
+                    if (cardData) {
+                        const cardElement = createSubjectCard(cardData, data);
+                        subjectsContainer.appendChild(cardElement);
+                    } else {
+                        // Handle cases where an enrolled subject might not be in our predefined list
+                        const fallbackCard = {
+                            name: subjectName,
+                            icon: 'fa-book', // Default icon
+                            url: '#' // Default URL
+                        };
+                        const cardElement = createSubjectCard(fallbackCard, data);
+                        subjectsContainer.appendChild(cardElement);
+                    }
+                });
+            }
+
             // Create floating particles
             function createParticles() {
                 for (let i = 0; i < 30; i++) {
                     const particle = document.createElement('div');
                     particle.classList.add('particle');
-                    
-                    // Random position
+
                     const posX = Math.random() * 100;
                     const posY = Math.random() * 100 + 100; // Start below viewport
-                    
-                    // Random size and animation duration
+
                     const size = Math.random() * 5 + 5;
                     const duration = Math.random() * 10 + 10;
                     const delay = Math.random() * 5;
-                    
+
                     particle.style.left = `${posX}vw`;
                     particle.style.top = `${posY}vh`;
                     particle.style.width = `${size}px`;
                     particle.style.height = `${size}px`;
                     particle.style.animationDuration = `${duration}s`;
                     particle.style.animationDelay = `${delay}s`;
-                    
+
                     floatingParticles.appendChild(particle);
                 }
             }
-            
+
             // Create byte coin animation
             function animateByteCoin(fromElement) {
                 if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
                     return; // Skip animation if reduced motion is preferred
                 }
-                
+
                 const fromRect = fromElement.getBoundingClientRect();
                 const toRect = bytesCountElement.getBoundingClientRect();
-                
-                // Calculate start and end positions
+
                 const startX = fromRect.left + fromRect.width / 2;
                 const startY = fromRect.top + fromRect.height / 2;
                 const endX = toRect.left + toRect.width / 2;
                 const endY = toRect.top + toRect.height / 2;
-                
-                // Create coin element
+
                 const coin = document.createElement('div');
                 coin.classList.add('byte-coin');
                 coin.style.left = `${startX}px`;
                 coin.style.top = `${startY}px`;
                 coin.style.setProperty('--target-x', `${endX - startX}px`);
                 coin.style.setProperty('--target-y', `${endY - startY}px`);
-                
+
                 document.body.appendChild(coin);
-                
-                // Remove coin after animation
+
                 setTimeout(() => {
                     coin.remove();
                 }, 1000);
             }
-            
+
             // Add bytes to counter with animation
             function addBytes(amount, sourceElement) {
                 bytesCount += amount;
                 bytesCountElement.textContent = bytesCount;
                 localStorage.setItem('bytesCount', bytesCount);
-                
-                // Animate coins flying to counter
+
                 for (let i = 0; i < Math.min(amount, 5); i++) {
                     setTimeout(() => {
                         animateByteCoin(sourceElement);
                     }, i * 100);
                 }
-                
-                // Add to activity feed
                 addActivity(`Earned ${amount} bytes`, 'coin');
             }
-            
+
             // Add activity to feed
             function addActivity(text, iconType) {
                 const now = new Date();
                 const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                
+
                 const icons = {
                     'coin': 'fas fa-coins',
                     'quiz': 'fas fa-question-circle',
                     'game': 'fas fa-gamepad'
                 };
-                
+
                 const iconClass = icons[iconType] || 'fas fa-bell';
-                
+
                 const activityItem = document.createElement('div');
                 activityItem.classList.add('activity-item');
                 activityItem.innerHTML = `
@@ -998,81 +967,74 @@ studentdashboard.html
                     <span class="activity-text">${text}</span>
                     <div class="activity-time">${timeString}</div>
                 `;
-                
+
                 feedItems.insertBefore(activityItem, feedItems.firstChild);
-                
-                // Show notification
                 showNotification();
             }
-            
+
             // Show notification
             function showNotification() {
-                // Flash the toggle button
                 toggleFeed.style.backgroundColor = 'var(--color-brand-secondary)';
                 setTimeout(() => {
                     toggleFeed.style.backgroundColor = 'var(--color-brand-primary)';
                 }, 500);
             }
-            
+
             // Toggle activity feed
             toggleFeed.addEventListener('click', function() {
                 activityFeed.classList.toggle('active');
             });
-            
-            // Quiz button click - UPDATED to redirect after animations
+
+            // Quiz button click
             quizBtn.addEventListener('click', function(e) {
-                e.preventDefault(); // Keep this to ensure animations run first
+                e.preventDefault();
                 addBytes(3, this);
                 addActivity('Completed a quiz', 'quiz');
-
-                // Redirect after 800ms (adjust time if needed)
                 setTimeout(() => {
                     window.location.href = 'quizzesstudentdashboard.html';
                 }, 800);
             });
 
-            // Game button click - UPDATED to redirect after animations
+            // Game button click
             gameBtn.addEventListener('click', function(e) {
-                e.preventDefault(); // Keep this to ensure animations run first
+                e.preventDefault();
                 addBytes(5, this);
                 addActivity('Played a game', 'game');
-
-                // Redirect after 800ms (adjust time if needed)
                 setTimeout(() => {
                     window.location.href = 'preadergamesstudentdashboard.html';
                 }, 800);
             });
-            
+
             // Sign out function
             signOutBtn.addEventListener('click', function() {
-                // Clear all student-related data from localStorage
                 localStorage.removeItem('studentToken');
                 localStorage.removeItem('studentData');
                 localStorage.removeItem('bytesCount');
                 localStorage.removeItem('studentName');
                 localStorage.removeItem('preferredFont');
                 localStorage.removeItem('preferredName');
-                
-                // Redirect to login page
                 window.location.href = 'studentlogin.html';
             });
-            
+
             // Tooltip initialization
             document.querySelectorAll('.info-icon').forEach(icon => {
                 icon.addEventListener('mouseenter', function() {
                     this.querySelector('.info-tooltip').style.opacity = '1';
                     this.querySelector('.info-tooltip').style.visibility = 'visible';
                 });
-                
+
                 icon.addEventListener('mouseleave', function() {
                     this.querySelector('.info-tooltip').style.opacity = '0';
                     this.querySelector('.info-tooltip').style.visibility = 'hidden';
                 });
             });
-            
+
+            // Fetch student data on page load
+            fetchStudentData();
+
             // Create particles on load
             createParticles();
-            
+
             // Add initial activities
             addActivity('Welcome to SchoolByte!', 'coin');
             addActivity('Dashboard loaded', 'coin');
@@ -1080,4 +1042,3 @@ studentdashboard.html
     </script>
 </body>
 </html>
-

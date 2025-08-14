@@ -871,10 +871,44 @@
                         const data = await response.json();
 
                         if (response.ok) {
-                            showMessage(data.message + ' Redirecting to login...', 'success');
-                            setTimeout(() => {
-                                window.location.href = 'studentlogin.html'; // Redirect to student login page
-                            }, 2000);
+                            showMessage(data.message + ' Logging you in...', 'success');
+                            
+                            // Auto-login the student after successful registration
+                            setTimeout(async () => {
+                                try {
+                                    const loginResponse = await fetch(`${API_BASE_URL}/login-student`, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({
+                                            email: emailInput.value.trim(),
+                                            password: passwordInput.value
+                                        }),
+                                    });
+
+                                    const loginData = await loginResponse.json();
+
+                                    if (loginResponse.ok) {
+                                        localStorage.setItem('studentToken', loginData.token);
+                                        localStorage.setItem('userData', JSON.stringify(loginData.student));
+                                        showMessage('Welcome to SchoolByte! Redirecting to your dashboard...', 'success');
+                                        setTimeout(() => {
+                                            window.location.href = 'studentdashboard.html';
+                                        }, 1500);
+                                    } else {
+                                        showMessage('Registration successful! Please go to login page.', 'success');
+                                        setTimeout(() => {
+                                            window.location.href = 'studentlogin.html';
+                                        }, 2000);
+                                    }
+                                } catch (error) {
+                                    showMessage('Registration successful! Please go to login page.', 'success');
+                                    setTimeout(() => {
+                                        window.location.href = 'studentlogin.html';
+                                    }, 2000);
+                                }
+                            }, 1500);
                         } else {
                             // Handle backend validation errors or other server errors
                             let errorMessage = data.message || 'Registration failed.';
@@ -902,7 +936,7 @@
             ];
 
             const oLevelElectiveSubjects = [
-                "Computer Science", "Agriculture", "Literature in English",
+                "Computer Science", "Agriculture", "Literature in English", "French",
                 "German", "Kiswahili", "Luganda", "Fine Art", "Performing Arts",
                 "Physical Education", "Technology and Design"
             ];
@@ -970,12 +1004,18 @@
                         });
                         
                     } else if (['S.5', 'S.6'].includes(selectedClass)) {
-                        // A'Level: Choose any 5 subjects
-                        subjectsLabel.textContent = 'Select Subjects (Choose exactly 5 subjects)';
-                        compulsoryContainer.style.display = 'none';
-                        subsidiaryTitle.textContent = 'Select any 5 subjects';
+                        // A'Level: General Paper is compulsory + choose any 4 subjects
+                        subjectsLabel.textContent = 'Select Subjects (1 compulsory + 4 of your choice = 5 total)';
+                        subsidiaryTitle.textContent = 'Choose any 4 additional subjects';
                         
-                        aLevelSubjects.forEach(subject => {
+                        // Add General Paper as compulsory (locked)
+                        selectedSubjects.push("General Paper");
+                        const gpDiv = createSubjectCheckbox("General Paper", true, true);
+                        compulsoryContainer.appendChild(gpDiv);
+                        
+                        // Add other subjects as options
+                        const otherALevelSubjects = aLevelSubjects.filter(subject => subject !== "General Paper");
+                        otherALevelSubjects.forEach(subject => {
                             const subjectDiv = createSubjectCheckbox(subject, false, false);
                             subsidiaryContainer.appendChild(subjectDiv);
                         });
@@ -1045,9 +1085,11 @@
                         errorMessage = `Please select exactly 2 additional subjects. Currently selected: ${subsidiaryCount}`;
                     }
                 } else if (['S.5', 'S.6'].includes(selectedClass)) {
-                    expectedCount = 5; // Any 5 subjects
+                    expectedCount = 5; // 1 compulsory (GP) + 4 choices
                     if (selectedSubjects.length !== 5) {
-                        errorMessage = `Please select exactly 5 subjects. Currently selected: ${selectedSubjects.length}`;
+                        errorMessage = `Please select exactly 4 additional subjects (+ General Paper = 5 total). Currently selected: ${selectedSubjects.length - 1} additional subjects`;
+                    } else if (!selectedSubjects.includes("General Paper")) {
+                        errorMessage = `General Paper is compulsory for A-Level students.`;
                     }
                 }
                 

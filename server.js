@@ -2158,7 +2158,7 @@ app.post('/login-teacher', [
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
-        
+
         // Check and reset weekly counters
         await checkAndResetTeacherWeeklyCounters(teacher);
 
@@ -2192,7 +2192,7 @@ app.get('/teacher/dashboard', authenticateTeacherToken, async (req, res) => {
         if (!teacherData) {
             return res.status(404).json({ message: 'Teacher data not found.' });
         }
-        
+
         // Check and reset weekly counters
         await checkAndResetTeacherWeeklyCounters(teacherData);
 
