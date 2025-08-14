@@ -59,6 +59,7 @@ const subjectSchema = new mongoose.Schema({
     name: { type: String, required: true, unique: true, trim: true, index: true },
     serialNumber: { type: Number, unique: true, sparse: true },
     isCompulsory: { type: Boolean, default: false },
+    isPrincipalAlevel: { type: Boolean, default: false },
     applicableLevels: {
         type: [String],
         enum: ["O_Level_Lower", "O_Level_Middle", "A_Level"],
@@ -1053,24 +1054,35 @@ async function generateStoryNode(basePrompt, currentGameState, studentClass, pre
 // Initialize subjects collection on startup
 async function initializeSubjects() {
     const subjects = [
-        { name: "Mathematics", isCompulsory: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
-        { name: "English Language", isCompulsory: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
-        { name: "Biology", isCompulsory: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
-        { name: "Chemistry", isCompulsory: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
-        { name: "Physics", isCompulsory: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
-        { name: "History", isCompulsory: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
-        { name: "Geography", isCompulsory: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
-        { name: "Computer Science", isCompulsory: false, applicableLevels: ["O_Level_Middle", "A_Level"] },
-        { name: "Agriculture", isCompulsory: false, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
-        { name: "Literature in English", isCompulsory: false, applicableLevels: ["O_Level_Middle", "A_Level"] },
-        { name: "French", isCompulsory: false, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
-        { name: "German", isCompulsory: false, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
-        { name: "Kiswahili", isCompulsory: false, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
-        { name: "Luganda", isCompulsory: false, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
-        { name: "Fine Art", isCompulsory: false, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
-        { name: "Performing Arts", isCompulsory: false, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
-        { name: "Physical Education", isCompulsory: false, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
-        { name: "Technology and Design", isCompulsory: false, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] }
+        // Compulsory O-Level subjects
+        { name: "Mathematics", isCompulsory: true, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "English Language", isCompulsory: true, isPrincipalAlevel: false, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "Biology", isCompulsory: true, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "Chemistry", isCompulsory: true, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "Physics", isCompulsory: true, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "History", isCompulsory: true, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "Geography", isCompulsory: true, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        
+        // Elective subjects
+        { name: "Computer Science", isCompulsory: false, isPrincipalAlevel: true, applicableLevels: ["O_Level_Middle", "A_Level"] },
+        { name: "Agriculture", isCompulsory: false, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "Literature in English", isCompulsory: false, isPrincipalAlevel: true, applicableLevels: ["O_Level_Middle", "A_Level"] },
+        { name: "French", isCompulsory: false, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "German", isCompulsory: false, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "Kiswahili", isCompulsory: false, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "Luganda", isCompulsory: false, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "Fine Art", isCompulsory: false, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "Performing Arts", isCompulsory: false, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "Physical Education", isCompulsory: false, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "Technology and Design", isCompulsory: false, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "Economics", isCompulsory: false, isPrincipalAlevel: true, applicableLevels: ["A_Level"] },
+        { name: "Entrepreneurship Education", isCompulsory: false, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "Food and Nutrition", isCompulsory: false, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        { name: "Christian Religious Education", isCompulsory: false, isPrincipalAlevel: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
+        
+        // A-Level specific subjects
+        { name: "General Paper", isCompulsory: false, isPrincipalAlevel: false, applicableLevels: ["A_Level"] },
+        { name: "Subsidiary Mathematics", isCompulsory: false, isPrincipalAlevel: false, applicableLevels: ["A_Level"] }
     ];
 
     for (const subject of subjects) {
@@ -1188,7 +1200,7 @@ app.post('/register-student', [
         } else if (['S.3', 'S.4'].includes(studentClass)) {
             expectedSubjectCount = 9; // 7 compulsory + 2 subsidiary
         } else if (['S.5', 'S.6'].includes(studentClass)) {
-            expectedSubjectCount = 5; // Any 5 subjects
+            expectedSubjectCount = 5; // 3 principal + GP + (ICT/Sub-Math)
             requiredCompulsory = false;
         }
 
@@ -1199,10 +1211,58 @@ app.post('/register-student', [
         }
 
         if (requiredCompulsory) {
+            // O-Level validation
             const hasAllCompulsory = compulsoryNames.every(name => subjectsEnrolled.includes(name));
             if (!hasAllCompulsory) {
                 return res.status(400).json({ 
                     message: `Missing required compulsory subjects: ${compulsoryNames.join(', ')}` 
+                });
+            }
+        } else {
+            // A-Level validation
+            // 1. Must have General Paper
+            if (!subjectsEnrolled.includes('General Paper')) {
+                return res.status(400).json({ 
+                    message: 'General Paper is mandatory for A-Level students.' 
+                });
+            }
+
+            // 2. Math-dependent subsidiary logic
+            const hasMath = subjectsEnrolled.includes('Mathematics');
+            const hasICT = subjectsEnrolled.includes('Computer Science');
+            const hasSubMath = subjectsEnrolled.includes('Subsidiary Mathematics');
+
+            if (hasMath) {
+                if (!hasICT) {
+                    return res.status(400).json({ 
+                        message: 'Students taking Mathematics must also take Computer Science (ICT).' 
+                    });
+                }
+                if (hasSubMath) {
+                    return res.status(400).json({ 
+                        message: 'Students taking Mathematics cannot also take Subsidiary Mathematics.' 
+                    });
+                }
+            } else {
+                if (!hasSubMath) {
+                    return res.status(400).json({ 
+                        message: 'Students not taking Mathematics must take Subsidiary Mathematics.' 
+                    });
+                }
+                if (hasICT) {
+                    return res.status(400).json({ 
+                        message: 'Students not taking Mathematics cannot take Computer Science (ICT).' 
+                    });
+                }
+            }
+
+            // 3. Must have exactly 3 principal subjects
+            const aLevelSubsidiaries = ['General Paper', 'Computer Science', 'Subsidiary Mathematics'];
+            const principalSubjects = subjectsEnrolled.filter(subject => !aLevelSubsidiaries.includes(subject));
+            
+            if (principalSubjects.length !== 3) {
+                return res.status(400).json({ 
+                    message: `A-Level students must select exactly 3 principal subjects. Found: ${principalSubjects.length}` 
                 });
             }
         }
