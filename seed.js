@@ -74,15 +74,15 @@ const seedDatabase = async () => {
         console.log('Creating "Super Admin Student" account...');
 
         const superAdminStudent = await Student.create({
-            studentName: 'Super Admin Student',
-            indexNumber: 'ADMIN-001',
+            studentName: 'semanda ian',
+            indexNumber: '11ABC22',
             email: 'semandaian@gmail.com', // Admin email
             password: hashedPassword,
             isEmailVerified: true, // Auto-verify for easy testing
             bytes: 10000, // Give them plenty of bytes
-            class: 'S.6', // Set them to S.6 as their 'base' class level
-            stream: 'Admin',
-            classTeacher: 'System Administrator',
+            class: 'S.3', // Set them to S.3 as requested
+            stream: 'Blue',
+            classTeacher: 'Ms Nalukwago Irene',
             subjectsEnrolled: allSubjectNames // THIS IS THE KEY: ALL SUBJECTS!
         });
 
@@ -96,6 +96,9 @@ const seedDatabase = async () => {
         await superAdminStudent.save();
 
         console.log(`Created Super Admin Student: ${superAdminStudent.studentName} (${superAdminStudent.email})`);
+        console.log(`Index Number: ${superAdminStudent.indexNumber}`);
+        console.log(`Class: ${superAdminStudent.class} - ${superAdminStudent.stream}`);
+        console.log(`Class Teacher: ${superAdminStudent.classTeacher}`);
         console.log(`Password: semandaian`);
         console.log(`Access Level: ALL SUBJECTS (${allSubjectNames.length} subjects enrolled)`);
 
@@ -246,8 +249,12 @@ const seedDatabase = async () => {
         console.log('DATABASE SEEDING COMPLETE!');
         console.log('='.repeat(60));
         console.log('SUPER ADMIN ACCOUNT CREATED:');
+        console.log(`Name: semanda ian`);
+        console.log(`Index Number: 11ABC22`);
         console.log(`Email: semandaian@gmail.com`);
         console.log(`Password: semandaian`);
+        console.log(`Class: S.3 - Blue Stream`);
+        console.log(`Class Teacher: Ms Nalukwago Irene`);
         console.log(`Access: ALL ${allSubjectNames.length} SUBJECTS`);
         console.log(`Bytes: 10,000`);
         console.log('='.repeat(60));
