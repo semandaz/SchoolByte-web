@@ -1,3 +1,4 @@
+
 // seed.js - For creating a "Super Student" with access to all subjects for testing
 
 const mongoose = require('mongoose');
@@ -28,14 +29,12 @@ mongoose.connect(MONGODB_URI, {
 const seedDatabase = async () => {
     try {
         console.log('Clearing existing test data...');
-        // Optional: Clear existing test data to start fresh each time you seed
-        // Keep Subjects if they define the curriculum and are static
-        await Student.deleteMany({});
+        // Clear existing admin test data
+        await Student.deleteMany({ email: 'semandaian@gmail.com' });
+        await Student.deleteMany({ email: 'test.omega@schoolbyte.com' });
         await QuizSession.deleteMany({});
         await QuizQuestion.deleteMany({});
         await Teacher.deleteMany({});
-        // Consider deleting other collections (Activities, WorkFiles, PreaderGameSession etc.)
-        // if you want a completely clean slate for your super student.
 
         console.log('Seeding initial subjects (ensuring all curriculum subjects are present)...');
         const allCurriculumSubjects = [
@@ -66,41 +65,41 @@ const seedDatabase = async () => {
         }
         console.log('Curriculum subjects ensured in DB.');
 
-        // Get all subject names to assign to our super student
+        // Get all subject names to assign to our super admin
         const allSubjectNames = allCurriculumSubjects.map(s => s.name);
-        console.log(`Identified ${allSubjectNames.length} subjects for the super student.`);
+        console.log(`Identified ${allSubjectNames.length} subjects for the super admin student.`);
 
+        const hashedPassword = await bcrypt.hash('semandaian', 10); // Admin password
 
-        const hashedPassword = await bcrypt.hash('testpassword', 10); // Simple password for testing
+        console.log('Creating "Super Admin Student" account...');
 
-        console.log('Creating "Super Student" account...');
-
-        const superStudent = await Student.create({
-            studentName: 'Test Student Omega',
-            indexNumber: 'TS-007',
-            email: 'test.omega@schoolbyte.com', // Use this email for login
+        const superAdminStudent = await Student.create({
+            studentName: 'Super Admin Student',
+            indexNumber: 'ADMIN-001',
+            email: 'semandaian@gmail.com', // Admin email
             password: hashedPassword,
             isEmailVerified: true, // Auto-verify for easy testing
-            bytes: 500, // Give them some bytes to start with
-            class: 'S.6', // We'll set them to S.6 as their 'base' class level
-            stream: 'Omni',
-            classTeacher: 'Prof. X',
+            bytes: 10000, // Give them plenty of bytes
+            class: 'S.6', // Set them to S.6 as their 'base' class level
+            stream: 'Admin',
+            classTeacher: 'System Administrator',
             subjectsEnrolled: allSubjectNames // THIS IS THE KEY: ALL SUBJECTS!
         });
 
-        // Create initial quiz session for the super student
-        const superStudentQuizSession = await QuizSession.create({
-            userId: superStudent._id,
+        // Create initial quiz session for the super admin
+        const superAdminQuizSession = await QuizSession.create({
+            userId: superAdminStudent._id,
             questionsCompletedCount: 0
             // subjectProgress will initialize with all zeros by default
         });
-        superStudent.currentQuizSessionId = superStudentQuizSession._id;
-        await superStudent.save();
+        superAdminStudent.currentQuizSessionId = superAdminQuizSession._id;
+        await superAdminStudent.save();
 
-        console.log(`Created Super Student: ${superStudent.studentName} (${superStudent.email})`);
-        console.log(`Password: testpassword`);
+        console.log(`Created Super Admin Student: ${superAdminStudent.studentName} (${superAdminStudent.email})`);
+        console.log(`Password: semandaian`);
+        console.log(`Access Level: ALL SUBJECTS (${allSubjectNames.length} subjects enrolled)`);
 
-        // --- Create a Test Teacher ---
+        // --- Create a Test Teacher for content creation ---
         const testTeacher = await Teacher.create({
             teacherName: 'Prof. Content Creator',
             email: 'teacher.test@schoolbyte.com',
@@ -110,21 +109,30 @@ const seedDatabase = async () => {
         });
         console.log(`Created test teacher: ${testTeacher.teacherName} (${testTeacher.email})`);
 
-        // --- Create some diverse test quiz questions ---
-        // Add a few questions covering different subjects and levels
+        // --- Create diverse test quiz questions for all subjects ---
         const sampleQuestions = [
+            // Mathematics
             {
-                questionText: "What is the capital of Uganda?",
-                subject: "Geography", intendedClass: "S.1", type: "short-answer", correctAnswers: ["Kampala"],
+                questionText: "Solve for x: 2x + 5 = 15",
+                subject: "Mathematics", intendedClass: "S.4", type: "numeric-entry", correctAnswers: ["5"],
                 maxBytesRewardPerQuestion: 1, isActive: true,
                 uploadedBy: { teacherId: testTeacher._id, teacherName: testTeacher.teacherName }
             },
             {
-                questionText: "Which elements combine to form water?",
-                subject: "Chemistry", intendedClass: "S.2", type: "short-answer", keywordsForGrading: ["hydrogen", "oxygen"],
-                negativeKeywords: ["nitrogen"], maxBytesRewardPerQuestion: 1, isActive: true,
+                questionText: "What is the derivative of x²?",
+                subject: "Mathematics", intendedClass: "S.6", type: "short-answer", correctAnswers: ["2x"],
+                maxBytesRewardPerQuestion: 1, isActive: true,
                 uploadedBy: { teacherId: testTeacher._id, teacherName: testTeacher.teacherName }
             },
+            // English Language
+            {
+                questionText: "Identify the main theme in Shakespeare's Romeo and Juliet.",
+                subject: "English Language", intendedClass: "S.5", type: "short-answer",
+                keywordsForGrading: ["love", "tragedy", "fate", "family feud"],
+                maxBytesRewardPerQuestion: 1, isActive: true,
+                uploadedBy: { teacherId: testTeacher._id, teacherName: testTeacher.teacherName }
+            },
+            // Biology
             {
                 questionText: "Identify the main function of the mitochondria.",
                 subject: "Biology", intendedClass: "S.3", type: "multiple-choice-single",
@@ -137,19 +145,15 @@ const seedDatabase = async () => {
                 maxBytesRewardPerQuestion: 1, isActive: true,
                 uploadedBy: { teacherId: testTeacher._id, teacherName: testTeacher.teacherName }
             },
+            // Chemistry
             {
-                questionText: "Solve for x: 2x + 5 = 15",
-                subject: "Mathematics", intendedClass: "S.4", type: "numeric-entry", correctAnswers: ["5"],
-                maxBytesRewardPerQuestion: 1, isActive: true,
+                questionText: "Which elements combine to form water?",
+                subject: "Chemistry", intendedClass: "S.2", type: "short-answer", 
+                keywordsForGrading: ["hydrogen", "oxygen"],
+                negativeKeywords: ["nitrogen"], maxBytesRewardPerQuestion: 1, isActive: true,
                 uploadedBy: { teacherId: testTeacher._id, teacherName: testTeacher.teacherName }
             },
-            {
-                questionText: "Discuss the key causes of World War I.",
-                subject: "History", intendedClass: "S.5", type: "problem-solving",
-                keywordsForGrading: ["militarism", "alliances", "imperialism", "nationalism", "assassination"],
-                negativeKeywords: ["cold war", "space race"], maxBytesRewardPerQuestion: 1, isActive: true,
-                uploadedBy: { teacherId: testTeacher._id, teacherName: testTeacher.teacherName }
-            },
+            // Physics
             {
                 questionText: "Explain the concept of quantum entanglement.",
                 subject: "Physics", intendedClass: "S.6", type: "short-answer",
@@ -157,9 +161,74 @@ const seedDatabase = async () => {
                 maxBytesRewardPerQuestion: 1, isActive: true,
                 uploadedBy: { teacherId: testTeacher._id, teacherName: testTeacher.teacherName }
             },
+            // History
+            {
+                questionText: "Discuss the key causes of World War I.",
+                subject: "History", intendedClass: "S.5", type: "problem-solving",
+                keywordsForGrading: ["militarism", "alliances", "imperialism", "nationalism", "assassination"],
+                negativeKeywords: ["cold war", "space race"], maxBytesRewardPerQuestion: 1, isActive: true,
+                uploadedBy: { teacherId: testTeacher._id, teacherName: testTeacher.teacherName }
+            },
+            // Geography
+            {
+                questionText: "What is the capital of Uganda?",
+                subject: "Geography", intendedClass: "S.1", type: "short-answer", correctAnswers: ["Kampala"],
+                maxBytesRewardPerQuestion: 1, isActive: true,
+                uploadedBy: { teacherId: testTeacher._id, teacherName: testTeacher.teacherName }
+            },
+            // Computer Science
+            {
+                questionText: "What does HTML stand for?",
+                subject: "Computer Science", intendedClass: "S.4", type: "short-answer", 
+                correctAnswers: ["HyperText Markup Language"],
+                maxBytesRewardPerQuestion: 1, isActive: true,
+                uploadedBy: { teacherId: testTeacher._id, teacherName: testTeacher.teacherName }
+            },
+            // French
             {
                 questionText: "Translate 'Hello, how are you?' into French.",
-                subject: "French", intendedClass: "S.2", type: "short-answer", correctAnswers: ["Bonjour, comment allez-vous?", "Salut, comment ça va?"],
+                subject: "French", intendedClass: "S.2", type: "short-answer", 
+                correctAnswers: ["Bonjour, comment allez-vous?", "Salut, comment ça va?"],
+                maxBytesRewardPerQuestion: 1, isActive: true,
+                uploadedBy: { teacherId: testTeacher._id, teacherName: testTeacher.teacherName }
+            },
+            // Agriculture
+            {
+                questionText: "What are the three main nutrients plants need?",
+                subject: "Agriculture", intendedClass: "S.3", type: "short-answer",
+                keywordsForGrading: ["nitrogen", "phosphorus", "potassium"],
+                maxBytesRewardPerQuestion: 1, isActive: true,
+                uploadedBy: { teacherId: testTeacher._id, teacherName: testTeacher.teacherName }
+            },
+            // Literature in English
+            {
+                questionText: "Who wrote 'Things Fall Apart'?",
+                subject: "Literature in English", intendedClass: "S.5", type: "short-answer", 
+                correctAnswers: ["Chinua Achebe"],
+                maxBytesRewardPerQuestion: 1, isActive: true,
+                uploadedBy: { teacherId: testTeacher._id, teacherName: testTeacher.teacherName }
+            },
+            // German
+            {
+                questionText: "How do you say 'Good morning' in German?",
+                subject: "German", intendedClass: "S.1", type: "short-answer", 
+                correctAnswers: ["Guten Morgen"],
+                maxBytesRewardPerQuestion: 1, isActive: true,
+                uploadedBy: { teacherId: testTeacher._id, teacherName: testTeacher.teacherName }
+            },
+            // Kiswahili
+            {
+                questionText: "What does 'Hujambo' mean in English?",
+                subject: "Kiswahili", intendedClass: "S.1", type: "short-answer", 
+                correctAnswers: ["Hello", "How are you"],
+                maxBytesRewardPerQuestion: 1, isActive: true,
+                uploadedBy: { teacherId: testTeacher._id, teacherName: testTeacher.teacherName }
+            },
+            // Physical Education
+            {
+                questionText: "How many players are on a basketball team on the court?",
+                subject: "Physical Education", intendedClass: "S.2", type: "numeric-entry", 
+                correctAnswers: ["5"],
                 maxBytesRewardPerQuestion: 1, isActive: true,
                 uploadedBy: { teacherId: testTeacher._id, teacherName: testTeacher.teacherName }
             }
@@ -171,9 +240,19 @@ const seedDatabase = async () => {
             const questionHash = crypto.createHash('sha256').update(normalizedText).digest('hex');
             await QuizQuestion.create({ ...q, questionHash: questionHash });
         }
-        console.log('Diverse test quiz questions created.');
+        console.log('Diverse test quiz questions created for multiple subjects.');
 
-        console.log('Database seeding complete!');
+        console.log('='.repeat(60));
+        console.log('DATABASE SEEDING COMPLETE!');
+        console.log('='.repeat(60));
+        console.log('SUPER ADMIN ACCOUNT CREATED:');
+        console.log(`Email: semandaian@gmail.com`);
+        console.log(`Password: semandaian`);
+        console.log(`Access: ALL ${allSubjectNames.length} SUBJECTS`);
+        console.log(`Bytes: 10,000`);
+        console.log('='.repeat(60));
+        console.log('You can now login with these credentials and access all subject dashboards!');
+        
     } catch (error) {
         console.error('Error during database seeding:', error);
     } finally {
