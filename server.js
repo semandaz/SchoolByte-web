@@ -1223,13 +1223,6 @@ app.post('/register-student', [
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        // Create initial quiz session
-        const initialQuizSession = new QuizSession({
-            userId: null, // Will be set after student creation
-            questionsCompletedCount: 0
-        });
-        await initialQuizSession.save();
-
         const newStudent = new Student({
             studentName,
             indexNumber,
@@ -1241,14 +1234,21 @@ app.post('/register-student', [
             stream,
             classTeacher,
             subjectsEnrolled,
-            currentQuizSessionId: initialQuizSession._id
+            currentQuizSessionId: null // Will be set after quiz session creation
         });
 
         await newStudent.save();
 
-        // Update quiz session with user ID
-        initialQuizSession.userId = newStudent._id;
+        // Create initial quiz session with the student's ID
+        const initialQuizSession = new QuizSession({
+            userId: newStudent._id,
+            questionsCompletedCount: 0
+        });
         await initialQuizSession.save();
+
+        // Update student with quiz session ID
+        newStudent.currentQuizSessionId = initialQuizSession._id;
+        await newStudent.save();
 
         res.status(201).json({
             message: 'Student registered successfully! Please verify your email to log in.',
