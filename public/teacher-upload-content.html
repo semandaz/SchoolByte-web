@@ -556,6 +556,8 @@
             const submitBtn = document.getElementById('submitBtn');
             const originalText = submitBtn.innerHTML;
             
+            console.log('Content upload initiated.');
+            
             try {
                 // Disable submit button and show loading
                 submitBtn.disabled = true;
@@ -598,6 +600,13 @@
 
                 formData.append('activityJson', JSON.stringify(activityData));
 
+                console.log('Form data collected:', {
+                    workFileTitle: document.getElementById('workFileTitle').value,
+                    workFileSubject: document.getElementById('workFileSubject').value,
+                    activityData: activityData,
+                    fileSelected: document.getElementById('workFilePdf').files[0]?.name
+                });
+
                 // Get auth token
                 const token = localStorage.getItem('teacherToken');
                 if (!token) {
@@ -613,13 +622,18 @@
                     body: formData
                 });
 
+                console.log('Server response received:', response.status, response.statusText);
+                
                 const result = await response.json();
+                console.log('Server response data:', result);
 
                 if (!response.ok) {
+                    console.error('Server responded with error:', result);
                     throw new Error(result.message || 'Upload failed');
                 }
 
                 // Success
+                console.log('Upload successful!');
                 showMessage('Content uploaded successfully! Redirecting to dashboard...', 'success');
                 
                 // Reset form
@@ -634,10 +648,15 @@
                 }, 2000);
 
             } catch (error) {
-                console.error('Upload error:', error);
+                console.error('Upload error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name
+                });
                 showMessage(`Upload failed: ${error.message}`, 'error');
             } finally {
                 // Re-enable submit button
+                console.log('Upload process completed, re-enabling button');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
             }
