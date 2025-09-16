@@ -882,14 +882,26 @@ const authenticateTeacherToken = (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
+        console.error('No authentication token provided in teacher request');
         return res.status(401).json({ message: 'Access Denied: No authentication token provided.' });
     }
 
     jwt.verify(token, JWT_SECRET, (err, decoded) => {
         if (err) {
-            console.error('JWT verification error (Teacher):', err.message);
+            console.error('JWT verification error (Teacher):', {
+                error: err.message,
+                token: token.substring(0, 20) + '...',
+                headers: req.headers.authorization ? 'present' : 'missing'
+            });
             return res.status(403).json({ message: 'Access Denied: Invalid or expired teacher token.' });
         }
+        
+        // Ensure the token is for a teacher
+        if (decoded.role !== 'teacher') {
+            console.error('Token role mismatch:', decoded.role);
+            return res.status(403).json({ message: 'Access Denied: Teacher access required.' });
+        }
+        
         req.teacher = decoded;
         next();
     });

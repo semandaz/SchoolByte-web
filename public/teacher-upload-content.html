@@ -361,20 +361,28 @@
             const submitBtn = document.getElementById('submitBtn');
             const addQuestionBtn = document.getElementById('addQuestionBtn');
 
-            const isTitleValid = workFileTitle.value.trim() !== '';
+            const isTitleValid = workFileTitle.value.trim() !== '' && workFileTitle.value.trim().length >= 3;
             const isSubjectValid = workFileSubject.value !== '';
             const isClassValid = workFileIntendedClass.value !== '';
-            const isPdfValid = workFilePdf.files.length > 0 && workFilePdf.files[0].size <= 20 * 1024 * 1024;
-            const isCostValid = workFileCostBytes.value >= 5 && workFileCostBytes.value <= 20;
+            
+            let isPdfValid = false;
+            if (workFilePdf.files.length > 0) {
+                const file = workFilePdf.files[0];
+                isPdfValid = file.type === 'application/pdf' && file.size <= 20 * 1024 * 1024;
+            }
+            
+            const costValue = parseInt(workFileCostBytes.value);
+            const isCostValid = !isNaN(costValue) && costValue >= 5 && costValue <= 20;
 
             const questionItems = document.querySelectorAll('.question-item');
             const hasFiveQuestions = questionItems.length === 5;
             let allQuestionsValid = hasFiveQuestions;
+            
             if (hasFiveQuestions) {
                 questionItems.forEach(item => {
                     const questionText = item.querySelector('.question-text').value.trim();
                     const keywordCount = item.querySelectorAll('.keyword-tag').length;
-                    if (questionText === '' || keywordCount < 5) {
+                    if (questionText === '' || questionText.length < 10 || keywordCount < 5) {
                         allQuestionsValid = false;
                     }
                 });
@@ -382,8 +390,15 @@
                 allQuestionsValid = false;
             }
 
-            submitBtn.disabled = !(isTitleValid && isSubjectValid && isClassValid && isPdfValid && isCostValid && allQuestionsValid);
+            const isFormValid = isTitleValid && isSubjectValid && isClassValid && isPdfValid && isCostValid && allQuestionsValid;
+            
+            submitBtn.disabled = !isFormValid;
             addQuestionBtn.disabled = questionItems.length >= 5;
+
+            // Visual feedback for invalid fields
+            workFileTitle.classList.toggle('border-red-500', !isTitleValid && workFileTitle.value.trim() !== '');
+            workFilePdf.classList.toggle('border-red-500', workFilePdf.files.length > 0 && !isPdfValid);
+            workFileCostBytes.classList.toggle('border-red-500', !isCostValid && workFileCostBytes.value !== '');
         }
 
         function showMessage(text, type = 'success') {
@@ -564,13 +579,34 @@
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
                 showUploadingMessage('Uploading content to server');
 
+                // Check authentication first
+                const token = localStorage.getItem('token') || localStorage.getItem('teacherToken');
+                if (!token) {
+                    throw new Error('Not authenticated. Please log in again.');
+                }
+
+                // Validate file exists and is valid
+                const fileInput = document.getElementById('workFilePdf');
+                if (!fileInput.files || !fileInput.files[0]) {
+                    throw new Error('Please select a PDF file to upload.');
+                }
+
+                const file = fileInput.files[0];
+                if (file.type !== 'application/pdf') {
+                    throw new Error('Please select a valid PDF file.');
+                }
+
+                if (file.size > 20 * 1024 * 1024) {
+                    throw new Error('File size must be less than 20MB.');
+                }
+
                 // Get form data
                 const formData = new FormData();
                 
                 // Add work file data
-                formData.append('workFilePdf', document.getElementById('workFilePdf').files[0]);
-                formData.append('workFileTitle', document.getElementById('workFileTitle').value);
-                formData.append('workFileDescription', document.getElementById('workFileDescription').value);
+                formData.append('workFilePdf', file);
+                formData.append('workFileTitle', document.getElementById('workFileTitle').value.trim());
+                formData.append('workFileDescription', document.getElementById('workFileDescription').value.trim());
                 formData.append('workFileSubject', document.getElementById('workFileSubject').value);
                 formData.append('workFileIntendedClass', document.getElementById('workFileIntendedClass').value);
                 formData.append('workFileCostBytes', document.getElementById('workFileCostBytes').value);
@@ -578,8 +614,8 @@
 
                 // Prepare activity data
                 const activityData = {
-                    title: document.getElementById('activityTitle').value,
-                    description: document.getElementById('activityDescription').value,
+                    title: document.getElementById('activityTitle').value.trim(),
+                    description: document.getElementById('activityDescription').value.trim(),
                     subject: document.getElementById('workFileSubject').value,
                     intendedClass: document.getElementById('workFileIntendedClass').value,
                     questions: []
@@ -587,10 +623,22 @@
 
                 // Collect questions and keywords
                 const questionItems = document.querySelectorAll('.question-item');
+                if (questionItems.length !== 5) {
+                    throw new Error('Exactly 5 questions are required.');
+                }
+
                 questionItems.forEach((item, index) => {
                     const questionText = item.querySelector('.question-text').value.trim();
                     const keywordTags = item.querySelectorAll('.keyword-tag span');
-                    const keywords = Array.from(keywordTags).map(tag => tag.textContent.trim());
+                    const keywords = Array.from(keywordTags).map(tag => tag.textContent.trim()).filter(k => k.length > 0);
+
+                    if (!questionText) {
+                        throw new Error(`Question ${index + 1} text is required.`);
+                    }
+
+                    if (keywords.length < 5) {
+                        throw new Error(`Question ${index + 1} must have at least 5 keywords.`);
+                    }
 
                     activityData.questions.push({
                         questionText: questionText,
@@ -600,18 +648,13 @@
 
                 formData.append('activityJson', JSON.stringify(activityData));
 
-                console.log('Form data collected:', {
-                    workFileTitle: document.getElementById('workFileTitle').value,
+                console.log('Form data prepared:', {
+                    workFileTitle: activityData.title,
                     workFileSubject: document.getElementById('workFileSubject').value,
-                    activityData: activityData,
-                    fileSelected: document.getElementById('workFilePdf').files[0]?.name
+                    questionsCount: activityData.questions.length,
+                    fileSelected: file.name,
+                    fileSize: Math.round(file.size / 1024) + ' KB'
                 });
-
-                // Get auth token
-                const token = localStorage.getItem('teacherToken');
-                if (!token) {
-                    throw new Error('Not authenticated. Please log in again.');
-                }
 
                 // Upload to server
                 const response = await fetch('/teacher/upload-content', {
@@ -629,7 +672,15 @@
 
                 if (!response.ok) {
                     console.error('Server responded with error:', result);
-                    throw new Error(result.message || 'Upload failed');
+                    
+                    // Handle specific error cases
+                    if (response.status === 401 || response.status === 403) {
+                        throw new Error('Authentication failed. Please log in again.');
+                    } else if (response.status === 400) {
+                        throw new Error(result.message || 'Invalid form data. Please check your inputs.');
+                    } else {
+                        throw new Error(result.message || `Upload failed with status ${response.status}`);
+                    }
                 }
 
                 // Success
@@ -638,6 +689,9 @@
                 
                 // Reset form
                 uploadForm.reset();
+                document.getElementById('fileName').textContent = '';
+                document.getElementById('fileSize').textContent = '';
+                document.getElementById('pdfThumbnail').classList.add('hidden');
                 questionsContainer.innerHTML = '';
                 addQuestion(); // Add one default question
                 validateForm();
