@@ -2786,3 +2786,72 @@ module.exports = {
     PreaderGameSession,
     PreaderGameSessionLog
 };
+
+
+// Student endpoint to fetch activities by subject and class
+app.get('/student/activities', authenticateToken, async (req, res) => {
+    try {
+        const { subject, intendedClass } = req.query;
+        
+        let query = {};
+        if (subject) query.subject = subject;
+        if (intendedClass) query.intendedClass = intendedClass;
+        
+        const activities = await Activity.find(query)
+            .populate('associatedWorkFile', 'title fileUrl costBytes')
+            .sort({ createdAt: -1 });
+        
+        res.status(200).json({
+            message: 'Activities fetched successfully.',
+            activities: activities.map(activity => ({
+                _id: activity._id,
+                title: activity.title,
+                description: activity.description,
+                subject: activity.subject,
+                intendedClass: activity.intendedClass,
+                maxBytesReward: activity.maxBytesReward,
+                questions: activity.questions,
+                uploadedBy: activity.uploadedBy,
+                associatedWorkFile: activity.associatedWorkFile,
+                createdAt: activity.createdAt
+            }))
+        });
+    } catch (error) {
+        console.error('Error fetching activities:', error);
+        res.status(500).json({ message: 'Failed to fetch activities.', error: error.message });
+    }
+});
+
+// Student endpoint to fetch a specific activity with all questions
+app.get('/student/activities/:activityId', authenticateToken, async (req, res) => {
+    try {
+        const { activityId } = req.params;
+        
+        const activity = await Activity.findById(activityId)
+            .populate('associatedWorkFile', 'title fileUrl costBytes');
+        
+        if (!activity) {
+            return res.status(404).json({ message: 'Activity not found.' });
+        }
+        
+        res.status(200).json({
+            message: 'Activity fetched successfully.',
+            activity: {
+                _id: activity._id,
+                title: activity.title,
+                description: activity.description,
+                subject: activity.subject,
+                intendedClass: activity.intendedClass,
+                maxBytesReward: activity.maxBytesReward,
+                questions: activity.questions,
+                uploadedBy: activity.uploadedBy,
+                associatedWorkFile: activity.associatedWorkFile,
+                createdAt: activity.createdAt
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching activity:', error);
+        res.status(500).json({ message: 'Failed to fetch activity.', error: error.message });
+    }
+});
+
