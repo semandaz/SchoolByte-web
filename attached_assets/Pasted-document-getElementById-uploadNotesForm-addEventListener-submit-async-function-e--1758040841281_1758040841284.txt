@@ -1,0 +1,49 @@
+document.getElementById('uploadNotesForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            console.log('Notes form submission initiated.');
+
+            const statusDiv = document.getElementById('notesStatus');
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.textContent;
+
+            submitBtn.textContent = 'Uploading...';
+            submitBtn.disabled = true;
+            statusDiv.textContent = 'Preparing upload...';
+            statusDiv.className = 'mt-4 text-center text-sm font-medium text-gray-600';
+
+            const formData = new FormData(this);
+            const token = localStorage.getItem('token');
+            
+            console.log('Token found:', !!token);
+            console.log('Form Data prepared. Sending to server...');
+
+            try {
+                const response = await fetch('/teacher/upload-content', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+
+                console.log('Server response received:', response.status);
+
+                const result = await response.json();
+                if (response.ok) {
+                    statusDiv.textContent = 'Notes & Activity uploaded successfully!';
+                    statusDiv.className = 'mt-4 text-center text-sm font-medium text-green-600';
+                    this.reset();
+                    document.getElementById('notesFileLabel').textContent = 'Click to select a file';
+                    console.log('Upload successful! Server result:', result);
+                } else {
+                    statusDiv.textContent = `Error: ${result.message}`;
+                    statusDiv.className = 'mt-4 text-center text-sm font-medium text-red-600';
+                    console.error('Server responded with an error:', result.message);
+                }
+            } catch (error) {
+                statusDiv.textContent = 'Network error. Please try again.';
+                statusDiv.className = 'mt-4 text-center text-sm font-medium text-red-600';
+                console.error('Upload Error:', error);
+            } finally {
+                submitBtn.textContent = originalBtnText;
+                submitBtn.disabled = false;
+            }
+        });
