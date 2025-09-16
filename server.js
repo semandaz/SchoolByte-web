@@ -2384,7 +2384,7 @@ app.get('/admin/teachers', authenticateAdminToken, async (req, res) => {
     }
 });
 
-app.delete('/admin/teachers/:id', authenticateTeacherToken, async (req, res) => {
+app.delete('/admin/teachers/:id', authenticateAdminToken, async (req, res) => {
     const teacherIdToDelete = req.params.id;
 
     try {
@@ -2769,3 +2769,20 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log('✓ Multiple question types support');
     console.log('✓ Subject-based curriculum management');
 });
+
+// Export models for use in other files
+module.exports = {
+    Student,
+    Teacher,
+    Subject,
+    QuizSession,
+    QuizQuestion,
+    CompletedQuizAttempt,
+    WorkFile,
+    Activity,
+    StudentActivitySubmission,
+    Administrator,
+    VerificationCode,
+    PreaderGameSession,
+    PreaderGameSessionLog
+};

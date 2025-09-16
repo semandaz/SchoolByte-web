@@ -4,30 +4,240 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+require('dotenv').config();
 
-// Import your Mongoose models from server.js (adjust path as necessary)
-// IMPORTANT: Ensure these models are exported from server.js (e.g., via module.exports at the end)
-const { Student, Subject, QuizSession, QuizQuestion, Teacher }
-    = require('./server.js'); // Assuming you export them
+require('dotenv').config();
 
 // --- MongoDB Connection ---
-// Replace with your actual MongoDB connection string.
-// If using Replit secrets, you might need to adjust how this is accessed
-// or manually paste your MONGODB_URI for local testing.
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/schoolbyte_dev'; // REPLACE if needed
+const MONGODB_URI = process.env.MONGODB_URI;
 
-mongoose.connect(MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
+if (!MONGODB_URI) {
+    console.error('FATAL ERROR: MONGODB_URI is not defined. Please set it in Replit Secrets.');
+    process.exit(1);
+}
+
+mongoose.connect(MONGODB_URI)
     .then(() => console.log('MongoDB connected for seeding'))
     .catch(err => {
         console.error('MongoDB connection error for seeding:', err);
         process.exit(1);
     });
 
+// Define models locally in seed.js to avoid import issues
+const studentSchema = new mongoose.Schema({
+    studentName: { type: String, required: true, trim: true },
+    indexNumber: { type: String, required: true, unique: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    password: { type: String, required: true },
+    isEmailVerified: { type: Boolean, default: false },
+    bytes: { type: Number, default: 20 },
+    class: { type: String, required: true, trim: true, index: true },
+    stream: { type: String, required: true, trim: true },
+    classTeacher: { type: String, required: true, trim: true },
+    subjectsEnrolled: {
+        type: [String],
+        required: true,
+        default: [],
+        index: true
+    },
+    quizzesCompletedThisWeek: { type: Number, default: 0, min: 0 },
+    lastQuizResetDate: { type: Date, default: Date.now },
+    recentQuizIds: {
+        type: [mongoose.Schema.Types.ObjectId],
+        default: [],
+        maxlength: 200
+    },
+    currentQuizSessionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'QuizSession',
+        default: null
+    },
+    firstNameDisplay: { type: String, trim: true },
+    preferredName: { type: String, trim: true },
+    preferences: {
+        type: Object,
+        default: {
+            fontSize: "medium",
+            theme: "light",
+            notifications_on: true,
+            fontFamily: "Inter, sans-serif"
+        }
+    },
+    totalPreaderGameTimeMinutes: { type: Number, default: 0 },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+
+const subjectSchema = new mongoose.Schema({
+    name: { type: String, required: true, unique: true, trim: true, index: true },
+    serialNumber: { type: Number, unique: true, sparse: true },
+    isCompulsory: { type: Boolean, default: false },
+    applicableLevels: {
+        type: [String],
+        enum: ["O_Level_Lower", "O_Level_Middle", "A_Level"],
+        default: []
+    },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+
+const quizSessionSchema = new mongoose.Schema({
+    userId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Student', 
+        required: true, 
+        index: true
+    },
+    questionsCompletedCount: { type: Number, default: 0, min: 0, max: 180 },
+    subjectProgress: {
+        type: mongoose.Schema.Types.Mixed,
+        default: function() {
+            const subjects = [
+                "Mathematics", "English Language", "Biology", "Chemistry", "Physics",
+                "History", "Geography", "Computer Science", "Agriculture", "Literature in English",
+                "French", "German", "Kiswahili", "Luganda", "Fine Art", "Performing Arts",
+                "Physical Education", "Technology and Design"
+            ];
+
+            const progress = {};
+            subjects.forEach(subject => {
+                progress[subject] = {
+                    ownClass: 0,
+                    lowerClass: 0,
+                    higherClass: 0
+                };
+            });
+            return progress;
+        }
+    },
+    startedAt: { type: Date, default: Date.now },
+    completedAt: { type: Date },
+    updatedAt: { type: Date, default: Date.now }
+});
+
+const quizQuestionSchema = new mongoose.Schema({
+    questionText: { type: String, required: true, trim: true },
+    subject: { type: String, required: true, trim: true, index: true },
+    intendedClass: { 
+        type: String, 
+        required: true, 
+        trim: true,
+        enum: ['S.1', 'S.2', 'S.3', 'S.4', 'S.5', 'S.6'],
+        index: true
+    },
+    type: {
+        type: String,
+        enum: [
+            'short-answer',
+            'multiple-choice-single',
+            'multiple-choice-multi',
+            'true-false',
+            'fill-in-the-blank',
+            'matching',
+            'ordering',
+            'problem-solving',
+            'numeric-entry'
+        ],
+        required: true
+    },
+    options: [{
+        text: { type: String, required: true },
+        isCorrect: { type: Boolean, default: false }
+    }],
+    correctAnswers: {
+        type: [String],
+        required: function() {
+            return ['short-answer', 'true-false', 'problem-solving', 'fill-in-the-blank', 'numeric-entry'].includes(this.type);
+        }
+    },
+    matchingPairs: [{
+        itemA: { type: String, required: true },
+        itemB: { type: String, required: true }
+    }],
+    orderedItems: {
+        type: [String],
+        required: function() { return this.type === 'ordering'; }
+    },
+    instructions: { type: String, trim: true },
+    hint: { type: String, trim: true },
+    explanation: { type: String, trim: true },
+    maxBytesRewardPerQuestion: { type: Number, required: true, default: 1, min: 0 },
+    keywordsForGrading: {
+        type: [String],
+        default: [],
+        set: (v) => v.map(s => s.toLowerCase().trim())
+    },
+    negativeKeywords: {
+        type: [String],
+        default: [],
+        set: (v) => v.map(s => s.toLowerCase().trim())
+    },
+    topic: { type: String, trim: true, index: true },
+    subTopic: { type: String, trim: true, index: true },
+    skillType: {
+        type: [String],
+        enum: ["Memorization", "Application", "Analysis", "Problem-Solving", "Evaluation", "Creation"],
+        default: []
+    },
+    isActive: { type: Boolean, default: true, index: true },
+    timesServedOverall: { type: Number, default: 0, min: 0, index: true },
+    lastServedTimestamp: { type: Date, index: true },
+    questionHash: { type: String, unique: true, sparse: true },
+    uploadedBy: {
+        teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null },
+        teacherName: { type: String, required: true }
+    },
+    isFeatured: { type: Boolean, default: false },
+    featuredUntil: { 
+        type: Date, 
+        required: function() { return this.isFeatured; }
+    },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
+});
+
+const teacherSchema = new mongoose.Schema({
+    teacherName: { type: String, required: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    password: { type: String, required: true },
+    bytes: { type: Number, default: 0 },
+    quizzesUploadedThisWeek: { type: Number, default: 0, min: 0 },
+    lastUploadResetDate: { type: Date, default: Date.now },
+    isPasswordSet: { type: Boolean, default: false },
+    gender: { 
+        type: String, 
+        enum: ['Male', 'Female', 'Other'], 
+        trim: true, 
+        default: 'Other' 
+    },
+    physicalDescription: { type: String, trim: true },
+    preferences: {
+        type: Object,
+        default: {
+            fontSize: "medium",
+            theme: "light",
+            notifications_on: true
+        }
+    },
+    createdAt: { type: Date, default: Date.now }
+});
+
+// Create models
+const Student = mongoose.model('Student', studentSchema);
+const Subject = mongoose.model('Subject', subjectSchema);
+const QuizSession = mongoose.model('QuizSession', quizSessionSchema);
+const QuizQuestion = mongoose.model('QuizQuestion', quizQuestionSchema);
+const Teacher = mongoose.model('Teacher', teacherSchema);
+
 const seedDatabase = async () => {
     try {
+        // Wait for mongoose to be ready
+        if (mongoose.connection.readyState !== 1) {
+            await new Promise((resolve) => {
+                mongoose.connection.once('open', resolve);
+            });
+        }
+
         console.log('Clearing existing test data...');
         // Clear existing admin test data
         await Student.deleteMany({ email: 'semandaian@gmail.com' });
@@ -268,4 +478,12 @@ const seedDatabase = async () => {
     }
 };
 
-seedDatabase();
+// Call seedDatabase and handle the promise properly
+(async () => {
+    try {
+        await seedDatabase();
+    } catch (error) {
+        console.error('Seeding failed:', error);
+        process.exit(1);
+    }
+})();
