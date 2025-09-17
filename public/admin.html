@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolByte - Administrator Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #2980b9;
+            --light-bg: rgba(30, 40, 56, 0.85);
+            --text-color: #ecf0f1;
+            --border-color: rgba(127, 140, 163, 0.3);
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            display: flex;
+            background: linear-gradient(135deg, #2c3e50, #1a2530);
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles - Combined Design */
+        .sidebar {
+            width: 250px;
+            background: rgba(30, 40, 56, 0.95);
+            backdrop-filter: blur(10px);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            overflow-y: auto;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .logo {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        .admin-info {
+            padding: 15px 20px;
+            margin: 15px;
+            background: rgba(25, 35, 50, 0.6);
+            border-radius: 10px;
+        }
+
+        .admin-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .admin-role {
+            font-size: 14px;
+            color: #bdc3c7;
+        }
+
+        .nav-links {
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(52, 152, 219, 0.2);
+            border-left-color: var(--primary-color);
+        }
+
+        .nav-item i {
+            margin-right: 10px;
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 15px 25px;
+            background: rgba(30, 40, 56, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        /* Dashboard Cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--light-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-card i {
+            font-size: 30px;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
+        .stat-card .label {
+            font-size: 14px;
+            color: #bdc3c7;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        /* Tables */
+        .table-container {
+            background: var(--light-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: rgba(25, 35, 50, 0.6);
+            font-weight: 600;
+            color: #bdc3c7;
+        }
+
+        tr:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-color);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(25, 35, 50, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-color);
+            font-size: 16px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+
+        .tab.active {
+            border-bottom: 3px solid var(--primary-color);
+            font-weight: 600;
+        }
+
+        /* Content Sections */
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 70px;
+            }
+
+            .logo h1, .nav-item span, .admin-info {
+                display: none;
+            }
+
+            .nav-item {
+                justify-content: center;
+                padding: 12px;
+            }
+
+            .nav-item i {
+                margin-right: 0;
+            }
+
+            .content {
+                margin-left: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="logo">
+            <h1>SchoolByte</h1>
+        </div>
+
+        <div class="admin-info">
+            <div class="admin-name">Administrator</div>
+            <div class="admin-role">System Admin</div>
+        </div>
+
+        <div class="nav-links">
+            <div class="nav-item active" data-target="dashboard">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </div>
+            <div class="nav-item" data-target="user-management">
+                <i class="fas fa-users"></i>
+                <span>User Management</span>
+            </div>
+            <div class="nav-item" data-target="content-management">
+                <i class="fas fa-file-alt"></i>
+                <span>Content Management</span>
+            </div>
+            <div class="nav-item" data-target="analytics">
+                <i class="fas fa-chart-line"></i>
+                <span>Analytics</span>
+            </div>
+            <div class="nav-item" data-target="curriculum">
+                <i class="fas fa-book"></i>
+                <span>Curriculum</span>
+            </div>
+            <div class="nav-item" data-target="settings">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <div class="header">
+            <h2 class="page-title">Administrator Dashboard</h2>
+            <div class="user-info">
+                <img src="https://ui-avatars.com/api/?name=Admin+User&background=0D8ABC&color=fff" alt="Admin User">
+                <span>Admin User</span>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="content-section active">
+            <h3>System Overview</h3>
+            <div class="card-grid">
+                <div class="card stat-card">
+                    <i class="fas fa-user-graduate"></i>
+                    <span class="label">Total Students</span>
+                    <span class="value">1,248</span>
+                </div>
+                <div class="card stat-card">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span class="label">Total Teachers</span>
+                    <span class="value">42</span>
+                </div>
+                <div class="card stat-card">
+                    <i class="fas fa-question-circle"></i>
+                    <span class="label">Quizzes Uploaded</span>
+                    <span class="value">156</span>
+                </div>
+                <div class="card stat-card">
+                    <i class="fas fa-sticky-note"></i>
+                    <span class="label">Notes Uploaded</span>
+                    <span class="value">327</span>
+                </div>
+                <div class="card stat-card">
+                    <i class="fas fa-clock"></i>
+                    <span class="label">Pending Approval</span>
+                    <span class="value">17</span>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h3>Pending Content for Approval</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Author</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Introduction to Algebra</td>
+                            <td>Lesson Notes</td>
+                            <td>Tr. Johnson</td>
+                            <td>Oct 12, 2023</td>
+                            <td>
+                                <button class="action-btn btn-success">Approve</button>
+                                <button class="action-btn btn-danger">Reject</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Physics Quiz: Motion</td>
+                            <td>Quiz</td>
+                            <td>Tr. Williams</td>
+                            <td>Oct 11, 2023</td>
+                            <td>
+                                <button class="action-btn btn-success">Approve</button>
+                                <button class="action-btn btn-danger">Reject</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>World History Chapter 5</td>
+                            <td>Lesson Notes</td>
+                            <td>Tr. Davis</td>
+                            <td>Oct 10, 2023</td>
+                            <td>
+                                <button class="action-btn btn-success">Approve</button>
+                                <button class="action-btn btn-danger">Reject</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-container">
+                <h3>Recent Activity</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Activity</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Tr. Amos</td>
+                            <td>Uploaded new quiz: Mathematics Grade 8</td>
+                            <td>10:30 AM</td>
+                        </tr>
+                        <tr>
+                            <td>Tr. Johnson</td>
+                            <td>Updated student grades</td>
+                            <td>09:45 AM</td>
+                        </tr>
+                        <tr>
+                            <td>System</td>
+                            <td>New student registration: Sarah Miller</td>
+                            <td>Yesterday</td>
+                        </tr>
+                        <tr>
+                            <td>Tr. Williams</td>
+                            <td>Requested password reset</td>
+                            <td>Oct 11, 2023</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- User Management Section -->
+        <div id="user-management" class="content-section">
+            <h3>User Management</h3>
+            <div class="tabs">
+                <div class="tab active" data-tab="teachers">Teachers</div>
+                <div class="tab" data-tab="students">Students</div>
+            </div>
+
+            <div class="tab-content">
+                <div id="teachers-tab" class="tab-pane active">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h4>Teacher List</h4>
+                            <input type="text" placeholder="Search teachers...">
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Subject</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Tr. Amos</td>
+                                    <td>Mathematics</td>
+                                    <td>amos@schoolbyte.edu</td>
+                                    <td>Active</td>
+                                    <td>
+                                        <button class="action-btn btn-primary">Reset Password</button>
+                                        <button class="action-btn">Edit</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Tr. Johnson</td>
+                                    <td>Science</td>
+                                    <td>johnson@schoolbyte.edu</td>
+                                    <td>Active</td>
+                                    <td>
+                                        <button class="action-btn btn-primary">Reset Password</button>
+                                        <button class="action-btn">Edit</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Tr. Williams</td>
+                                    <td>Physics</td>
+                                    <td>williams@schoolbyte.edu</td>
+                                    <td>Inactive</td>
+                                    <td>
+                                        <button class="action-btn btn-primary">Reset Password</button>
+                                        <button class="action-btn">Edit</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="students-tab" class="tab-pane" style="display: none;">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h4>Student List</h4>
+                            <input type="text" placeholder="Search students...">
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Class</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>John Smith</td>
+                                    <td>10-A</td>
+                                    <td>john.smith@schoolbyte.edu</td>
+                                    <td>Active</td>
+                                    <td>
+                                        <button class="action-btn btn-primary">Reset Password</button>
+                                        <button class="action-btn btn-danger">Delete</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Emma Johnson</td>
+                                    <td>9-B</td>
+                                    <td>emma.j@schoolbyte.edu</td>
+                                    <td>Active</td>
+                                    <td>
+                                        <button class="action-btn btn-primary">Reset Password</button>
+                                        <button class="action-btn btn-danger">Delete</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Michael Brown</td>
+                                    <td>11-C</td>
+                                    <td>m.brown@schoolbyte.edu</td>
+                                    <td>Inactive</td>
+                                    <td>
+                                        <button class="action-btn btn-primary">Reset Password</button>
+                                        <button class="action-btn btn-danger">Delete</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Management Section -->
+        <div id="content-management" class="content-section">
+            <h3>Content Management</h3>
+            <div class="tabs">
+                <div class="tab active" data-tab="approval">Approval Queue</div>
+                <div class="tab" data-tab="quizzes">Quiz Management</div>
+                <div class="tab" data-tab="notes">Notes Management</div>
+            </div>
+
+            <div class="tab-content">
+                <div id="approval-tab" class="tab-pane active">
+                    <div class="table-container">
+                        <h4>Content Pending Approval</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Type</th>
+                                    <th>Author</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Introduction to Algebra</td>
+                                    <td>Lesson Notes</td>
+                                    <td>Tr. Johnson</td>
+                                    <td>2023-10-15</td>
+                                    <td>
+                                        <button class="action-btn btn-success">Approve</button>
+                                        <button class="action-btn btn-danger">Reject</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>World History Quiz</td>
+                                    <td>Quiz</td>
+                                    <td>Tr. Historian</td>
+                                    <td>2023-10-14</td>
+                                    <td>
+                                        <button class="action-btn btn-success">Approve</button>
+                                        <button class="action-btn btn-danger">Reject</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="quizzes-tab" class="tab-pane" style="display: none;">
+                    <div class="table-container">
+                        <h4>Quiz Management</h4>
+                        <input type="text" placeholder="Search quizzes...">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Subject</th>
+                                    <th>Class</th>
+                                    <th>Questions</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Basic Algebra Test</td>
+                                    <td>Mathematics</td>
+                                    <td>10-A</td>
+                                    <td>15</td>
+                                    <td>
+                                        <button class="action-btn btn-primary">Edit</button>
+                                        <button class="action-btn btn-danger">Delete</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>World War II Quiz</td>
+                                    <td>History</td>
+                                    <td>9-B</td>
+                                    <td>10</td>
+                                    <td>
+                                        <button class="action-btn btn-primary">Edit</button>
+                                        <button class="action-btn btn-danger">Delete</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="notes-tab" class="tab-pane" style="display: none;">
+                    <div class="table-container">
+                        <h4>Notes Management</h4>
+                        <input type="text" placeholder="Search notes...">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Subject</th>
+                                    <th>Class</th>
+                                    <th>Pages</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Introduction to Calculus</td>
+                                    <td>Mathematics</td>
+                                    <td>11-C</td>
+                                    <td>12</td>
+                                    <td>
+                                        <button class="action-btn btn-primary">Edit</button>
+                                        <button class="action-btn btn-danger">Delete</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Chemical Reactions</td>
+                                    <td>Chemistry</td>
+                                    <td>10-A</td>
+                                    <td>8</td>
+                                    <td>
+                                        <button class="action-btn btn-primary">Edit</button>
+                                        <button class="action-btn btn-danger">Delete</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div id="analytics" class="content-section">
+            <h3>Analytics & Reporting</h3>
+            <div class="card-grid">
+                <div class="card stat-card">
+                    <i class="fas fa-trophy"></i>
+                    <span class="label">Top Student (Bytes)</span>
+                    <span class="value">Emma Johnson (5,240)</span>
+                </div>
+                <div class="card stat-card">
+                    <i class="fas fa-chart-pie"></i>
+                    <span class="label">Most Active Subject</span>
+                    <span class="value">Mathematics</span>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h4>Top Performing Students</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Name</th>
+                            <th>Class</th>
+                            <th>Bytes Earned</th>
+                            <th>Quizzes Completed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>Emma Johnson</td>
+                            <td>9-B</td>
+                            <td>5,240</td>
+                            <td>42</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>John Smith</td>
+                            <td>10-A</td>
+                            <td>4,870</td>
+                            <td>38</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>Sophia Williams</td>
+                            <td>11-C</td>
+                            <td>4,520</td>
+                            <td>35</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-container">
+                <h4>Content Engagement by Subject</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Notes Viewed</th>
+                            <th>Quizzes Taken</th>
+                            <th>Total Engagement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Mathematics</td>
+                            <td>1,245</td>
+                            <td>856</td>
+                            <td>2,101</td>
+                        </tr>
+                        <tr>
+                            <td>Science</td>
+                            <td>987</td>
+                            <td>654</td>
+                            <td>1,641</td>
+                        </tr>
+                        <tr>
+                            <td>History</td>
+                            <td>843</td>
+                            <td>521</td>
+                            <td>1,364</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Curriculum Management Section -->
+        <div id="curriculum" class="content-section">
+            <h3>Curriculum Management</h3>
+            <div class="card">
+                <h4>Create New Subject</h4>
+                <div class="form-group">
+                    <label for="subjectName">Subject Name</label>
+                    <input type="text" id="subjectName" placeholder="Enter subject name">
+                </div>
+                <div class="form-group">
+                    <label for="subjectTeacher">Assign Teacher</label>
+                    <select id="subjectTeacher">
+                        <option value="">Select a teacher</option>
+                        <option value="1">Tr. Amos</option>
+                        <option value="2">Tr. Johnson</option>
+                        <option value="3">Tr. Williams</option>
+                    </select>
+                </div>
+                <button class="action-btn btn-primary">Create Subject</button>
+            </div>
+
+            <div class="table-container">
+                <h4>Current Subjects</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Assigned Teacher</th>
+                            <th>Classes</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Mathematics</td>
+                            <td>Tr. Amos</td>
+                            <td>10-A, 9-B, 11-C</td>
+                            <td>Active</td>
+                            <td>
+                                <button class="action-btn btn-primary">Edit</button>
+                                <button class="action-btn btn-danger">Archive</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Science</td>
+                            <td>Tr. Johnson</td>
+                            <td>9-B, 11-C</td>
+                            <td>Active</td>
+                            <td>
+                                <button class="action-btn btn-primary">Edit</button>
+                                <button class="action-btn btn-danger">Archive</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Physics</td>
+                            <td>Tr. Williams</td>
+                            <td>10-A, 11-C</td>
+                            <td>Active</td>
+                            <td>
+                                <button class="action-btn btn-primary">Edit</button>
+                                <button class="action-btn btn-danger">Archive</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings" class="content-section">
+            <h3>System Settings</h3>
+            <div class="card">
+                <h4>General Settings</h4>
+                <div class="form-group">
+                    <label for="schoolName">School Name</label>
+                    <input type="text" id="schoolName" value="SchoolByte Academy">
+                </div>
+                <div class="form-group">
+                    <label for="adminEmail">Admin Email</label>
+                    <input type="email" id="adminEmail" value="admin@schoolbyte.edu">
+                </div>
+                <button class="action-btn btn-primary">Save Settings</button>
+            </div>
+
+            <div class="card">
+                <h4>Security Settings</h4>
+                <div class="form-group">
+                    <label for="passwordPolicy">Password Policy</label>
+                    <select id="passwordPolicy">
+                        <option value="standard">Standard (8+ characters)</option>
+                        <option value="strict">Strict (12+ characters with special chars)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" checked> Require 2FA for admins
+                    </label>
+                </div>
+                <button class="action-btn btn-primary">Update Security</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navigation functionality
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                // Remove active class from all items
+                document.querySelectorAll('.nav-item').forEach(i => {
+                    i.classList.remove('active');
+                });
+
+                // Add active class to clicked item
+                this.classList.add('active');
+
+                // Hide all content sections
+                document.querySelectorAll('.content-section').forEach(section => {
+                    section.classList.remove('active');
+                });
+
+                // Show the targeted content section
+                const targetId = this.getAttribute('data-target');
+                document.getElementById(targetId).classList.add('active');
+            });
+        });
+
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabContainer = this.closest('.tabs');
+                const tabContent = this.closest('.tab-content') || this.parentElement.nextElementSibling;
+                const targetTab = this.getAttribute('data-tab');
+
+                // Remove active class from all tabs in this container
+                tabContainer.querySelectorAll('.tab').forEach(t => {
+                    t.classList.remove('active');
+                });
+
+                // Add active class to clicked tab
+                this.classList.add('active');
+
+                // Hide all tab panes in this container
+                tabContent.querySelectorAll('.tab-pane').forEach(pane => {
+                    pane.style.display = 'none';
+                });
+
+                // Show the targeted tab pane
+                document.getElementById(`${targetTab}-tab`).style.display = 'block';
+            });
+        });
+
+        // Initialize the first tab in each tab container
+        document.querySelectorAll('.tabs').forEach(tabContainer => {
+            const firstTab = tabContainer.querySelector('.tab');
+            if (firstTab) {
+                firstTab.click();
+            }
+        });
+    </script>
+</body>
+</html>
+
+
