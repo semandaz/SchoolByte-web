@@ -215,7 +215,58 @@
     </div>
 
     <script>
+        // Check authentication on page load
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Please log in to access the upload page.');
+            window.location.href = 'teacherlogin.html';
+        }
+
+        // Current User Info will be fetched from backend
+        let currentUser = {
+            name: "Teacher",
+            role: "Teacher",
+            subject: "Subject"
+        };
+
+        // Fetch teacher data
+        async function fetchTeacherData() {
+            try {
+                const response = await fetch('/teacher/dashboard', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        alert('Session expired. Please log in again.');
+                        localStorage.removeItem('token');
+                        window.location.href = 'teacherlogin.html';
+                        return;
+                    }
+                    throw new Error('Failed to fetch teacher data');
+                }
+
+                const data = await response.json();
+                currentUser.name = data.teacher.teacherName;
+
+                // Update any displayed teacher name elements if they exist
+                const teacherNameElements = document.querySelectorAll('[data-teacher-name]');
+                teacherNameElements.forEach(element => {
+                    element.textContent = data.teacher.teacherName;
+                });
+
+            } catch (error) {
+                console.error('Error fetching teacher data:', error);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Fetch teacher data on page load
+            fetchTeacherData();
+
             // --- DOM Element References ---
             const uploadForm = document.getElementById('uploadForm');
             const messageBox = document.getElementById('messageBox');
@@ -364,20 +415,20 @@
             const isTitleValid = workFileTitle.value.trim() !== '' && workFileTitle.value.trim().length >= 3;
             const isSubjectValid = workFileSubject.value !== '';
             const isClassValid = workFileIntendedClass.value !== '';
-            
+
             let isPdfValid = false;
             if (workFilePdf.files.length > 0) {
                 const file = workFilePdf.files[0];
                 isPdfValid = file.type === 'application/pdf' && file.size <= 20 * 1024 * 1024;
             }
-            
+
             const costValue = parseInt(workFileCostBytes.value);
             const isCostValid = !isNaN(costValue) && costValue >= 5 && costValue <= 20;
 
             const questionItems = document.querySelectorAll('.question-item');
             const hasFiveQuestions = questionItems.length === 5;
             let allQuestionsValid = hasFiveQuestions;
-            
+
             if (hasFiveQuestions) {
                 questionItems.forEach(item => {
                     const questionText = item.querySelector('.question-text').value.trim();
@@ -391,7 +442,7 @@
             }
 
             const isFormValid = isTitleValid && isSubjectValid && isClassValid && isPdfValid && isCostValid && allQuestionsValid;
-            
+
             submitBtn.disabled = !isFormValid;
             addQuestionBtn.disabled = questionItems.length >= 5;
 
@@ -570,9 +621,9 @@
         async function uploadContent() {
             const submitBtn = document.getElementById('submitBtn');
             const originalText = submitBtn.innerHTML;
-            
+
             console.log('Content upload initiated.');
-            
+
             try {
                 // Disable submit button and show loading
                 submitBtn.disabled = true;
@@ -602,7 +653,7 @@
 
                 // Get form data
                 const formData = new FormData();
-                
+
                 // Add work file data
                 formData.append('workFilePdf', file);
                 formData.append('workFileTitle', document.getElementById('workFileTitle').value.trim());
@@ -666,13 +717,13 @@
                 });
 
                 console.log('Server response received:', response.status, response.statusText);
-                
+
                 const result = await response.json();
                 console.log('Server response data:', result);
 
                 if (!response.ok) {
                     console.error('Server responded with error:', result);
-                    
+
                     // Handle specific error cases
                     if (response.status === 401 || response.status === 403) {
                         throw new Error('Authentication failed. Please log in again.');
@@ -686,7 +737,7 @@
                 // Success
                 console.log('Upload successful!');
                 showMessage('Content uploaded successfully! Redirecting to dashboard...', 'success');
-                
+
                 // Reset form
                 uploadForm.reset();
                 document.getElementById('fileName').textContent = '';

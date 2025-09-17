@@ -529,11 +529,11 @@
             
             <!-- Welcome Message -->
             <div class="welcome-container">
-                <div class="welcome-message active" id="welcome-1">Welcome, Tr. Amos. Ready to inspire today?</div>
-                <div class="welcome-message" id="welcome-2">Good morning, Tr. Amos. Let's make minds shine.</div>
-                <div class="welcome-message" id="welcome-3">Hello, Tr. Amos. Your class is ready for brilliance.</div>
-                <div class="welcome-message" id="welcome-4">Welcome back, Tr. Amos. Time to spark curiosity!</div>
-                <div class="welcome-message" id="welcome-5">Good afternoon, Tr. Amos. The future starts with you.</div>
+                <div class="welcome-message active" id="welcome-1">Welcome, <span id="teacherNameSpan">Teacher</span>. Ready to inspire today?</div>
+                <div class="welcome-message" id="welcome-2">Good morning, <span id="teacherNameSpan2">Teacher</span>. Let's make minds shine.</div>
+                <div class="welcome-message" id="welcome-3">Hello, <span id="teacherNameSpan3">Teacher</span>. Your class is ready for brilliance.</div>
+                <div class="welcome-message" id="welcome-4">Welcome back, <span id="teacherNameSpan4">Teacher</span>. Time to spark curiosity!</div>
+                <div class="welcome-message" id="welcome-5">Good afternoon, <span id="teacherNameSpan5">Teacher</span>. The future starts with you.</div>
             </div>
         </header>
         
@@ -629,6 +629,81 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication and fetch teacher data
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please log in to access the teacher dashboard.');
+                window.location.href = 'teacherlogin.html';
+                return;
+            }
+
+            // Fetch teacher dashboard data
+            async function fetchTeacherData() {
+                try {
+                    const response = await fetch('/teacher/dashboard', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 401 || response.status === 403) {
+                            alert('Session expired. Please log in again.');
+                            localStorage.removeItem('token');
+                            window.location.href = 'teacherlogin.html';
+                            return;
+                        }
+                        throw new Error('Failed to fetch teacher data');
+                    }
+
+                    const data = await response.json();
+                    const teacherName = data.teacher.teacherName;
+                    
+                    // Update all teacher name spans
+                    const teacherNameSpans = [
+                        'teacherNameSpan', 'teacherNameSpan2', 'teacherNameSpan3', 
+                        'teacherNameSpan4', 'teacherNameSpan5'
+                    ];
+                    
+                    teacherNameSpans.forEach(spanId => {
+                        const span = document.getElementById(spanId);
+                        if (span) {
+                            span.textContent = teacherName;
+                        }
+                    });
+
+                    // Update welcome messages with actual teacher name
+                    const messages = [
+                        `Welcome, ${teacherName}. Ready to inspire today?`,
+                        `Good morning, ${teacherName}. Let's make minds shine.`,
+                        `Hello, ${teacherName}. Your class is ready for brilliance.`,
+                        `Welcome back, ${teacherName}. Time to spark curiosity!`,
+                        `Good afternoon, ${teacherName}. The future starts with you.`,
+                        `Great to see you, ${teacherName}. Let's shape tomorrow.`,
+                        `Good day, ${teacherName}. Every lesson counts — let's begin.`,
+                        `Welcome, ${teacherName}. Let's light up learning today.`,
+                        `Hello again, ${teacherName}. The leaders of tomorrow await you.`,
+                        `Welcome aboard, ${teacherName}. Let's turn potential into achievement.`
+                    ];
+
+                    // Update welcome messages
+                    const welcomeMessages = document.querySelectorAll('.welcome-message');
+                    welcomeMessages.forEach((msg, index) => {
+                        if (index < messages.length) {
+                            msg.textContent = messages[index];
+                        }
+                    });
+
+                } catch (error) {
+                    console.error('Error fetching teacher data:', error);
+                    alert('Error loading dashboard. Please try refreshing the page.');
+                }
+            }
+
+            // Fetch teacher data on page load
+            fetchTeacherData();
+
             // Update date and time
             function updateDateTime() {
                 const now = new Date();
@@ -651,20 +726,6 @@
             updateDateTime();
             setInterval(updateDateTime, 60000);
             
-            // Welcome message rotation
-            const messages = [
-                "Welcome, Tr. Amos. Ready to inspire today?",
-                "Good morning, Tr. Amos. Let's make minds shine.",
-                "Hello, Tr. Amos. Your class is ready for brilliance.",
-                "Welcome back, Tr. Amos. Time to spark curiosity!",
-                "Good afternoon, Tr. Amos. The future starts with you.",
-                "Great to see you, Tr. Amos. Let's shape tomorrow.",
-                "Good day, Tr. Amos. Every lesson counts — let's begin.",
-                "Welcome, Tr. Amos. Let's light up learning today.",
-                "Hello again, Tr. Amos. The leaders of tomorrow await you.",
-                "Welcome aboard, Tr. Amos. Let's turn potential into achievement."
-            ];
-            
             let currentMessage = 0;
             const welcomeMessages = document.querySelectorAll('.welcome-message');
             
@@ -679,21 +740,15 @@
                 welcomeMessages[currentMessage].classList.add('active');
             }
             
-            // Set up initial messages
-            welcomeMessages.forEach((msg, index) => {
-                if (index < messages.length) {
-                    msg.textContent = messages[index];
-                }
-            });
-            
             // Rotate every 10 seconds
             setInterval(rotateWelcomeMessage, 10000);
             
             // Sign out functionality
             document.querySelector('.sign-out-btn').addEventListener('click', function() {
                 if(confirm('Are you sure you want to sign out?')) {
+                    localStorage.removeItem('token');
                     alert('Signing out... Redirecting to login page.');
-                    window.location.href = 'login.html';
+                    window.location.href = 'teacherlogin.html';
                 }
             });
             
