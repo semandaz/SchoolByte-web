@@ -895,13 +895,13 @@ const authenticateTeacherToken = (req, res, next) => {
             });
             return res.status(403).json({ message: 'Access Denied: Invalid or expired teacher token.' });
         }
-        
+
         // Ensure the token is for a teacher
         if (decoded.role !== 'teacher') {
             console.error('Token role mismatch:', decoded.role);
             return res.status(403).json({ message: 'Access Denied: Teacher access required.' });
         }
-        
+
         req.teacher = decoded;
         next();
     });
@@ -1062,7 +1062,33 @@ async function generateStoryNode(basePrompt, currentGameState, studentClass, pre
 
 // --- API Endpoints ---
 
-// Initialize subjects collection on startup
+// Initialize admin account on startup
+async function initializeAdmin() {
+    try {
+        const adminEmail = 'zackian1122@gmail.com';
+        const existingAdmin = await Administrator.findOne({ email: adminEmail });
+
+        if (!existingAdmin) {
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash('001@simax001@simax', saltRounds);
+
+            const newAdmin = new Administrator({
+                adminName: 'Administrator',
+                email: adminEmail,
+                password: hashedPassword
+            });
+
+            await newAdmin.save();
+            console.log('Initial administrator account created successfully.');
+        } else {
+            console.log('Administrator account already exists.');
+        }
+    } catch (error) {
+        console.error('Error creating initial administrator:', error);
+    }
+}
+
+// Initialize subjects on startup
 async function initializeSubjects() {
     const subjects = [
         { name: "Mathematics", isCompulsory: true, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] },
@@ -1094,8 +1120,9 @@ async function initializeSubjects() {
     }
 }
 
-// Initialize subjects on startup
+// Initialize subjects and admin on startup
 initializeSubjects().catch(console.error);
+initializeAdmin().catch(console.error);
 
 // Email verification endpoints (existing)
 app.post('/send-verification-code', [
@@ -2804,15 +2831,15 @@ module.exports = {
 app.get('/student/activities', authenticateToken, async (req, res) => {
     try {
         const { subject, intendedClass } = req.query;
-        
+
         let query = {};
         if (subject) query.subject = subject;
         if (intendedClass) query.intendedClass = intendedClass;
-        
+
         const activities = await Activity.find(query)
             .populate('associatedWorkFile', 'title fileUrl costBytes')
             .sort({ createdAt: -1 });
-        
+
         res.status(200).json({
             message: 'Activities fetched successfully.',
             activities: activities.map(activity => ({
@@ -2838,14 +2865,14 @@ app.get('/student/activities', authenticateToken, async (req, res) => {
 app.get('/student/activities/:activityId', authenticateToken, async (req, res) => {
     try {
         const { activityId } = req.params;
-        
+
         const activity = await Activity.findById(activityId)
             .populate('associatedWorkFile', 'title fileUrl costBytes');
-        
+
         if (!activity) {
             return res.status(404).json({ message: 'Activity not found.' });
         }
-        
+
         res.status(200).json({
             message: 'Activity fetched successfully.',
             activity: {
@@ -2866,4 +2893,3 @@ app.get('/student/activities/:activityId', authenticateToken, async (req, res) =
         res.status(500).json({ message: 'Failed to fetch activity.', error: error.message });
     }
 });
-

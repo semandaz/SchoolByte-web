@@ -637,6 +637,15 @@
                 let email = emailInput.value.trim();
                 const password = passwordInput.value;
 
+                // Check if this is an admin login attempt
+                const adminPrefix = 'admin: ';
+                let isAdminLogin = false;
+
+                if (email.toLowerCase().startsWith(adminPrefix.toLowerCase())) {
+                    isAdminLogin = true;
+                    // Don't remove the prefix here - let the server handle it
+                }
+
                 // Client-side validation
                 let hasError = false;
 
@@ -645,7 +654,10 @@
                     hasError = true;
                 }
 
-                if (!email || !validateEmail(email)) {
+                if (!email) {
+                    showError(emailError, 'Please enter a valid email address.');
+                    hasError = true;
+                } else if (!isAdminLogin && !validateEmail(email)) {
                     showError(emailError, 'Please enter a valid school email address.');
                     hasError = true;
                 }
@@ -655,48 +667,28 @@
                     hasError = true;
                 }
 
-                if (hasError) return;
-
-                // Determine the redirection URL based on email prefix
-                let redirectUrl = 'teacherdashboard.html';
-                const adminPrefix = 'Admin: ';
-                let isAdmin = false;
-
-                if (email.startsWith(adminPrefix)) {
-                    email = email.substring(adminPrefix.length).trim();
-                    redirectUrl = 'admin-2fa-verify.html';
-                    isAdmin = true;
+                // For admin login, validate the username
+                if (isAdminLogin && name.toLowerCase() !== 'administrator') {
+                    showError(nameError, 'For admin login, username must be "administrator".');
+                    hasError = true;
                 }
+
+                if (hasError) return;
 
                 // Show loading state
                 loginBtn.disabled = true;
                 loginBtn.innerHTML = '<span class="loading"></span> Authenticating...';
 
                 try {
-                    let response;
-                    let requestBody;
-
-                    if (isAdmin) {
-                        // Admin login - first step (initiate 2FA)
-                        requestBody = { email, password };
-                        response = await fetch('/login-admin', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(requestBody),
-                        });
-                    } else {
-                        // Teacher login - include name in request
-                        requestBody = { teacherName: name, email, password };
-                        response = await fetch('/login-teacher', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(requestBody),
-                        });
-                    }
+                    // All login attempts go through the same endpoint now
+                    const requestBody = { teacherName: name, email, password };
+                    const response = await fetch('/login-teacher', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestBody),
+                    });
 
                     const data = await response.json();
 
@@ -704,16 +696,16 @@
                         throw new Error(data.message || 'Login failed');
                     }
 
-                    if (isAdmin) {
+                    if (data.requiresTwoFA) {
                         // Admin 2FA initiated - redirect to verification page
-                        localStorage.setItem('adminEmail', email);
+                        localStorage.setItem('adminEmail', data.adminEmail);
                         showMessageBox('2FA code sent to your email. Redirecting to verification...');
                         setTimeout(() => {
                             window.location.href = 'admin-2fa-verify.html';
                         }, 2000);
                     } else {
-                        // Check if teacher needs to set initial password
-                        if (!data.teacher.isPasswordSet) {
+                        // Teacher login successful
+                        if (data.teacher && !data.teacher.isPasswordSet) {
                             showMessageBox('Please set your initial password. Redirecting...');
                             setTimeout(() => {
                                 window.location.href = 'teacher-set-password.html';
@@ -721,13 +713,12 @@
                             return;
                         }
 
-                        // Teacher login successful
                         localStorage.setItem('token', data.token);
                         localStorage.setItem('userData', JSON.stringify(data.teacher));
 
                         showMessageBox('Login successful! Redirecting to dashboard...');
                         setTimeout(() => {
-                            window.location.href = redirectUrl;
+                            window.location.href = 'teacherdashboard.html';
                         }, 1500);
                     }
 

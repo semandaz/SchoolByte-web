@@ -454,26 +454,26 @@
             .dashboard-header {
                 padding: 20px;
             }
-            
+
             .header-content {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 20px;
             }
-            
+
             .header-right {
                 width: 100%;
                 justify-content: space-between;
             }
-            
+
             .datetime-container {
                 text-align: left;
             }
-            
+
             .welcome-message {
                 font-size: 18px;
             }
-            
+
             .cards-section {
                 grid-template-columns: 1fr;
             }
@@ -483,15 +483,15 @@
             .container {
                 padding: 10px;
             }
-            
+
             .card {
                 padding: 20px;
             }
-            
+
             .welcome-container {
                 height: 70px;
             }
-            
+
             .dashboard-title {
                 font-size: 22px;
             }
@@ -509,24 +509,24 @@
                     </div>
                     <div class="logo-text">SchoolByte</div>
                 </div>
-                
+
                 <div class="header-right">
                     <div class="datetime-container">
                         <div class="current-time" id="currentTime">10:30 AM</div>
                         <div class="current-date" id="currentDate">Monday, September 12, 2023</div>
                     </div>
-                    
+
                     <div class="notification-bell">
                         <i class="fas fa-bell"></i>
                         <span class="notification-badge">3</span>
                     </div>
-                    
+
                     <button class="sign-out-btn">
                         <i class="fas fa-sign-out-alt"></i> Sign Out
                     </button>
                 </div>
             </div>
-            
+
             <!-- Welcome Message -->
             <div class="welcome-container">
                 <div class="welcome-message active" id="welcome-1">Welcome, <span id="teacherNameSpan">Teacher</span>. Ready to inspire today?</div>
@@ -536,17 +536,17 @@
                 <div class="welcome-message" id="welcome-5">Good afternoon, <span id="teacherNameSpan5">Teacher</span>. The future starts with you.</div>
             </div>
         </header>
-        
+
         <!-- Cards Section -->
         <h2 class="dashboard-title">Teaching Tools & Resources</h2>
-        
+
         <div class="cards-section">
             <!-- Upload Notes Card -->
             <div class="card">
                 <div class="card-icon">
                     <i class="fas fa-book"></i>
                 </div>
-                
+
                 <div class="card-header">
                     <h2 class="card-title">Upload Notes & Activities</h2>
                     <div class="info-icon">i</div>
@@ -554,7 +554,7 @@
                         Give your students trusted notes to read. Upload documents, presentations, and other learning materials in multiple formats to enhance their understanding.
                     </div>
                 </div>
-                
+
                 <div class="card-content">
                     <p class="card-description">Provide comprehensive notes and learning activities for your students to enhance their understanding of course concepts.</p>
                     <a href="teacher-upload-content.html" class="card-button">
@@ -562,13 +562,13 @@
                     </a>
                 </div>
             </div>
-            
+
             <!-- Upload Quizzes Card -->
             <div class="card">
                 <div class="card-icon">
                     <i class="fas fa-question-circle"></i>
                 </div>
-                
+
                 <div class="card-header">
                     <h2 class="card-title">Upload Quizzes</h2>
                     <div class="info-icon">i</div>
@@ -576,7 +576,7 @@
                         Sometimes notes aren't enough. Let students test their knowledge with our automarking system that provides instant feedback and helps identify learning gaps.
                     </div>
                 </div>
-                
+
                 <div class="card-content">
                     <p class="card-description">Create and assign quizzes to evaluate student understanding with our automated grading system.</p>
                     <a href="upload-quizzes.html" class="card-button">
@@ -584,13 +584,13 @@
                     </a>
                 </div>
             </div>
-            
+
             <!-- Upload Podcast Card -->
             <div class="card">
                 <div class="card-icon">
                     <i class="fas fa-podcast"></i>
                 </div>
-                
+
                 <div class="card-header">
                     <h2 class="card-title">Upload Podcasts</h2>
                     <div class="info-icon">i</div>
@@ -599,7 +599,7 @@
                     </div>
                     <div class="coming-soon">Coming Soon</div>
                 </div>
-                
+
                 <div class="card-content">
                     <p class="card-description">Engage your students with audio lessons and educational podcasts for flexible learning.</p>
                     <a href="#" class="card-button disabled">
@@ -608,13 +608,13 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Resource Counter -->
         <div class="resource-counter">
             <i class="fas fa-book resource-icon"></i>
             <span id="resourceCount">27</span> Teaching Resources Available
         </div>
-        
+
         <!-- Dashboard Footer -->
         <footer class="dashboard-footer">
             <div>SchoolByte Educator Portal - Secure Teaching Environment</div>
@@ -659,13 +659,13 @@
 
                     const data = await response.json();
                     const teacherName = data.teacher.teacherName;
-                    
+
                     // Update all teacher name spans
                     const teacherNameSpans = [
                         'teacherNameSpan', 'teacherNameSpan2', 'teacherNameSpan3', 
                         'teacherNameSpan4', 'teacherNameSpan5'
                     ];
-                    
+
                     teacherNameSpans.forEach(spanId => {
                         const span = document.getElementById(spanId);
                         if (span) {
@@ -707,7 +707,7 @@
             // Update date and time
             function updateDateTime() {
                 const now = new Date();
-                
+
                 // Format time (HH:MM AM/PM)
                 let hours = now.getHours();
                 let minutes = now.getMinutes();
@@ -716,33 +716,33 @@
                 hours = hours ? hours : 12; // Handle midnight
                 minutes = minutes < 10 ? '0' + minutes : minutes;
                 document.getElementById('currentTime').textContent = `${hours}:${minutes} ${ampm}`;
-                
+
                 // Format date (Weekday, Month Day, Year)
                 const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
                 document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
             }
-            
+
             // Update immediately and set interval
             updateDateTime();
             setInterval(updateDateTime, 60000);
-            
+
             let currentMessage = 0;
             const welcomeMessages = document.querySelectorAll('.welcome-message');
-            
+
             function rotateWelcomeMessage() {
                 // Remove active class from current message
                 welcomeMessages.forEach(msg => msg.classList.remove('active'));
-                
+
                 // Calculate next index
                 currentMessage = (currentMessage + 1) % welcomeMessages.length;
-                
+
                 // Add active class to next message
                 welcomeMessages[currentMessage].classList.add('active');
             }
-            
+
             // Rotate every 10 seconds
             setInterval(rotateWelcomeMessage, 10000);
-            
+
             // Sign out functionality
             document.querySelector('.sign-out-btn').addEventListener('click', function() {
                 if(confirm('Are you sure you want to sign out?')) {
@@ -751,12 +751,12 @@
                     window.location.href = 'teacherlogin.html';
                 }
             });
-            
+
             // Notification bell functionality
             document.querySelector('.notification-bell').addEventListener('click', function() {
                 alert('You have 3 notifications:\n- New student submission\n- Parent meeting request\n- School announcement');
             });
-            
+
             // Simulate resource count (would come from backend in real app)
             document.getElementById('resourceCount').textContent = Math.floor(Math.random() * 50) + 20;
         });
