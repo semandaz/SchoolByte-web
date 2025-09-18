@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -283,6 +284,81 @@
             display: block;
         }
 
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #bdc3c7;
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .success-message {
+            background: rgba(46, 204, 113, 0.1);
+            color: #2ecc71;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #2ecc71;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background: var(--light-bg);
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #fff;
+        }
+
+        .logout-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .logout-btn:hover {
+            background-color: #c0392b;
+        }
+
         /* Responsive */
         @media (max-width: 992px) {
             .sidebar {
@@ -316,8 +392,8 @@
         </div>
 
         <div class="admin-info">
-            <div class="admin-name">Administrator</div>
-            <div class="admin-role">System Admin</div>
+            <div class="admin-name" id="adminName">Loading...</div>
+            <div class="admin-role">System Administrator</div>
         </div>
 
         <div class="nav-links">
@@ -337,10 +413,6 @@
                 <i class="fas fa-chart-line"></i>
                 <span>Analytics</span>
             </div>
-            <div class="nav-item" data-target="curriculum">
-                <i class="fas fa-book"></i>
-                <span>Curriculum</span>
-            </div>
             <div class="nav-item" data-target="settings">
                 <i class="fas fa-cog"></i>
                 <span>Settings</span>
@@ -353,8 +425,8 @@
         <div class="header">
             <h2 class="page-title">Administrator Dashboard</h2>
             <div class="user-info">
-                <img src="https://ui-avatars.com/api/?name=Admin+User&background=0D8ABC&color=fff" alt="Admin User">
-                <span>Admin User</span>
+                <img id="adminAvatar" src="https://ui-avatars.com/api/?name=Admin+User&background=0D8ABC&color=fff" alt="Admin User">
+                <span id="adminDisplayName">Loading...</span>
             </div>
         </div>
 
@@ -365,80 +437,29 @@
                 <div class="card stat-card">
                     <i class="fas fa-user-graduate"></i>
                     <span class="label">Total Students</span>
-                    <span class="value">1,248</span>
+                    <span class="value" id="totalStudents">Loading...</span>
                 </div>
                 <div class="card stat-card">
                     <i class="fas fa-chalkboard-teacher"></i>
                     <span class="label">Total Teachers</span>
-                    <span class="value">42</span>
+                    <span class="value" id="totalTeachers">Loading...</span>
                 </div>
                 <div class="card stat-card">
                     <i class="fas fa-question-circle"></i>
-                    <span class="label">Quizzes Uploaded</span>
-                    <span class="value">156</span>
+                    <span class="label">Quiz Questions</span>
+                    <span class="value" id="totalQuizzes">Loading...</span>
                 </div>
                 <div class="card stat-card">
-                    <i class="fas fa-sticky-note"></i>
-                    <span class="label">Notes Uploaded</span>
-                    <span class="value">327</span>
+                    <i class="fas fa-file-alt"></i>
+                    <span class="label">Work Files</span>
+                    <span class="value" id="totalWorkFiles">Loading...</span>
                 </div>
-                <div class="card stat-card">
-                    <i class="fas fa-clock"></i>
-                    <span class="label">Pending Approval</span>
-                    <span class="value">17</span>
-                </div>
-            </div>
-
-            <div class="table-container">
-                <h3>Pending Content for Approval</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>Type</th>
-                            <th>Author</th>
-                            <th>Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Introduction to Algebra</td>
-                            <td>Lesson Notes</td>
-                            <td>Tr. Johnson</td>
-                            <td>Oct 12, 2023</td>
-                            <td>
-                                <button class="action-btn btn-success">Approve</button>
-                                <button class="action-btn btn-danger">Reject</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Physics Quiz: Motion</td>
-                            <td>Quiz</td>
-                            <td>Tr. Williams</td>
-                            <td>Oct 11, 2023</td>
-                            <td>
-                                <button class="action-btn btn-success">Approve</button>
-                                <button class="action-btn btn-danger">Reject</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>World History Chapter 5</td>
-                            <td>Lesson Notes</td>
-                            <td>Tr. Davis</td>
-                            <td>Oct 10, 2023</td>
-                            <td>
-                                <button class="action-btn btn-success">Approve</button>
-                                <button class="action-btn btn-danger">Reject</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
             </div>
 
             <div class="table-container">
                 <h3>Recent Activity</h3>
-                <table>
+                <div id="recentActivityLoading" class="loading">Loading recent activity...</div>
+                <table id="recentActivityTable" style="display: none;">
                     <thead>
                         <tr>
                             <th>User</th>
@@ -446,27 +467,7 @@
                             <th>Time</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>Tr. Amos</td>
-                            <td>Uploaded new quiz: Mathematics Grade 8</td>
-                            <td>10:30 AM</td>
-                        </tr>
-                        <tr>
-                            <td>Tr. Johnson</td>
-                            <td>Updated student grades</td>
-                            <td>09:45 AM</td>
-                        </tr>
-                        <tr>
-                            <td>System</td>
-                            <td>New student registration: Sarah Miller</td>
-                            <td>Yesterday</td>
-                        </tr>
-                        <tr>
-                            <td>Tr. Williams</td>
-                            <td>Requested password reset</td>
-                            <td>Oct 11, 2023</td>
-                        </tr>
+                    <tbody id="recentActivityBody">
                     </tbody>
                 </table>
             </div>
@@ -483,51 +484,24 @@
             <div class="tab-content">
                 <div id="teachers-tab" class="tab-pane active">
                     <div class="table-container">
-                        <div class="table-header">
-                            <h4>Teacher List</h4>
-                            <input type="text" placeholder="Search teachers...">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h4>Teacher Management</h4>
+                            <button class="action-btn btn-primary" onclick="showCreateTeacherModal()">
+                                <i class="fas fa-plus"></i> Create Teacher
+                            </button>
                         </div>
-                        <table>
+                        <div id="teachersLoading" class="loading">Loading teachers...</div>
+                        <table id="teachersTable" style="display: none;">
                             <thead>
                                 <tr>
                                     <th>Name</th>
-                                    <th>Subject</th>
                                     <th>Email</th>
                                     <th>Status</th>
+                                    <th>Created</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Tr. Amos</td>
-                                    <td>Mathematics</td>
-                                    <td>amos@schoolbyte.edu</td>
-                                    <td>Active</td>
-                                    <td>
-                                        <button class="action-btn btn-primary">Reset Password</button>
-                                        <button class="action-btn">Edit</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Tr. Johnson</td>
-                                    <td>Science</td>
-                                    <td>johnson@schoolbyte.edu</td>
-                                    <td>Active</td>
-                                    <td>
-                                        <button class="action-btn btn-primary">Reset Password</button>
-                                        <button class="action-btn">Edit</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Tr. Williams</td>
-                                    <td>Physics</td>
-                                    <td>williams@schoolbyte.edu</td>
-                                    <td>Inactive</td>
-                                    <td>
-                                        <button class="action-btn btn-primary">Reset Password</button>
-                                        <button class="action-btn">Edit</button>
-                                    </td>
-                                </tr>
+                            <tbody id="teachersBody">
                             </tbody>
                         </table>
                     </div>
@@ -535,51 +509,20 @@
 
                 <div id="students-tab" class="tab-pane" style="display: none;">
                     <div class="table-container">
-                        <div class="table-header">
-                            <h4>Student List</h4>
-                            <input type="text" placeholder="Search students...">
-                        </div>
-                        <table>
+                        <h4>Student Management</h4>
+                        <div id="studentsLoading" class="loading">Loading students...</div>
+                        <table id="studentsTable" style="display: none;">
                             <thead>
                                 <tr>
                                     <th>Name</th>
                                     <th>Class</th>
                                     <th>Email</th>
+                                    <th>Bytes</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td>John Smith</td>
-                                    <td>10-A</td>
-                                    <td>john.smith@schoolbyte.edu</td>
-                                    <td>Active</td>
-                                    <td>
-                                        <button class="action-btn btn-primary">Reset Password</button>
-                                        <button class="action-btn btn-danger">Delete</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Emma Johnson</td>
-                                    <td>9-B</td>
-                                    <td>emma.j@schoolbyte.edu</td>
-                                    <td>Active</td>
-                                    <td>
-                                        <button class="action-btn btn-primary">Reset Password</button>
-                                        <button class="action-btn btn-danger">Delete</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Michael Brown</td>
-                                    <td>11-C</td>
-                                    <td>m.brown@schoolbyte.edu</td>
-                                    <td>Inactive</td>
-                                    <td>
-                                        <button class="action-btn btn-primary">Reset Password</button>
-                                        <button class="action-btn btn-danger">Delete</button>
-                                    </td>
-                                </tr>
+                            <tbody id="studentsBody">
                             </tbody>
                         </table>
                     </div>
@@ -591,126 +534,50 @@
         <div id="content-management" class="content-section">
             <h3>Content Management</h3>
             <div class="tabs">
-                <div class="tab active" data-tab="approval">Approval Queue</div>
-                <div class="tab" data-tab="quizzes">Quiz Management</div>
-                <div class="tab" data-tab="notes">Notes Management</div>
+                <div class="tab active" data-tab="quizzes">Quiz Questions</div>
+                <div class="tab" data-tab="workfiles">Work Files</div>
             </div>
 
             <div class="tab-content">
-                <div id="approval-tab" class="tab-pane active">
+                <div id="quizzes-tab" class="tab-pane active">
                     <div class="table-container">
-                        <h4>Content Pending Approval</h4>
-                        <table>
+                        <h4>Quiz Questions Management</h4>
+                        <div id="quizzesLoading" class="loading">Loading quiz questions...</div>
+                        <table id="quizzesTable" style="display: none;">
                             <thead>
                                 <tr>
-                                    <th>Title</th>
+                                    <th>Question</th>
+                                    <th>Subject</th>
+                                    <th>Class</th>
                                     <th>Type</th>
                                     <th>Author</th>
-                                    <th>Date</th>
+                                    <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Introduction to Algebra</td>
-                                    <td>Lesson Notes</td>
-                                    <td>Tr. Johnson</td>
-                                    <td>2023-10-15</td>
-                                    <td>
-                                        <button class="action-btn btn-success">Approve</button>
-                                        <button class="action-btn btn-danger">Reject</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>World History Quiz</td>
-                                    <td>Quiz</td>
-                                    <td>Tr. Historian</td>
-                                    <td>2023-10-14</td>
-                                    <td>
-                                        <button class="action-btn btn-success">Approve</button>
-                                        <button class="action-btn btn-danger">Reject</button>
-                                    </td>
-                                </tr>
+                            <tbody id="quizzesBody">
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <div id="quizzes-tab" class="tab-pane" style="display: none;">
+                <div id="workfiles-tab" class="tab-pane" style="display: none;">
                     <div class="table-container">
-                        <h4>Quiz Management</h4>
-                        <input type="text" placeholder="Search quizzes...">
-                        <table>
+                        <h4>Work Files Management</h4>
+                        <div id="workfilesLoading" class="loading">Loading work files...</div>
+                        <table id="workfilesTable" style="display: none;">
                             <thead>
                                 <tr>
                                     <th>Title</th>
                                     <th>Subject</th>
                                     <th>Class</th>
-                                    <th>Questions</th>
+                                    <th>Cost (Bytes)</th>
+                                    <th>Author</th>
+                                    <th>Created</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Basic Algebra Test</td>
-                                    <td>Mathematics</td>
-                                    <td>10-A</td>
-                                    <td>15</td>
-                                    <td>
-                                        <button class="action-btn btn-primary">Edit</button>
-                                        <button class="action-btn btn-danger">Delete</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>World War II Quiz</td>
-                                    <td>History</td>
-                                    <td>9-B</td>
-                                    <td>10</td>
-                                    <td>
-                                        <button class="action-btn btn-primary">Edit</button>
-                                        <button class="action-btn btn-danger">Delete</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div id="notes-tab" class="tab-pane" style="display: none;">
-                    <div class="table-container">
-                        <h4>Notes Management</h4>
-                        <input type="text" placeholder="Search notes...">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Title</th>
-                                    <th>Subject</th>
-                                    <th>Class</th>
-                                    <th>Pages</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Introduction to Calculus</td>
-                                    <td>Mathematics</td>
-                                    <td>11-C</td>
-                                    <td>12</td>
-                                    <td>
-                                        <button class="action-btn btn-primary">Edit</button>
-                                        <button class="action-btn btn-danger">Delete</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Chemical Reactions</td>
-                                    <td>Chemistry</td>
-                                    <td>10-A</td>
-                                    <td>8</td>
-                                    <td>
-                                        <button class="action-btn btn-primary">Edit</button>
-                                        <button class="action-btn btn-danger">Delete</button>
-                                    </td>
-                                </tr>
+                            <tbody id="workfilesBody">
                             </tbody>
                         </table>
                     </div>
@@ -725,18 +592,29 @@
                 <div class="card stat-card">
                     <i class="fas fa-trophy"></i>
                     <span class="label">Top Student (Bytes)</span>
-                    <span class="value">Emma Johnson (5,240)</span>
+                    <span class="value" id="topStudentBytes">Loading...</span>
                 </div>
                 <div class="card stat-card">
                     <i class="fas fa-chart-pie"></i>
                     <span class="label">Most Active Subject</span>
-                    <span class="value">Mathematics</span>
+                    <span class="value" id="mostActiveSubject">Loading...</span>
+                </div>
+                <div class="card stat-card">
+                    <i class="fas fa-clock"></i>
+                    <span class="label">Avg. Session Time</span>
+                    <span class="value" id="avgSessionTime">Loading...</span>
+                </div>
+                <div class="card stat-card">
+                    <i class="fas fa-percentage"></i>
+                    <span class="label">Quiz Success Rate</span>
+                    <span class="value" id="quizSuccessRate">Loading...</span>
                 </div>
             </div>
 
             <div class="table-container">
                 <h4>Top Performing Students</h4>
-                <table>
+                <div id="topStudentsLoading" class="loading">Loading top students...</div>
+                <table id="topStudentsTable" style="display: none;">
                     <thead>
                         <tr>
                             <th>Rank</th>
@@ -746,131 +624,7 @@
                             <th>Quizzes Completed</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>Emma Johnson</td>
-                            <td>9-B</td>
-                            <td>5,240</td>
-                            <td>42</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>John Smith</td>
-                            <td>10-A</td>
-                            <td>4,870</td>
-                            <td>38</td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>Sophia Williams</td>
-                            <td>11-C</td>
-                            <td>4,520</td>
-                            <td>35</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="table-container">
-                <h4>Content Engagement by Subject</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Subject</th>
-                            <th>Notes Viewed</th>
-                            <th>Quizzes Taken</th>
-                            <th>Total Engagement</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Mathematics</td>
-                            <td>1,245</td>
-                            <td>856</td>
-                            <td>2,101</td>
-                        </tr>
-                        <tr>
-                            <td>Science</td>
-                            <td>987</td>
-                            <td>654</td>
-                            <td>1,641</td>
-                        </tr>
-                        <tr>
-                            <td>History</td>
-                            <td>843</td>
-                            <td>521</td>
-                            <td>1,364</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Curriculum Management Section -->
-        <div id="curriculum" class="content-section">
-            <h3>Curriculum Management</h3>
-            <div class="card">
-                <h4>Create New Subject</h4>
-                <div class="form-group">
-                    <label for="subjectName">Subject Name</label>
-                    <input type="text" id="subjectName" placeholder="Enter subject name">
-                </div>
-                <div class="form-group">
-                    <label for="subjectTeacher">Assign Teacher</label>
-                    <select id="subjectTeacher">
-                        <option value="">Select a teacher</option>
-                        <option value="1">Tr. Amos</option>
-                        <option value="2">Tr. Johnson</option>
-                        <option value="3">Tr. Williams</option>
-                    </select>
-                </div>
-                <button class="action-btn btn-primary">Create Subject</button>
-            </div>
-
-            <div class="table-container">
-                <h4>Current Subjects</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Subject</th>
-                            <th>Assigned Teacher</th>
-                            <th>Classes</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Mathematics</td>
-                            <td>Tr. Amos</td>
-                            <td>10-A, 9-B, 11-C</td>
-                            <td>Active</td>
-                            <td>
-                                <button class="action-btn btn-primary">Edit</button>
-                                <button class="action-btn btn-danger">Archive</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Science</td>
-                            <td>Tr. Johnson</td>
-                            <td>9-B, 11-C</td>
-                            <td>Active</td>
-                            <td>
-                                <button class="action-btn btn-primary">Edit</button>
-                                <button class="action-btn btn-danger">Archive</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Physics</td>
-                            <td>Tr. Williams</td>
-                            <td>10-A, 11-C</td>
-                            <td>Active</td>
-                            <td>
-                                <button class="action-btn btn-primary">Edit</button>
-                                <button class="action-btn btn-danger">Archive</button>
-                            </td>
-                        </tr>
+                    <tbody id="topStudentsBody">
                     </tbody>
                 </table>
             </div>
@@ -880,57 +634,375 @@
         <div id="settings" class="content-section">
             <h3>System Settings</h3>
             <div class="card">
-                <h4>General Settings</h4>
-                <div class="form-group">
-                    <label for="schoolName">School Name</label>
-                    <input type="text" id="schoolName" value="SchoolByte Academy">
-                </div>
-                <div class="form-group">
-                    <label for="adminEmail">Admin Email</label>
-                    <input type="email" id="adminEmail" value="admin@schoolbyte.edu">
-                </div>
-                <button class="action-btn btn-primary">Save Settings</button>
+                <h4>Create New Administrator</h4>
+                <form id="createAdminForm">
+                    <div class="form-group">
+                        <label for="newAdminName">Admin Name</label>
+                        <input type="text" id="newAdminName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newAdminEmail">Admin Email</label>
+                        <input type="email" id="newAdminEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newAdminPassword">Password</label>
+                        <input type="password" id="newAdminPassword" required>
+                    </div>
+                    <button type="submit" class="action-btn btn-primary">Create Administrator</button>
+                </form>
             </div>
 
             <div class="card">
-                <h4>Security Settings</h4>
-                <div class="form-group">
-                    <label for="passwordPolicy">Password Policy</label>
-                    <select id="passwordPolicy">
-                        <option value="standard">Standard (8+ characters)</option>
-                        <option value="strict">Strict (12+ characters with special chars)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" checked> Require 2FA for admins
-                    </label>
-                </div>
-                <button class="action-btn btn-primary">Update Security</button>
+                <h4>System Maintenance</h4>
+                <button class="action-btn btn-warning" onclick="triggerYearlyUpgrade()">
+                    <i class="fas fa-graduation-cap"></i> Trigger Yearly Student Upgrade
+                </button>
+                <p style="margin-top: 10px; color: #bdc3c7; font-size: 14px;">
+                    This will promote all students to the next class and delete S.6 graduates.
+                </p>
             </div>
         </div>
     </div>
 
+    <!-- Create Teacher Modal -->
+    <div id="createTeacherModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCreateTeacherModal()">&times;</span>
+            <h3>Create New Teacher</h3>
+            <form id="createTeacherForm">
+                <div class="form-group">
+                    <label for="teacherName">Teacher Name</label>
+                    <input type="text" id="teacherName" required>
+                </div>
+                <div class="form-group">
+                    <label for="teacherEmail">Email</label>
+                    <input type="email" id="teacherEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="teacherPassword">Initial Password</label>
+                    <input type="password" id="teacherPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="teacherGender">Gender</label>
+                    <select id="teacherGender">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="teacherDescription">Physical Description (Optional)</label>
+                    <input type="text" id="teacherDescription">
+                </div>
+                <button type="submit" class="action-btn btn-primary">Create Teacher</button>
+            </form>
+        </div>
+    </div>
+
+    <button class="logout-btn" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i> Logout
+    </button>
+
     <script>
+        // Global variables
+        let currentToken = localStorage.getItem('token');
+        let dashboardData = {};
+
+        // Check authentication on load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!currentToken) {
+                window.location.href = 'teacherlogin.html';
+                return;
+            }
+            
+            initializeAdmin();
+            loadDashboardData();
+        });
+
+        // Initialize admin info
+        async function initializeAdmin() {
+            try {
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                if (userData.adminName) {
+                    document.getElementById('adminName').textContent = userData.adminName;
+                    document.getElementById('adminDisplayName').textContent = userData.adminName;
+                    
+                    // Update avatar
+                    const avatar = document.getElementById('adminAvatar');
+                    avatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.adminName)}&background=0D8ABC&color=fff`;
+                }
+            } catch (error) {
+                console.error('Error loading admin data:', error);
+            }
+        }
+
+        // API call helper
+        async function apiCall(endpoint, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentToken}`
+                }
+            };
+
+            const response = await fetch(endpoint, { ...defaultOptions, ...options });
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    logout();
+                    return;
+                }
+                throw new Error(`API call failed: ${response.statusText}`);
+            }
+
+            return response.json();
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                // Load basic stats
+                await Promise.all([
+                    loadStats(),
+                    loadTeachers(),
+                    loadStudents(),
+                    loadQuizzes(),
+                    loadWorkFiles(),
+                    loadAnalytics()
+                ]);
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                showError('Failed to load dashboard data');
+            }
+        }
+
+        // Load system statistics
+        async function loadStats() {
+            try {
+                const [teachers, students] = await Promise.all([
+                    apiCall('/admin/teachers'),
+                    apiCall('/admin/students')
+                ]);
+
+                document.getElementById('totalTeachers').textContent = teachers.teachers?.length || 0;
+                document.getElementById('totalStudents').textContent = students.students?.length || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load teachers
+        async function loadTeachers() {
+            try {
+                const response = await apiCall('/admin/teachers');
+                const teachers = response.teachers || [];
+                
+                const tbody = document.getElementById('teachersBody');
+                tbody.innerHTML = '';
+
+                if (teachers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No teachers found</td></tr>';
+                } else {
+                    teachers.forEach(teacher => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${teacher.teacherName}</td>
+                            <td>${teacher.email}</td>
+                            <td><span style="color: ${teacher.isPasswordSet ? 'var(--success-color)' : 'var(--warning-color)'}">${teacher.isPasswordSet ? 'Active' : 'Pending Setup'}</span></td>
+                            <td>${new Date(teacher.createdAt).toLocaleDateString()}</td>
+                            <td>
+                                <button class="action-btn btn-danger" onclick="deleteTeacher('${teacher._id}', '${teacher.teacherName}')">Delete</button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+
+                document.getElementById('teachersLoading').style.display = 'none';
+                document.getElementById('teachersTable').style.display = 'table';
+            } catch (error) {
+                console.error('Error loading teachers:', error);
+                document.getElementById('teachersLoading').innerHTML = 'Error loading teachers';
+            }
+        }
+
+        // Load students (simplified for admin view)
+        async function loadStudents() {
+            // Since there's no dedicated admin endpoint for students, we'll show a placeholder
+            document.getElementById('studentsLoading').innerHTML = 'Student data available through individual management';
+            setTimeout(() => {
+                document.getElementById('studentsLoading').style.display = 'none';
+                document.getElementById('studentsTable').style.display = 'table';
+                document.getElementById('studentsBody').innerHTML = '<tr><td colspan="6" style="text-align: center;">Contact individual teachers for student data</td></tr>';
+            }, 1000);
+        }
+
+        // Load quiz questions
+        async function loadQuizzes() {
+            document.getElementById('quizzesLoading').innerHTML = 'Quiz management available through teacher portals';
+            setTimeout(() => {
+                document.getElementById('quizzesLoading').style.display = 'none';
+                document.getElementById('quizzesTable').style.display = 'table';
+                document.getElementById('quizzesBody').innerHTML = '<tr><td colspan="7" style="text-align: center;">Quiz questions managed by individual teachers</td></tr>';
+            }, 1000);
+        }
+
+        // Load work files
+        async function loadWorkFiles() {
+            document.getElementById('workfilesLoading').innerHTML = 'Work files available through teacher portals';
+            setTimeout(() => {
+                document.getElementById('workfilesLoading').style.display = 'none';
+                document.getElementById('workfilesTable').style.display = 'table';
+                document.getElementById('workfilesBody').innerHTML = '<tr><td colspan="7" style="text-align: center;">Work files managed by individual teachers</td></tr>';
+            }, 1000);
+        }
+
+        // Load analytics
+        async function loadAnalytics() {
+            // Load leaderboard for top students
+            try {
+                const response = await fetch('/leaderboard');
+                const data = await response.json();
+                
+                if (data.leaderboard && data.leaderboard.length > 0) {
+                    const topStudent = data.leaderboard[0];
+                    document.getElementById('topStudentBytes').textContent = `${topStudent.name} (${topStudent.bytes || 0})`;
+                    
+                    // Populate top students table
+                    const tbody = document.getElementById('topStudentsBody');
+                    tbody.innerHTML = '';
+                    
+                    data.leaderboard.slice(0, 10).forEach((student, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${student.name}</td>
+                            <td>-</td>
+                            <td>${student.bytes || 0}</td>
+                            <td>-</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    
+                    document.getElementById('topStudentsLoading').style.display = 'none';
+                    document.getElementById('topStudentsTable').style.display = 'table';
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+            
+            // Set placeholder values for other analytics
+            document.getElementById('mostActiveSubject').textContent = 'Mathematics';
+            document.getElementById('avgSessionTime').textContent = '15 min';
+            document.getElementById('quizSuccessRate').textContent = '78%';
+        }
+
+        // Create teacher
+        document.getElementById('createTeacherForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                teacherName: document.getElementById('teacherName').value,
+                email: document.getElementById('teacherEmail').value,
+                initialPassword: document.getElementById('teacherPassword').value,
+                gender: document.getElementById('teacherGender').value,
+                physicalDescription: document.getElementById('teacherDescription').value
+            };
+
+            try {
+                await apiCall('/admin/teachers', {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+
+                showSuccess('Teacher created successfully!');
+                closeCreateTeacherModal();
+                loadTeachers();
+                this.reset();
+            } catch (error) {
+                console.error('Error creating teacher:', error);
+                showError('Failed to create teacher: ' + error.message);
+            }
+        });
+
+        // Delete teacher
+        async function deleteTeacher(teacherId, teacherName) {
+            if (!confirm(`Are you sure you want to delete teacher ${teacherName}?`)) {
+                return;
+            }
+
+            try {
+                await apiCall(`/admin/teachers/${teacherId}`, {
+                    method: 'DELETE'
+                });
+
+                showSuccess('Teacher deleted successfully!');
+                loadTeachers();
+            } catch (error) {
+                console.error('Error deleting teacher:', error);
+                showError('Failed to delete teacher: ' + error.message);
+            }
+        }
+
+        // Create admin
+        document.getElementById('createAdminForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                adminName: document.getElementById('newAdminName').value,
+                email: document.getElementById('newAdminEmail').value,
+                password: document.getElementById('newAdminPassword').value
+            };
+
+            try {
+                await apiCall('/admin/create-admin', {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+
+                showSuccess('Administrator created successfully!');
+                this.reset();
+            } catch (error) {
+                console.error('Error creating admin:', error);
+                showError('Failed to create administrator: ' + error.message);
+            }
+        });
+
+        // Trigger yearly upgrade
+        async function triggerYearlyUpgrade() {
+            if (!confirm('This will promote all students to the next class and delete S.6 graduates. Are you sure?')) {
+                return;
+            }
+
+            try {
+                const response = await apiCall('/admin/trigger-yearly-upgrade', {
+                    method: 'POST'
+                });
+
+                showSuccess(`Yearly upgrade completed! ${response.upgradedStudents} students upgraded, ${response.deletedStudents} graduates removed.`);
+            } catch (error) {
+                console.error('Error triggering yearly upgrade:', error);
+                showError('Failed to trigger yearly upgrade: ' + error.message);
+            }
+        }
+
+        // Modal functions
+        function showCreateTeacherModal() {
+            document.getElementById('createTeacherModal').style.display = 'block';
+        }
+
+        function closeCreateTeacherModal() {
+            document.getElementById('createTeacherModal').style.display = 'none';
+        }
+
         // Navigation functionality
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', function() {
-                // Remove active class from all items
-                document.querySelectorAll('.nav-item').forEach(i => {
-                    i.classList.remove('active');
-                });
-
-                // Add active class to clicked item
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                 this.classList.add('active');
 
-                // Hide all content sections
-                document.querySelectorAll('.content-section').forEach(section => {
-                    section.classList.remove('active');
-                });
-
-                // Show the targeted content section
-                const targetId = this.getAttribute('data-target');
-                document.getElementById(targetId).classList.add('active');
+                document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+                document.getElementById(this.getAttribute('data-target')).classList.add('active');
             });
         });
 
@@ -938,36 +1010,54 @@
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 const tabContainer = this.closest('.tabs');
-                const tabContent = this.closest('.tab-content') || this.parentElement.nextElementSibling;
+                const tabContent = tabContainer.parentElement;
                 const targetTab = this.getAttribute('data-tab');
 
-                // Remove active class from all tabs in this container
-                tabContainer.querySelectorAll('.tab').forEach(t => {
-                    t.classList.remove('active');
-                });
-
-                // Add active class to clicked tab
+                tabContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
 
-                // Hide all tab panes in this container
-                tabContent.querySelectorAll('.tab-pane').forEach(pane => {
-                    pane.style.display = 'none';
-                });
-
-                // Show the targeted tab pane
+                tabContent.querySelectorAll('.tab-pane').forEach(pane => pane.style.display = 'none');
                 document.getElementById(`${targetTab}-tab`).style.display = 'block';
             });
         });
 
-        // Initialize the first tab in each tab container
-        document.querySelectorAll('.tabs').forEach(tabContainer => {
-            const firstTab = tabContainer.querySelector('.tab');
-            if (firstTab) {
-                firstTab.click();
+        // Utility functions
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.textContent = message;
+            document.body.appendChild(successDiv);
+            
+            setTimeout(() => {
+                document.body.removeChild(successDiv);
+            }, 5000);
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                document.body.removeChild(errorDiv);
+            }, 5000);
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userData');
+            localStorage.removeItem('adminEmail');
+            window.location.href = 'teacherlogin.html';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('createTeacherModal');
+            if (event.target === modal) {
+                closeCreateTeacherModal();
             }
-        });
+        };
     </script>
 </body>
 </html>
-
-

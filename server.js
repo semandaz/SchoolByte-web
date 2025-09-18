@@ -2175,7 +2175,8 @@ app.post(
 
 // Teacher login and dashboard endpoints (existing)
 app.post('/login-teacher', [
-    body('email').isEmail().withMessage('Please provide a valid email address.'),
+    body('teacherName').notEmpty().withMessage('Teacher name is required.'),
+    body('email').notEmpty().withMessage('Email is required.'),
     body('password').notEmpty().withMessage('Password is required.')
 ], async (req, res) => {
     const errors = validationResult(req);
@@ -2183,44 +2184,100 @@ app.post('/login-teacher', [
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password } = req.body;
+    let { teacherName, email, password } = req.body;
 
     try {
-        const teacher = await Teacher.findOne({ email });
+        // Check if this is an admin login attempt
+        const adminPrefix = 'admin: ';
+        let isAdminLogin = false;
 
-        if (!teacher) {
-            return res.status(401).json({ message: 'Invalid email or password.' });
-        }
+        if (email.toLowerCase().startsWith(adminPrefix.toLowerCase())) {
+            isAdminLogin = true;
+            // Remove the admin prefix to get the actual email
+            email = email.substring(adminPrefix.length).trim();
 
-        const isMatch = await bcrypt.compare(password, teacher.password);
-
-        if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid email or password.' });
-        }
-
-        // Check and reset weekly counters
-        await checkAndResetTeacherWeeklyCounters(teacher);
-
-        const token = jwt.sign(
-            { id: teacher._id, email: teacher.email, teacherName: teacher.teacherName, role: 'teacher' },
-            JWT_SECRET,
-            { expiresIn: '24h' }
-        );
-
-        res.status(200).json({
-            message: 'Teacher login successful!',
-            token: token,
-            teacher: {
-                teacherName: teacher.teacherName,
-                email: teacher.email,
-                bytes: teacher.bytes,
-                isPasswordSet: teacher.isPasswordSet
+            // Validate admin credentials
+            if (teacherName.toLowerCase() !== 'administrator') {
+                return res.status(401).json({ message: 'Invalid admin credentials.' });
             }
-        });
+        }
+
+        if (isAdminLogin) {
+            // Handle admin login with 2FA
+            const admin = await Administrator.findOne({ email });
+
+            if (!admin) {
+                return res.status(401).json({ message: 'Invalid admin credentials.' });
+            }
+
+            const isMatch = await bcrypt.compare(password, admin.password);
+
+            if (!isMatch) {
+                return res.status(401).json({ message: 'Invalid admin credentials.' });
+            }
+
+            // Generate and send 2FA code
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+            await VerificationCode.findOneAndUpdate(
+                { email },
+                { code, createdAt: Date.now() },
+                { upsert: true, new: true, setDefaultsOnInsert: true }
+            );
+
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: 'SchoolByte Admin 2FA Code',
+                html: `<p>Your SchoolByte Administrator 2FA code is: <strong>${code}</strong></p><p>This code is valid for 10 minutes.</p>`
+            };
+
+            await transporter.sendMail(mailOptions);
+
+            res.status(200).json({
+                message: 'Admin 2FA code sent to your email.',
+                requiresTwoFA: true,
+                adminEmail: email
+            });
+
+        } else {
+            // Handle regular teacher login
+            const teacher = await Teacher.findOne({ email });
+
+            if (!teacher) {
+                return res.status(401).json({ message: 'Invalid teacher credentials.' });
+            }
+
+            const isMatch = await bcrypt.compare(password, teacher.password);
+
+            if (!isMatch) {
+                return res.status(401).json({ message: 'Invalid teacher credentials.' });
+            }
+
+            // Check and reset weekly counters
+            await checkAndResetTeacherWeeklyCounters(teacher);
+
+            const token = jwt.sign(
+                { id: teacher._id, email: teacher.email, teacherName: teacher.teacherName, role: 'teacher' },
+                JWT_SECRET,
+                { expiresIn: '24h' }
+            );
+
+            res.status(200).json({
+                message: 'Teacher login successful!',
+                token: token,
+                teacher: {
+                    teacherName: teacher.teacherName,
+                    email: teacher.email,
+                    bytes: teacher.bytes,
+                    isPasswordSet: teacher.isPasswordSet
+                }
+            });
+        }
 
     } catch (error) {
-        console.error('Error during teacher login:', error);
-        res.status(500).json({ message: 'Server error during teacher login.', error: error.message });
+        console.error('Error during login:', error);
+        res.status(500).json({ message: 'Server error during login.', error: error.message });
     }
 });
 
