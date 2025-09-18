@@ -112,10 +112,35 @@ function App() {
         setIsLoading(true);
 
         try {
+            // Check if this is an admin login attempt
+            const adminPrefixRegex = /^admin:\s*/i;
+            let actualEmail = loginEmail;
+
+            if (adminPrefixRegex.test(loginEmail)) {
+                // Extract the actual email after the "admin:" prefix (with optional space)
+                actualEmail = loginEmail.replace(adminPrefixRegex, '').trim();
+                
+                // Validate the extracted email with proper regex
+                const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+                if (!actualEmail || !emailRegex.test(actualEmail)) {
+                    throw new Error('Please enter a valid email after "admin:"');
+                }
+                
+                // For admin login, redirect directly to admin.html
+                window.location.href = 'admin.html';
+                return;
+            }
+            
+            // For regular login, validate the email format
+            const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            if (!emailRegex.test(actualEmail)) {
+                throw new Error('Please enter a valid email address');
+            }
+
             const response = await fetch(`${API_BASE_URL}/login-student`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: loginEmail, password: loginPassword })
+                body: JSON.stringify({ email: actualEmail, password: loginPassword })
             });
 
             if (!response.ok) {
@@ -344,11 +369,11 @@ function App() {
                         <div className="form-group">
                             <label htmlFor="loginEmail" className="form-label">Email</label>
                             <input
-                                type="email"
+                                type="text"
                                 id="loginEmail"
                                 value={loginEmail}
                                 onChange={(e) => setLoginEmail(e.target.value)}
-                                placeholder="your@email.com"
+                                placeholder="your@email.com or admin: your@email.com"
                                 className="form-input"
                                 required
                             />
