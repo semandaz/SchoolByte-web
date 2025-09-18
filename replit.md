@@ -1,0 +1,87 @@
+# SchoolByte - Educational Platform
+
+## Overview
+
+SchoolByte is a comprehensive educational platform designed to motivate student learning through a gamified "bytes" reward system. The platform serves three primary user types: Students, Teachers, and Administrators. Students engage with quizzes, activities, and interactive content to earn bytes and track their academic progress. Teachers can upload educational content, create assessments, and manage their subject areas. Administrators oversee the entire platform with comprehensive dashboard controls and user management capabilities.
+
+The platform includes specialized features like Preader Games (AI-powered interactive storytelling for ethical decision-making), subject-specific dashboards, and a sophisticated quiz system with personalized question generation based on student class levels and enrolled subjects.
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+## System Architecture
+
+### Backend Architecture
+- **Framework**: Node.js with Express.js for RESTful API development
+- **Database**: MongoDB with Mongoose ODM for data modeling and validation
+- **Authentication**: JWT (JSON Web Tokens) with bcrypt for password hashing
+- **Security**: Helmet middleware for security headers, CORS for cross-origin requests, Morgan for HTTP request logging
+- **File Handling**: Multer for multipart form data and file uploads
+- **Email**: Nodemailer for email verification and notifications
+- **Input Validation**: Express-validator for comprehensive request validation
+
+### Database Design
+- **Student Schema**: Tracks academic progress, enrolled subjects, bytes earned, quiz history, and personalized learning data
+- **Teacher Schema**: Manages teacher profiles and subject specializations
+- **Administrator Schema**: Handles admin accounts with elevated privileges
+- **Quiz Questions**: Supports multiple question types (multiple-choice, short-answer, fill-in-the-blank, problem-solving)
+- **Activities**: Long-answer tasks with automated keyword-based grading
+- **Work Files**: PDF storage and management for educational materials
+- **Verification Codes**: Time-limited codes for email verification
+
+### Frontend Architecture
+- **Multiple Interface Types**: 
+  - Static HTML/CSS/JavaScript dashboards for different subjects
+  - React SPA components for interactive features (Preader Games)
+  - Vite build system for modern frontend tooling
+- **Responsive Design**: CSS Grid and Flexbox with custom color palette and gradient system
+- **Subject-Specific Dashboards**: Dedicated interfaces for Biology, Chemistry, Mathematics, English, Geography, History, Agriculture, and other subjects
+- **Dynamic Content Loading**: AJAX requests for real-time data updates without page refreshes
+
+### AI Integration
+- **Google Generative AI**: Integrated for Preader Games storytelling and educational content generation
+- **Safety Configuration**: Harm category blocking and content filtering for educational appropriateness
+- **Session Management**: Persistent game sessions with progress tracking and ethical scoring
+
+### Authentication & Authorization
+- **Multi-Role System**: Separate authentication flows for students, teachers, and administrators
+- **Token-Based Security**: JWT tokens stored in localStorage with middleware validation
+- **Email Verification**: Required verification process for new student accounts
+- **Role-Based Access Control**: Protected routes and endpoints based on user roles
+
+### Quiz System Logic
+- **Personalized Question Selection**: Algorithm considers student's class level, enrolled subjects, and recent quiz history
+- **Anti-Repetition Mechanism**: Sliding window system prevents immediate question repetition
+- **Fallback System**: Resets question pool when student exhausts available unique questions
+- **Byte Reward System**: Progressive scoring based on question difficulty and student performance
+- **Class-Based Distribution**: Questions sourced from student's own class (70%), one level below (20%), and one level above (10%)
+
+## External Dependencies
+
+### Third-Party Services
+- **Google Generative AI**: Powers the Preader Games AI storytelling feature and educational content generation
+- **Cloudinary**: Cloud-based media management for file storage and image optimization
+- **MongoDB Atlas** (implied): Cloud database hosting for scalable data storage
+
+### NPM Packages
+- **Core Framework**: Express.js for server framework, Mongoose for MongoDB integration
+- **Security**: bcrypt for password hashing, helmet for security headers, jsonwebtoken for authentication
+- **Utilities**: cors for cross-origin requests, dotenv for environment management, morgan for logging
+- **File Processing**: multer for file uploads, body-parser for request parsing
+- **Validation**: express-validator for input sanitization and validation
+- **Email**: nodemailer for transactional emails and notifications
+- **AI Integration**: @google/generative-ai and @google/genai for AI-powered features
+
+### Development Tools
+- **Build System**: Vite for modern frontend development and hot module replacement
+- **Styling**: TailwindCSS for utility-first CSS framework
+- **PostCSS**: For CSS processing and optimization
+
+### Email Service
+- **SMTP Integration**: Configured through nodemailer for student verification emails and system notifications
+- **Verification System**: Time-limited 6-digit codes for account activation
+
+### File Storage
+- **Cloudinary Integration**: Handles PDF uploads for educational materials and work files
+- **Local Storage**: Browser localStorage for JWT token persistence and user session management
