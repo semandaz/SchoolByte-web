@@ -334,13 +334,18 @@
             <label>Sign in as:</label>
             <div class="radio-group">
                 <label class="radio-option">
+                    <input type="radio" name="role" value="student" id="roleStudent">
+                    <span>Student</span>
+                </label>
+                <label class="radio-option">
                     <input type="radio" name="role" value="teacher" id="roleTeacher">
                     <span>Teacher</span>
                 </label>
                 <label class="radio-option">
-                    <input type="radio" name="role" value="student" id="roleStudent">
-                    <span>Student</span>
+                    <input type="radio" name="role" value="admin" id="roleAdmin">
+                    <span>Admin</span>
                 </label>
+
             </div>
         </div>
         
@@ -370,7 +375,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Create floating books
             createFloatingBooks();
-            
+
             // Cache DOM elements
             const elements = {
                 schoolNameInput: document.getElementById('schoolName'),
@@ -380,40 +385,42 @@
                 authLogin: document.getElementById('authLogin'),
                 authSignup: document.getElementById('authSignup'),
                 signupLabel: document.getElementById('signupLabel'),
-                errorMessage: document.getElementById('errorMessage')
+                errorMessage: document.getElementById('errorMessage'),
+                roleAdmin: document.getElementById('roleAdmin'), // Added for Admin radio
+                authLoginLabel: document.querySelector('label[for="authLogin"]') // Get the label for Login radio
             };
-            
+
             const REGISTERED_SCHOOL_NAME = "Mengo Senior School";
-            
+
             // Create floating books animation
             function createFloatingBooks() {
                 const container = document.getElementById('floatingBooks');
                 const bookCount = 15;
                 const bookIcons = ['book', 'book-open', 'bookmark', 'graduation-cap', 'scroll', 'file-alt'];
-                
+
                 // Check for reduced motion preference
                 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
                 if (reducedMotion) return;
-                
+
                 for (let i = 0; i < bookCount; i++) {
                     const book = document.createElement('i');
                     book.classList.add('book', 'fas', `fa-${bookIcons[Math.floor(Math.random() * bookIcons.length)]}`);
-                    
+
                     // Random position and animation
                     const posX = Math.random() * 100;
                     const delay = Math.random() * 10;
                     const duration = Math.random() * 15 + 10;
                     const size = Math.random() * 1 + 1;
-                    
+
                     book.style.left = `${posX}%`;
                     book.style.animationDuration = `${duration}s`;
                     book.style.animationDelay = `${delay}s`;
                     book.style.fontSize = `${size}rem`;
-                    
+
                     container.appendChild(book);
                 }
             }
-            
+
             // Update UI based on selections
             function updateUI() {
                 const schoolNameValue = elements.schoolNameInput.value.trim();
@@ -421,39 +428,39 @@
                 const isSchoolRegistered = schoolNameValue.toLowerCase() === REGISTERED_SCHOOL_NAME.toLowerCase();
                 const selectedRole = document.querySelector('input[name="role"]:checked')?.value;
                 let selectedAuth = document.querySelector('input[name="auth"]:checked')?.value;
-                
-                // Teacher sign-up restriction
-                if (selectedRole === 'teacher') {
+
+                // Admin and Teacher sign-up restriction
+                if (selectedRole === 'teacher' || selectedRole === 'admin') {
                     elements.authSignup.disabled = true;
-                    elements.signupLabel.classList.add('disabled-label');
-                    if (selectedAuth === 'signup') {
-                        elements.authLogin.checked = true;
-                        selectedAuth = 'login';
-                    }
+                    elements.signupLabel.style.display = 'none'; // Hide signup option
+                    elements.authLogin.checked = true; // Automatically select Login
+                    selectedAuth = 'login';
                 } else {
                     elements.authSignup.disabled = false;
-                    elements.signupLabel.classList.remove('disabled-label');
+                    elements.signupLabel.style.display = 'flex'; // Show signup option
                 }
-                
+
                 // Determine button state
                 const allFieldsSelected = schoolNameFilled && selectedRole && selectedAuth;
-                const isValidCombination = !(selectedRole === 'teacher' && selectedAuth === 'signup');
-                
+                const isValidCombination = !(selectedRole === 'teacher' && selectedAuth === 'signup') && !(selectedRole === 'admin' && selectedAuth === 'signup');
+
                 if (allFieldsSelected && isValidCombination && isSchoolRegistered) {
                     elements.continueBtn.disabled = false;
                     elements.errorMessage.textContent = '';
                 } else {
                     elements.continueBtn.disabled = true;
-                    
+
                     // Error messages in priority order
                     if (!isSchoolRegistered && schoolNameFilled) {
                         elements.errorMessage.textContent = `${schoolNameValue} has not yet registered for SchoolByte.`;
                     } else if (!schoolNameFilled) {
                         elements.errorMessage.textContent = 'Please enter your school name.';
+                    } else if (!selectedRole) {
+                        elements.errorMessage.textContent = 'Please select your role (Student/Teacher/Admin).';
                     } else if (selectedRole === 'teacher' && selectedAuth === 'signup') {
                         elements.errorMessage.textContent = 'Teachers can only log in, not sign up.';
-                    } else if (!selectedRole) {
-                        elements.errorMessage.textContent = 'Please select your role (Teacher/Student).';
+                    } else if (selectedRole === 'admin' && selectedAuth === 'signup') {
+                        elements.errorMessage.textContent = 'Admins can only log in, not sign up.';
                     } else if (!selectedAuth) {
                         elements.errorMessage.textContent = 'Please select Login or Sign Up.';
                     } else {
@@ -461,21 +468,21 @@
                     }
                 }
             }
-            
+
             // Handle continue button click
             function handleContinue() {
                 const schoolName = elements.schoolNameInput.value.trim();
                 const selectedRole = document.querySelector('input[name="role"]:checked')?.value;
                 const selectedAuth = document.querySelector('input[name="auth"]:checked')?.value;
-                
+
                 // Safeguard check (button should be disabled if invalid)
                 const isSchoolRegistered = schoolName.toLowerCase() === REGISTERED_SCHOOL_NAME.toLowerCase();
-                if (!schoolName || !selectedRole || !selectedAuth ||
-                    (selectedRole === 'teacher' && selectedAuth === 'signup') || !isSchoolRegistered) {
+                if (!schoolName || !selectedRole || !selectedAuth || !isSchoolRegistered) {
                     updateUI();
                     return;
                 }
-                
+
+                // Redirect based on role and action
                 const redirectMap = {
                     student: {
                         login: 'studentlogin.html',
@@ -483,9 +490,12 @@
                     },
                     teacher: {
                         login: 'teacherlogin.html'
+                    },
+                    admin: {
+                        login: 'adminlogin.html'
                     }
                 };
-                
+
                 const redirectURL = redirectMap[selectedRole]?.[selectedAuth];
                 if (redirectURL) {
                     window.location.href = redirectURL;
@@ -493,13 +503,13 @@
                     elements.errorMessage.textContent = 'An unexpected redirection error occurred.';
                 }
             }
-            
+
             // Event listeners
             elements.schoolNameInput.addEventListener('input', updateUI);
             elements.roleRadios.forEach(radio => radio.addEventListener('change', updateUI));
             elements.authRadios.forEach(radio => radio.addEventListener('change', updateUI));
             elements.continueBtn.addEventListener('click', handleContinue);
-            
+
             // Initial UI update
             updateUI();
         });

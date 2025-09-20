@@ -2310,17 +2310,67 @@ app.get('/teacher/dashboard', authenticateTeacherToken, async (req, res) => {
     }
 });
 
-// Admin authentication and management endpoints (existing)
-app.post('/login-admin', [
+// admin signup endpoint
+app.post('/signup-admin', [
+    body('adminName').notEmpty().withMessage('Admin name is required.'),
     body('email').isEmail().withMessage('Please provide a valid email address.'),
-    body('password').notEmpty().withMessage('Password is required.')
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long.')
 ], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password } = req.body;
+    const { adminName, email, password } = req.body; // <-- THE FIX IS HERE
+
+    try {
+        const existingAdmin = await Administrator.findOne({ email });
+        if (existingAdmin) {
+            return res.status(400).json({ message: 'An admin with this email already exists.' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const newAdmin = new Administrator({
+            adminName, // <-- AND HERE
+            email,
+            password: hashedPassword
+        });
+
+        await newAdmin.save();
+
+        res.status(201).json({ message: 'Admin account created successfully. You can now log in.' });
+
+    } catch (error) {
+        console.error('Error during admin account creation:', error);
+        res.status(500).json({ message: 'Server error during admin account creation.', error: error.message });
+    }
+});
+
+// Admin authentication and management endpoints (existing)
+app.post('/login-admin', [
+    // Leave only the password validation here
+    body('password').notEmpty().withMessage('Password is required.')
+], async (req, res) => {
+    let { email, password } = req.body;
+
+    // Check for the admin prefix and remove it first
+    const adminPrefix = 'admin: ';
+    if (email.toLowerCase().startsWith(adminPrefix)) {
+        email = email.substring(adminPrefix.length).trim();
+    }
+
+    // Perform manual email validation after the prefix is removed
+    const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: 'Please provide a valid email address.' });
+    }
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
 
     try {
         const admin = await Administrator.findOne({ email });
