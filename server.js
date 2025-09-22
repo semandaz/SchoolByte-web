@@ -2310,70 +2310,86 @@ app.get('/teacher/dashboard', authenticateTeacherToken, async (req, res) => {
     }
 });
 
-// admin signup endpoint
+// Admin signup endpoint
 app.post('/signup-admin', [
-    body('adminName').notEmpty().withMessage('Admin name is required.'),
-    body('email').isEmail().withMessage('Please provide a valid email address.'),
+    body('adminName').notEmpty().trim().withMessage('Admin name is required.'),
+    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email address.'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long.')
 ], async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { adminName, email, password } = req.body; // <-- THE FIX IS HERE
-
     try {
-        const existingAdmin = await Administrator.findOne({ email });
-        if (existingAdmin) {
-            return res.status(400).json({ message: 'An admin with this email already exists.' });
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ 
+                message: 'Validation failed',
+                errors: errors.array() 
+            });
         }
 
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        const { adminName, email, password } = req.body;
 
+        // Check if admin already exists
+        const existingAdmin = await Administrator.findOne({ email: email.toLowerCase() });
+        if (existingAdmin) {
+            return res.status(409).json({ message: 'An administrator with this email already exists.' });
+        }
+
+        // Hash password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        // Create new admin
         const newAdmin = new Administrator({
-            adminName, // <-- AND HERE
-            email,
+            adminName: adminName.trim(),
+            email: email.toLowerCase(),
             password: hashedPassword
         });
 
         await newAdmin.save();
 
-        res.status(201).json({ message: 'Admin account created successfully. You can now log in.' });
+        res.status(201).json({ 
+            message: 'Administrator account created successfully.',
+            admin: {
+                id: newAdmin._id,
+                adminName: newAdmin.adminName,
+                email: newAdmin.email
+            }
+        });
 
     } catch (error) {
-        console.error('Error during admin account creation:', error);
-        res.status(500).json({ message: 'Server error during admin account creation.', error: error.message });
+        console.error('Error during admin signup:', error);
+        res.status(500).json({ 
+            message: 'Server error during admin account creation.',
+            error: error.message 
+        });
     }
 });
 
 // Admin authentication and management endpoints (existing)
 app.post('/login-admin', [
-    // Leave only the password validation here
+    body('email').notEmpty().withMessage('Email is required.'),
     body('password').notEmpty().withMessage('Password is required.')
 ], async (req, res) => {
-    let { email, password } = req.body;
-
-    // Check for the admin prefix and remove it first
-    const adminPrefix = 'admin: ';
-    if (email.toLowerCase().startsWith(adminPrefix)) {
-        email = email.substring(adminPrefix.length).trim();
-    }
-
-    // Perform manual email validation after the prefix is removed
-    const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    if (!emailRegex.test(email)) {
-        return res.status(400).json({ message: 'Please provide a valid email address.' });
-    }
-
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-
     try {
-        const admin = await Administrator.findOne({ email });
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        let { email, password } = req.body;
+
+        // Check for the admin prefix and remove it
+        const adminPrefix = 'admin: ';
+        if (email.toLowerCase().startsWith(adminPrefix.toLowerCase())) {
+            email = email.substring(adminPrefix.length).trim();
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ message: 'Please provide a valid email address.' });
+        }
+
+        const admin = await Administrator.findOne({ email: email.toLowerCase() });
 
         if (!admin) {
             return res.status(401).json({ message: 'Invalid email or password.' });
@@ -2385,29 +2401,34 @@ app.post('/login-admin', [
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
 
+        // Generate 2FA code
         const code = Math.floor(100000 + Math.random() * 900000).toString();
 
         await VerificationCode.findOneAndUpdate(
-            { email },
+            { email: email.toLowerCase() },
             { code, createdAt: Date.now() },
             { upsert: true, new: true, setDefaultsOnInsert: true }
         );
 
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'SchoolByte Admin 2FA Code',
-            html: `<p>Your SchoolByte Administrator 2FA code is: <strong>${code}</strong></p><p>This code is valid for 10 minutes.</p>`
-        };
+        // Send email if configured
+        if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: 'SchoolByte Admin 2FA Code',
+                html: `<p>Your SchoolByte Administrator 2FA code is: <strong>${code}</strong></p><p>This code is valid for 10 minutes.</p>`
+            };
 
-        await transporter.sendMail(mailOptions);
+            await transporter.sendMail(mailOptions);
+        }
 
         res.status(200).json({
-            message: 'Admin login successful. A 2FA code has been sent to your email. Please verify it.'
+            message: 'Admin login successful. A 2FA code has been sent to your email.',
+            requiresTwoFA: true
         });
 
     } catch (error) {
-        console.error('Error during admin login (2FA initiation):', error);
+        console.error('Error during admin login:', error);
         res.status(500).json({ message: 'Server error during admin login.', error: error.message });
     }
 });
