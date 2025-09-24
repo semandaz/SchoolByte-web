@@ -4,6 +4,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -2482,37 +2483,90 @@ app.post('/admin/verify-2fa', [
     }
 });
 
+app.post('/admin/create-admin', authenticateAdminToken, [
+    body('adminName').notEmpty().trim().withMessage('Admin name is required.'),
+    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email address.'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long.')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ 
+                message: 'Validation failed',
+                errors: errors.array() 
+            });
+        }
+
+        const { adminName, email, password } = req.body;
+
+        // Check if admin already exists
+        const existingAdmin = await Administrator.findOne({ email: email.toLowerCase() });
+        if (existingAdmin) {
+            return res.status(409).json({ message: 'An administrator with this email already exists.' });
+        }
+
+        // Hash password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        // Create new admin
+        const newAdmin = new Administrator({
+            adminName: adminName.trim(),
+            email: email.toLowerCase(),
+            password: hashedPassword
+        });
+
+        await newAdmin.save();
+
+        res.status(201).json({ 
+            message: 'Administrator account created successfully.',
+            admin: {
+                id: newAdmin._id,
+                name: newAdmin.adminName,
+                email: newAdmin.email
+            }
+        });
+
+    } catch (error) {
+        console.error('Error during admin creation:', error);
+        res.status(500).json({ 
+            message: 'Server error during admin account creation.',
+            error: error.message 
+        });
+    }
+});
+
 app.post('/admin/teachers', authenticateAdminToken, [
     body('teacherName').notEmpty().withMessage('Teacher name is required.'),
-    body('email').isEmail().withMessage('Please provide a valid email address.'),
-    body('initialPassword').isLength({ min: 6 }).withMessage('Initial password must be at least 6 characters long.'),
-    body('gender').optional().isIn(['Male', 'Female', 'Other']).withMessage('Gender must be Male, Female, or Other.'),
-    body('physicalDescription').optional().isString().withMessage('Physical description must be a string.')
+    body('teacherEmail').isEmail().withMessage('Please provide a valid email address.'),
+    body('teacherPassword').isLength({ min: 6 }).withMessage('Initial password must be at least 6 characters long.'),
+    body('teacherGender').optional().isIn(['male', 'female', 'other']).withMessage('Gender must be male, female, or other.'),
+    body('teacherPhysicalDescription').optional().isString().withMessage('Physical description must be a string.')
 ], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { teacherName, email, initialPassword, gender, physicalDescription } = req.body;
+    const { teacherName, teacherEmail, teacherPassword, teacherGender, teacherPhysicalDescription } = req.body;
 
     try {
-        const existingTeacher = await Teacher.findOne({ email });
+        const existingTeacher = await Teacher.findOne({ email: teacherEmail });
         if (existingTeacher) {
             return res.status(409).json({ message: 'A teacher with this email already exists.' });
         }
 
         const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(initialPassword, saltRounds);
+        const hashedPassword = await bcrypt.hash(teacherPassword, saltRounds);
 
         const newTeacher = new Teacher({
             teacherName,
-            email,
+            email: teacherEmail,
             password: hashedPassword,
             bytes: 0,
             isPasswordSet: false,
-            gender,
-            physicalDescription
+            gender: teacherGender === 'male' ? 'Male' : teacherGender === 'female' ? 'Female' : 'Other',
+            physicalDescription: teacherPhysicalDescription
         });
 
         await newTeacher.save();
@@ -2538,30 +2592,43 @@ app.post('/admin/teachers', authenticateAdminToken, [
 app.get('/admin/teachers', authenticateAdminToken, async (req, res) => {
     try {
         const teachers = await Teacher.find({}).select('-password');
-        res.status(200).json({
-            message: 'Teachers fetched successfully.',
-            teachers: teachers
-        });
+        res.status(200).json(teachers);
     } catch (error) {
         console.error('Error fetching teachers by admin:', error);
         res.status(500).json({ message: 'Server error fetching teachers.', error: error.message });
     }
 });
 
-// --- Place your new code block in the Admin Routes section ---
+// Admin dashboard stats endpoint
+app.get('/admin/dashboard', authenticateAdminToken, async (req, res) => {
+    try {
+        const adminData = await Administrator.findById(req.admin.id).select('-password');
+        
+        if (!adminData) {
+            return res.status(404).json({ message: 'Administrator data not found.' });
+        }
 
-// ... other admin routes like login, signup, etc.
+        res.status(200).json({
+            message: `Welcome to your admin dashboard, ${adminData.adminName}!`,
+            admin: {
+                adminName: adminData.adminName,
+                email: adminData.email,
+                createdAt: adminData.createdAt
+            }
+        });
+    } catch (error) {
+        console.error('Error accessing admin dashboard:', error);
+        res.status(500).json({ message: 'Server error accessing admin dashboard.', error: error.message });
+    }
+});
 
-// New endpoint to fetch all dashboard statistics
 app.get('/admin/dashboard-stats', authenticateAdminToken, async (req, res) => {
     try {
         const totalStudents = await Student.countDocuments();
         const totalTeachers = await Teacher.countDocuments();
         const totalQuizQuestions = await QuizQuestion.countDocuments();
         const totalWorkFiles = await WorkFile.countDocuments();
-
-        // You can add more counts here as your app grows
-        const totalPreaderGames = await PreaderGame.countDocuments();
+        const totalPreaderGames = await PreaderGameSessionLog.countDocuments();
 
         res.status(200).json({
             message: 'Dashboard stats fetched successfully.',
@@ -2949,6 +3016,11 @@ app.get('/student/preader-games/history', authenticateToken, async (req, res) =>
         console.error('Error fetching Preader Game history:', error);
         res.status(500).json({ message: 'Failed to fetch Preader Game history.', error: error.message });
     }
+});
+
+// Serve admin login page
+app.get('/admin-login.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'adminlogin.html'));
 });
 
 // Start the server

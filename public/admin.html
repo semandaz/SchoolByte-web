@@ -578,49 +578,62 @@
 
     <script>
         // Check for authenticated admin and load data on page load
-        // Check for authenticated admin and load data on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeAdmin();
-            loadDashboardData(); // This is crucial and must be called after initialization
-            loadTeachers();
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initializeAdmin();
+            if (localStorage.getItem('token')) {
+                await loadDashboardData();
+                await loadTeachers();
+            }
         });
 
         // Function to initialize admin data from local storage
-        function initializeAdmin() {
-            const adminEmail = localStorage.getItem('adminEmail');
-            const adminName = localStorage.getItem('adminName');
-            const token = localStorage.getItem('adminToken');
+        async function initializeAdmin() {
+            const token = localStorage.getItem('token');
 
             if (!token) {
                 // Redirect to login if token is not found
-                window.location.href = 'admin-login.html';
+                window.location.href = 'adminlogin.html';
                 return;
             }
 
-            if (adminName) {
-                document.getElementById('adminNameDisplay').textContent = adminName;
-                document.getElementById('welcomeAdminName').textContent = adminName;
-            } else if (adminEmail) {
-                document.getElementById('adminNameDisplay').textContent = adminEmail;
-                document.getElementById('welcomeAdminName').textContent = adminEmail;
+            try {
+                const response = await fetch('/admin/dashboard', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('adminNameDisplay').textContent = data.admin.adminName;
+                    document.getElementById('welcomeAdminName').textContent = data.admin.adminName;
+                    localStorage.setItem('adminName', data.admin.adminName);
+                    localStorage.setItem('adminEmail', data.admin.email);
+                } else {
+                    throw new Error('Failed to load admin data');
+                }
+            } catch (error) {
+                console.error('Error loading admin data:', error);
+                window.location.href = 'adminlogin.html';
             }
         }
 
         // Function to handle logout (FIXED)
         function logout() {
+            localStorage.removeItem('token');
             localStorage.removeItem('adminToken');
             localStorage.removeItem('adminEmail');
             localStorage.removeItem('adminName');
-            window.location.href = 'admin-login.html';
+            window.location.href = 'adminlogin.html';
         }
 
         // Dashboard Data Loading (UPDATED & CORRECTED)
         async function loadDashboardData() {
             try {
-                const token = localStorage.getItem('adminToken');
+                const token = localStorage.getItem('token');
                 if (!token) {
                     // Already handled by initializeAdmin, but a good failsafe
-                    window.location.href = 'admin-login.html';
+                    window.location.href = 'adminlogin.html';
                     return;
                 }
 
@@ -689,7 +702,7 @@
         // Teacher Management Functions
         async function loadTeachers() {
             try {
-                const token = localStorage.getItem('adminToken');
+                const token = localStorage.getItem('token');
                 if (!token) {
                     return;
                 }
@@ -734,7 +747,7 @@
                 return;
             }
             try {
-                const token = localStorage.getItem('adminToken');
+                const token = localStorage.getItem('token');
                 const response = await fetch(`/admin/teachers/${teacherId}`, {
                     method: 'DELETE',
                     headers: {
@@ -775,7 +788,7 @@
         // Form submissions
         document.getElementById('createTeacherForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const token = localStorage.getItem('adminToken');
+            const token = localStorage.getItem('token');
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
 
@@ -792,8 +805,10 @@
                     const errorData = await response.json();
                     throw new Error(errorData.message || 'Failed to create teacher.');
                 }
+                const result = await response.json();
                 showSuccess('Teacher created successfully!');
                 closeCreateTeacherModal();
+                document.getElementById('createTeacherForm').reset();
                 loadTeachers();
             } catch (error) {
                 console.error('Error creating teacher:', error);
@@ -803,7 +818,7 @@
 
         document.getElementById('createPreaderGameForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const token = localStorage.getItem('adminToken');
+            const token = localStorage.getItem('token');
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
 
@@ -834,7 +849,7 @@
                 return;
             }
             try {
-                const token = localStorage.getItem('adminToken');
+                const token = localStorage.getItem('token');
                 const response = await fetch('/admin/trigger-yearly-upgrade', {
                     method: 'POST',
                     headers: {
