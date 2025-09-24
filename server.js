@@ -2548,6 +2548,37 @@ app.get('/admin/teachers', authenticateAdminToken, async (req, res) => {
     }
 });
 
+// --- Place your new code block in the Admin Routes section ---
+
+// ... other admin routes like login, signup, etc.
+
+// New endpoint to fetch all dashboard statistics
+app.get('/admin/dashboard-stats', authenticateAdminToken, async (req, res) => {
+    try {
+        const totalStudents = await Student.countDocuments();
+        const totalTeachers = await Teacher.countDocuments();
+        const totalQuizQuestions = await QuizQuestion.countDocuments();
+        const totalWorkFiles = await WorkFile.countDocuments();
+
+        // You can add more counts here as your app grows
+        const totalPreaderGames = await PreaderGame.countDocuments();
+
+        res.status(200).json({
+            message: 'Dashboard stats fetched successfully.',
+            stats: {
+                totalStudents,
+                totalTeachers,
+                totalQuizQuestions,
+                totalWorkFiles,
+                totalPreaderGames
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+        res.status(500).json({ message: 'Failed to fetch dashboard statistics.', error: error.message });
+    }
+});
+
 app.delete('/admin/teachers/:id', authenticateAdminToken, async (req, res) => {
     const teacherIdToDelete = req.params.id;
 
