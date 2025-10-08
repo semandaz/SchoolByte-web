@@ -2297,21 +2297,28 @@ app.post(
         let workFilePublicId = null;
 
         try {
-            // 1. Upload file to Cloudinary
-            workFilePublicId = `schoolbyte/workfiles/${teacherId}/${Date.now()}`;
+            // 1. Upload file to Cloudinary with organized folder structure
+            const timestamp = Date.now();
+            const randomId = Math.random().toString(36).substring(2, 10);
+            workFilePublicId = `schoolbyte/workfiles/${teacherId}/workfile-${timestamp}-${randomId}`;
+            
             const uploadResult = await new Promise((resolve, reject) => {
                 const uploadStream = cloudinary.uploader.upload_stream({
                     resource_type: 'raw',
                     public_id: workFilePublicId,
-                    folder: `schoolbyte/workfiles/${teacherId}`
+                    folder: `schoolbyte/workfiles/${teacherId}`,
+                    format: 'pdf'
                 }, (error, result) => {
-                    if (error) return reject(error);
+                    if (error) {
+                        return reject(new Error(`Cloudinary upload failed: ${error.message}`));
+                    }
                     resolve(result);
                 });
                 uploadStream.end(req.file.buffer);
             });
 
             uploadedFileUrl = uploadResult.secure_url;
+            console.log(`PDF uploaded to Cloudinary: ${uploadedFileUrl}`);
 
             // 2. Create the two linked documents in the database
             const newActivity = new Activity({

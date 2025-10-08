@@ -631,7 +631,7 @@
                 showUploadingMessage('Uploading content to server');
 
                 // Check authentication first
-                const token = localStorage.getItem('token') || localStorage.getItem('teacherToken');
+                const token = localStorage.getItem('token');
                 if (!token) {
                     throw new Error('Not authenticated. Please log in again.');
                 }
@@ -661,7 +661,8 @@
                 formData.append('workFileSubject', document.getElementById('workFileSubject').value);
                 formData.append('workFileIntendedClass', document.getElementById('workFileIntendedClass').value);
                 formData.append('workFileCostBytes', document.getElementById('workFileCostBytes').value);
-                formData.append('applyDownloadWatermark', document.getElementById('applyDownloadWatermark').checked);
+                // Convert boolean to string "true" or "false" for proper form data handling
+                formData.append('applyDownloadWatermark', document.getElementById('applyDownloadWatermark').checked ? 'true' : 'false');
 
                 // Prepare activity data
                 const activityData = {
@@ -704,7 +705,8 @@
                     workFileSubject: document.getElementById('workFileSubject').value,
                     questionsCount: activityData.questions.length,
                     fileSelected: file.name,
-                    fileSize: Math.round(file.size / 1024) + ' KB'
+                    fileSize: Math.round(file.size / 1024) + ' KB',
+                    applyWatermark: document.getElementById('applyDownloadWatermark').checked
                 });
 
                 // Upload to server
@@ -726,17 +728,19 @@
 
                     // Handle specific error cases
                     if (response.status === 401 || response.status === 403) {
+                        localStorage.removeItem('token');
                         throw new Error('Authentication failed. Please log in again.');
                     } else if (response.status === 400) {
-                        throw new Error(result.message || 'Invalid form data. Please check your inputs.');
+                        const errorMsg = result.errors ? result.errors.map(e => e.msg).join(', ') : result.message;
+                        throw new Error(errorMsg || 'Invalid form data. Please check your inputs.');
                     } else {
                         throw new Error(result.message || `Upload failed with status ${response.status}`);
                     }
                 }
 
                 // Success
-                console.log('Upload successful!');
-                showMessage('Content uploaded successfully! Redirecting to dashboard...', 'success');
+                console.log('Upload successful! PDF stored in Cloudinary, activity in database.');
+                showMessage('Content uploaded successfully! PDF saved to Cloudinary. Redirecting...', 'success');
 
                 // Reset form
                 uploadForm.reset();
