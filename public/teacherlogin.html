@@ -441,7 +441,7 @@
                 <div class="logo-icon">
                     <i class="fas fa-graduation-cap"></i>
                 </div>
-                <div class="logo-text">SchoolByte</div>
+                 <div class="logo-text">SchoolByte</div>
             </div>
             <h1>Educator Portal - Secure Login</h1>
         </div>
@@ -450,60 +450,60 @@
             <div class="form-group">
                 <label for="teacherName">Full Name</label>
                 <div class="input-with-icon">
-                    <i class="fas fa-user"></i>
+                     <i class="fas fa-user"></i>
                     <input 
                         type="text" 
                         id="teacherName" 
-                        class="form-control" 
+                         class="form-control" 
                         placeholder="Enter your full name"
                         autocomplete="name"
                         required
-                    >
+                     >
                 </div>
                 <div class="error-text" id="name-error"></div>
             </div>
 
             <div class="form-group">
-                <label for="email">School Email                </label>
+                <label for="email">School Email</label>
                 <div class="input-with-icon">
                     <i class="fas fa-envelope"></i>
                     <input 
                         type="email" 
-                        id="email" 
+                         id="email" 
                         class="form-control" 
                         placeholder="your.name@school.edu or Admin: your.name@school.edu"
                         autocomplete="email"
-                        required
+                         required
                     >
                 </div>
                 <div class="error-text" id="email-error"></div>
             </div>
 
             <div class="form-group">
-                <label for="password">Password</label>
+                 <label for="password">Password</label>
                 <div class="input-with-icon">
                     <i class="fas fa-lock"></i>
                     <div class="password-container">
                         <input 
-                            type="password" 
+                             type="password" 
                             id="password" 
                             class="form-control" 
-                            placeholder="Enter your password"
+                             placeholder="Enter your password"
                             autocomplete="current-password"
                             required
                         >
-                        <button type="button" class="toggle-password" id="togglePassword">
+                         <button type="button" class="toggle-password" id="togglePassword">
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
-                </div>
+                 </div>
                 <div class="error-text" id="password-error"></div>
             </div>
 
             <div class="options">
                 <div class="remember-me">
                     <input type="checkbox" id="rememberMe">
-                    <label for="rememberMe">Remember me</label>
+                     <label for="rememberMe">Remember me</label>
                 </div>
                 <a href="#" class="forgot-password">Forgot password?</a>
             </div>
@@ -511,20 +511,20 @@
             <button type="submit" class="btn-login" id="login-btn">Sign In to Dashboard</button>
 
             <div class="divider">
-                <div class="divider-text">Or continue with</div>
+                 <div class="divider-text">Or continue with</div>
             </div>
 
             <div class="social-login">
                 <div class="social-btn">
                     <i class="fab fa-google"></i>
                 </div>
-                <div class="social-btn">
+                 <div class="social-btn">
                     <i class="fab fa-microsoft"></i>
                 </div>
                 <div class="social-btn">
                     <i class="fab fa-apple"></i>
                 </div>
-            </div>
+             </div>
 
             <div class="signup-link">
                 New to SchoolByte? <a href="#">Contact Admin</a>
@@ -535,11 +535,10 @@
                 <span>256-bit SSL encryption</span>
                 <i class="fas fa-user-shield"></i>
                 <span>GDPR compliant</span>
-            </div>
+             </div>
         </form>
     </div>
 
-    <!-- Custom Message Box HTML -->
     <div id="messageBoxOverlay" class="message-box-overlay">
         <div class="message-box">
             <p id="messageBoxText"></p>
@@ -549,7 +548,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const togglePassword = document.getElementById('togglePassword');
+             const togglePassword = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
             const loginForm = document.getElementById('login-form');
             const loginBtn = document.getElementById('login-btn');
@@ -604,14 +603,12 @@
 
             // Close message box on OK button click
             messageBoxClose.addEventListener('click', hideMessageBox);
-
             // Close message box if clicking outside
             messageBoxOverlay.addEventListener('click', function(e) {
                 if (e.target === messageBoxOverlay) {
                     hideMessageBox();
                 }
             });
-
             // Toggle password visibility
             togglePassword.addEventListener('click', function() {
                 const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -619,12 +616,11 @@
 
                 // Toggle eye icon
                 if (type === 'password') {
-                    this.innerHTML = '<i class="fas fa-eye"></i>';
+                     this.innerHTML = '<i class="fas fa-eye"></i>';
                 } else {
                     this.innerHTML = '<i class="fas fa-eye-slash"></i>';
                 }
             });
-
             // Form submission handler
             loginForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
@@ -640,19 +636,18 @@
 
                 if (email.toLowerCase().startsWith(adminPrefix.toLowerCase())) {
                     isAdminLogin = true;
-                    // Don't remove the prefix here - let the server handle it
                 }
 
                 // Client-side validation
                 let hasError = false;
 
-                if (!name) {
+                 if (!name) {
                     showError(nameError, 'Please enter your full name.');
                     hasError = true;
                 }
 
                 if (!email) {
-                    showError(emailError, 'Please enter a valid email address.');
+                     showError(emailError, 'Please enter a valid email address.');
                     hasError = true;
                 } else if (!isAdminLogin && !validateEmail(email)) {
                     showError(emailError, 'Please enter a valid school email address.');
@@ -671,7 +666,6 @@
                 }
 
                 if (hasError) return;
-
                 // Show loading state
                 loginBtn.disabled = true;
                 loginBtn.innerHTML = '<span class="loading"></span> Authenticating...';
@@ -683,10 +677,9 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                        },
+                         },
                         body: JSON.stringify(requestBody),
                     });
-
                     const data = await response.json();
 
                     if (!response.ok) {
@@ -701,22 +694,33 @@
                             window.location.href = 'admin-2fa-verify.html';
                         }, 2000);
                     } else {
-                        // Teacher login successful
-                        if (data.teacher && !data.teacher.isPasswordSet) {
-                            showMessageBox('Please set your initial password. Redirecting...');
-                            setTimeout(() => {
-                                window.location.href = 'teacher-set-password.html';
-                            }, 2000);
-                            return;
-                        }
+                        // ==========================================================
+                        // ===               START: CORRECTED CODE                ===
+                        // ==========================================================
 
+                        // ✨ KEY FIX: Save the token and user data IMMEDIATELY after a successful login.
                         localStorage.setItem('token', data.token);
                         localStorage.setItem('userData', JSON.stringify(data.teacher));
 
+                        // NOW, check if the password needs to be set.
+                        if (data.teacher && !data.teacher.isPasswordSet) {
+                            showMessageBox('Please set your initial password. Redirecting...');
+                            setTimeout(() => {
+                                // This redirect will now work because the token is saved.
+                                window.location.href = 'teacher-set-password.html';
+                            }, 2000);
+                            return; // Important to exit after scheduling the redirect
+                        }
+
+                        // If password is set, proceed to the dashboard.
                         showMessageBox('Login successful! Redirecting to dashboard...');
                         setTimeout(() => {
                             window.location.href = 'teacherdashboard.html';
                         }, 1500);
+
+                        // ==========================================================
+                        // ===                END: CORRECTED CODE                 ===
+                        // ==========================================================
                     }
 
                 } catch (error) {
@@ -727,7 +731,6 @@
                     loginBtn.innerHTML = 'Sign In to Dashboard';
                 }
             });
-
             // Email validation function
             function validateEmail(email) {
               const re = /^(admin: |)(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;

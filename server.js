@@ -1,5 +1,6 @@
 // server.js - SchoolByte Backend - Complete Quiz System Implementation
 
+
 // --- Module Imports ---
 const express = require('express');
 const mongoose = require('mongoose');
@@ -16,8 +17,10 @@ const multer = require('multer');
 const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai');
 const crypto = require('crypto');
 
+
 const app = express();
 const PORT = process.env.PORT || 5000;
+
 
 // --- Middleware ---
 app.use(cors());
@@ -27,13 +30,16 @@ app.use(express.static('public'));
 app.use(helmet());
 app.use(morgan('dev'));
 
+
 // --- MongoDB Connection ---
 const MONGODB_URI = process.env.MONGODB_URI;
+
 
 if (!MONGODB_URI) {
     console.error('FATAL ERROR: MONGODB_URI is not defined. Please set it in Replit Secrets.');
     process.exit(1);
 }
+
 
 mongoose.connect(MONGODB_URI)
     .then(() => console.log('MongoDB connected successfully'))
@@ -42,7 +48,9 @@ mongoose.connect(MONGODB_URI)
         process.exit(1);
     });
 
+
 // --- Enhanced Database Schemas ---
+
 
 // VerificationCode Schema
 const verificationCodeSchema = new mongoose.Schema({
@@ -51,6 +59,7 @@ const verificationCodeSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now, expires: '10m' }
 });
 const VerificationCode = mongoose.model('VerificationCode', verificationCodeSchema);
+
 
 // Subject Schema (Static curriculum definition)
 const subjectSchema = new mongoose.Schema({
@@ -71,6 +80,7 @@ subjectSchema.pre('save', function(next) {
 });
 const Subject = mongoose.model('Subject', subjectSchema);
 
+
 // Enhanced Student Schema with all report features
 const studentSchema = new mongoose.Schema({
     studentName: { type: String, required: true, trim: true },
@@ -79,6 +89,7 @@ const studentSchema = new mongoose.Schema({
     password: { type: String, required: true },
     isEmailVerified: { type: Boolean, default: false },
     bytes: { type: Number, default: 20 },
+
 
     // Core fields from report
     class: { type: String, required: true, trim: true, index: true },
@@ -90,6 +101,7 @@ const studentSchema = new mongoose.Schema({
         default: [],
         index: true
     },
+
 
     // Quiz tracking fields
     quizzesCompletedThisWeek: { type: Number, default: 0, min: 0 },
@@ -105,6 +117,7 @@ const studentSchema = new mongoose.Schema({
         default: null
     },
 
+
     // Display preferences
     firstNameDisplay: { type: String, trim: true },
     preferredName: { type: String, trim: true },
@@ -118,18 +131,22 @@ const studentSchema = new mongoose.Schema({
         }
     },
 
+
     // Preader Games tracking
     totalPreaderGameTimeMinutes: { type: Number, default: 0 },
+
 
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
+
 
 studentSchema.pre('save', function(next) {
     this.updatedAt = Date.now();
     next();
 });
 const Student = mongoose.model('Student', studentSchema);
+
 
 // Enhanced QuizQuestion Schema with all question types and NLP features
 const quizQuestionSchema = new mongoose.Schema({
@@ -142,6 +159,7 @@ const quizQuestionSchema = new mongoose.Schema({
         enum: ['S.1', 'S.2', 'S.3', 'S.4', 'S.5', 'S.6'],
         index: true
     },
+
 
     // Question type system
     type: {
@@ -159,6 +177,7 @@ const quizQuestionSchema = new mongoose.Schema({
         ],
         required: true
     },
+
 
     // Type-specific answer fields
     options: [{
@@ -180,11 +199,13 @@ const quizQuestionSchema = new mongoose.Schema({
         required: function() { return this.type === 'ordering'; }
     },
 
+
     // Additional question fields
     instructions: { type: String, trim: true },
     hint: { type: String, trim: true },
     explanation: { type: String, trim: true },
     maxBytesRewardPerQuestion: { type: Number, required: true, default: 1, min: 0 },
+
 
     // NLP and content enhancement fields
     keywordsForGrading: {
@@ -198,6 +219,7 @@ const quizQuestionSchema = new mongoose.Schema({
         set: (v) => v.map(s => s.toLowerCase().trim())
     },
 
+
     // Content tagging
     topic: { type: String, trim: true, index: true },
     subTopic: { type: String, trim: true, index: true },
@@ -207,19 +229,23 @@ const quizQuestionSchema = new mongoose.Schema({
         default: []
     },
 
+
     // Content management
     isActive: { type: Boolean, default: true, index: true },
     timesServedOverall: { type: Number, default: 0, min: 0, index: true },
     lastServedTimestamp: { type: Date, index: true },
 
+
     // Question hashing for duplicate detection
     questionHash: { type: String, unique: true, sparse: true },
+
 
     // Teacher attribution
     uploadedBy: {
         teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null },
         teacherName: { type: String, required: true }
     },
+
 
     // Featured content
     isFeatured: { type: Boolean, default: false },
@@ -228,13 +254,16 @@ const quizQuestionSchema = new mongoose.Schema({
         required: function() { return this.isFeatured; }
     },
 
+
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
 
+
 // Pre-save middleware to generate question hash
 quizQuestionSchema.pre('save', function(next) {
     this.updatedAt = Date.now();
+
 
     // Generate hash for duplicate detection
     if (this.isModified('questionText')) {
@@ -242,10 +271,13 @@ quizQuestionSchema.pre('save', function(next) {
         this.questionHash = crypto.createHash('sha256').update(normalizedText).digest('hex');
     }
 
+
     next();
 });
 
+
 const QuizQuestion = mongoose.model('QuizQuestion', quizQuestionSchema);
+
 
 // QuizSession Schema - "Fats and Beef" mechanism
 const quizSessionSchema = new mongoose.Schema({
@@ -266,6 +298,7 @@ const quizSessionSchema = new mongoose.Schema({
                 "Physical Education", "Technology and Design"
             ];
 
+
             const progress = {};
             subjects.forEach(subject => {
                 progress[subject] = {
@@ -282,11 +315,13 @@ const quizSessionSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
 });
 
+
 quizSessionSchema.pre('save', function(next) {
     this.updatedAt = Date.now();
     next();
 });
 const QuizSession = mongoose.model('QuizSession', quizSessionSchema);
+
 
 // CompletedQuizAttempt Schema - Immutable log
 const completedQuizAttemptSchema = new mongoose.Schema({
@@ -313,6 +348,7 @@ const completedQuizAttemptSchema = new mongoose.Schema({
         ref: 'QuizSession' 
     },
 
+
     // Enhanced fields for analytics
     studentAnswer: { type: mongoose.Schema.Types.Mixed },
     correctAnswer: { type: mongoose.Schema.Types.Mixed },
@@ -321,6 +357,7 @@ const completedQuizAttemptSchema = new mongoose.Schema({
 });
 const CompletedQuizAttempt = mongoose.model('CompletedQuizAttempt', completedQuizAttemptSchema);
 
+
 // Teacher Schema with weekly tracking
 const teacherSchema = new mongoose.Schema({
     teacherName: { type: String, required: true, trim: true },
@@ -328,9 +365,11 @@ const teacherSchema = new mongoose.Schema({
     password: { type: String, required: true },
     bytes: { type: Number, default: 0 },
 
+
     // Weekly contribution tracking
     quizzesUploadedThisWeek: { type: Number, default: 0, min: 0 },
     lastUploadResetDate: { type: Date, default: Date.now },
+
 
     // Profile fields
     isPasswordSet: { type: Boolean, default: false },
@@ -350,9 +389,11 @@ const teacherSchema = new mongoose.Schema({
         }
     },
 
+
     createdAt: { type: Date, default: Date.now }
 });
 const Teacher = mongoose.model('Teacher', teacherSchema);
+
 
 // WorkFile and Activity schemas (existing)
 const workFileSchema = new mongoose.Schema({
@@ -366,11 +407,19 @@ const workFileSchema = new mongoose.Schema({
         teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null },
         teacherName: { type: String, required: true }
     },
+    // This field links the WorkFile to its corresponding Activity
     activity: { type: mongoose.Schema.Types.ObjectId, ref: 'Activity', required: true, unique: true },
     applyDownloadWatermark: { type: Boolean, default: true },
     createdAt: { type: Date, default: Date.now }
 });
 const WorkFile = mongoose.model('WorkFile', workFileSchema);
+
+// This posts the activity schema to the cloudinary database
+
+
+
+// REPLACE your old activitySchema with this one
+
 
 const activitySchema = new mongoose.Schema({
     title: { type: String, required: true, trim: true },
@@ -405,6 +454,7 @@ const activitySchema = new mongoose.Schema({
 });
 const Activity = mongoose.model('Activity', activitySchema);
 
+
 const studentActivitySubmissionSchema = new mongoose.Schema({
     student: {
         type: mongoose.Schema.Types.ObjectId,
@@ -436,6 +486,7 @@ const studentActivitySubmissionSchema = new mongoose.Schema({
 });
 const StudentActivitySubmission = mongoose.model('StudentActivitySubmission', studentActivitySubmissionSchema);
 
+
 // Administrator Schema
 const adminSchema = new mongoose.Schema({
     adminName: { type: String, required: true, trim: true },
@@ -444,6 +495,7 @@ const adminSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 const Administrator = mongoose.model('Administrator', adminSchema);
+
 
 // Preader Game Schemas (existing)
 const PreaderGameSessionSchema = new mongoose.Schema({
@@ -523,7 +575,9 @@ const PreaderGameSessionSchema = new mongoose.Schema({
     rewindsUsed: { type: Number, default: 0 }
 });
 
+
 const PreaderGameSession = mongoose.model('PreaderGameSession', PreaderGameSessionSchema);
+
 
 const PreaderGameSessionLogSchema = new mongoose.Schema({
     student: {
@@ -565,9 +619,12 @@ const PreaderGameSessionLogSchema = new mongoose.Schema({
     }
 });
 
+
 const PreaderGameSessionLog = mongoose.model('PreaderGameSessionLog', PreaderGameSessionLogSchema);
 
+
 // --- Utility Functions ---
+
 
 // Helper to apply stat changes with boundaries
 function applyStatChanges(currentStats, changes) {
@@ -575,6 +632,7 @@ function applyStatChanges(currentStats, changes) {
     for (const stat in changes) {
         if (newStats.hasOwnProperty(stat) && typeof changes[stat] === 'number') {
             newStats[stat] = newStats[stat] + changes[stat];
+
 
             if (stat === 'life' || stat === 'mana' || stat === 'knowledge' || stat === 'luck') {
                 newStats[stat] = Math.max(0, newStats[stat]);
@@ -587,15 +645,18 @@ function applyStatChanges(currentStats, changes) {
     return newStats;
 }
 
+
 // Enhanced NLP grading function
 async function gradeNLPAnswer(studentAnswer, quizQuestion) {
     if (!quizQuestion.keywordsForGrading || quizQuestion.keywordsForGrading.length === 0) {
         return 1; // If no keywords, assume correct
     }
 
+
     let matchedKeywords = 0;
     let negativeMatches = 0;
     const normalizedAnswer = studentAnswer.toLowerCase().trim();
+
 
     // Check positive keywords
     for (const keyword of quizQuestion.keywordsForGrading) {
@@ -603,6 +664,7 @@ async function gradeNLPAnswer(studentAnswer, quizQuestion) {
             matchedKeywords++;
         }
     }
+
 
     // Check negative keywords
     if (quizQuestion.negativeKeywords && quizQuestion.negativeKeywords.length > 0) {
@@ -613,18 +675,22 @@ async function gradeNLPAnswer(studentAnswer, quizQuestion) {
         }
     }
 
+
     // Calculate score with negative penalty
     let score = matchedKeywords / quizQuestion.keywordsForGrading.length;
     score = Math.max(0, score - (negativeMatches * 0.1)); // Deduct 0.1 per negative match
 
+
     return Math.min(1, score);
 }
+
 
 // Weekly reset checker for students
 async function checkAndResetWeeklyCounters(student) {
     const now = new Date();
     const lastReset = new Date(student.lastQuizResetDate);
     const startOfThisWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+
 
     if (lastReset < startOfThisWeek) {
         student.quizzesCompletedThisWeek = 0;
@@ -633,11 +699,13 @@ async function checkAndResetWeeklyCounters(student) {
     }
 }
 
+
 // Weekly reset checker for teachers
 async function checkAndResetTeacherWeeklyCounters(teacher) {
     const now = new Date();
     const lastReset = new Date(teacher.lastUploadResetDate);
     const startOfThisWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+
 
     if (lastReset < startOfThisWeek) {
         teacher.quizzesUploadedThisWeek = 0;
@@ -646,10 +714,12 @@ async function checkAndResetTeacherWeeklyCounters(teacher) {
     }
 }
 
+
 // Quiz generation algorithm implementing "Fats and Beef"
 async function generateQuizQuestions(student, requestedSubject = null) {
     const session = await mongoose.startSession();
     session.startTransaction();
+
 
     try {
         // Get or create quiz session
@@ -664,9 +734,11 @@ async function generateQuizQuestions(student, requestedSubject = null) {
             await student.save({ session });
         }
 
+
         // Determine question distribution based on class level
         let ownClassCount, lowerClassCount, higherClassCount;
         const studentClass = student.class;
+
 
         if (['S.1', 'S.2', 'S.3', 'S.4'].includes(studentClass)) {
             // O-Level distribution: 5 own, 2 lower, 3 higher
@@ -680,16 +752,20 @@ async function generateQuizQuestions(student, requestedSubject = null) {
             higherClassCount = 3;
         }
 
+
         const selectedQuestions = [];
         const usedQuestionIds = new Set();
 
+
         // Priority 1: Fill underrepresented subjects
         const underrepresentedSlots = findUnderrepresentedSlots(quizSession.subjectProgress);
+
 
         // Helper function to get class levels for distribution
         function getClassLevels(targetClass, type) {
             const classOrder = ['S.1', 'S.2', 'S.3', 'S.4', 'S.5', 'S.6'];
             const currentIndex = classOrder.indexOf(targetClass);
+
 
             if (type === 'own') return [targetClass];
             if (type === 'lower') {
@@ -700,13 +776,16 @@ async function generateQuizQuestions(student, requestedSubject = null) {
             }
         }
 
+
         // Fill questions for each category
         await fillQuestionCategory('own', ownClassCount, getClassLevels(studentClass, 'own'));
         await fillQuestionCategory('lower', lowerClassCount, getClassLevels(studentClass, 'lower'));
         await fillQuestionCategory('higher', higherClassCount, getClassLevels(studentClass, 'higher'));
 
+
         async function fillQuestionCategory(categoryType, count, allowedClasses) {
             let filled = 0;
+
 
             // Try to fill from underrepresented subjects first
             for (const subject in underrepresentedSlots) {
@@ -720,6 +799,7 @@ async function generateQuizQuestions(student, requestedSubject = null) {
                     }).limit(Math.min(underrepresentedSlots[subject][categoryType], count - filled))
                       .session(session);
 
+
                     for (const q of questions) {
                         if (filled < count) {
                             selectedQuestions.push({ question: q, category: categoryType, subject: subject });
@@ -730,11 +810,13 @@ async function generateQuizQuestions(student, requestedSubject = null) {
                 }
             }
 
+
             // Fill remaining slots with enrolled subjects
             while (filled < count) {
                 let found = false;
                 for (const subject of student.subjectsEnrolled) {
                     if (filled >= count) break;
+
 
                     const questions = await QuizQuestion.find({
                         subject: subject,
@@ -742,6 +824,7 @@ async function generateQuizQuestions(student, requestedSubject = null) {
                         isActive: true,
                         _id: { $nin: [...student.recentQuizIds, ...usedQuestionIds] }
                     }).limit(1).session(session);
+
 
                     if (questions.length > 0) {
                         selectedQuestions.push({ 
@@ -755,6 +838,7 @@ async function generateQuizQuestions(student, requestedSubject = null) {
                     }
                 }
 
+
                 if (!found) {
                     // Fallback: use least-served questions globally
                     const questions = await QuizQuestion.find({
@@ -764,6 +848,7 @@ async function generateQuizQuestions(student, requestedSubject = null) {
                     }).sort({ timesServedOverall: 1, lastServedTimestamp: 1 })
                       .limit(count - filled)
                       .session(session);
+
 
                     for (const q of questions) {
                         selectedQuestions.push({ 
@@ -779,6 +864,7 @@ async function generateQuizQuestions(student, requestedSubject = null) {
             }
         }
 
+
         // Update question stats asynchronously (in background)
         setImmediate(async () => {
             for (const { question } of selectedQuestions) {
@@ -792,8 +878,10 @@ async function generateQuizQuestions(student, requestedSubject = null) {
             }
         });
 
+
         await session.commitTransaction();
         return selectedQuestions.map(sq => sq.question);
+
 
     } catch (error) {
         await session.abortTransaction();
@@ -803,9 +891,11 @@ async function generateQuizQuestions(student, requestedSubject = null) {
     }
 }
 
+
 function findUnderrepresentedSlots(subjectProgress) {
     const underrepresented = {};
     const quotas = { ownClass: 5, lowerClass: 2, higherClass: 3 };
+
 
     for (const subject in subjectProgress) {
         underrepresented[subject] = {};
@@ -818,8 +908,10 @@ function findUnderrepresentedSlots(subjectProgress) {
         }
     }
 
+
     return underrepresented;
 }
+
 
 // --- Email Configuration ---
 const transporter = nodemailer.createTransport({
@@ -830,9 +922,11 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+
 if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     console.warn('WARNING: EMAIL_USER or EMAIL_PASS not set. Email functionalities will not work.');
 }
+
 
 // --- JWT Secret ---
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -841,6 +935,7 @@ if (!JWT_SECRET) {
     process.exit(1);
 }
 
+
 // --- Cloudinary Configuration ---
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -848,22 +943,25 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+
 if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
     console.warn('WARNING: Cloudinary environment variables are not fully set. File uploads will not work.');
 } else {
     console.log('Cloudinary configured successfully.');
 }
 
-const upload = multer({ storage: multer.memoryStorage() });
+
 
 // --- Authentication Middleware ---
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
+
     if (!token) {
         return res.status(401).json({ message: 'Access Denied: No authentication token provided.' });
     }
+
 
     jwt.verify(token, JWT_SECRET, (err, decoded) => {
         if (err) {
@@ -875,14 +973,17 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+
 const authenticateTeacherToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
+
 
     if (!token) {
         console.error('No authentication token provided in teacher request');
         return res.status(401).json({ message: 'Access Denied: No authentication token provided.' });
     }
+
 
     jwt.verify(token, JWT_SECRET, (err, decoded) => {
         if (err) {
@@ -894,24 +995,29 @@ const authenticateTeacherToken = (req, res, next) => {
             return res.status(403).json({ message: 'Access Denied: Invalid or expired teacher token.' });
         }
 
+
         // Ensure the token is for a teacher
         if (decoded.role !== 'teacher') {
             console.error('Token role mismatch:', decoded.role);
             return res.status(403).json({ message: 'Access Denied: Teacher access required.' });
         }
 
+
         req.teacher = decoded;
         next();
     });
 };
 
+
 const authenticateAdminToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
+
     if (!token) {
         return res.status(401).json({ message: 'Access Denied: No authentication token provided.' });
     }
+
 
     jwt.verify(token, JWT_SECRET, (err, decoded) => {
         if (err) {
@@ -923,9 +1029,11 @@ const authenticateAdminToken = (req, res, next) => {
     });
 };
 
+
 // --- AI Service Configuration ---
 const MODEL_NAME = "gemini-1.5-flash";
 const API_KEY = process.env.GEMINI_API_KEY;
+
 
 let genAI;
 if (!API_KEY) {
@@ -934,15 +1042,19 @@ if (!API_KEY) {
     genAI = new GoogleGenerativeAI(API_KEY);
 }
 
+
 async function generateStoryNode(basePrompt, currentGameState, studentClass, previousScene = null, chosenOptionText = null) {
     if (!genAI) {
         throw new Error("AI service not configured: GEMINI_API_KEY is missing or invalid.");
     }
 
+
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+
 
     let contentSafetyInstruction = "";
     const classNumber = parseInt(studentClass.replace('S.', ""));
+
 
     if (classNumber <= 4) {
         contentSafetyInstruction = 'The story MUST be entirely clean, appropriate for all ages, ' +
@@ -955,6 +1067,7 @@ async function generateStoryNode(basePrompt, currentGameState, studentClass, pre
             'is allowed. Focus on mature themes like complex ethical dilemmas, advanced ' +
             'problem-solving, and character development, while maintaining a non-explicit narrative.';
     }
+
 
     let ethicalImpactPrompt = "";
     if (currentGameState && typeof currentGameState.currentEthicalScore === 'number') {
@@ -971,11 +1084,13 @@ async function generateStoryNode(basePrompt, currentGameState, studentClass, pre
         ethicalImpactPrompt = "Ensure the story has unexpected twists and hard decisions.";
     }
 
+
     let continuationContext = "";
     if (previousScene && chosenOptionText) {
         continuationContext = `
             **Previous Scene:**
             ${previousScene}
+
 
             **Player's Choice:**
             "${chosenOptionText}"
@@ -983,21 +1098,26 @@ async function generateStoryNode(basePrompt, currentGameState, studentClass, pre
         `;
     }
 
+
     const fullPrompt = `
         You are generating a scene for an interactive story game set in a typical, vibrant Ugandan secondary school.
         Focus on details relevant to this setting. Use common Ugandan names for characters. Incorporate elements like
         school uniforms, assembly grounds, dormitories (if boarding), specific classroom environments, common school
         activities (e.g., morning assembly, prep time, sports day), and interactions with 'mwalimu' (teacher) or 'prefects').
 
+
         **Your Task:** Generate the next scene of the interactive story.
         The narrative must be rich, descriptive, and novel-like.
         ${ethicalImpactPrompt}
         ${contentSafetyInstruction}
 
+
         ${continuationContext}
+
 
         **Current Player State (for context, do not explicitly reference in narrative unless relevant):**
         ${JSON.stringify(currentGameState, null, 2)}
+
 
         **Output Format:**
         Respond ONLY with a JSON object.
@@ -1012,6 +1132,7 @@ async function generateStoryNode(basePrompt, currentGameState, studentClass, pre
         Ensure all numerical values for stat changes are provided, even if 0.
         Ensure \`ethicalImpact\` and \`bytesAwarded\` are always present for each choice.
     `;
+
 
     try {
         const result = await model.generateContent({
@@ -1039,17 +1160,21 @@ async function generateStoryNode(basePrompt, currentGameState, studentClass, pre
             ]
         });
 
+
         const responseText = result.candidates[0].content.parts[0].text;
         const parsedResponse = JSON.parse(responseText);
+
 
         if (!parsedResponse.sceneDescription || !Array.isArray(parsedResponse.choices)) {
             throw new Error("AI response did not match expected JSON structure.");
         }
 
+
         parsedResponse.choices = parsedResponse.choices.map(choice => ({
             ...choice,
             bytesAwarded: typeof choice.bytesAwarded === 'number' ? choice.bytesAwarded : 1
         }));
+
 
         return parsedResponse;
     } catch (error) {
@@ -1058,7 +1183,9 @@ async function generateStoryNode(basePrompt, currentGameState, studentClass, pre
     }
 }
 
+
 // --- API Endpoints ---
+
 
 // Initialize admin account on startup
 async function initializeAdmin() {
@@ -1066,15 +1193,18 @@ async function initializeAdmin() {
         const adminEmail = 'zackian1122@gmail.com';
         const existingAdmin = await Administrator.findOne({ email: adminEmail });
 
+
         if (!existingAdmin) {
             const saltRounds = 10;
             const hashedPassword = await bcrypt.hash('001@simax001@simax', saltRounds);
+
 
             const newAdmin = new Administrator({
                 adminName: 'Administrator',
                 email: adminEmail,
                 password: hashedPassword
             });
+
 
             await newAdmin.save();
             console.log('Initial administrator account created successfully.');
@@ -1085,6 +1215,7 @@ async function initializeAdmin() {
         console.error('Error creating initial administrator:', error);
     }
 }
+
 
 // Initialize subjects on startup
 async function initializeSubjects() {
@@ -1109,6 +1240,7 @@ async function initializeSubjects() {
         { name: "Technology and Design", isCompulsory: false, applicableLevels: ["O_Level_Lower", "O_Level_Middle", "A_Level"] }
     ];
 
+
     for (const subject of subjects) {
         await Subject.findOneAndUpdate(
             { name: subject.name },
@@ -1118,9 +1250,11 @@ async function initializeSubjects() {
     }
 }
 
+
 // Initialize subjects and admin on startup
 initializeSubjects().catch(console.error);
 initializeAdmin().catch(console.error);
+
 
 // Email verification endpoints (existing)
 app.post('/send-verification-code', [
@@ -1131,7 +1265,9 @@ app.post('/send-verification-code', [
         return res.status(400).json({ errors: errors.array() });
     }
 
+
     const { email } = req.body;
+
 
     try {
         const student = await Student.findOne({ email });
@@ -1139,13 +1275,16 @@ app.post('/send-verification-code', [
             return res.status(400).json({ message: 'This email is already verified.' });
         }
 
+
         const code = Math.floor(100000 + Math.random() * 900000).toString();
+
 
         await VerificationCode.findOneAndUpdate(
             { email },
             { code, createdAt: Date.now() },
             { upsert: true, new: true, setDefaultsOnInsert: true }
         );
+
 
         const mailOptions = {
             from: process.env.EMAIL_USER,
@@ -1154,14 +1293,17 @@ app.post('/send-verification-code', [
             html: `<p>Your SchoolByte verification code is: <strong>${code}</strong></p><p>This code is valid for 10 minutes.</p>`
         };
 
+
         await transporter.sendMail(mailOptions);
         res.status(200).json({ message: 'Verification code sent to your email.' });
+
 
     } catch (error) {
         console.error('Error sending verification email:', error);
         res.status(500).json({ message: 'Failed to send verification code.', error: error.message });
     }
 });
+
 
 app.post('/verify-code', [
     body('email').isEmail().withMessage('Please provide a valid email address.'),
@@ -1172,14 +1314,18 @@ app.post('/verify-code', [
         return res.status(400).json({ errors: errors.array() });
     }
 
+
     const { email, code } = req.body;
+
 
     try {
         const storedCode = await VerificationCode.findOne({ email });
 
+
         if (!storedCode) {
             return res.status(400).json({ message: 'No verification code found for this email, or it has expired.', verified: false });
         }
+
 
         if (storedCode.code === code) {
             await Student.updateOne({ email }, { isEmailVerified: true });
@@ -1193,6 +1339,7 @@ app.post('/verify-code', [
         res.status(500).json({ message: 'Error verifying code.', error: error.message, verified: false });
     }
 });
+
 
 // Enhanced student registration with subject validation
 app.post('/register-student', [
@@ -1210,15 +1357,19 @@ app.post('/register-student', [
         return res.status(400).json({ errors: errors.array() });
     }
 
+
     const { studentName, indexNumber, email, password, class: studentClass, stream, classTeacher, subjectsEnrolled } = req.body;
+
 
     try {
         // Validate subject enrollment rules
         const compulsorySubjects = await Subject.find({ isCompulsory: true }).select('name');
         const compulsoryNames = compulsorySubjects.map(s => s.name);
 
+
         let expectedSubjectCount;
         let requiredCompulsory = true;
+
 
         if (['S.1', 'S.2'].includes(studentClass)) {
             expectedSubjectCount = 12; // 7 compulsory + 5 subsidiary
@@ -1229,11 +1380,13 @@ app.post('/register-student', [
             requiredCompulsory = false;
         }
 
+
         if (subjectsEnrolled.length !== expectedSubjectCount) {
             return res.status(400).json({ 
                 message: `Invalid number of subjects. ${studentClass} students must enroll in exactly ${expectedSubjectCount} subjects.` 
             });
         }
+
 
         if (requiredCompulsory) {
             const hasAllCompulsory = compulsoryNames.every(name => subjectsEnrolled.includes(name));
@@ -1243,6 +1396,7 @@ app.post('/register-student', [
                 });
             }
         }
+
 
         const existingStudent = await Student.findOne({ $or: [{ email }, { indexNumber }] });
         if (existingStudent) {
@@ -1257,8 +1411,10 @@ app.post('/register-student', [
             return res.status(409).json({ message });
         }
 
+
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
+
 
         const newStudent = new Student({
             studentName,
@@ -1274,7 +1430,9 @@ app.post('/register-student', [
             currentQuizSessionId: null // Will be set after quiz session creation
         });
 
+
         await newStudent.save();
+
 
         // Create initial quiz session with the student's ID
         const initialQuizSession = new QuizSession({
@@ -1283,9 +1441,11 @@ app.post('/register-student', [
         });
         await initialQuizSession.save();
 
+
         // Update student with quiz session ID
         newStudent.currentQuizSessionId = initialQuizSession._id;
         await newStudent.save();
+
 
         res.status(201).json({
             message: 'Student registered successfully! Please verify your email to log in.',
@@ -1299,6 +1459,7 @@ app.post('/register-student', [
             }
         });
 
+
     } catch (error) {
         console.error('Error during student registration:', error);
         if (error.code === 11000) {
@@ -1310,6 +1471,7 @@ app.post('/register-student', [
     }
 });
 
+
 // Enhanced student login
 app.post('/login-student', [
     body('email').isEmail().withMessage('Please provide a valid email address.'),
@@ -1320,23 +1482,30 @@ app.post('/login-student', [
         return res.status(400).json({ errors: errors.array() });
     }
 
+
     const { email, password } = req.body;
+
 
     try {
         const student = await Student.findOne({ email });
+
 
         if (!student) {
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
 
+
         const isMatch = await bcrypt.compare(password, student.password);
+
 
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
 
+
         // Check and reset weekly counters
         await checkAndResetWeeklyCounters(student);
+
 
         const token = jwt.sign(
             { 
@@ -1349,6 +1518,7 @@ app.post('/login-student', [
             JWT_SECRET,
             { expiresIn: '24h' }
         );
+
 
         res.status(200).json({
             message: 'Login successful!',
@@ -1364,23 +1534,28 @@ app.post('/login-student', [
             }
         });
 
+
     } catch (error) {
         console.error('Error during student login:', error);
         res.status(500).json({ message: 'Server error during login.', error: error.message });
     }
 });
 
+
 // Enhanced student dashboard
 app.get('/student/dashboard', authenticateToken, async (req, res) => {
     try {
         const studentData = await Student.findById(req.student.id).select('-password').populate('currentQuizSessionId');
 
+
         if (!studentData) {
             return res.status(404).json({ message: 'Student data not found.' });
         }
 
+
         // Check and reset weekly counters
         await checkAndResetWeeklyCounters(studentData);
+
 
         res.status(200).json({
             message: `Welcome to your dashboard, ${studentData.studentName}!`,
@@ -1404,11 +1579,13 @@ app.get('/student/dashboard', authenticateToken, async (req, res) => {
             }
         });
 
+
     } catch (error) {
         console.error('Error accessing student dashboard:', error);
         res.status(500).json({ message: 'Server error accessing dashboard.', error: error.message });
     }
 });
+
 
 // Enhanced Quiz Generation Endpoint
 app.get('/student/quizzes/generate', authenticateToken, async (req, res) => {
@@ -1418,9 +1595,11 @@ app.get('/student/quizzes/generate', authenticateToken, async (req, res) => {
             return res.status(404).json({ message: 'Student not found.' });
         }
 
+
         // Check weekly quiz limit
         await checkAndResetWeeklyCounters(student);
         const weeklyLimit = 50; // Configurable
+
 
         if (student.quizzesCompletedThisWeek >= weeklyLimit) {
             return res.status(429).json({ 
@@ -1430,12 +1609,15 @@ app.get('/student/quizzes/generate', authenticateToken, async (req, res) => {
             });
         }
 
+
         // Generate quiz questions using enhanced algorithm
         const questions = await generateQuizQuestions(student, req.query.subject);
+
 
         if (questions.length === 0) {
             return res.status(404).json({ message: 'No suitable questions found. Please try again later.' });
         }
+
 
         // Return questions without correct answers
         const sanitizedQuestions = questions.map(q => ({
@@ -1454,6 +1636,7 @@ app.get('/student/quizzes/generate', authenticateToken, async (req, res) => {
             uploadedBy: { teacherName: q.uploadedBy.teacherName }
         }));
 
+
         res.status(200).json({
             message: 'Quiz questions generated successfully!',
             questions: sanitizedQuestions,
@@ -1465,11 +1648,13 @@ app.get('/student/quizzes/generate', authenticateToken, async (req, res) => {
             }
         });
 
+
     } catch (error) {
         console.error('Error generating quiz questions:', error);
         res.status(500).json({ message: 'Failed to generate quiz questions.', error: error.message });
     }
 });
+
 
 // Enhanced Quiz Submission with full grading system
 app.post('/student/quizzes/submit', authenticateToken, [
@@ -1480,8 +1665,10 @@ app.post('/student/quizzes/submit', authenticateToken, [
     const { quizSubmissions } = req.body;
     const studentId = req.student.id;
 
+
     const session = await mongoose.startSession();
     session.startTransaction();
+
 
     try {
         const student = await Student.findById(studentId).session(session);
@@ -1489,19 +1676,23 @@ app.post('/student/quizzes/submit', authenticateToken, [
             return res.status(404).json({ message: 'Student not found.' });
         }
 
+
         const quizSession = await QuizSession.findById(student.currentQuizSessionId).session(session);
         if (!quizSession) {
             return res.status(404).json({ message: 'Quiz session not found.' });
         }
 
+
         let totalBytesEarned = 0;
         const gradedAnswers = [];
         const completedAttempts = [];
+
 
         // Grade each question
         for (const submission of quizSubmissions) {
             const questionId = submission.questionId;
             const studentAnswer = submission.studentAnswer;
+
 
             const quizQuestion = await QuizQuestion.findById(questionId).session(session);
             if (!quizQuestion) {
@@ -1509,9 +1700,11 @@ app.post('/student/quizzes/submit', authenticateToken, [
                 continue;
             }
 
+
             let isCorrect = false;
             let questionBytes = 0;
             let partialScore = 0;
+
 
             // Enhanced grading based on question type
             switch (quizQuestion.type) {
@@ -1524,6 +1717,7 @@ app.post('/student/quizzes/submit', authenticateToken, [
                     }
                     break;
 
+
                 case 'fill-in-the-blank':
                     if (typeof studentAnswer === 'string') {
                         const normalizedStudentAnswer = studentAnswer.toLowerCase().trim();
@@ -1534,6 +1728,7 @@ app.post('/student/quizzes/submit', authenticateToken, [
                         partialScore = questionBytes;
                     }
                     break;
+
 
                 case 'true-false':
                     if (typeof studentAnswer === 'boolean' || typeof studentAnswer === 'string') {
@@ -1546,6 +1741,7 @@ app.post('/student/quizzes/submit', authenticateToken, [
                     }
                     break;
 
+
                 case 'multiple-choice-single':
                     if (typeof studentAnswer === 'string' && mongoose.Types.ObjectId.isValid(studentAnswer)) {
                         isCorrect = quizQuestion.options.some(option =>
@@ -1556,6 +1752,7 @@ app.post('/student/quizzes/submit', authenticateToken, [
                     }
                     break;
 
+
                 case 'multiple-choice-multi':
                     if (Array.isArray(studentAnswer)) {
                         const correctOptionIds = quizQuestion.options
@@ -1563,8 +1760,10 @@ app.post('/student/quizzes/submit', authenticateToken, [
                             .map(option => option._id.toString());
                         const chosenOptionIds = studentAnswer.map(id => id.toString());
 
+
                         const correctChoices = chosenOptionIds.filter(id => correctOptionIds.includes(id)).length;
                         const incorrectChoices = chosenOptionIds.filter(id => !correctOptionIds.includes(id)).length;
+
 
                         partialScore = Math.max(0, (correctChoices - incorrectChoices) / correctOptionIds.length);
                         isCorrect = partialScore >= 0.7;
@@ -1572,12 +1771,14 @@ app.post('/student/quizzes/submit', authenticateToken, [
                     }
                     break;
 
+
                 case 'matching':
                     if (Array.isArray(studentAnswer)) {
                         const normalizedCorrectPairs = quizQuestion.matchingPairs
                             .map(pair => ({ itemA: pair.itemA.toLowerCase().trim(), itemB: pair.itemB.toLowerCase().trim() }));
                         const normalizedStudentPairs = studentAnswer
                             .map(pair => ({ itemA: pair.itemA.toLowerCase().trim(), itemB: pair.itemB.toLowerCase().trim() }));
+
 
                         let correctMatches = 0;
                         normalizedStudentPairs.forEach(studentPair => {
@@ -1587,16 +1788,19 @@ app.post('/student/quizzes/submit', authenticateToken, [
                             }
                         });
 
+
                         partialScore = correctMatches / normalizedCorrectPairs.length;
                         isCorrect = partialScore >= 0.7;
                         questionBytes = partialScore;
                     }
                     break;
 
+
                 case 'ordering':
                     if (Array.isArray(studentAnswer)) {
                         const normalizedCorrectOrder = quizQuestion.orderedItems.map(item => item.toLowerCase().trim());
                         const normalizedStudentOrder = studentAnswer.map(item => item.toLowerCase().trim());
+
 
                         let correctPositions = 0;
                         normalizedStudentOrder.forEach((item, index) => {
@@ -1605,11 +1809,13 @@ app.post('/student/quizzes/submit', authenticateToken, [
                             }
                         });
 
+
                         partialScore = correctPositions / normalizedCorrectOrder.length;
                         isCorrect = partialScore >= 0.7;
                         questionBytes = partialScore;
                     }
                     break;
+
 
                 case 'numeric-entry':
                     if (typeof studentAnswer === 'string' || typeof studentAnswer === 'number') {
@@ -1625,6 +1831,7 @@ app.post('/student/quizzes/submit', authenticateToken, [
                     }
                     break;
 
+
                 default:
                     console.warn(`Unknown quiz question type: ${quizQuestion.type} for question ID: ${questionId}`);
                     questionBytes = 0;
@@ -1632,7 +1839,9 @@ app.post('/student/quizzes/submit', authenticateToken, [
                     partialScore = 0;
             }
 
+
             totalBytesEarned += questionBytes;
+
 
             gradedAnswers.push({
                 questionId: questionId,
@@ -1644,6 +1853,7 @@ app.post('/student/quizzes/submit', authenticateToken, [
                 intendedClass: quizQuestion.intendedClass,
                 questionType: quizQuestion.type
             });
+
 
             // Create completed attempt log
             completedAttempts.push({
@@ -1662,6 +1872,7 @@ app.post('/student/quizzes/submit', authenticateToken, [
                 partialScore: partialScore
             });
 
+
             // Update subject progress in quiz session
             const categoryType = determineQuestionCategory(student.class, quizQuestion.intendedClass);
             if (categoryType && quizSession.subjectProgress[quizQuestion.subject]) {
@@ -1669,26 +1880,33 @@ app.post('/student/quizzes/submit', authenticateToken, [
             }
         }
 
+
         // Round total bytes earned
         const finalBytesEarned = Math.round(totalBytesEarned);
+
 
         // Update student data
         student.bytes += finalBytesEarned;
         student.quizzesCompletedThisWeek += 1;
 
+
         // Update recent quiz IDs (sliding window)
         const newQuizIds = quizSubmissions.map(sub => new mongoose.Types.ObjectId(sub.questionId));
         student.recentQuizIds = [...newQuizIds, ...student.recentQuizIds].slice(0, 200);
 
+
         await student.save({ session });
+
 
         // Update quiz session
         quizSession.questionsCompletedCount += quizSubmissions.length;
         quizSession.updatedAt = new Date();
 
+
         // Check if 180-question cycle is complete
         if (quizSession.questionsCompletedCount >= 180) {
             quizSession.completedAt = new Date();
+
 
             // Create new quiz session
             const newQuizSession = new QuizSession({
@@ -1697,16 +1915,21 @@ app.post('/student/quizzes/submit', authenticateToken, [
             });
             await newQuizSession.save({ session });
 
+
             student.currentQuizSessionId = newQuizSession._id;
             await student.save({ session });
         }
 
+
         await quizSession.save({ session });
+
 
         // Bulk insert completed attempts
         await CompletedQuizAttempt.insertMany(completedAttempts, { session });
 
+
         await session.commitTransaction();
+
 
         res.status(200).json({
             message: 'Quiz submitted and graded successfully!',
@@ -1723,6 +1946,7 @@ app.post('/student/quizzes/submit', authenticateToken, [
             }
         });
 
+
     } catch (error) {
         await session.abortTransaction();
         console.error('Error submitting quiz:', error);
@@ -1732,17 +1956,20 @@ app.post('/student/quizzes/submit', authenticateToken, [
     }
 });
 
+
 // Helper function to determine question category
 function determineQuestionCategory(studentClass, questionClass) {
     const classOrder = ['S.1', 'S.2', 'S.3', 'S.4', 'S.5', 'S.6'];
     const studentIndex = classOrder.indexOf(studentClass);
     const questionIndex = classOrder.indexOf(questionClass);
 
+
     if (studentIndex === questionIndex) return 'ownClass';
     if (questionIndex < studentIndex) return 'lowerClass';
     if (questionIndex > studentIndex) return 'higherClass';
     return null;
 }
+
 
 // Enhanced teacher quiz question management
 app.post('/teacher/quiz-questions', authenticateTeacherToken, [
@@ -1759,6 +1986,7 @@ app.post('/teacher/quiz-questions', authenticateTeacherToken, [
         return res.status(400).json({ errors: errors.array() });
     }
 
+
     const {
         questionText, subject, intendedClass, type, options, correctAnswers,
         matchingPairs, orderedItems, instructions, hint, explanation,
@@ -1766,16 +1994,20 @@ app.post('/teacher/quiz-questions', authenticateTeacherToken, [
         topic, subTopic, skillType
     } = req.body;
 
+
     const teacherId = req.teacher.id;
     const teacherName = req.teacher.teacherName;
 
+
     const session = await mongoose.startSession();
     session.startTransaction();
+
 
     try {
         // Check for exact duplicates using hash
         const normalizedText = questionText.toLowerCase().trim().replace(/\s+/g, ' ');
         const questionHash = crypto.createHash('sha256').update(normalizedText).digest('hex');
+
 
         const existingQuestion = await QuizQuestion.findOne({ questionHash }).session(session);
         if (existingQuestion) {
@@ -1790,6 +2022,7 @@ app.post('/teacher/quiz-questions', authenticateTeacherToken, [
             });
         }
 
+
         // Validate type-specific fields
         if (['multiple-choice-single', 'multiple-choice-multi'].includes(type) && (!options || options.length === 0)) {
             return res.status(400).json({ message: 'Options are required for multiple-choice questions.' });
@@ -1803,6 +2036,7 @@ app.post('/teacher/quiz-questions', authenticateTeacherToken, [
         if (type === 'ordering' && (!orderedItems || orderedItems.length === 0)) {
             return res.status(400).json({ message: 'Ordered items are required for ordering questions.' });
         }
+
 
         const newQuizQuestion = new QuizQuestion({
             questionText,
@@ -1829,7 +2063,9 @@ app.post('/teacher/quiz-questions', authenticateTeacherToken, [
             questionHash
         });
 
+
         await newQuizQuestion.save({ session });
+
 
         // Update teacher's weekly upload count
         const teacher = await Teacher.findById(teacherId).session(session);
@@ -1837,7 +2073,9 @@ app.post('/teacher/quiz-questions', authenticateTeacherToken, [
         teacher.quizzesUploadedThisWeek += 1;
         await teacher.save({ session });
 
+
         await session.commitTransaction();
+
 
         res.status(201).json({
             message: 'Quiz question created successfully!',
@@ -1855,6 +2093,7 @@ app.post('/teacher/quiz-questions', authenticateTeacherToken, [
             }
         });
 
+
     } catch (error) {
         await session.abortTransaction();
         console.error('Error creating quiz question:', error);
@@ -1864,10 +2103,12 @@ app.post('/teacher/quiz-questions', authenticateTeacherToken, [
     }
 });
 
+
 // Get teacher's quiz questions with enhanced filtering
 app.get('/teacher/quiz-questions', authenticateTeacherToken, async (req, res) => {
     const teacherId = req.teacher.id;
     const { subject, intendedClass, type, isActive, page = 1, limit = 20 } = req.query;
+
 
     let query = { 'uploadedBy.teacherId': teacherId };
     if (subject) query.subject = subject;
@@ -1875,8 +2116,10 @@ app.get('/teacher/quiz-questions', authenticateTeacherToken, async (req, res) =>
     if (type) query.type = type;
     if (isActive !== undefined) query.isActive = isActive === 'true';
 
+
     try {
         const skip = (parseInt(page) - 1) * parseInt(limit);
+
 
         const [questions, total] = await Promise.all([
             QuizQuestion.find(query)
@@ -1886,9 +2129,11 @@ app.get('/teacher/quiz-questions', authenticateTeacherToken, async (req, res) =>
             QuizQuestion.countDocuments(query)
         ]);
 
+
         // Get teacher's weekly stats
         const teacher = await Teacher.findById(teacherId);
         await checkAndResetTeacherWeeklyCounters(teacher);
+
 
         res.status(200).json({
             message: 'Quiz questions fetched successfully.',
@@ -1910,23 +2155,28 @@ app.get('/teacher/quiz-questions', authenticateTeacherToken, async (req, res) =>
     }
 });
 
+
 // Analytics endpoint for quiz performance
 app.get('/student/analytics/quiz-performance', authenticateToken, async (req, res) => {
     try {
         const studentId = req.student.id;
         const { timeframe = '30', subject } = req.query;
 
+
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - parseInt(timeframe));
+
 
         let matchCriteria = {
             userId: new mongoose.Types.ObjectId(studentId),
             attemptDate: { $gte: startDate }
         };
 
+
         if (subject) {
             matchCriteria.questionSubject = subject;
         }
+
 
         const analytics = await CompletedQuizAttempt.aggregate([
             { $match: matchCriteria },
@@ -1969,11 +2219,13 @@ app.get('/student/analytics/quiz-performance', authenticateToken, async (req, re
             { $sort: { _id: 1 } }
         ]);
 
+
         res.status(200).json({
             message: 'Quiz performance analytics fetched successfully.',
             timeframe: parseInt(timeframe),
             analytics: analytics
         });
+
 
     } catch (error) {
         console.error('Error fetching quiz analytics:', error);
@@ -1981,7 +2233,153 @@ app.get('/student/analytics/quiz-performance', authenticateToken, async (req, re
     }
 });
 
+// --- Multer Configuration for File Uploads ---
+const storage = multer.memoryStorage(); // Use memory storage for Cloudinary upload
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+        cb(null, true);
+    } else {
+        cb(new Error('Invalid file type. Only PDFs are allowed.'), false);
+    }
+};
+const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: { fileSize: 25 * 1024 * 1024 } // 25MB file size limit
+});
+
+app.post(
+    '/teacher/upload-content',
+    authenticateTeacherToken,
+    upload.single('workFilePdf'),
+    [
+        // Validation chain to check all incoming data
+        body('workFileTitle').notEmpty().withMessage('WorkFile title is required.').trim(),
+        body('workFileSubject').notEmpty().withMessage('Subject is required.').trim(),
+        body('workFileIntendedClass').notEmpty().withMessage('Intended class is required.').trim(),
+        body('workFileCostBytes').isInt({ min: 0 }).withMessage('Cost in Bytes must be a number.'),
+        body('applyDownloadWatermark').optional().toBoolean(),
+        body('activityJson').notEmpty().withMessage('Activity data is required.'),
+    ],
+    async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ message: 'A PDF file is required.' });
+        }
+
+        let activityData;
+        try {
+            activityData = JSON.parse(req.body.activityJson);
+        } catch (e) {
+            return res.status(400).json({ message: 'Invalid activity JSON format.' });
+        }
+
+        const {
+            workFileTitle,
+            workFileDescription,
+            workFileSubject,
+            workFileIntendedClass,
+            workFileCostBytes,
+            applyDownloadWatermark
+        } = req.body;
+
+        const teacherId = req.teacher.id;
+        const teacherName = req.teacher.teacherName;
+
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        let uploadedFileUrl = null;
+        let workFilePublicId = null;
+
+        try {
+            // 1. Upload file to Cloudinary
+            workFilePublicId = `schoolbyte/workfiles/${teacherId}/${Date.now()}`;
+            const uploadResult = await new Promise((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream({
+                    resource_type: 'raw',
+                    public_id: workFilePublicId,
+                    folder: `schoolbyte/workfiles/${teacherId}`
+                }, (error, result) => {
+                    if (error) return reject(error);
+                    resolve(result);
+                });
+                uploadStream.end(req.file.buffer);
+            });
+
+            uploadedFileUrl = uploadResult.secure_url;
+
+            // 2. Create the two linked documents in the database
+            const newActivity = new Activity({
+                title: activityData.title,
+                description: activityData.description,
+                subject: activityData.subject,
+                intendedClass: activityData.intendedClass,
+                maxBytesReward: 5, // Or get from form
+                questions: activityData.questions, // This saves all questions and keywords
+                uploadedBy: { teacherId, teacherName },
+                // Temporarily set associatedWorkFile to a placeholder
+                associatedWorkFile: new mongoose.Types.ObjectId()
+            });
+
+            const newWorkFile = new WorkFile({
+                title: workFileTitle,
+                description: workFileDescription,
+                fileUrl: uploadedFileUrl,
+                subject: workFileSubject,
+                intendedClass: workFileIntendedClass,
+                costBytes: workFileCostBytes,
+                uploadedBy: { teacherId, teacherName },
+                applyDownloadWatermark: applyDownloadWatermark,
+                activity: newActivity._id // Link to the new activity
+            });
+
+            // Now update the activity with the real WorkFile ID
+            newActivity.associatedWorkFile = newWorkFile._id;
+
+            // 3. Save both to the database
+            await newWorkFile.save({ session });
+            await newActivity.save({ session });
+
+            // 4. Commit the transaction if everything succeeded
+            await session.commitTransaction();
+
+            res.status(201).json({
+                message: 'Content uploaded successfully!',
+                workFile: newWorkFile,
+                activity: newActivity
+            });
+
+        } catch (error) {
+            // If anything fails, roll back the transaction
+            await session.abortTransaction();
+            console.error('Upload transaction failed:', error);
+
+            // If the file was uploaded to Cloudinary but the DB failed, delete it
+            if (workFilePublicId) {
+                try {
+                    await cloudinary.uploader.destroy(workFilePublicId, { resource_type: 'raw' });
+                } catch (deleteError) {
+                    console.error('Failed to delete orphaned Cloudinary file:', deleteError);
+                }
+            }
+
+            res.status(500).json({ message: 'Failed to upload content. Please try again.' });
+        } finally {
+            // End the session
+            session.endSession();
+        }
+    }
+);
+
+
+
 // Existing endpoints for teacher upload, admin management, etc.
+
 
 // Endpoint for Teacher to upload a WorkFile PDF and its associated Activity
 app.post(
@@ -1989,17 +2387,22 @@ app.post(
     authenticateTeacherToken,
     upload.single('workFilePdf'),
     [
+        // Validation chain with the fix applied
         body('workFileTitle').notEmpty().withMessage('WorkFile title is required.').trim().isLength({ min: 3, max: 200 }),
         body('workFileDescription').optional().isString().withMessage('WorkFile description must be a string.').trim().isLength({ max: 500 }),
         body('workFileSubject').notEmpty().withMessage('WorkFile subject is required.').trim().isLength({ min: 2, max: 100 }),
         body('workFileIntendedClass').notEmpty().withMessage('WorkFile intended class is required.').trim().isIn(['S.1', 'S.2', 'S.3', 'S.4', 'S.5', 'S.6']).withMessage('Invalid WorkFile intended class.'),
         body('workFileCostBytes').isInt({ min: 0 }).withMessage('WorkFile cost bytes must be a non-negative integer.').notEmpty(),
-        body('applyDownloadWatermark').optional().isBoolean().withMessage('Apply download watermark must be a boolean value (true/false).'),
+
+        // ✨ KEY FIX: Changed .isBoolean() to .toBoolean() to correctly handle form data.
+        body('applyDownloadWatermark').optional().toBoolean(),
+
         body('activityJson').notEmpty().withMessage('Activity data is required and must be a JSON string.'),
     ],
     async (req, res) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            // This is where your request was failing before the fix.
             return res.status(400).json({ errors: errors.array() });
         }
 
@@ -2015,6 +2418,7 @@ app.post(
             return res.status(400).json({ message: 'Invalid activity data format. Must be a valid JSON string.' });
         }
 
+        // Manual validation for the parsed activityData
         if (!activityData.title || typeof activityData.title !== 'string' || activityData.title.trim().length < 3 || activityData.title.trim().length > 200) {
             return res.status(400).json({ message: 'Activity title is required and must be between 3 and 200 characters.' });
         }
@@ -2051,9 +2455,8 @@ app.post(
             workFileSubject,
             workFileIntendedClass,
             workFileCostBytes,
-            applyDownloadWatermark = true
+            applyDownloadWatermark = true // Default value in case it's not provided
         } = req.body;
-
         const {
             title: activityTitle,
             description: activityDescription,
@@ -2061,19 +2464,16 @@ app.post(
             intendedClass: activityIntendedClass,
             questions
         } = activityData;
-
         const teacherId = req.teacher.id;
         const teacherName = req.teacher.teacherName;
 
         let uploadedFileUrl = null;
         let workFilePublicId = null;
-
         const session = await mongoose.startSession();
         session.startTransaction();
 
         try {
             workFilePublicId = `schoolbyte/workfiles/${teacherId}/workfile-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
-
             const cloudinaryUploadResult = await new Promise((resolve, reject) => {
                 const uploadStream = cloudinary.uploader.upload_stream(
                     {
@@ -2092,7 +2492,6 @@ app.post(
                 );
                 uploadStream.end(req.file.buffer);
             });
-
             const newWorkFile = new WorkFile({
                 title: workFileTitle,
                 description: workFileDescription,
@@ -2107,7 +2506,6 @@ app.post(
                 applyDownloadWatermark: applyDownloadWatermark
             });
             await newWorkFile.save({ session });
-
             const newActivity = new Activity({
                 title: activityTitle,
                 description: activityDescription || '',
@@ -2148,7 +2546,6 @@ app.post(
                     questionsCount: newActivity.questions.length
                 }
             });
-
         } catch (error) {
             await session.abortTransaction();
             console.error('Error during WorkFile/Activity upload transaction:', error);
@@ -2182,17 +2579,21 @@ app.post('/login-teacher', [
         return res.status(400).json({ errors: errors.array() });
     }
 
+
     let { teacherName, email, password } = req.body;
+
 
     try {
         // Check if this is an admin login attempt
         const adminPrefix = 'admin: ';
         let isAdminLogin = false;
 
+
         if (email.toLowerCase().startsWith(adminPrefix.toLowerCase())) {
             isAdminLogin = true;
             // Remove the admin prefix to get the actual email
             email = email.substring(adminPrefix.length).trim();
+
 
             // Validate admin credentials
             if (teacherName.toLowerCase() !== 'administrator') {
@@ -2200,28 +2601,35 @@ app.post('/login-teacher', [
             }
         }
 
+
         if (isAdminLogin) {
             // Handle admin login with 2FA
             const admin = await Administrator.findOne({ email });
+
 
             if (!admin) {
                 return res.status(401).json({ message: 'Invalid admin credentials.' });
             }
 
+
             const isMatch = await bcrypt.compare(password, admin.password);
+
 
             if (!isMatch) {
                 return res.status(401).json({ message: 'Invalid admin credentials.' });
             }
 
+
             // Generate and send 2FA code
             const code = Math.floor(100000 + Math.random() * 900000).toString();
+
 
             await VerificationCode.findOneAndUpdate(
                 { email },
                 { code, createdAt: Date.now() },
                 { upsert: true, new: true, setDefaultsOnInsert: true }
             );
+
 
             const mailOptions = {
                 from: process.env.EMAIL_USER,
@@ -2230,7 +2638,9 @@ app.post('/login-teacher', [
                 html: `<p>Your SchoolByte Administrator 2FA code is: <strong>${code}</strong></p><p>This code is valid for 10 minutes.</p>`
             };
 
+
             await transporter.sendMail(mailOptions);
+
 
             res.status(200).json({
                 message: 'Admin 2FA code sent to your email.',
@@ -2238,28 +2648,35 @@ app.post('/login-teacher', [
                 adminEmail: email
             });
 
+
         } else {
             // Handle regular teacher login
             const teacher = await Teacher.findOne({ email });
+
 
             if (!teacher) {
                 return res.status(401).json({ message: 'Invalid teacher credentials.' });
             }
 
+
             const isMatch = await bcrypt.compare(password, teacher.password);
+
 
             if (!isMatch) {
                 return res.status(401).json({ message: 'Invalid teacher credentials.' });
             }
 
+
             // Check and reset weekly counters
             await checkAndResetTeacherWeeklyCounters(teacher);
+
 
             const token = jwt.sign(
                 { id: teacher._id, email: teacher.email, teacherName: teacher.teacherName, role: 'teacher' },
                 JWT_SECRET,
                 { expiresIn: '24h' }
             );
+
 
             res.status(200).json({
                 message: 'Teacher login successful!',
@@ -2273,22 +2690,27 @@ app.post('/login-teacher', [
             });
         }
 
+
     } catch (error) {
         console.error('Error during login:', error);
         res.status(500).json({ message: 'Server error during login.', error: error.message });
     }
 });
 
+
 app.get('/teacher/dashboard', authenticateTeacherToken, async (req, res) => {
     try {
         const teacherData = await Teacher.findById(req.teacher.id).select('-password');
+
 
         if (!teacherData) {
             return res.status(404).json({ message: 'Teacher data not found.' });
         }
 
+
         // Check and reset weekly counters
         await checkAndResetTeacherWeeklyCounters(teacherData);
+
 
         res.status(200).json({
             message: `Welcome to your teacher dashboard, ${teacherData.teacherName}!`,
@@ -2305,11 +2727,13 @@ app.get('/teacher/dashboard', authenticateTeacherToken, async (req, res) => {
             }
         });
 
+
     } catch (error) {
         console.error('Error accessing teacher dashboard:', error);
         res.status(500).json({ message: 'Server error accessing teacher dashboard.', error: error.message });
     }
 });
+
 
 // Admin signup endpoint
 app.post('/signup-admin', [
@@ -2326,7 +2750,9 @@ app.post('/signup-admin', [
             });
         }
 
+
         const { adminName, email, password } = req.body;
+
 
         // Check if admin already exists
         const existingAdmin = await Administrator.findOne({ email: email.toLowerCase() });
@@ -2334,9 +2760,11 @@ app.post('/signup-admin', [
             return res.status(409).json({ message: 'An administrator with this email already exists.' });
         }
 
+
         // Hash password
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
+
 
         // Create new admin
         const newAdmin = new Administrator({
@@ -2345,7 +2773,9 @@ app.post('/signup-admin', [
             password: hashedPassword
         });
 
+
         await newAdmin.save();
+
 
         res.status(201).json({ 
             message: 'Administrator account created successfully.',
@@ -2356,6 +2786,7 @@ app.post('/signup-admin', [
             }
         });
 
+
     } catch (error) {
         console.error('Error during admin signup:', error);
         res.status(500).json({ 
@@ -2364,6 +2795,7 @@ app.post('/signup-admin', [
         });
     }
 });
+
 
 // Admin authentication and management endpoints (existing)
 app.post('/login-admin', [
@@ -2376,7 +2808,9 @@ app.post('/login-admin', [
             return res.status(400).json({ errors: errors.array() });
         }
 
+
         let { email, password } = req.body;
+
 
         // Check for the admin prefix and remove it
         const adminPrefix = 'admin: ';
@@ -2384,32 +2818,40 @@ app.post('/login-admin', [
             email = email.substring(adminPrefix.length).trim();
         }
 
+
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             return res.status(400).json({ message: 'Please provide a valid email address.' });
         }
 
+
         const admin = await Administrator.findOne({ email: email.toLowerCase() });
+
 
         if (!admin) {
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
 
+
         const isMatch = await bcrypt.compare(password, admin.password);
+
 
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid email or password.' });
         }
 
+
         // Generate 2FA code
         const code = Math.floor(100000 + Math.random() * 900000).toString();
+
 
         await VerificationCode.findOneAndUpdate(
             { email: email.toLowerCase() },
             { code, createdAt: Date.now() },
             { upsert: true, new: true, setDefaultsOnInsert: true }
         );
+
 
         // Send email if configured
         if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
@@ -2420,19 +2862,23 @@ app.post('/login-admin', [
                 html: `<p>Your SchoolByte Administrator 2FA code is: <strong>${code}</strong></p><p>This code is valid for 10 minutes.</p>`
             };
 
+
             await transporter.sendMail(mailOptions);
         }
+
 
         res.status(200).json({
             message: 'Admin login successful. A 2FA code has been sent to your email.',
             requiresTwoFA: true
         });
 
+
     } catch (error) {
         console.error('Error during admin login:', error);
         res.status(500).json({ message: 'Server error during admin login.', error: error.message });
     }
 });
+
 
 app.post('/admin/verify-2fa', [
     body('email').isEmail().withMessage('Please provide a valid email address.'),
@@ -2443,14 +2889,18 @@ app.post('/admin/verify-2fa', [
         return res.status(400).json({ errors: errors.array() });
     }
 
+
     const { email, code } = req.body;
+
 
     try {
         const storedCode = await VerificationCode.findOne({ email });
 
+
         if (!storedCode) {
             return res.status(400).json({ message: 'No 2FA code found for this email, or it has expired.' });
         }
+
 
         if (storedCode.code === code) {
             const admin = await Administrator.findOne({ email });
@@ -2458,13 +2908,16 @@ app.post('/admin/verify-2fa', [
                 return res.status(404).json({ message: 'Administrator not found.' });
             }
 
+
             await VerificationCode.deleteOne({ email });
+
 
             const token = jwt.sign(
                 { id: admin._id, email: admin.email, adminName: admin.adminName, role: 'admin' },
                 JWT_SECRET,
                 { expiresIn: '24h' }
             );
+
 
             res.status(200).json({
                 message: 'Admin 2FA successful! You are now logged in.',
@@ -2483,6 +2936,7 @@ app.post('/admin/verify-2fa', [
     }
 });
 
+
 app.post('/admin/create-admin', authenticateAdminToken, [
     body('adminName').notEmpty().trim().withMessage('Admin name is required.'),
     body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email address.'),
@@ -2497,7 +2951,9 @@ app.post('/admin/create-admin', authenticateAdminToken, [
             });
         }
 
+
         const { adminName, email, password } = req.body;
+
 
         // Check if admin already exists
         const existingAdmin = await Administrator.findOne({ email: email.toLowerCase() });
@@ -2505,9 +2961,11 @@ app.post('/admin/create-admin', authenticateAdminToken, [
             return res.status(409).json({ message: 'An administrator with this email already exists.' });
         }
 
+
         // Hash password
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
+
 
         // Create new admin
         const newAdmin = new Administrator({
@@ -2516,7 +2974,9 @@ app.post('/admin/create-admin', authenticateAdminToken, [
             password: hashedPassword
         });
 
+
         await newAdmin.save();
+
 
         res.status(201).json({ 
             message: 'Administrator account created successfully.',
@@ -2527,6 +2987,7 @@ app.post('/admin/create-admin', authenticateAdminToken, [
             }
         });
 
+
     } catch (error) {
         console.error('Error during admin creation:', error);
         res.status(500).json({ 
@@ -2535,6 +2996,7 @@ app.post('/admin/create-admin', authenticateAdminToken, [
         });
     }
 });
+
 
 app.post('/admin/teachers', authenticateAdminToken, [
     body('teacherName').notEmpty().withMessage('Teacher name is required.'),
@@ -2548,7 +3010,9 @@ app.post('/admin/teachers', authenticateAdminToken, [
         return res.status(400).json({ errors: errors.array() });
     }
 
+
     const { teacherName, teacherEmail, teacherPassword, teacherGender, teacherPhysicalDescription } = req.body;
+
 
     try {
         const existingTeacher = await Teacher.findOne({ email: teacherEmail });
@@ -2556,8 +3020,10 @@ app.post('/admin/teachers', authenticateAdminToken, [
             return res.status(409).json({ message: 'A teacher with this email already exists.' });
         }
 
+
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(teacherPassword, saltRounds);
+
 
         const newTeacher = new Teacher({
             teacherName,
@@ -2569,7 +3035,9 @@ app.post('/admin/teachers', authenticateAdminToken, [
             physicalDescription: teacherPhysicalDescription
         });
 
+
         await newTeacher.save();
+
 
         res.status(201).json({
             message: 'Teacher account created successfully by administrator! Teacher needs to set their password on first login.',
@@ -2583,11 +3051,13 @@ app.post('/admin/teachers', authenticateAdminToken, [
             }
         });
 
+
     } catch (error) {
         console.error('Error creating teacher account by admin:', error);
         res.status(500).json({ message: 'Server error creating teacher account.', error: error.message });
     }
 });
+
 
 app.get('/admin/teachers', authenticateAdminToken, async (req, res) => {
     try {
@@ -2599,14 +3069,17 @@ app.get('/admin/teachers', authenticateAdminToken, async (req, res) => {
     }
 });
 
+
 // Admin dashboard stats endpoint
 app.get('/admin/dashboard', authenticateAdminToken, async (req, res) => {
     try {
         const adminData = await Administrator.findById(req.admin.id).select('-password');
-        
+
+
         if (!adminData) {
             return res.status(404).json({ message: 'Administrator data not found.' });
         }
+
 
         res.status(200).json({
             message: `Welcome to your admin dashboard, ${adminData.adminName}!`,
@@ -2622,6 +3095,7 @@ app.get('/admin/dashboard', authenticateAdminToken, async (req, res) => {
     }
 });
 
+
 app.get('/admin/dashboard-stats', authenticateAdminToken, async (req, res) => {
     try {
         const totalStudents = await Student.countDocuments();
@@ -2629,6 +3103,7 @@ app.get('/admin/dashboard-stats', authenticateAdminToken, async (req, res) => {
         const totalQuizQuestions = await QuizQuestion.countDocuments();
         const totalWorkFiles = await WorkFile.countDocuments();
         const totalPreaderGames = await PreaderGameSessionLog.countDocuments();
+
 
         res.status(200).json({
             message: 'Dashboard stats fetched successfully.',
@@ -2646,14 +3121,17 @@ app.get('/admin/dashboard-stats', authenticateAdminToken, async (req, res) => {
     }
 });
 
+
 app.delete('/admin/teachers/:id', authenticateAdminToken, async (req, res) => {
     const teacherIdToDelete = req.params.id;
+
 
     try {
         const teacher = await Teacher.findById(teacherIdToDelete);
         if (!teacher) {
             return res.status(404).json({ message: 'Teacher not found.' });
         }
+
 
         await WorkFile.updateMany(
             { 'uploadedBy.teacherId': teacherIdToDelete },
@@ -2668,11 +3146,14 @@ app.delete('/admin/teachers/:id', authenticateAdminToken, async (req, res) => {
             { $set: { 'uploadedBy.teacherId': null } }
         );
 
+
         await Teacher.deleteOne({ _id: teacherIdToDelete });
+
 
         res.status(200).json({
             message: `Teacher ${teacher.teacherName} and their associated content references updated/deleted successfully. Content remains attributed by name.`
         });
+
 
     } catch (error) {
         console.error('Error deleting teacher account by admin:', error);
@@ -2680,15 +3161,19 @@ app.delete('/admin/teachers/:id', authenticateAdminToken, async (req, res) => {
     }
 });
 
+
 app.post('/admin/trigger-yearly-upgrade', authenticateAdminToken, async (req, res) => {
     try {
         const students = await Student.find({});
 
+
         let upgradedCount = 0;
         let deletedCount = 0;
 
+
         for (const student of students) {
             const currentClass = student.class.toUpperCase();
+
 
             if (currentClass === 'S.6' || currentClass === 'SENIOR 6') {
                 await Student.deleteOne({ _id: student._id });
@@ -2697,6 +3182,7 @@ app.post('/admin/trigger-yearly-upgrade', authenticateAdminToken, async (req, re
             } else {
                 let newClass;
                 const classNumber = parseInt(currentClass.replace('S.', '').replace('SENIOR ', ''));
+
 
                 if (!isNaN(classNumber) && classNumber >= 1 && classNumber <= 5) {
                     newClass = `S.${classNumber + 1}`;
@@ -2709,17 +3195,20 @@ app.post('/admin/trigger-yearly-upgrade', authenticateAdminToken, async (req, re
             }
         }
 
+
         res.status(200).json({
             message: 'Yearly student upgrade and deletion process completed.',
             upgradedStudents: upgradedCount,
             deletedStudents: deletedCount
         });
 
+
     } catch (error) {
         console.error('Error during yearly student upgrade/deletion:', error);
         res.status(500).json({ message: 'Server error during yearly upgrade process.', error: error.message });
     }
 });
+
 
 // Leaderboard endpoints (existing)
 app.get('/leaderboard', async (req, res) => {
@@ -2729,9 +3218,11 @@ app.get('/leaderboard', async (req, res) => {
             .select('studentName firstNameDisplay bytes')
             .lean();
 
+
         const leaderboard = students.map((student, index) => {
             const displayName = student.firstNameDisplay || student.studentName.split(' ')[0];
             const bytesStatus = index < 200 ? student.bytes : undefined;
+
 
             return {
                 name: displayName,
@@ -2739,16 +3230,19 @@ app.get('/leaderboard', async (req, res) => {
             };
         });
 
+
         res.status(200).json({
             message: 'Leaderboard fetched successfully!',
             leaderboard: leaderboard
         });
+
 
     } catch (error) {
         console.error('Error fetching leaderboard:', error);
         res.status(500).json({ message: 'Server error fetching leaderboard.', error: error.message });
     }
 });
+
 
 app.get('/teacher/leaderboard', async (req, res) => {
     try {
@@ -2757,21 +3251,25 @@ app.get('/teacher/leaderboard', async (req, res) => {
             .select('teacherName bytes')
             .lean();
 
+
         const teacherLeaderboard = teachers.map(teacher => ({
             name: teacher.teacherName,
             bytes: teacher.bytes
         }));
+
 
         res.status(200).json({
             message: 'Teacher Leaderboard fetched successfully!',
             leaderboard: teacherLeaderboard
         });
 
+
     } catch (error) {
         console.error('Error fetching teacher leaderboard:', error);
         res.status(500).json({ message: 'Server error fetching teacher leaderboard.', error: error.message });
     }
 });
+
 
 // Preader Game Endpoints (Student-Facing)
 app.post('/student/preader-games/start', authenticateToken, [
@@ -2782,11 +3280,14 @@ app.post('/student/preader-games/start', authenticateToken, [
         return res.status(400).json({ errors: errors.array() });
     }
 
+
     const { gameTitle } = req.body;
     const studentId = req.student.id;
 
+
     const session = await mongoose.startSession();
     session.startTransaction();
+
 
     try {
         const student = await Student.findById(studentId).session(session);
@@ -2795,6 +3296,7 @@ app.post('/student/preader-games/start', authenticateToken, [
             return res.status(404).json({ message: 'Student not found.' });
         }
         const studentClass = student.class;
+
 
         const initialGameState = {
             playerStats: {
@@ -2805,6 +3307,7 @@ app.post('/student/preader-games/start', authenticateToken, [
             pathTaken: []
         };
 
+
         const initialPromptContent = `Start an interactive story based on the title: "${gameTitle}".`;
         const aiGeneratedContent = await generateStoryNode(
             initialPromptContent,
@@ -2813,6 +3316,7 @@ app.post('/student/preader-games/start', authenticateToken, [
             null, 
             null
         );
+
 
         const newSession = new PreaderGameSession({
             student: studentId,
@@ -2833,7 +3337,9 @@ app.post('/student/preader-games/start', authenticateToken, [
         });
         await newSession.save({ session });
 
+
         await session.commitTransaction();
+
 
         res.status(201).json({
             message: 'Preader Game session started!',
@@ -2844,6 +3350,7 @@ app.post('/student/preader-games/start', authenticateToken, [
             currentEthicalScore: newSession.currentEthicalScore
         });
 
+
     } catch (error) {
         await session.abortTransaction();
         console.error('Error starting Preader Game session:', error);
@@ -2853,6 +3360,7 @@ app.post('/student/preader-games/start', authenticateToken, [
     }
 });
 
+
 app.post('/student/preader-games/:sessionId/make-choice', authenticateToken, [
     body('choiceIndex').isInt({ min: 0 }).withMessage('Choice index must be a non-negative integer.'),
 ], async (req, res) => {
@@ -2861,12 +3369,15 @@ app.post('/student/preader-games/:sessionId/make-choice', authenticateToken, [
         return res.status(400).json({ errors: errors.array() });
     }
 
+
     const { sessionId } = req.params;
     const { choiceIndex } = req.body;
     const studentId = req.student.id;
 
+
     const session = await mongoose.startSession();
     session.startTransaction();
+
 
     try {
         const gameSession = await PreaderGameSession.findOne({ _id: sessionId, student: studentId }).session(session);
@@ -2875,6 +3386,7 @@ app.post('/student/preader-games/:sessionId/make-choice', authenticateToken, [
             return res.status(404).json({ message: 'Preader Game session not found or does not belong to you.' });
         }
 
+
         const student = await Student.findById(studentId).session(session);
         if (!student) {
             await session.abortTransaction();
@@ -2882,20 +3394,25 @@ app.post('/student/preader-games/:sessionId/make-choice', authenticateToken, [
         }
         const studentClass = student.class;
 
+
         if (choiceIndex < 0 || choiceIndex >= gameSession.currentChoices.length) {
             await session.abortTransaction();
             return res.status(400).json({ message: 'Invalid choice index.' });
         }
 
+
         const chosenOption = gameSession.currentChoices[choiceIndex];
+
 
         const newPlayerStats = applyStatChanges(gameSession.playerStats, chosenOption.statChanges);
         const newEthicalScore = gameSession.currentEthicalScore + chosenOption.ethicalImpact.scoreChange;
         const bytesEarnedThisTurn = chosenOption.bytesAwarded || 1;
 
+
         gameSession.playerStats = newPlayerStats;
         gameSession.currentEthicalScore = newEthicalScore;
         gameSession.totalBytesEarnedInSession += bytesEarnedThisTurn;
+
 
         gameSession.pathTaken.push({
             sceneContent: gameSession.currentSceneContent,
@@ -2906,6 +3423,7 @@ app.post('/student/preader-games/:sessionId/make-choice', authenticateToken, [
             timestamp: Date.now()
         });
 
+
         const nextScenePromptContent = `The player chose "${chosenOption.choiceText}". Continue the story from the previous scene: "${gameSession.currentSceneContent}".`;
         const aiGeneratedContent = await generateStoryNode(
             nextScenePromptContent,
@@ -2915,11 +3433,14 @@ app.post('/student/preader-games/:sessionId/make-choice', authenticateToken, [
             chosenOption.choiceText
         );
 
+
         gameSession.currentSceneContent = aiGeneratedContent.sceneDescription;
         gameSession.currentChoices = aiGeneratedContent.choices;
 
+
         await gameSession.save({ session });
         await session.commitTransaction();
+
 
         res.status(200).json({
             message: 'Choice made and story advanced!',
@@ -2931,6 +3452,7 @@ app.post('/student/preader-games/:sessionId/make-choice', authenticateToken, [
             totalBytesEarnedInSession: gameSession.totalBytesEarnedInSession
         });
 
+
     } catch (error) {
         await session.abortTransaction();
         console.error('Error making choice in Preader Game session:', error);
@@ -2940,12 +3462,15 @@ app.post('/student/preader-games/:sessionId/make-choice', authenticateToken, [
     }
 });
 
+
 app.post('/student/preader-games/:sessionId/end', authenticateToken, async (req, res) => {
     const { sessionId } = req.params;
     const studentId = req.student.id;
 
+
     const session = await mongoose.startSession();
     session.startTransaction();
+
 
     try {
         const gameSession = await PreaderGameSession.findOne({ _id: sessionId, student: studentId }).session(session);
@@ -2954,19 +3479,23 @@ app.post('/student/preader-games/:sessionId/end', authenticateToken, async (req,
             return res.status(404).json({ message: 'Preader Game session not found or does not belong to you.' });
         }
 
+
         const student = await Student.findById(studentId).session(session);
         if (!student) {
             await session.abortTransaction();
             return res.status(404).json({ message: 'Student not found.' });
         }
 
+
         const endTime = Date.now();
         const durationMinutes = Math.round((endTime - gameSession.startTime.getTime()) / (1000 * 60));
         const totalBytesEarned = gameSession.totalBytesEarnedInSession;
 
+
         student.bytes += totalBytesEarned;
         student.totalPreaderGameTimeMinutes += durationMinutes;
         await student.save({ session });
+
 
         const sessionLog = new PreaderGameSessionLog({
             student: studentId,
@@ -2979,9 +3508,12 @@ app.post('/student/preader-games/:sessionId/end', authenticateToken, async (req,
         });
         await sessionLog.save({ session });
 
+
         await PreaderGameSession.deleteOne({ _id: sessionId }).session(session);
 
+
         await session.commitTransaction();
+
 
         res.status(200).json({
             message: 'Preader Game session ended successfully!',
@@ -2992,6 +3524,7 @@ app.post('/student/preader-games/:sessionId/end', authenticateToken, async (req,
             studentTotalPreaderGameTime: student.totalPreaderGameTimeMinutes
         });
 
+
     } catch (error) {
         await session.abortTransaction();
         console.error('Error ending Preader Game session:', error);
@@ -3001,12 +3534,14 @@ app.post('/student/preader-games/:sessionId/end', authenticateToken, async (req,
     }
 });
 
+
 app.get('/student/preader-games/history', authenticateToken, async (req, res) => {
     try {
         const studentId = req.student.id;
         const history = await PreaderGameSessionLog.find({ student: studentId })
                                                     .sort({ createdAt: -1 })
                                                     .select('-student -_id -__v');
+
 
         res.status(200).json({
             message: 'Preader Game session history fetched successfully!',
@@ -3018,10 +3553,103 @@ app.get('/student/preader-games/history', authenticateToken, async (req, res) =>
     }
 });
 
+
+// Route for the teacher's initial password setup page
+app.get('/teacher-set-password.html', (req, res) => {
+    // Assuming HTML files are in a 'public' folder
+    res.sendFile(path.join(__dirname, 'public', 'teacher-set-password.html'));
+});
+
+
+// Teacher initial password setting endpoint
+app.put('/teacher/set-initial-password', authenticateTeacherToken, [
+    body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+
+    const { newPassword } = req.body;
+    const teacherId = req.teacher.id;
+
+
+    try {
+        const teacher = await Teacher.findById(teacherId);
+        if (!teacher) {
+            return res.status(404).json({ message: 'Teacher not found.' });
+        }
+
+
+        // Check if password is already set
+        if (teacher.isPasswordSet) {
+            return res.status(400).json({ message: 'Password has already been set. Use the profile settings to change it.' });
+        }
+
+
+        // Hash the new password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+
+        // Update teacher password and set flag
+        teacher.password = hashedPassword;
+        teacher.isPasswordSet = true;
+        await teacher.save();
+
+
+        res.status(200).json({
+            message: 'Password set successfully!',
+            teacher: {
+                teacherName: teacher.teacherName,
+                email: teacher.email,
+                isPasswordSet: teacher.isPasswordSet
+            }
+        });
+
+
+    } catch (error) {
+        console.error('Error setting initial password:', error);
+        res.status(500).json({ message: 'Failed to set password. Please try again.', error: error.message });
+    }
+});
+
+
+app.get('/teacher/profile', authenticateTeacherToken, async (req, res) => {
+    try {
+        const teacherData = await Teacher.findById(req.teacher.id).select('-password');
+
+
+        if (!teacherData) {
+            return res.status(404).json({ message: 'Teacher not found.' });
+        }
+
+
+        res.status(200).json({
+            message: 'Teacher profile fetched successfully.',
+            teacher: {
+                teacherName: teacherData.teacherName,
+                email: teacherData.email,
+                isPasswordSet: teacherData.isPasswordSet,
+                bytes: teacherData.bytes,
+                gender: teacherData.gender,
+                physicalDescription: teacherData.physicalDescription,
+                createdAt: teacherData.createdAt
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching teacher profile:', error);
+        res.status(500).json({ message: 'Server error fetching profile.', error: error.message });
+    }
+});
+
+
 // Serve admin login page
 app.get('/admin-login.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'adminlogin.html'));
 });
+
 
 // Start the server
 app.listen(PORT, '0.0.0.0', () => {
@@ -3036,6 +3664,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log('✓ Multiple question types support');
     console.log('✓ Subject-based curriculum management');
 });
+
 
 // Export models for use in other files
 module.exports = {
@@ -3055,18 +3684,23 @@ module.exports = {
 };
 
 
+
+
 // Student endpoint to fetch activities by subject and class
 app.get('/student/activities', authenticateToken, async (req, res) => {
     try {
         const { subject, intendedClass } = req.query;
 
+
         let query = {};
         if (subject) query.subject = subject;
         if (intendedClass) query.intendedClass = intendedClass;
 
+
         const activities = await Activity.find(query)
             .populate('associatedWorkFile', 'title fileUrl costBytes')
             .sort({ createdAt: -1 });
+
 
         res.status(200).json({
             message: 'Activities fetched successfully.',
@@ -3089,17 +3723,21 @@ app.get('/student/activities', authenticateToken, async (req, res) => {
     }
 });
 
+
 // Student endpoint to fetch a specific activity with all questions
 app.get('/student/activities/:activityId', authenticateToken, async (req, res) => {
     try {
         const { activityId } = req.params;
 
+
         const activity = await Activity.findById(activityId)
             .populate('associatedWorkFile', 'title fileUrl costBytes');
+
 
         if (!activity) {
             return res.status(404).json({ message: 'Activity not found.' });
         }
+
 
         res.status(200).json({
             message: 'Activity fetched successfully.',
