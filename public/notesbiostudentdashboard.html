@@ -458,21 +458,22 @@
 
         async function loadStudentData() {
             try {
-                const token = localStorage.getItem('token') || localStorage.getItem('studentToken');
+                const token = localStorage.getItem('studentToken') || localStorage.getItem('token');
                 if (!token) {
                     window.location.href = 'studentlogin.html';
                     return;
                 }
 
-                const profileResponse = await fetch('/student/profile', {
+                const profileResponse = await fetch('/student/dashboard', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
                 if (profileResponse.ok) {
                     const profileData = await profileResponse.json();
-                    document.getElementById('studentNameDisplay').textContent = profileData.student.studentName;
-                    document.getElementById('bytesCount').textContent = profileData.student.bytes;
-                    studentClass = profileData.student.class;
+                    const student = profileData.student;
+                    document.getElementById('studentNameDisplay').textContent = student.preferredName || student.studentName;
+                    document.getElementById('bytesCount').textContent = student.bytes || 0;
+                    studentClass = student.class;
                 } else if (profileResponse.status === 401 || profileResponse.status === 403) {
                     localStorage.removeItem('token');
                     localStorage.removeItem('studentToken');
@@ -486,13 +487,16 @@
 
                 if (notesResponse.ok) {
                     const notesData = await notesResponse.json();
-                    allWorkFiles = notesData.workFiles;
+                    allWorkFiles = notesData.workFiles || [];
+                    studentClass = notesData.studentClass || studentClass;
                     displayNotes(allWorkFiles);
                 } else {
                     console.error('Failed to fetch Biology resources:', notesResponse.status);
+                    document.getElementById('noResults').classList.remove('hidden');
                 }
             } catch (error) {
                 console.error('Error loading data:', error);
+                document.getElementById('noResults').classList.remove('hidden');
             }
         }
 
@@ -557,7 +561,7 @@
 
         async function downloadResource(workFileId, costBytes, title, teacherName) {
             try {
-                const token = localStorage.getItem('token') || localStorage.getItem('studentToken');
+                const token = localStorage.getItem('studentToken') || localStorage.getItem('token');
                 if (!token) {
                     alert('Please log in to download files');
                     window.location.href = 'studentlogin.html';
@@ -608,7 +612,7 @@
                     localStorage.removeItem('studentToken');
                     window.location.href = 'studentlogin.html';
                 } else {
-                    const errorData = await response.json();
+                    const errorData = await response.json().catch(() => ({ message: 'Download failed' }));
                     alert(errorData.message || 'Download failed. Please try again.');
                 }
             } catch (error) {
