@@ -514,69 +514,8 @@
                     <i class="fas fa-fire"></i>
                     Most Downloaded Resources
                 </h2>
-                <div class="resource-cards">
-                    <!-- Resource Card 1 -->
-                    <div class="resource-card">
-                        <h3 class="resource-name">Cell Structure & Function</h3>
-                        <div class="resource-meta">
-                            <span><i class="fas fa-file-pdf"></i> PDF</span>
-                            <span class="resource-class">Senior 3</span>
-                        </div>
-                        <p class="resource-description">Comprehensive notes on cell organelles and their functions with labeled diagrams.</p>
-                        <div class="resource-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-download"></i> 245 downloads
-                            </div>
-                            <div class="stat-item">
-                                <i class="fas fa-star"></i> 4.8 (36)
-                            </div>
-                        </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('cell_structure.pdf')">
-                            <i class="fas fa-download"></i> Download
-                        </a>
-                    </div>
-
-                    <!-- Resource Card 2 -->
-                    <div class="resource-card">
-                        <h3 class="resource-name">Photosynthesis Process</h3>
-                        <div class="resource-meta">
-                            <span><i class="fas fa-file-pdf"></i> PDF</span>
-                            <span class="resource-class">Senior 2</span>
-                        </div>
-                        <p class="resource-description">Detailed explanation of the photosynthesis process with chemical equations.</p>
-                        <div class="resource-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-download"></i> 198 downloads
-                            </div>
-                            <div class="stat-item">
-                                <i class="fas fa-star"></i> 4.7 (28)
-                            </div>
-                        </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('photosynthesis.pdf')">
-                            <i class="fas fa-download"></i> Download
-                        </a>
-                    </div>
-
-                    <!-- Resource Card 3 -->
-                    <div class="resource-card">
-                        <h3 class="resource-name">Human Digestive System</h3>
-                        <div class="resource-meta">
-                            <span><i class="fas fa-file-word"></i> DOCX</span>
-                            <span class="resource-class">Senior 4</span>
-                        </div>
-                        <p class="resource-description">Complete notes on the human digestive system with diagrams and enzyme functions.</p>
-                        <div class="resource-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-download"></i> 176 downloads
-                            </div>
-                            <div class="stat-item">
-                                <i class="fas fa-star"></i> 4.9 (42)
-                            </div>
-                        </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('digestive_system.docx')">
-                            <i class="fas fa-download"></i> Download
-                        </a>
-                    </div>
+                <div class="resource-cards" id="popularResourcesContainer">
+                    <!-- Resource Cards will be loaded dynamically -->
                 </div>
             </div>
 
@@ -586,69 +525,8 @@
                     <i class="fas fa-star"></i>
                     Top Rated Resources
                 </h2>
-                <div class="resource-cards">
-                    <!-- Resource Card 1 -->
-                    <div class="resource-card">
-                        <h3 class="resource-name">DNA Replication</h3>
-                        <div class="resource-meta">
-                            <span><i class="fas fa-file-pdf"></i> PDF</span>
-                            <span class="resource-class">Senior 5</span>
-                        </div>
-                        <p class="resource-description">Step-by-step explanation of DNA replication process with animations.</p>
-                        <div class="resource-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-download"></i> 154 downloads
-                            </div>
-                            <div class="stat-item">
-                                <i class="fas fa-star"></i> 4.9 (45)
-                            </div>
-                        </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('dna_replication.pdf')">
-                            <i class="fas fa-download"></i> Download
-                        </a>
-                    </div>
-
-                    <!-- Resource Card 2 -->
-                    <div class="resource-card">
-                        <h3 class="resource-name">Genetics Problems</h3>
-                        <div class="resource-meta">
-                            <span><i class="fas fa-file-word"></i> DOCX</span>
-                            <span class="resource-class">Senior 6</span>
-                        </div>
-                        <p class="resource-description">Collection of genetics problems with solutions and Punnett square examples.</p>
-                        <div class="resource-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-download"></i> 132 downloads
-                            </div>
-                            <div class="stat-item">
-                                <i class="fas fa-star"></i> 4.8 (38)
-                            </div>
-                        </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('genetics_problems.docx')">
-                            <i class="fas fa-download"></i> Download
-                        </a>
-                    </div>
-
-                    <!-- Resource Card 3 -->
-                    <div class="resource-card">
-                        <h3 class="resource-name">Plant Transport Systems</h3>
-                        <div class="resource-meta">
-                            <span><i class="fas fa-file-pdf"></i> PDF</span>
-                            <span class="resource-class">Senior 3</span>
-                        </div>
-                        <p class="resource-description">Detailed notes on xylem, phloem and transpiration with experiments.</p>
-                        <div class="resource-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-download"></i> 121 downloads
-                            </div>
-                            <div class="stat-item">
-                                <i class="fas fa-star"></i> 4.9 (31)
-                            </div>
-                        </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('plant_transport.pdf')">
-                            <i class="fas fa-download"></i> Download
-                        </a>
-                    </div>
+                <div class="resource-cards" id="topRatedResourcesContainer">
+                    <!-- Resource Cards will be loaded dynamically -->
                 </div>
             </div>
 
@@ -658,7 +536,7 @@
                     <i class="fas fa-search"></i>
                     Search Results
                 </h2>
-                <div class="results-count" id="resultsCount">3 results found for "Cell"</div>
+                <div class="results-count" id="resultsCount"></div>
                 <div class="resource-cards" id="resultsContainer">
                     <!-- Search results will be added here dynamically -->
                 </div>
@@ -680,299 +558,289 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // DOM Elements
-            const studentNameDisplay = document.getElementById('studentNameDisplay');
-            const bytesCountElement = document.getElementById('bytesCount');
-            const floatingParticles = document.getElementById('floatingParticles');
-            const searchInput = document.getElementById('searchInput');
-            const searchSuggestions = document.getElementById('searchSuggestions');
-            const searchResults = document.getElementById('searchResults');
-            const resultsContainer = document.getElementById('resultsContainer');
-            const resultsCount = document.getElementById('resultsCount');
-            const noResults = document.getElementById('noResults');
+        // Create floating particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('floatingParticles');
+            const particleCount = 15;
 
-            // Fetch real data from backend
-            let allTopics = [];
-            let allResources = [];
-
-            // Fetch Biology work files from the server
-            async function fetchBiologyResources() {
-                try {
-                    const token = localStorage.getItem('studentToken');
-                    if (!token) {
-                        console.warn('No token found, redirecting to login');
-                        window.location.href = 'studentlogin.html';
-                        return;
-                    }
-
-                    const response = await fetch(`${window.location.origin}/student/workfiles?subject=Biology`, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        
-                        // Transform server data to match our display format
-                        allResources = data.workFiles.map(file => ({
-                            _id: file._id,
-                            name: file.title,
-                            class: file.intendedClass,
-                            type: "PDF",
-                            description: file.description || "Educational material",
-                            downloads: file.downloadCount || 0,
-                            rating: 0,
-                            reviews: 0,
-                            topics: [file.title],
-                            fileUrl: file.fileUrl,
-                            costBytes: file.costBytes,
-                            uploadedBy: file.uploadedBy.teacherName
-                        }));
-
-                        // Extract unique topics
-                        allTopics = [...new Set(allResources.map(r => r.name))];
-
-                        // Re-render the resources on the page
-                        renderInitialResources();
-                        
-                    } else if (response.status === 401 || response.status === 403) {
-                        console.warn('Authentication failed, redirecting to login');
-                        localStorage.removeItem('studentToken');
-                        window.location.href = 'studentlogin.html';
-                    } else {
-                        console.error('Failed to fetch resources:', response.status);
-                    }
-                } catch (error) {
-                    console.error('Error fetching Biology resources:', error);
-                }
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                particle.style.animationDelay = Math.random() * 5 + 's';
+                particlesContainer.appendChild(particle);
             }
+        }
 
-            // Student Data
-            const studentName = localStorage.getItem('studentName') || 'Student';
-            studentNameDisplay.textContent = studentName;
-
-            let bytesCount = parseInt(localStorage.getItem('bytesCount')) || 0;
-            bytesCountElement.textContent = bytesCount;
-
-            // Create floating particles
-            function createParticles() {
-                for (let i = 0; i < 30; i++) {
-                    const particle = document.createElement('div');
-                    particle.classList.add('particle');
-
-                    const posX = Math.random() * 100;
-                    const posY = Math.random() * 100;
-                    const size = Math.random() * 4 + 4;
-                    const duration = Math.random() * 15 + 10;
-                    const delay = Math.random() * 5;
-
-                    particle.style.left = `${posX}vw`;
-                    particle.style.top = `${posY}vh`;
-                    particle.style.width = `${size}px`;
-                    particle.style.height = `${size}px`;
-                    particle.style.animationDuration = `${duration}s`;
-                    particle.style.animationDelay = `${delay}s`;
-
-                    floatingParticles.appendChild(particle);
-                }
-            }
-
-            // Show search suggestions
-            function showSuggestions(query) {
-                searchSuggestions.innerHTML = '';
-
-                if (query.length < 2) {
-                    searchSuggestions.classList.remove('active');
+        // Load student data and notes
+        async function loadStudentData() {
+            try {
+                const token = localStorage.getItem('studentToken'); // Use 'studentToken' as per other examples
+                if (!token) {
+                    window.location.href = 'studentlogin.html';
                     return;
                 }
 
-                const filtered = allTopics.filter(topic => 
-                    topic.toLowerCase().includes(query.toLowerCase())
-                );
+                // Fetch student profile
+                const profileResponse = await fetch('/student/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
 
-                if (filtered.length > 0) {
-                    filtered.forEach(topic => {
-                        const item = document.createElement('div');
-                        item.classList.add('suggestion-item');
-                        item.textContent = topic;
-                        item.addEventListener('click', () => {
-                            searchInput.value = topic;
-                            searchSuggestions.classList.remove('active');
-                            performSearch(topic);
-                        });
-                        searchSuggestions.appendChild(item);
-                    });
-                    searchSuggestions.classList.add('active');
+                if (profileResponse.ok) {
+                    const profileData = await profileResponse.json();
+                    document.getElementById('studentNameDisplay').textContent = profileData.student.studentName;
+
+                    // Update bytes counter
+                    const bytesCountElement = document.getElementById('bytesCount');
+                    if (bytesCountElement) {
+                        bytesCountElement.textContent = profileData.student.bytes;
+                        localStorage.setItem('bytesCount', profileData.student.bytes);
+                    }
+                } else if (profileResponse.status === 401 || profileResponse.status === 403) {
+                    console.warn('Authentication failed, redirecting to login');
+                    localStorage.removeItem('studentToken');
+                    window.location.href = 'studentlogin.html';
+                }
+
+                // Fetch Biology notes
+                const notesResponse = await fetch('/api/workfiles?subject=Biology', { // Use the correct API endpoint for fetching files by subject
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (notesResponse.ok) {
+                    const notesData = await notesResponse.json();
+                    displayNotes(notesData.workFiles, notesData.studentClass);
+                } else if (notesResponse.status === 401 || notesResponse.status === 403) {
+                    console.warn('Authentication failed, redirecting to login');
+                    localStorage.removeItem('studentToken');
+                    window.location.href = 'studentlogin.html';
                 } else {
-                    searchSuggestions.classList.remove('active');
+                    console.error('Failed to fetch Biology resources:', notesResponse.status);
                 }
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Display notes in the cards
+        function displayNotes(workFiles, studentClass) {
+            const popularResourcesContainer = document.getElementById('popularResourcesContainer');
+            const topRatedResourcesContainer = document.getElementById('topRatedResourcesContainer');
+
+            // Clear existing content if any
+            popularResourcesContainer.innerHTML = '';
+            topRatedResourcesContainer.innerHTML = '';
+
+            if (workFiles.length === 0) {
+                const noResultsMessage = '<div class="no-results">No Biology notes available yet.</div>';
+                popularResourcesContainer.innerHTML = noResultsMessage;
+                topRatedResourcesContainer.innerHTML = noResultsMessage;
+                return;
             }
 
-            // Perform search
-            function performSearch(query) {
-                if (query.length < 2) {
-                    searchResults.classList.remove('active');
-                    noResults.classList.add('hidden');
-                    return;
+            // Sort by downloads for "Most Downloaded"
+            const sortedByDownloads = [...workFiles].sort((a, b) => (b.downloadCount || 0) - (a.downloadCount || 0));
+
+            // Sort by rating for "Top Rated" (assuming rating is available, otherwise use a placeholder)
+            const sortedByRating = [...workFiles].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+
+
+            sortedByDownloads.slice(0, 3).forEach(file => { // Display top 3
+                popularResourcesContainer.appendChild(createResourceCard(file, studentClass));
+            });
+
+            sortedByRating.slice(0, 3).forEach(file => { // Display top 3
+                topRatedResourcesContainer.appendChild(createResourceCard(file, studentClass));
+            });
+        }
+
+        // Create a single resource card element
+        function createResourceCard(file, studentClass) {
+            const card = document.createElement('div');
+            card.className = 'resource-card';
+
+            // Highlight if it matches student's class
+            if (file.intendedClass === studentClass) {
+                card.style.borderLeft = '4px solid var(--color-brand-gold)'; // Use gold for emphasis
+            }
+
+            card.innerHTML = `
+                <h3 class="resource-name">${file.title}</h3>
+                <div class="resource-meta">
+                    <span><i class="fas fa-file-pdf"></i> ${file.fileType || 'PDF'}</span>
+                    <span class="resource-class">${file.intendedClass}</span>
+                </div>
+                <p class="resource-description">${file.description || 'No description available'}</p>
+                <div class="resource-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-download"></i> ${file.downloadCount || 0} downloads
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-coins"></i> ${file.costBytes} bytes
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-user"></i> ${file.uploadedBy?.teacherName || 'Teacher'}
+                    </div>
+                </div>
+                <button class="download-btn" onclick="return downloadResource('${file._id}', ${file.costBytes})">
+                    <i class="fas fa-download"></i> Download (${file.costBytes} bytes)
+                </button>
+            `;
+            return card;
+        }
+
+
+        // Handle real file downloads with bytes deduction
+        window.downloadResource = async function(workFileId, costBytes) {
+            try {
+                const token = localStorage.getItem('studentToken');
+                if (!token) {
+                    alert('Please log in to download files');
+                    window.location.href = 'studentlogin.html';
+                    return false;
                 }
 
-                const filtered = allResources.filter(resource => 
-                    resource.name.toLowerCase().includes(query.toLowerCase()) ||
-                    resource.topics.some(topic => topic.toLowerCase().includes(query.toLowerCase()))
-                .sort((a, b) => b.downloads - a.downloads);
+                let currentBytes = parseInt(localStorage.getItem('bytesCount')) || 0;
 
+                // Check if student has enough bytes
+                if (currentBytes < costBytes) {
+                    alert(`Insufficient bytes! You need ${costBytes} bytes but only have ${currentBytes} bytes. Complete more quizzes to earn bytes.`);
+                    return false;
+                }
+
+                // Confirm download
+                const confirmDownload = confirm(`This file costs ${costBytes} bytes. You currently have ${currentBytes} bytes. Do you want to proceed with the download?`);
+                if (!confirmDownload) {
+                    return false;
+                }
+
+                // Request download from server
+                const response = await fetch(`${window.location.origin}/student/download-workfile/${workFileId}`, { // Assuming this is the correct download endpoint
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Update bytes count locally and in storage
+                    currentBytes = data.remainingBytes;
+                    document.getElementById('bytesCount').textContent = currentBytes;
+                    localStorage.setItem('bytesCount', currentBytes);
+
+                    // Trigger actual download
+                    window.open(data.downloadUrl, '_blank');
+
+                    alert(`Download started! ${costBytes} bytes deducted. You now have ${currentBytes} bytes.`);
+
+                    // Optionally refresh the notes to update download counts on the server side if needed
+                    loadStudentData();
+
+                } else if (response.status === 401 || response.status === 403) {
+                    alert('Session expired. Please log in again.');
+                    localStorage.removeItem('studentToken');
+                    window.location.href = 'studentlogin.html';
+                } else {
+                    const errorData = await response.json();
+                    alert(errorData.message || 'Download failed. Please try again.');
+                }
+
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('An error occurred during download. Please try again.');
+            }
+
+            return false; // Prevent default anchor behavior
+        }
+
+
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        const searchSuggestions = document.getElementById('searchSuggestions');
+        const searchResults = document.getElementById('searchResults');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsCount = document.getElementById('resultsCount');
+        const noResults = document.getElementById('noResults');
+        let allDisplayedResources = []; // To store resources currently displayed on the page
+
+        function updateDisplayedResources(resources) {
+            allDisplayedResources = resources;
+            const resourceCardsContainer = document.querySelector('.resources-content .resource-cards'); // Target the main container
+            resourceCardsContainer.innerHTML = ''; // Clear existing cards
+
+            if (resources.length > 0) {
+                resources.forEach(resource => {
+                    // Assuming createResourceCard is globally available or defined here
+                    // For simplicity, let's assume it's defined within loadStudentData or globally accessible
+                    const card = createResourceCard(resource, localStorage.getItem('studentClass')); // Need to fetch studentClass
+                    resourceCardsContainer.appendChild(card);
+                });
+                searchResults.classList.remove('active');
+                noResults.classList.add('hidden');
+            } else {
+                noResults.classList.remove('hidden');
+                searchResults.classList.remove('active');
+            }
+        }
+
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const allCards = document.querySelectorAll('.resource-card'); // Select all cards currently visible
+
+            if (query.length < 2) { // Don't search until at least 2 characters are typed
+                // Revert to showing popular/top-rated if search is too short
+                document.getElementById('popular-resources').style.display = 'block';
+                document.getElementById('top-rated-resources').style.display = 'block';
+                searchResults.classList.remove('active');
+                noResults.classList.add('hidden');
+                // Clear search results container if it was active
                 resultsContainer.innerHTML = '';
-
-                if (filtered.length > 0) {
-                    resultsCount.textContent = `${filtered.length} result${filtered.length === 1 ? '' : 's'} found for "${query}"`;
-
-                    filtered.forEach(resource => {
-                        const card = createResourceCard(resource);
-                        resultsContainer.appendChild(card);
-                    });
-
-                    searchResults.classList.add('active');
-                    noResults.classList.add('hidden');
-                } else {
-                    searchResults.classList.remove('active');
-                    noResults.classList.remove('hidden');
-                }
+                return;
             }
 
-            // Create resource card element
-            function createResourceCard(resource) {
-                const card = document.createElement('div');
-                card.classList.add('resource-card');
+            // Hide popular and top-rated sections when searching
+            document.getElementById('popular-resources').style.display = 'none';
+            document.getElementById('top-rated-resources').style.display = 'none';
 
-                card.innerHTML = `
-                    <h3 class="resource-name">${resource.name}</h3>
-                    <div class="resource-meta">
-                        <span><i class="fas fa-file-pdf"></i> ${resource.type}</span>
-                        <span class="resource-class">${resource.class}</span>
-                    </div>
-                    <p class="resource-description">${resource.description}</p>
-                    <div class="resource-stats">
-                        <div class="stat-item">
-                            <i class="fas fa-download"></i> ${resource.downloads} downloads
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-coins"></i> ${resource.costBytes} bytes
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-user"></i> ${resource.uploadedBy}
-                        </div>
-                    </div>
-                    <a href="#" class="download-btn" onclick="return downloadResource('${resource._id}', ${resource.costBytes})">
-                        <i class="fas fa-download"></i> Download (${resource.costBytes} bytes)
-                    </a>
-                `;
+            // Filter currently displayed cards (this assumes the initial cards are loaded)
+            // A more robust solution would involve filtering the original `workFiles` data
+            const filteredCards = Array.from(allCards).filter(card => {
+                const title = card.querySelector('.resource-name').textContent.toLowerCase();
+                const description = card.querySelector('.resource-description').textContent.toLowerCase();
+                return title.includes(query) || description.includes(query);
+            });
 
-                return card;
+            // Display filtered cards in the search results area
+            resultsContainer.innerHTML = '';
+            if (filteredCards.length > 0) {
+                filteredCards.forEach(card => {
+                    // Append a clone of the card to the results container
+                    resultsContainer.appendChild(card.cloneNode(true));
+                });
+                resultsCount.textContent = `${filteredCards.length} result${filteredCards.length === 1 ? '' : 's'} found for "${e.target.value}"`;
+                searchResults.classList.add('active');
+                noResults.classList.add('hidden');
+            } else {
+                resultsCount.textContent = `0 results found for "${e.target.value}"`;
+                noResults.classList.remove('hidden');
+                searchResults.classList.remove('active');
             }
+        });
 
-            // Function to render initial resources
-            function renderInitialResources() {
-                // Clear and re-populate the popular resources section
-                const popularContainer = document.querySelector('.popular-resources .resource-cards');
-                if (popularContainer) {
-                    popularContainer.innerHTML = '';
-                    allResources.slice(0, 6).forEach(resource => {
-                        popularContainer.appendChild(createResourceCard(resource));
-                    });
-                }
-            }
 
-            // Handle real file downloads with bytes deduction
-            window.downloadResource = async function(workFileId, costBytes) {
-                try {
-                    const token = localStorage.getItem('studentToken');
-                    if (!token) {
-                        alert('Please log in to download files');
-                        window.location.href = 'studentlogin.html';
-                        return false;
-                    }
-
-                    // Check if student has enough bytes
-                    if (bytesCount < costBytes) {
-                        alert(`Insufficient bytes! You need ${costBytes} bytes but only have ${bytesCount} bytes. Complete more quizzes to earn bytes.`);
-                        return false;
-                    }
-
-                    // Confirm download
-                    const confirmDownload = confirm(`This file costs ${costBytes} bytes. You currently have ${bytesCount} bytes. Do you want to proceed with the download?`);
-                    if (!confirmDownload) {
-                        return false;
-                    }
-
-                    // Request download from server
-                    const response = await fetch(`${window.location.origin}/student/download-workfile/${workFileId}`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        
-                        // Update bytes count
-                        bytesCount = data.remainingBytes;
-                        bytesCountElement.textContent = bytesCount;
-                        localStorage.setItem('bytesCount', bytesCount);
-
-                        // Trigger actual download
-                        window.open(data.downloadUrl, '_blank');
-                        
-                        alert(`Download started! ${costBytes} bytes deducted. You now have ${bytesCount} bytes.`);
-                        
-                    } else if (response.status === 401 || response.status === 403) {
-                        alert('Session expired. Please log in again.');
-                        localStorage.removeItem('studentToken');
-                        window.location.href = 'studentlogin.html';
-                    } else {
-                        const errorData = await response.json();
-                        alert(errorData.message || 'Download failed. Please try again.');
-                    }
-
-                } catch (error) {
-                    console.error('Download error:', error);
-                    alert('An error occurred during download. Please try again.');
-                }
-
-                return false;
-            }
-
-            // Event listeners
-            searchInput.addEventListener('input', (e) => {
-                showSuggestions(e.target.value);
-            });
-
-            searchInput.addEventListener('focus', () => {
-                if (searchInput.value.length >= 2) {
-                    showSuggestions(searchInput.value);
-                }
-            });
-
-            document.addEventListener('click', (e) => {
-                if (!searchInput.contains(e.target) {
-                    searchSuggestions.classList.remove('active');
-                }
-            });
-
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    performSearch(searchInput.value);
-                }
-            });
-
-            // Initialize
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', () => {
             createParticles();
-            fetchBiologyResources();
+            loadStudentData();
         });
     </script>
 </body>

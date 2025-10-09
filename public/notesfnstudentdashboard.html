@@ -680,250 +680,202 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // DOM Elements
-            const studentNameDisplay = document.getElementById('studentNameDisplay');
-            const bytesCountElement = document.getElementById('bytesCount');
-            const floatingParticles = document.getElementById('floatingParticles');
-            const searchInput = document.getElementById('searchInput');
-            const searchSuggestions = document.getElementById('searchSuggestions');
-            const searchResults = document.getElementById('searchResults');
-            const resultsContainer = document.getElementById('resultsContainer');
-            const resultsCount = document.getElementById('resultsCount');
-            const noResults = document.getElementById('noResults');
-
-            // Sample data - Food and Nutrition topics and resources
-            const allTopics = [
-                "Nutrition", "Food Preparation", "Meal Planning", 
-                "Food Safety", "Dietary Requirements", "Food Preservation",
-                "Kitchen Equipment", "Cooking Methods", "Food Groups", 
-                "Balanced Diet", "Food Storage", "Nutritional Disorders",
-                "Vitamins & Minerals", "Food Labeling", "Meal Presentation",
-                "Food Microbiology", "Recipe Development", "Cultural Foods"
-            ];
-
-            const allResources = [
-                {
-                    name: "Nutrition Fundamentals",
-                    class: "Senior 3",
-                    type: "PDF",
-                    description: "Comprehensive guide to essential nutrients, their functions, and food sources.",
-                    downloads: 287,
-                    rating: 4.7,
-                    reviews: 38,
-                    topics: ["Nutrition"]
-                },
-                {
-                    name: "Food Preparation Techniques",
-                    class: "Senior 4",
-                    type: "PDF",
-                    description: "Step-by-step guide to various cooking methods and food preparation skills.",
-                    downloads: 254,
-                    rating: 4.6,
-                    reviews: 32,
-                    topics: ["Food Preparation"]
-                },
-                {
-                    name: "Meal Planning Guide",
-                    class: "Senior 5",
-                    type: "DOCX",
-                    description: "Principles of balanced meal planning for different dietary needs and occasions.",
-                    downloads: 231,
-                    rating: 4.5,
-                    reviews: 28,
-                    topics: ["Meal Planning"]
-                },
-                {
-                    name: "Food Safety and Hygiene",
-                    class: "Senior 4",
-                    type: "PDF",
-                    description: "Essential practices for maintaining food safety and kitchen hygiene standards.",
-                    downloads: 198,
-                    rating: 4.9,
-                    reviews: 42,
-                    topics: ["Food Safety"]
-                },
-                {
-                    name: "Dietary Requirements",
-                    class: "Senior 6",
-                    type: "PDF",
-                    description: "Guide to special dietary needs including vegetarian, vegan, and medical diets.",
-                    downloads: 176,
-                    rating: 4.8,
-                    reviews: 35,
-                    topics: ["Dietary Requirements"]
-                },
-                {
-                    name: "Food Preservation Methods",
-                    class: "Senior 3",
-                    type: "DOCX",
-                    description: "Traditional and modern techniques for preserving food and extending shelf life.",
-                    downloads: 165,
-                    rating: 4.7,
-                    reviews: 26,
-                    topics: ["Food Preservation"]
+        async function loadStudentData() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) { window.location.href = 'studentlogin.html'; return; }
+                const profileResponse = await fetch('/student/profile', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (profileResponse.ok) {
+                    const profileData = await profileResponse.json();
+                    document.getElementById('studentNameDisplay').textContent = profileData.student.studentName;
+                    const bytesCounter = document.querySelector('.bytes-counter');
+                    if (bytesCounter) bytesCounter.querySelector('.bytes-icon').nextSibling.textContent = ` ${profileData.student.bytes} Bytes`;
                 }
-            ];
-
-            // Student Data
-            const studentName = localStorage.getItem('studentName') || 'Student';
-            studentNameDisplay.textContent = studentName;
-
-            let bytesCount = parseInt(localStorage.getItem('bytesCount')) || 0;
-            bytesCountElement.textContent = bytesCount;
-
-            // Create floating particles
-            function createParticles() {
-                for (let i = 0; i < 30; i++) {
-                    const particle = document.createElement('div');
-                    particle.classList.add('particle');
-
-                    const posX = Math.random() * 100;
-                    const posY = Math.random() * 100;
-                    const size = Math.random() * 4 + 4;
-                    const duration = Math.random() * 15 + 10;
-                    const delay = Math.random() * 5;
-
-                    particle.style.left = `${posX}vw`;
-                    particle.style.top = `${posY}vh`;
-                    particle.style.width = `${size}px`;
-                    particle.style.height = `${size}px`;
-                    particle.style.animationDuration = `${duration}s`;
-                    particle.style.animationDelay = `${delay}s`;
-
-                    floatingParticles.appendChild(particle);
+                const notesResponse = await fetch('/api/workfiles/Food and Nutrition', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (notesResponse.ok) {
+                    const notesData = await notesResponse.json();
+                    displayNotes(notesData.workFiles, notesData.studentClass);
                 }
-            }
-
-            // Show search suggestions
-            function showSuggestions(query) {
-                searchSuggestions.innerHTML = '';
-
-                if (query.length < 2) {
-                    searchSuggestions.classList.remove('active');
-                    return;
-                }
-
-                const filtered = allTopics.filter(topic => 
-                    topic.toLowerCase().includes(query.toLowerCase())
-                );
-
-                if (filtered.length > 0) {
-                    filtered.forEach(topic => {
-                        const item = document.createElement('div');
-                        item.classList.add('suggestion-item');
-                        item.textContent = topic;
-                        item.addEventListener('click', () => {
-                            searchInput.value = topic;
-                            searchSuggestions.classList.remove('active');
-                            performSearch(topic);
-                        });
-                        searchSuggestions.appendChild(item);
-                    });
-                    searchSuggestions.classList.add('active');
-                } else {
-                    searchSuggestions.classList.remove('active');
-                }
-            }
-
-            // Perform search
-            function performSearch(query) {
-                if (query.length < 2) {
-                    searchResults.classList.remove('active');
-                    noResults.classList.add('hidden');
-                    return;
-                }
-
-                const filtered = allResources.filter(resource => 
-                    resource.name.toLowerCase().includes(query.toLowerCase()) ||
-                    resource.topics.some(topic => topic.toLowerCase().includes(query.toLowerCase()))
-                ).sort((a, b) => b.downloads - a.downloads);
-
-                resultsContainer.innerHTML = '';
-
-                if (filtered.length > 0) {
-                    resultsCount.textContent = `${filtered.length} result${filtered.length === 1 ? '' : 's'} found for "${query}"`;
-
-                    filtered.forEach(resource => {
-                        const card = createResourceCard(resource);
-                        resultsContainer.appendChild(card);
-                    });
-
-                    searchResults.classList.add('active');
-                    noResults.classList.add('hidden');
-                } else {
-                    searchResults.classList.remove('active');
-                    noResults.classList.remove('hidden');
-                }
-            }
-
-            // Create resource card element
-            function createResourceCard(resource) {
+            } catch (error) { console.error('Error:', error); }
+        }
+        function displayNotes(workFiles, studentClass) {
+            const resourceCards = document.querySelector('.resource-cards');
+            resourceCards.innerHTML = '';
+            if (workFiles.length === 0) { resourceCards.innerHTML = '<div class="no-results">No Food and Nutrition notes available yet.</div>'; return; }
+            workFiles.forEach(file => {
                 const card = document.createElement('div');
-                card.classList.add('resource-card');
+                card.className = 'resource-card';
+                if (file.intendedClass === studentClass) card.style.borderLeft = '4px solid #FFD700';
+                card.innerHTML = `<h3 class="resource-name">${file.title}</h3><div class="resource-meta"><span><i class="fas fa-file-pdf"></i> PDF</span><span class="resource-class">${file.intendedClass}</span></div><p class="resource-description">${file.description || 'No description available'}</p><div class="resource-stats"><div class="stat-item"><i class="fas fa-download"></i> ${file.downloadCount} downloads</div><div class="stat-item"><i class="fas fa-coins"></i> ${file.costBytes} bytes</div></div><button class="download-btn" onclick="downloadResource('${file._id}', ${file.costBytes})"><i class="fas fa-download"></i> Download (${file.costBytes} bytes)</button>`;
+                resourceCards.appendChild(card);
+            });
+        }
+        async function downloadResource(fileId, cost) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/workfiles/${fileId}/download`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } });
+                const data = await response.json();
+                if (response.ok) {
+                    const bytesCounter = document.querySelector('.bytes-counter');
+                    if (bytesCounter) bytesCounter.querySelector('.bytes-icon').nextSibling.textContent = ` ${data.bytesRemaining} Bytes`;
+                    window.open(data.fileUrl, '_blank');
+                    alert(`Download successful! ${cost} bytes deducted. Remaining: ${data.bytesRemaining} bytes`);
+                    loadStudentData();
+                } else { alert(data.message || 'Download failed'); }
+            } catch (error) { alert('Error downloading file.'); }
+        }
+        document.addEventListener('DOMContentLoaded', loadStudentData);
+        // Create floating particles
+        function createParticles() {
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
 
-                card.innerHTML = `
-                    <h3 class="resource-name">${resource.name}</h3>
-                    <div class="resource-meta">
-                        <span><i class="fas fa-file-${resource.type.toLowerCase() === 'pdf' ? 'pdf' : 'word'}"></i> ${resource.type}</span>
-                        <span class="resource-class">${resource.class}</span>
-                    </div>
-                    <p class="resource-description">${resource.description}</p>
-                    <div class="resource-stats">
-                        <div class="stat-item">
-                            <i class="fas fa-download"></i> ${resource.downloads} downloads
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-star"></i> ${resource.rating} (${resource.reviews})
-                        </div>
-                    </div>
-                    <a href="#" class="download-btn" onclick="downloadResource('${resource.name.replace(/\s+/g, '_').toLowerCase()}.${resource.type.toLowerCase()}')">
-                        <i class="fas fa-download"></i> Download
-                    </a>
-                `;
+                const posX = Math.random() * 100;
+                const posY = Math.random() * 100;
+                const size = Math.random() * 4 + 4;
+                const duration = Math.random() * 15 + 10;
+                const delay = Math.random() * 5;
 
-                return card;
+                particle.style.left = `${posX}vw`;
+                particle.style.top = `${posY}vh`;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.animationDuration = `${duration}s`;
+                particle.style.animationDelay = `${delay}s`;
+
+                floatingParticles.appendChild(particle);
+            }
+        }
+
+        // Show search suggestions
+        function showSuggestions(query) {
+            searchSuggestions.innerHTML = '';
+
+            if (query.length < 2) {
+                searchSuggestions.classList.remove('active');
+                return;
             }
 
-            // Simulate download (will be replaced with Cloudinary integration)
-            window.downloadResource = function(filename) {
-                // In production, this would trigger the Cloudinary download
-                alert(`Downloading ${filename}... (This will connect to Cloudinary in production)`);
+            const filtered = allTopics.filter(topic => 
+                topic.toLowerCase().includes(query.toLowerCase())
+            );
 
-                // Add some bytes for downloading (optional)
-                bytesCount += 2;
-                bytesCountElement.textContent = bytesCount;
-                localStorage.setItem('bytesCount', bytesCount);
+            if (filtered.length > 0) {
+                filtered.forEach(topic => {
+                    const item = document.createElement('div');
+                    item.classList.add('suggestion-item');
+                    item.textContent = topic;
+                    item.addEventListener('click', () => {
+                        searchInput.value = topic;
+                        searchSuggestions.classList.remove('active');
+                        performSearch(topic);
+                    });
+                    searchSuggestions.appendChild(item);
+                });
+                searchSuggestions.classList.add('active');
+            } else {
+                searchSuggestions.classList.remove('active');
+            }
+        }
 
-                return false; // Prevent default link behavior
+        // Perform search
+        function performSearch(query) {
+            if (query.length < 2) {
+                searchResults.classList.remove('active');
+                noResults.classList.add('hidden');
+                return;
             }
 
-            // Event listeners
-            searchInput.addEventListener('input', (e) => {
-                showSuggestions(e.target.value);
-            });
+            const filtered = allResources.filter(resource => 
+                resource.name.toLowerCase().includes(query.toLowerCase()) ||
+                resource.topics.some(topic => topic.toLowerCase().includes(query.toLowerCase()))
+            ).sort((a, b) => b.downloads - a.downloads);
 
-            searchInput.addEventListener('focus', () => {
-                if (searchInput.value.length >= 2) {
-                    showSuggestions(searchInput.value);
-                }
-            });
+            resultsContainer.innerHTML = '';
 
-            document.addEventListener('click', (e) => {
-                if (!searchInput.contains(e.target)) {
-                    searchSuggestions.classList.remove('active');
-                }
-            });
+            if (filtered.length > 0) {
+                resultsCount.textContent = `${filtered.length} result${filtered.length === 1 ? '' : 's'} found for "${query}"`;
 
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    performSearch(searchInput.value);
-                }
-            });
+                filtered.forEach(resource => {
+                    const card = createResourceCard(resource);
+                    resultsContainer.appendChild(card);
+                });
 
-            // Initialize
-            createParticles();
+                searchResults.classList.add('active');
+                noResults.classList.add('hidden');
+            } else {
+                searchResults.classList.remove('active');
+                noResults.classList.remove('hidden');
+            }
+        }
+
+        // Create resource card element
+        function createResourceCard(resource) {
+            const card = document.createElement('div');
+            card.classList.add('resource-card');
+
+            card.innerHTML = `
+                <h3 class="resource-name">${resource.name}</h3>
+                <div class="resource-meta">
+                    <span><i class="fas fa-file-${resource.type.toLowerCase() === 'pdf' ? 'pdf' : 'word'}"></i> ${resource.type}</span>
+                    <span class="resource-class">${resource.class}</span>
+                </div>
+                <p class="resource-description">${resource.description}</p>
+                <div class="resource-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-download"></i> ${resource.downloads} downloads
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-star"></i> ${resource.rating} (${resource.reviews})
+                    </div>
+                </div>
+                <a href="#" class="download-btn" onclick="downloadResource('${resource.name.replace(/\s+/g, '_').toLowerCase()}.${resource.type.toLowerCase()}')">
+                    <i class="fas fa-download"></i> Download
+                </a>
+            `;
+
+            return card;
+        }
+
+        // Simulate download (will be replaced with Cloudinary integration)
+        window.downloadResource = function(filename) {
+            // In production, this would trigger the Cloudinary download
+            alert(`Downloading ${filename}... (This will connect to Cloudinary in production)`);
+
+            // Add some bytes for downloading (optional)
+            bytesCount += 2;
+            bytesCountElement.textContent = bytesCount;
+            localStorage.setItem('bytesCount', bytesCount);
+
+            return false; // Prevent default link behavior
+        }
+
+        // Event listeners
+        searchInput.addEventListener('input', (e) => {
+            showSuggestions(e.target.value);
         });
+
+        searchInput.addEventListener('focus', () => {
+            if (searchInput.value.length >= 2) {
+                showSuggestions(searchInput.value);
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target)) {
+                searchSuggestions.classList.remove('active');
+            }
+        });
+
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch(searchInput.value);
+            }
+        });
+
+        // Initialize
+        createParticles();
     </script>
 </body>
 </html>

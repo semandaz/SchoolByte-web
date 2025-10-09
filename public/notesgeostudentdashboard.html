@@ -489,8 +489,8 @@
         <!-- Subject Header -->
         <div class="subject-header">
             <h1 class="subject-title">
-                <i class="fas fa-globe-africa subject-icon"></i>
-                Geography Resources
+                <i class="fas fa-flask subject-icon"></i>
+                Biology Resources
             </h1>
             <p class="subject-subtitle">Search for study materials by topic, or browse popular resources below</p>
         </div>
@@ -498,7 +498,7 @@
         <!-- Search Section -->
         <div class="search-section">
             <div class="search-container">
-                <input type="text" class="search-input" id="searchInput" placeholder="Search for topics (e.g., Maps, Climate, Population)...">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search for topics (e.g., Cells, DNA, Evolution)...">
                 <i class="fas fa-search search-icon"></i>
                 <div class="search-suggestions" id="searchSuggestions">
                     <!-- Suggestions will be added here dynamically -->
@@ -508,147 +508,69 @@
 
         <!-- Resources Content -->
         <div class="resources-content">
-            <!-- Popular Resources Section -->
-            <div class="popular-resources">
-                <h2 class="section-title">
-                    <i class="fas fa-fire"></i>
-                    Most Downloaded Resources
-                </h2>
-                <div class="resource-cards">
-                    <!-- Resource Card 1 -->
-                    <div class="resource-card">
-                        <h3 class="resource-name">Map Reading Skills</h3>
-                        <div class="resource-meta">
-                            <span><i class="fas fa-file-pdf"></i> PDF</span>
-                            <span class="resource-class">Senior 3</span>
-                        </div>
-                        <p class="resource-description">Comprehensive guide to interpreting topographic maps, scales, and symbols.</p>
-                        <div class="resource-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-download"></i> 312 downloads
-                            </div>
-                            <div class="stat-item">
-                                <i class="fas fa-star"></i> 4.8 (45)
-                            </div>
-                        </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('map_reading.pdf')">
-                            <i class="fas fa-download"></i> Download
-                        </a>
+            <!-- Resources will be loaded here dynamically -->
+            <div class="resource-cards" id="resourceCards">
+                <!-- Resource Card 1 -->
+                <div class="resource-card">
+                    <h3 class="resource-name">Cell Structure and Function</h3>
+                    <div class="resource-meta">
+                        <span><i class="fas fa-file-pdf"></i> PDF</span>
+                        <span class="resource-class">Senior 3</span>
                     </div>
-
-                    <!-- Resource Card 2 -->
-                    <div class="resource-card">
-                        <h3 class="resource-name">Climate Systems</h3>
-                        <div class="resource-meta">
-                            <span><i class="fas fa-file-pdf"></i> PDF</span>
-                            <span class="resource-class">Senior 4</span>
+                    <p class="resource-description">Detailed overview of plant and animal cell components and their roles.</p>
+                    <div class="resource-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-download"></i> 450 downloads
                         </div>
-                        <p class="resource-description">Detailed analysis of global climate patterns and weather systems.</p>
-                        <div class="resource-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-download"></i> 278 downloads
-                            </div>
-                            <div class="stat-item">
-                                <i class="fas fa-star"></i> 4.7 (39)
-                            </div>
+                        <div class="stat-item">
+                            <i class="fas fa-coins"></i> 10 bytes
                         </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('climate_systems.pdf')">
-                            <i class="fas fa-download"></i> Download
-                        </a>
                     </div>
-
-                    <!-- Resource Card 3 -->
-                    <div class="resource-card">
-                        <h3 class="resource-name">Population Geography</h3>
-                        <div class="resource-meta">
-                            <span><i class="fas fa-file-word"></i> DOCX</span>
-                            <span class="resource-class">Senior 5</span>
-                        </div>
-                        <p class="resource-description">Study of population distribution, density, and demographic transitions.</p>
-                        <div class="resource-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-download"></i> 245 downloads
-                            </div>
-                            <div class="stat-item">
-                                <i class="fas fa-star"></i> 4.6 (32)
-                            </div>
-                        </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('population_geography.docx')">
-                            <i class="fas fa-download"></i> Download
-                        </a>
-                    </div>
+                    <a href="#" class="download-btn">
+                        <i class="fas fa-download"></i> Download (10 bytes)
+                    </a>
                 </div>
-            </div>
 
-            <!-- Top Rated Resources Section -->
-            <div class="popular-resources">
-                <h2 class="section-title">
-                    <i class="fas fa-star"></i>
-                    Top Rated Resources
-                </h2>
-                <div class="resource-cards">
-                    <!-- Resource Card 1 -->
-                    <div class="resource-card">
-                        <h3 class="resource-name">Geographical Information Systems</h3>
-                        <div class="resource-meta">
-                            <span><i class="fas fa-file-pdf"></i> PDF</span>
-                            <span class="resource-class">Senior 4</span>
-                        </div>
-                        <p class="resource-description">Introduction to GIS technology and its applications in geography.</p>
-                        <div class="resource-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-download"></i> 198 downloads
-                            </div>
-                            <div class="stat-item">
-                                <i class="fas fa-star"></i> 4.9 (52)
-                            </div>
-                        </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('gis_intro.pdf')">
-                            <i class="fas fa-download"></i> Download
-                        </a>
+                <!-- Resource Card 2 -->
+                <div class="resource-card">
+                    <h3 class="resource-name">Photosynthesis Process</h3>
+                    <div class="resource-meta">
+                        <span><i class="fas fa-file-pdf"></i> PDF</span>
+                        <span class="resource-class">Senior 4</span>
                     </div>
+                    <p class="resource-description">Explanation of the light-dependent and light-independent reactions.</p>
+                    <div class="resource-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-download"></i> 420 downloads
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-coins"></i> 15 bytes
+                        </div>
+                    </div>
+                    <a href="#" class="download-btn">
+                        <i class="fas fa-download"></i> Download (15 bytes)
+                    </a>
+                </div>
 
-                    <!-- Resource Card 2 -->
-                    <div class="resource-card">
-                        <h3 class="resource-name">Economic Geography</h3>
-                        <div class="resource-meta">
-                            <span><i class="fas fa-file-pdf"></i> PDF</span>
-                            <span class="resource-class">Senior 6</span>
-                        </div>
-                        <p class="resource-description">Analysis of spatial distribution of economic activities and resources.</p>
-                        <div class="resource-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-download"></i> 187 downloads
-                            </div>
-                            <div class="stat-item">
-                                <i class="fas fa-star"></i> 4.8 (41)
-                            </div>
-                        </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('economic_geography.pdf')">
-                            <i class="fas fa-download"></i> Download
-                        </a>
+                <!-- Resource Card 3 -->
+                <div class="resource-card">
+                    <h3 class="resource-name">Genetics and Heredity</h3>
+                    <div class="resource-meta">
+                        <span><i class="fas fa-file-word"></i> DOCX</span>
+                        <span class="resource-class">Senior 5</span>
                     </div>
-
-                    <!-- Resource Card 3 -->
-                    <div class="resource-card">
-                        <h3 class="resource-name">Physical Landforms</h3>
-                        <div class="resource-meta">
-                            <span><i class="fas fa-file-word"></i> DOCX</span>
-                            <span class="resource-class">Senior 3</span>
+                    <p class="resource-description">Fundamentals of Mendelian genetics, DNA, and mutations.</p>
+                    <div class="resource-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-download"></i> 380 downloads
                         </div>
-                        <p class="resource-description">Comprehensive guide to various landforms and their formation processes.</p>
-                        <div class="resource-stats">
-                            <div class="stat-item">
-                                <i class="fas fa-download"></i> 156 downloads
-                            </div>
-                            <div class="stat-item">
-                                <i class="fas fa-star"></i> 4.7 (28)
-                            </div>
+                        <div class="stat-item">
+                            <i class="fas fa-coins"></i> 12 bytes
                         </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('physical_landforms.docx')">
-                            <i class="fas fa-download"></i> Download
-                        </a>
                     </div>
+                    <a href="#" class="download-btn">
+                        <i class="fas fa-download"></i> Download (12 bytes)
+                    </a>
                 </div>
             </div>
 
@@ -680,28 +602,184 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // DOM Elements
-            const studentNameDisplay = document.getElementById('studentNameDisplay');
-            const bytesCountElement = document.getElementById('bytesCount');
+        // Load student data and notes
+        async function loadStudentData() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    window.location.href = 'studentlogin.html';
+                    return;
+                }
+
+                const profileResponse = await fetch('/student/profile', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (profileResponse.ok) {
+                    const profileData = await profileResponse.json();
+                    document.getElementById('studentNameDisplay').textContent = profileData.student.studentName;
+                    const bytesCounter = document.querySelector('.bytes-counter');
+                    if (bytesCounter) {
+                        bytesCounter.querySelector('.bytes-icon').nextSibling.textContent = ` ${profileData.student.bytes} Bytes`;
+                    }
+                }
+
+                const notesResponse = await fetch('/api/workfiles/Biology', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (notesResponse.ok) {
+                    const notesData = await notesResponse.json();
+                    displayNotes(notesData.workFiles, notesData.studentClass);
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        function displayNotes(workFiles, studentClass) {
+            const resourceCards = document.getElementById('resourceCards'); // Changed to target the new ID
+            resourceCards.innerHTML = '';
+
+            if (workFiles.length === 0) {
+                resourceCards.innerHTML = '<div class="no-results">No Biology notes available yet.</div>';
+                return;
+            }
+
+            workFiles.forEach(file => {
+                const card = document.createElement('div');
+                card.className = 'resource-card';
+                if (file.intendedClass === studentClass) {
+                    card.style.borderLeft = '4px solid var(--color-brand-gold)'; // Use gold for matching class
+                }
+                card.innerHTML = `
+                    <h3 class="resource-name">${file.title}</h3>
+                    <div class="resource-meta">
+                        <span><i class="fas fa-file-pdf"></i> PDF</span> 
+                        <span class="resource-class">${file.intendedClass}</span>
+                    </div>
+                    <p class="resource-description">${file.description || 'No description available'}</p>
+                    <div class="resource-stats">
+                        <div class="stat-item"><i class="fas fa-download"></i> ${file.downloadCount} downloads</div>
+                        <div class="stat-item"><i class="fas fa-coins"></i> ${file.costBytes} bytes</div>
+                    </div>
+                    <button class="download-btn" onclick="downloadResource('${file._id}', ${file.costBytes})">
+                        <i class="fas fa-download"></i> Download (${file.costBytes} bytes)
+                    </button>
+                `;
+                resourceCards.appendChild(card);
+            });
+        }
+
+        async function downloadResource(fileId, cost) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/workfiles/${fileId}/download`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    const bytesCounter = document.querySelector('.bytes-counter');
+                    if (bytesCounter) {
+                        bytesCounter.querySelector('.bytes-icon').nextSibling.textContent = ` ${data.bytesRemaining} Bytes`;
+                    }
+                    window.open(data.fileUrl, '_blank');
+                    alert(`Download successful! ${cost} bytes deducted. Remaining: ${data.bytesRemaining} bytes`);
+                    loadStudentData(); // Reload data to reflect updated bytes count
+                } else {
+                    alert(data.message || 'Download failed');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error downloading file.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadStudentData);
+
+        // Create floating particles
+        function createParticles() {
             const floatingParticles = document.getElementById('floatingParticles');
-            const searchInput = document.getElementById('searchInput');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+
+                const posX = Math.random() * 100;
+                const posY = Math.random() * 100;
+                const size = Math.random() * 4 + 4;
+                const duration = Math.random() * 15 + 10;
+                const delay = Math.random() * 5;
+
+                particle.style.left = `${posX}vw`;
+                particle.style.top = `${posY}vh`;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.animationDuration = `${duration}s`;
+                particle.style.animationDelay = `${delay}s`;
+
+                floatingParticles.appendChild(particle);
+            }
+        }
+
+        // Show search suggestions
+        function showSuggestions(query) {
             const searchSuggestions = document.getElementById('searchSuggestions');
+            searchSuggestions.innerHTML = '';
+
+            if (query.length < 2) {
+                searchSuggestions.classList.remove('active');
+                return;
+            }
+
+            // Sample data - Geography topics and resources (for search functionality)
+            const allTopics = [
+                "Maps", "Climate", "Population",
+                "Weather", "Landforms", "Urbanization",
+                "Agriculture", "GIS", "Ecosystems",
+                "Water Resources", "Natural Hazards", "Economic Activities",
+                "Plate Tectonics", "Soil Types", "Demographics",
+                "Cartography", "Regional Geography", "Development",
+                "Cells", "DNA", "Evolution", "Photosynthesis", "Genetics", "Heredity"
+            ];
+
+
+            const filtered = allTopics.filter(topic =>
+                topic.toLowerCase().includes(query.toLowerCase())
+            );
+
+            if (filtered.length > 0) {
+                filtered.forEach(topic => {
+                    const item = document.createElement('div');
+                    item.classList.add('suggestion-item');
+                    item.textContent = topic;
+                    item.addEventListener('click', () => {
+                        document.getElementById('searchInput').value = topic;
+                        searchSuggestions.classList.remove('active');
+                        performSearch(topic);
+                    });
+                    searchSuggestions.appendChild(item);
+                });
+                searchSuggestions.classList.add('active');
+            } else {
+                searchSuggestions.classList.remove('active');
+            }
+        }
+
+        // Perform search
+        function performSearch(query) {
             const searchResults = document.getElementById('searchResults');
             const resultsContainer = document.getElementById('resultsContainer');
             const resultsCount = document.getElementById('resultsCount');
             const noResults = document.getElementById('noResults');
 
-            // Sample data - Geography topics and resources
-            const allTopics = [
-                "Maps", "Climate", "Population", 
-                "Weather", "Landforms", "Urbanization",
-                "Agriculture", "GIS", "Ecosystems", 
-                "Water Resources", "Natural Hazards", "Economic Activities",
-                "Plate Tectonics", "Soil Types", "Demographics",
-                "Cartography", "Regional Geography", "Development"
-            ];
+            if (query.length < 2) {
+                searchResults.classList.remove('active');
+                noResults.classList.add('hidden');
+                return;
+            }
 
+            // Sample data - Geography topics and resources (for search functionality)
             const allResources = [
                 {
                     name: "Map Reading Skills",
@@ -762,168 +840,130 @@
                     rating: 4.7,
                     reviews: 28,
                     topics: ["Landforms", "Plate Tectonics"]
+                },
+                {
+                    name: "Cell Structure and Function",
+                    class: "Senior 3",
+                    type: "PDF",
+                    description: "Detailed overview of plant and animal cell components and their roles.",
+                    downloads: 450,
+                    rating: 4.9,
+                    reviews: 60,
+                    topics: ["Cells", "Cell Biology"]
+                },
+                {
+                    name: "Photosynthesis Process",
+                    class: "Senior 4",
+                    type: "PDF",
+                    description: "Explanation of the light-dependent and light-independent reactions.",
+                    downloads: 420,
+                    rating: 4.8,
+                    reviews: 55,
+                    topics: ["Photosynthesis", "Plant Biology"]
+                },
+                {
+                    name: "Genetics and Heredity",
+                    class: "Senior 5",
+                    type: "DOCX",
+                    description: "Fundamentals of Mendelian genetics, DNA, and mutations.",
+                    downloads: 380,
+                    rating: 4.7,
+                    reviews: 48,
+                    topics: ["Genetics", "Heredity", "DNA"]
                 }
             ];
 
-            // Student Data
-            const studentName = localStorage.getItem('studentName') || 'Student';
-            studentNameDisplay.textContent = studentName;
+            const filtered = allResources.filter(resource =>
+                resource.name.toLowerCase().includes(query.toLowerCase()) ||
+                resource.topics.some(topic => topic.toLowerCase().includes(query.toLowerCase()))
+            ).sort((a, b) => b.downloads - a.downloads);
 
-            let bytesCount = parseInt(localStorage.getItem('bytesCount')) || 0;
-            bytesCountElement.textContent = bytesCount;
+            resultsContainer.innerHTML = '';
 
-            // Create floating particles
-            function createParticles() {
-                for (let i = 0; i < 30; i++) {
-                    const particle = document.createElement('div');
-                    particle.classList.add('particle');
+            if (filtered.length > 0) {
+                resultsCount.textContent = `${filtered.length} result${filtered.length === 1 ? '' : 's'} found for "${query}"`;
 
-                    const posX = Math.random() * 100;
-                    const posY = Math.random() * 100;
-                    const size = Math.random() * 4 + 4;
-                    const duration = Math.random() * 15 + 10;
-                    const delay = Math.random() * 5;
+                filtered.forEach(resource => {
+                    const card = createResourceCard(resource);
+                    resultsContainer.appendChild(card);
+                });
 
-                    particle.style.left = `${posX}vw`;
-                    particle.style.top = `${posY}vh`;
-                    particle.style.width = `${size}px`;
-                    particle.style.height = `${size}px`;
-                    particle.style.animationDuration = `${duration}s`;
-                    particle.style.animationDelay = `${delay}s`;
-
-                    floatingParticles.appendChild(particle);
-                }
+                searchResults.classList.add('active');
+                noResults.classList.add('hidden');
+            } else {
+                searchResults.classList.remove('active');
+                noResults.classList.remove('hidden');
             }
+        }
 
-            // Show search suggestions
-            function showSuggestions(query) {
-                searchSuggestions.innerHTML = '';
+        // Create resource card element
+        function createResourceCard(resource) {
+            const card = document.createElement('div');
+            card.classList.add('resource-card');
 
-                if (query.length < 2) {
-                    searchSuggestions.classList.remove('active');
-                    return;
-                }
-
-                const filtered = allTopics.filter(topic => 
-                    topic.toLowerCase().includes(query.toLowerCase())
-                );
-
-                if (filtered.length > 0) {
-                    filtered.forEach(topic => {
-                        const item = document.createElement('div');
-                        item.classList.add('suggestion-item');
-                        item.textContent = topic;
-                        item.addEventListener('click', () => {
-                            searchInput.value = topic;
-                            searchSuggestions.classList.remove('active');
-                            performSearch(topic);
-                        });
-                        searchSuggestions.appendChild(item);
-                    });
-                    searchSuggestions.classList.add('active');
-                } else {
-                    searchSuggestions.classList.remove('active');
-                }
-            }
-
-            // Perform search
-            function performSearch(query) {
-                if (query.length < 2) {
-                    searchResults.classList.remove('active');
-                    noResults.classList.add('hidden');
-                    return;
-                }
-
-                const filtered = allResources.filter(resource => 
-                    resource.name.toLowerCase().includes(query.toLowerCase()) ||
-                    resource.topics.some(topic => topic.toLowerCase().includes(query.toLowerCase()))
-                ).sort((a, b) => b.downloads - a.downloads);
-
-                resultsContainer.innerHTML = '';
-
-                if (filtered.length > 0) {
-                    resultsCount.textContent = `${filtered.length} result${filtered.length === 1 ? '' : 's'} found for "${query}"`;
-
-                    filtered.forEach(resource => {
-                        const card = createResourceCard(resource);
-                        resultsContainer.appendChild(card);
-                    });
-
-                    searchResults.classList.add('active');
-                    noResults.classList.add('hidden');
-                } else {
-                    searchResults.classList.remove('active');
-                    noResults.classList.remove('hidden');
-                }
-            }
-
-            // Create resource card element
-            function createResourceCard(resource) {
-                const card = document.createElement('div');
-                card.classList.add('resource-card');
-
-                card.innerHTML = `
-                    <h3 class="resource-name">${resource.name}</h3>
-                    <div class="resource-meta">
-                        <span><i class="fas fa-file-${resource.type.toLowerCase() === 'pdf' ? 'pdf' : 'word'}"></i> ${resource.type}</span>
-                        <span class="resource-class">${resource.class}</span>
+            card.innerHTML = `
+                <h3 class="resource-name">${resource.name}</h3>
+                <div class="resource-meta">
+                    <span><i class="fas fa-file-${resource.type.toLowerCase() === 'pdf' ? 'pdf' : 'word'}"></i> ${resource.type}</span>
+                    <span class="resource-class">${resource.class}</span>
+                </div>
+                <p class="resource-description">${resource.description}</p>
+                <div class="resource-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-download"></i> ${resource.downloads} downloads
                     </div>
-                    <p class="resource-description">${resource.description}</p>
-                    <div class="resource-stats">
-                        <div class="stat-item">
-                            <i class="fas fa-download"></i> ${resource.downloads} downloads
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-star"></i> ${resource.rating} (${resource.reviews})
-                        </div>
+                    <div class="stat-item">
+                        <i class="fas fa-star"></i> ${resource.rating} (${resource.reviews})
                     </div>
-                    <a href="#" class="download-btn" onclick="downloadResource('${resource.name.replace(/\s+/g, '_').toLowerCase()}.${resource.type.toLowerCase()}')">
-                        <i class="fas fa-download"></i> Download
-                    </a>
-                `;
+                </div>
+                <a href="#" class="download-btn" onclick="downloadResourceStub('${resource.name.replace(/\s+/g, '_').toLowerCase()}.${resource.type.toLowerCase()}')">
+                    <i class="fas fa-download"></i> Download
+                </a>
+            `;
 
-                return card;
-            }
+            return card;
+        }
 
-            // Simulate download (will be replaced with Cloudinary integration)
-            window.downloadResource = function(filename) {
-                // In production, this would trigger the Cloudinary download
-                alert(`Downloading ${filename}... (This will connect to Cloudinary in production)`);
+        // Stub for download function for search results (won't deduct bytes)
+        function downloadResourceStub(filename) {
+            alert(`Downloading ${filename}... (This is a stub for search results. Real downloads are handled by the dynamically loaded notes.)`);
+            return false;
+        }
 
-                // Add some bytes for downloading (optional)
-                bytesCount += 2;
-                bytesCountElement.textContent = bytesCount;
-                localStorage.setItem('bytesCount', bytesCount);
 
-                return false; // Prevent default link behavior
-            }
+        // Event listeners
+        const searchInput = document.getElementById('searchInput');
+        const searchSuggestions = document.getElementById('searchSuggestions');
+        const searchResults = document.getElementById('searchResults'); // Ensure this is defined
+        const resultsContainer = document.getElementById('resultsContainer'); // Ensure this is defined
+        const resultsCount = document.getElementById('resultsCount'); // Ensure this is defined
+        const noResults = document.getElementById('noResults'); // Ensure this is defined
 
-            // Event listeners
-            searchInput.addEventListener('input', (e) => {
-                showSuggestions(e.target.value);
-            });
 
-            searchInput.addEventListener('focus', () => {
-                if (searchInput.value.length >= 2) {
-                    showSuggestions(searchInput.value);
-                }
-            });
-
-            document.addEventListener('click', (e) => {
-                if (!searchInput.contains(e.target)) {
-                    searchSuggestions.classList.remove('active');
-                }
-            });
-
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    performSearch(searchInput.value);
-                }
-            });
-
-            // Initialize
-            createParticles();
+        searchInput.addEventListener('input', (e) => {
+            showSuggestions(e.target.value);
         });
+
+        searchInput.addEventListener('focus', () => {
+            if (searchInput.value.length >= 2) {
+                showSuggestions(searchInput.value);
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+                searchSuggestions.classList.remove('active');
+            }
+        });
+
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch(searchInput.value);
+            }
+        });
+
+        // Initialize
+        createParticles();
     </script>
 </body>
 </html>

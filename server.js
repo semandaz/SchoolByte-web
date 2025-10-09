@@ -49,8 +49,103 @@ mongoose.connect(MONGODB_URI)
     });
 
 
-// --- Enhanced Database Schemas ---
+// --- Get Work Files (Notes) by Subject ---
+app.get('/api/workfiles/:subject', authenticateToken, async (req, res) => {
+    try {
+        const { subject } = req.params;
+        // Use req.student.id from authenticateToken middleware
+        const studentId = req.student.id; 
 
+        // Get student info to know their class
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
+        // Fetch all work files for this subject
+        const workFiles = await WorkFile.find({ subject: subject })
+            .populate('activity')
+            .sort({ createdAt: -1 });
+
+        // Prioritize by student's class
+        const studentClass = student.class;
+        const sortedFiles = workFiles.sort((a, b) => {
+            // Exact class match gets highest priority
+            if (a.intendedClass === studentClass && b.intendedClass !== studentClass) return -1;
+            if (b.intendedClass === studentClass && a.intendedClass !== studentClass) return 1;
+            // Otherwise sort by date (newest first)
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+
+        res.json({
+            workFiles: sortedFiles.map(file => ({
+                _id: file._id,
+                title: file.title,
+                description: file.description,
+                fileUrl: file.fileUrl,
+                intendedClass: file.intendedClass,
+                costBytes: file.costBytes,
+                uploadedBy: file.uploadedBy,
+                downloadCount: file.downloadCount,
+                createdAt: file.createdAt,
+                hasActivity: !!file.activity // Check if an activity is associated
+            })),
+            studentClass: studentClass
+        });
+    } catch (error) {
+        console.error('Error fetching work files:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// --- Download Work File ---
+app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Use req.student.id from authenticateToken middleware
+        const studentId = req.student.id; 
+
+        const workFile = await WorkFile.findById(id);
+        if (!workFile) {
+            return res.status(404).json({ message: 'File not found' });
+        }
+
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
+        // Check if student has enough bytes
+        if (student.bytes < workFile.costBytes) {
+            return res.status(400).json({ 
+                message: 'Insufficient bytes',
+                required: workFile.costBytes,
+                available: student.bytes
+            });
+        }
+
+        // Deduct bytes
+        student.bytes -= workFile.costBytes;
+        await student.save();
+
+        // Increment download count
+        workFile.downloadCount += 1;
+        await workFile.save();
+
+        res.json({
+            message: 'Download successful',
+            fileUrl: workFile.fileUrl,
+            bytesRemaining: student.bytes,
+            bytesDeducted: workFile.costBytes
+        });
+    } catch (error) {
+        console.error('Error downloading file:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+
+// --- Enhanced Database Schemas ---
 
 // VerificationCode Schema
 const verificationCodeSchema = new mongoose.Schema({
@@ -969,7 +1064,8 @@ const authenticateToken = (req, res, next) => {
             console.error('JWT verification error (Student):', err.message);
             return res.status(403).json({ message: 'Access Denied: Invalid or expired token.' });
         }
-        req.student = decoded;
+        // Make sure to use req.student for student-related authenticated routes
+        req.student = decoded; // Store decoded token payload in req.student
         next();
     });
 };
@@ -1546,6 +1642,7 @@ app.post('/login-student', [
 // Enhanced student dashboard
 app.get('/student/dashboard', authenticateToken, async (req, res) => {
     try {
+        // Use req.student.id from the authenticateToken middleware
         const studentData = await Student.findById(req.student.id).select('-password').populate('currentQuizSessionId');
 
 
@@ -1591,6 +1688,7 @@ app.get('/student/dashboard', authenticateToken, async (req, res) => {
 // Enhanced Quiz Generation Endpoint
 app.get('/student/quizzes/generate', authenticateToken, async (req, res) => {
     try {
+        // Use req.student.id from the authenticateToken middleware
         const student = await Student.findById(req.student.id);
         if (!student) {
             return res.status(404).json({ message: 'Student not found.' });
@@ -1664,7 +1762,8 @@ app.post('/student/quizzes/submit', authenticateToken, [
     body('quizSubmissions.*.studentAnswer').notEmpty().withMessage('Student answer is required for each question.')
 ], async (req, res) => {
     const { quizSubmissions } = req.body;
-    const studentId = req.student.id;
+    // Use req.student.id from the authenticateToken middleware
+    const studentId = req.student.id; 
 
 
     const session = await mongoose.startSession();
@@ -2138,7 +2237,7 @@ app.get('/student/workfiles', authenticateToken, async (req, res) => {
 // Student endpoint to download a work file (with bytes deduction)
 app.post('/student/download-workfile/:workFileId', authenticateToken, async (req, res) => {
     const { workFileId } = req.params;
-    const studentId = req.student.id;
+    const studentId = req.student.id; // Use student ID from token
 
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -2398,7 +2497,7 @@ app.post(
             const timestamp = Date.now();
             const randomId = Math.random().toString(36).substring(2, 10);
             workFilePublicId = `schoolbyte/workfiles/${teacherId}/workfile-${timestamp}-${randomId}`;
-            
+
             const uploadResult = await new Promise((resolve, reject) => {
                 const uploadStream = cloudinary.uploader.upload_stream({
                     resource_type: 'raw',
