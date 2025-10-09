@@ -680,6 +680,35 @@
     </div>
 
     <script>
+        // Dummy data for search suggestions and resources (replace with actual data fetching)
+        const allTopics = [
+            "Nutrition Fundamentals", "Food Preparation Techniques", "Meal Planning Guide",
+            "Food Safety and Hygiene", "Dietary Requirements", "Food Preservation Methods",
+            "Healthy Eating Habits", "Cooking Basics", "Baking Science", "Food Allergies",
+            "Sustainable Food Choices", "Global Cuisines", "Culinary Arts", "Food Science",
+            "Nutrient Deficiencies", "Special Diets"
+        ];
+
+        const allResources = [
+            { name: "Nutrition Fundamentals", type: "PDF", class: "Senior 3", description: "Comprehensive guide to essential nutrients, their functions, and food sources.", downloads: 287, rating: 4.7, reviews: 38, topics: ["nutrition", "fundamentals", "nutrients"] },
+            { name: "Food Preparation Techniques", type: "PDF", class: "Senior 4", description: "Step-by-step guide to various cooking methods and food preparation skills.", downloads: 254, rating: 4.6, reviews: 32, topics: ["cooking", "preparation", "techniques"] },
+            { name: "Meal Planning Guide", type: "DOCX", class: "Senior 5", description: "Principles of balanced meal planning for different dietary needs and occasions.", downloads: 231, rating: 4.5, reviews: 28, topics: ["meal planning", "diet", "planning"] },
+            { name: "Food Safety and Hygiene", type: "PDF", class: "Senior 4", description: "Essential practices for maintaining food safety and kitchen hygiene standards.", downloads: 198, rating: 4.9, reviews: 42, topics: ["safety", "hygiene", "food handling"] },
+            { name: "Dietary Requirements", type: "PDF", class: "Senior 6", description: "Guide to special dietary needs including vegetarian, vegan, and medical diets.", downloads: 176, rating: 4.8, reviews: 35, topics: ["diet", "requirements", "special diets"] },
+            { name: "Food Preservation Methods", type: "DOCX", class: "Senior 3", description: "Traditional and modern techniques for preserving food and extending shelf life.", downloads: 165, rating: 4.7, reviews: 26, topics: ["preservation", "storage", "methods"] }
+        ];
+
+        const searchInput = document.getElementById('searchInput');
+        const searchSuggestions = document.getElementById('searchSuggestions');
+        const searchResults = document.getElementById('searchResults');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsCount = document.getElementById('resultsCount');
+        const noResults = document.getElementById('noResults');
+        const floatingParticles = document.getElementById('floatingParticles');
+        const bytesCountElement = document.getElementById('bytesCount');
+        let bytesCount = parseInt(localStorage.getItem('bytesCount') || '0');
+        bytesCountElement.textContent = bytesCount;
+
         async function loadStudentData() {
             try {
                 const token = localStorage.getItem('token');
@@ -691,7 +720,8 @@
                     const bytesCounter = document.querySelector('.bytes-counter');
                     if (bytesCounter) bytesCounter.querySelector('.bytes-icon').nextSibling.textContent = ` ${profileData.student.bytes} Bytes`;
                 }
-                const notesResponse = await fetch('/api/workfiles/Food and Nutrition', { headers: { 'Authorization': `Bearer ${token}` } });
+                const SUBJECT = 'Food and Nutrition'; // Updated subject
+                const notesResponse = await fetch(`/api/workfiles/${SUBJECT}`, { headers: { 'Authorization': `Bearer ${token}` } });
                 if (notesResponse.ok) {
                     const notesData = await notesResponse.json();
                     displayNotes(notesData.workFiles, notesData.studentClass);
@@ -699,15 +729,45 @@
             } catch (error) { console.error('Error:', error); }
         }
         function displayNotes(workFiles, studentClass) {
-            const resourceCards = document.querySelector('.resource-cards');
-            resourceCards.innerHTML = '';
-            if (workFiles.length === 0) { resourceCards.innerHTML = '<div class="no-results">No Food and Nutrition notes available yet.</div>'; return; }
+            const resourceCardsContainer = document.querySelector('.resources-content .resource-cards'); // Target the container for actual resources
+            if (!resourceCardsContainer) {
+                console.error("Resource cards container not found!");
+                return;
+            }
+            resourceCardsContainer.innerHTML = ''; // Clear existing cards
+
+            if (workFiles.length === 0) {
+                resourceCardsContainer.innerHTML = '<div class="no-results">No Food and Nutrition notes available yet.</div>';
+                return;
+            }
+
             workFiles.forEach(file => {
                 const card = document.createElement('div');
                 card.className = 'resource-card';
-                if (file.intendedClass === studentClass) card.style.borderLeft = '4px solid #FFD700';
-                card.innerHTML = `<h3 class="resource-name">${file.title}</h3><div class="resource-meta"><span><i class="fas fa-file-pdf"></i> PDF</span><span class="resource-class">${file.intendedClass}</span></div><p class="resource-description">${file.description || 'No description available'}</p><div class="resource-stats"><div class="stat-item"><i class="fas fa-download"></i> ${file.downloadCount} downloads</div><div class="stat-item"><i class="fas fa-coins"></i> ${file.costBytes} bytes</div></div><button class="download-btn" onclick="downloadResource('${file._id}', ${file.costBytes})"><i class="fas fa-download"></i> Download (${file.costBytes} bytes)</button>`;
-                resourceCards.appendChild(card);
+                // Apply highlight if the file is intended for the student's class
+                if (file.intendedClass === studentClass) {
+                    card.style.borderLeft = '4px solid var(--color-brand-gold)'; // Use gold for highlight
+                }
+                card.innerHTML = `
+                    <h3 class="resource-name">${file.title}</h3>
+                    <div class="resource-meta">
+                        <span><i class="fas fa-file-pdf"></i> PDF</span>
+                        <span class="resource-class">${file.intendedClass}</span>
+                    </div>
+                    <p class="resource-description">${file.description || 'No description available'}</p>
+                    <div class="resource-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-download"></i> ${file.downloadCount} downloads
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-coins"></i> ${file.costBytes} bytes
+                        </div>
+                    </div>
+                    <button class="download-btn" onclick="downloadResource('${file._id}', ${file.costBytes})">
+                        <i class="fas fa-download"></i> Download (${file.costBytes} bytes)
+                    </button>
+                `;
+                resourceCardsContainer.appendChild(card);
             });
         }
         async function downloadResource(fileId, cost) {
@@ -720,7 +780,7 @@
                     if (bytesCounter) bytesCounter.querySelector('.bytes-icon').nextSibling.textContent = ` ${data.bytesRemaining} Bytes`;
                     window.open(data.fileUrl, '_blank');
                     alert(`Download successful! ${cost} bytes deducted. Remaining: ${data.bytesRemaining} bytes`);
-                    loadStudentData();
+                    loadStudentData(); // Reload data to reflect potential changes in user's bytes
                 } else { alert(data.message || 'Download failed'); }
             } catch (error) { alert('Error downloading file.'); }
         }
@@ -757,7 +817,7 @@
                 return;
             }
 
-            const filtered = allTopics.filter(topic => 
+            const filtered = allTopics.filter(topic =>
                 topic.toLowerCase().includes(query.toLowerCase())
             );
 
@@ -787,7 +847,7 @@
                 return;
             }
 
-            const filtered = allResources.filter(resource => 
+            const filtered = allResources.filter(resource =>
                 resource.name.toLowerCase().includes(query.toLowerCase()) ||
                 resource.topics.some(topic => topic.toLowerCase().includes(query.toLowerCase()))
             ).sort((a, b) => b.downloads - a.downloads);
@@ -839,15 +899,20 @@
         }
 
         // Simulate download (will be replaced with Cloudinary integration)
-        window.downloadResource = function(filename) {
+        window.downloadResource = function(filename, cost) {
             // In production, this would trigger the Cloudinary download
-            alert(`Downloading ${filename}... (This will connect to Cloudinary in production)`);
-
-            // Add some bytes for downloading (optional)
-            bytesCount += 2;
-            bytesCountElement.textContent = bytesCount;
-            localStorage.setItem('bytesCount', bytesCount);
-
+            // For now, just simulate the deduction and alert
+            const currentBytes = parseInt(localStorage.getItem('bytesCount') || '0');
+            if (currentBytes >= cost) {
+                const newBytes = currentBytes - cost;
+                localStorage.setItem('bytesCount', newBytes);
+                bytesCountElement.textContent = newBytes;
+                alert(`Downloading ${filename}... Cost: ${cost} bytes. Remaining: ${newBytes} bytes.`);
+                // In a real scenario, you'd redirect or open the file URL here
+                // window.open(fileUrl, '_blank');
+            } else {
+                alert(`Not enough bytes to download ${filename}. You need ${cost} bytes, but only have ${currentBytes}.`);
+            }
             return false; // Prevent default link behavior
         }
 
@@ -863,7 +928,7 @@
         });
 
         document.addEventListener('click', (e) => {
-            if (!searchInput.contains(e.target)) {
+            if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
                 searchSuggestions.classList.remove('active');
             }
         });

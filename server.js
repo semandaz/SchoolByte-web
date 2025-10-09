@@ -49,31 +49,51 @@ mongoose.connect(MONGODB_URI)
     });
 
 
+// --- JWT Secret ---
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    console.error('FATAL ERROR: JWT_SECRET is not defined. Please set it in Replit Secrets.');
+    process.exit(1);
+}
+
+
+// --- Authentication Middleware ---
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ message: 'Access token required' });
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) {
+            return res.status(403).json({ message: 'Invalid or expired token' });
+        }
+        req.student = user;
+        next();
+    });
+};
+
 // --- Get Work Files (Notes) by Subject ---
 app.get('/api/workfiles/:subject', authenticateToken, async (req, res) => {
     try {
         const { subject } = req.params;
-        // Use req.student.id from authenticateToken middleware
-        const studentId = req.student.id; 
+        const studentId = req.student.id;
 
-        // Get student info to know their class
         const student = await Student.findById(studentId);
         if (!student) {
             return res.status(404).json({ message: 'Student not found' });
         }
 
-        // Fetch all work files for this subject
         const workFiles = await WorkFile.find({ subject: subject })
             .populate('activity')
             .sort({ createdAt: -1 });
 
-        // Prioritize by student's class
         const studentClass = student.class;
         const sortedFiles = workFiles.sort((a, b) => {
-            // Exact class match gets highest priority
             if (a.intendedClass === studentClass && b.intendedClass !== studentClass) return -1;
             if (b.intendedClass === studentClass && a.intendedClass !== studentClass) return 1;
-            // Otherwise sort by date (newest first)
             return new Date(b.createdAt) - new Date(a.createdAt);
         });
 
@@ -88,7 +108,7 @@ app.get('/api/workfiles/:subject', authenticateToken, async (req, res) => {
                 uploadedBy: file.uploadedBy,
                 downloadCount: file.downloadCount,
                 createdAt: file.createdAt,
-                hasActivity: !!file.activity // Check if an activity is associated
+                hasActivity: !!file.activity
             })),
             studentClass: studentClass
         });
@@ -102,8 +122,7 @@ app.get('/api/workfiles/:subject', authenticateToken, async (req, res) => {
 app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
-        // Use req.student.id from authenticateToken middleware
-        const studentId = req.student.id; 
+        const studentId = req.student.id;
 
         const workFile = await WorkFile.findById(id);
         if (!workFile) {
@@ -115,7 +134,6 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
             return res.status(404).json({ message: 'Student not found' });
         }
 
-        // Check if student has enough bytes
         if (student.bytes < workFile.costBytes) {
             return res.status(400).json({ 
                 message: 'Insufficient bytes',
@@ -124,11 +142,9 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
             });
         }
 
-        // Deduct bytes
         student.bytes -= workFile.costBytes;
         await student.save();
 
-        // Increment download count
         workFile.downloadCount += 1;
         await workFile.save();
 
@@ -143,7 +159,6 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
-
 
 // --- Enhanced Database Schemas ---
 
@@ -1024,14 +1039,6 @@ if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
 }
 
 
-// --- JWT Secret ---
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-    console.error('FATAL ERROR: JWT_SECRET is not defined. Please set it in Replit Secrets.');
-    process.exit(1);
-}
-
-
 // --- Cloudinary Configuration ---
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -1049,26 +1056,7 @@ if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !pr
 
 
 // --- Authentication Middleware ---
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-
-    if (!token) {
-        return res.status(401).json({ message: 'Access Denied: No authentication token provided.' });
-    }
-
-
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
-        if (err) {
-            console.error('JWT verification error (Student):', err.message);
-            return res.status(403).json({ message: 'Access Denied: Invalid or expired token.' });
-        }
-        // Make sure to use req.student for student-related authenticated routes
-        req.student = decoded; // Store decoded token payload in req.student
-        next();
-    });
-};
+// authenticateToken is defined above
 
 
 const authenticateTeacherToken = (req, res, next) => {

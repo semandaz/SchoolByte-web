@@ -680,6 +680,65 @@
     </div>
 
     <script>
+        // This script needs to be adapted for each subject page
+        // The original provided code was for Chemistry.
+        // Below are templates for other subjects, assuming similar structure.
+
+        // Template for Performing Arts
+        // <script src="performing_arts_notes.js"></script>
+
+        // Template for Physical Education
+        // <script src="physical_education_notes.js"></script>
+
+        // Template for Technology and Design
+        // <script src="technology_and_design_notes.js"></script>
+
+        // Template for Food and Nutrition
+        // <script src="food_and_nutrition_notes.js"></script>
+
+        // Template for Chemistry (as provided)
+        // const SUBJECT = 'Chemistry'; // Correctly set for this page
+
+        // Template for Christian Religious Education
+        // <script src="christian_religious_education_notes.js"></script>
+
+        // Template for English
+        // <script src="english_notes.js"></script>
+
+        // Template for Entrepreneurship
+        // <script src="entrepreneurship_notes.js"></script>
+
+        // Template for German
+        // <script src="german_notes.js"></script>
+
+        // Template for History
+        // <script src="history_notes.js"></script>
+
+        // Template for Literature
+        // <script src="literature_notes.js"></script>
+
+        // Template for Luganda
+        // <script src="luganda_notes.js"></script>
+
+        // Template for Physics
+        // <script src="physics_notes.js"></script>
+
+        // Template for Biology
+        // <script src="biology_notes.js"></script>
+
+        // Template for Geography
+        // <script src="geography_notes.js"></script>
+
+        // Template for Agriculture
+        // <script src="agriculture_notes.js"></script>
+
+        // Template for Mathematics
+        // <script src="mathematics_notes.js"></script>
+
+        // Template for Kiswahili
+        // <script src="kiswahili_notes.js"></script>
+
+
         document.addEventListener('DOMContentLoaded', function() {
             // DOM Elements
             const studentNameDisplay = document.getElementById('studentNameDisplay');
@@ -692,78 +751,167 @@
             const resultsCount = document.getElementById('resultsCount');
             const noResults = document.getElementById('noResults');
 
-            // Sample data - Chemistry topics and resources
-            const allTopics = [
-                "Atomic Structure", "Chemical Bonding", "Organic Chemistry", 
-                "Stoichiometry", "Acids and Bases", "Electrochemistry",
-                "Periodic Table", "Chemical Kinetics", "Thermochemistry", 
-                "Equilibrium", "Redox Reactions", "Coordination Compounds",
-                "Nuclear Chemistry", "Industrial Chemistry", "Environmental Chemistry",
-                "Metals and Non-metals", "Solutions", "Gases"
-            ];
+            // Determine the current subject based on the page title or a data attribute if available
+            // For now, we hardcode Chemistry as per the original file.
+            // In a real application, this would be dynamic.
+            const SUBJECT = 'Chemistry'; 
 
-            const allResources = [
-                {
-                    name: "Atomic Structure & Periodic Table",
-                    class: "Senior 3",
-                    type: "PDF",
-                    description: "Detailed notes on atomic models, electron configuration and periodic trends.",
-                    downloads: 287,
-                    rating: 4.8,
-                    reviews: 42,
-                    topics: ["Atomic Structure", "Periodic Table"]
-                },
-                {
-                    name: "Chemical Bonding",
-                    class: "Senior 4",
-                    type: "PDF",
-                    description: "Comprehensive guide to ionic, covalent and metallic bonding with diagrams.",
-                    downloads: 234,
-                    rating: 4.7,
-                    reviews: 38,
-                    topics: ["Chemical Bonding"]
-                },
-                {
-                    name: "Organic Chemistry Basics",
-                    class: "Senior 5",
-                    type: "DOCX",
-                    description: "Introduction to hydrocarbons, functional groups and IUPAC nomenclature.",
-                    downloads: 198,
-                    rating: 4.9,
-                    reviews: 47,
-                    topics: ["Organic Chemistry"]
-                },
-                {
-                    name: "Chemical Equations & Stoichiometry",
-                    class: "Senior 4",
-                    type: "PDF",
-                    description: "Balancing equations, mole concept and stoichiometric calculations with examples.",
-                    downloads: 187,
-                    rating: 4.9,
-                    reviews: 53,
-                    topics: ["Stoichiometry"]
-                },
-                {
-                    name: "Acids, Bases & Salts",
-                    class: "Senior 3",
-                    type: "PDF",
-                    description: "Properties of acids and bases, pH scale, and salt preparation methods.",
-                    downloads: 176,
-                    rating: 4.8,
-                    reviews: 39,
-                    topics: ["Acids and Bases"]
-                },
-                {
-                    name: "Electrochemistry",
-                    class: "Senior 6",
-                    type: "DOCX",
-                    description: "Redox reactions, electrochemical cells and electrolysis with worked examples.",
-                    downloads: 154,
-                    rating: 4.9,
-                    reviews: 41,
-                    topics: ["Electrochemistry", "Redox Reactions"]
+            // Placeholder for subject-specific topics and resources
+            let allTopics = [];
+            let allResources = [];
+
+            // Fetch data based on the subject
+            // This is a placeholder. In a real app, you'd fetch from an API.
+            // The API should return data tailored to the user's class.
+            function fetchSubjectData(subject) {
+                // Mock data - in a real scenario, this would come from an API call
+                // The API would need to be aware of the logged-in user's class to filter resources.
+                switch (subject) {
+                    case 'Chemistry':
+                        allTopics = [
+                            "Atomic Structure", "Chemical Bonding", "Organic Chemistry", 
+                            "Stoichiometry", "Acids and Bases", "Electrochemistry",
+                            "Periodic Table", "Chemical Kinetics", "Thermochemistry", 
+                            "Equilibrium", "Redox Reactions", "Coordination Compounds",
+                            "Nuclear Chemistry", "Industrial Chemistry", "Environmental Chemistry",
+                            "Metals and Non-metals", "Solutions", "Gases"
+                        ];
+                        allResources = [
+                            { name: "Atomic Structure & Periodic Table", class: "Senior 3", type: "PDF", description: "Detailed notes on atomic models, electron configuration and periodic trends.", downloads: 287, rating: 4.8, reviews: 42, topics: ["Atomic Structure", "Periodic Table"] },
+                            { name: "Chemical Bonding", class: "Senior 4", type: "PDF", description: "Comprehensive guide to ionic, covalent and metallic bonding with diagrams.", downloads: 234, rating: 4.7, reviews: 38, topics: ["Chemical Bonding"] },
+                            { name: "Organic Chemistry Basics", class: "Senior 5", type: "DOCX", description: "Introduction to hydrocarbons, functional groups and IUPAC nomenclature.", downloads: 198, rating: 4.9, reviews: 47, topics: ["Organic Chemistry"] },
+                            { name: "Chemical Equations & Stoichiometry", class: "Senior 4", type: "PDF", description: "Balancing equations, mole concept and stoichiometric calculations with examples.", downloads: 187, rating: 4.9, reviews: 53, topics: ["Stoichiometry"] },
+                            { name: "Acids, Bases & Salts", class: "Senior 3", type: "PDF", description: "Properties of acids and bases, pH scale, and salt preparation methods.", downloads: 176, rating: 4.8, reviews: 39, topics: ["Acids and Bases"] },
+                            { name: "Electrochemistry", class: "Senior 6", type: "DOCX", description: "Redox reactions, electrochemical cells and electrolysis with worked examples.", downloads: 154, rating: 4.9, reviews: 41, topics: ["Electrochemistry", "Redox Reactions"] }
+                        ];
+                        break;
+                    case 'Performing Arts':
+                        allTopics = ["Music Theory", "History of Performing Arts", "Dance Styles", "Drama Techniques"];
+                        allResources = [
+                            { name: "Introduction to Music Theory", class: "Senior 1", type: "PDF", description: "Basic concepts of music notation and harmony.", downloads: 120, rating: 4.5, reviews: 20, topics: ["Music Theory"] },
+                            { name: "Classical Ballet Fundamentals", class: "Senior 2", type: "DOCX", description: "Key positions and movements in ballet.", downloads: 95, rating: 4.7, reviews: 18, topics: ["Dance Styles"] }
+                        ];
+                        break;
+                    case 'Physical Education':
+                        allTopics = ["Sports Physiology", "Fitness Training", "Rules of Athletics", "Team Sports Strategies"];
+                        allResources = [
+                            { name: "Principles of Fitness Training", class: "Senior 3", type: "PDF", description: "Guidelines for improving cardiovascular health and strength.", downloads: 150, rating: 4.6, reviews: 25, topics: ["Fitness Training"] },
+                            { name: "Tactics in Football", class: "Senior 4", type: "PDF", description: "Offensive and defensive strategies for football.", downloads: 130, rating: 4.8, reviews: 22, topics: ["Team Sports Strategies"] }
+                        ];
+                        break;
+                    case 'Technology and Design':
+                        allTopics = ["3D Modeling", "Electronics Basics", "Prototyping", "Design Thinking"];
+                        allResources = [
+                            { name: "Introduction to 3D Printing", class: "Senior 4", type: "PDF", description: "Basics of designing and printing 3D models.", downloads: 180, rating: 4.9, reviews: 30, topics: ["3D Modeling", "Prototyping"] },
+                            { name: "Basic Circuit Design", class: "Senior 5", type: "DOCX", description: "Understanding simple electronic circuits.", downloads: 160, rating: 4.7, reviews: 28, topics: ["Electronics Basics"] }
+                        ];
+                        break;
+                    case 'Food and Nutrition':
+                        allTopics = ["Macronutrients", "Micronutrients", "Dietary Guidelines", "Food Safety"];
+                        allResources = [
+                            { name: "Understanding Macronutrients", class: "Senior 2", type: "PDF", description: "Role of carbohydrates, proteins, and fats.", downloads: 110, rating: 4.5, reviews: 19, topics: ["Macronutrients"] },
+                            { name: "Food Preservation Techniques", class: "Senior 3", type: "PDF", description: "Methods to extend the shelf life of food.", downloads: 105, rating: 4.6, reviews: 17, topics: ["Food Safety"] }
+                        ];
+                        break;
+                    case 'Christian Religious Education':
+                        allTopics = ["Old Testament History", "New Testament Teachings", "Christian Ethics", "World Religions"];
+                        allResources = [
+                            { name: "Key Events in the Old Testament", class: "Senior 3", type: "PDF", description: "Narratives and significance of major events.", downloads: 140, rating: 4.7, reviews: 23, topics: ["Old Testament History"] },
+                            { name: "The Teachings of Jesus", class: "Senior 4", type: "DOCX", description: "Parables and ethical teachings of Jesus.", downloads: 135, rating: 4.8, reviews: 21, topics: ["New Testament Teachings"] }
+                        ];
+                        break;
+                    case 'English':
+                        allTopics = ["Grammar Essentials", "Literary Analysis", "Essay Writing", "Poetry Appreciation"];
+                        allResources = [
+                            { name: "English Grammar Rules", class: "Senior 1", type: "PDF", description: "Common grammar mistakes and how to avoid them.", downloads: 200, rating: 4.7, reviews: 35, topics: ["Grammar Essentials"] },
+                            { name: "Analyzing Shakespearean Plays", class: "Senior 5", type: "PDF", description: "A guide to understanding Shakespeare's language and themes.", downloads: 190, rating: 4.9, reviews: 40, topics: ["Literary Analysis", "Poetry Appreciation"] }
+                        ];
+                        break;
+                    case 'Entrepreneurship':
+                        allTopics = ["Business Planning", "Marketing Strategies", "Financial Management", "Innovation"];
+                        allResources = [
+                            { name: "Developing a Business Plan", class: "Senior 4", type: "PDF", description: "Steps to create a comprehensive business plan.", downloads: 165, rating: 4.8, reviews: 29, topics: ["Business Planning"] },
+                            { name: "Introduction to Marketing", class: "Senior 5", type: "DOCX", description: "Core concepts of marketing and promotion.", downloads: 155, rating: 4.6, reviews: 26, topics: ["Marketing Strategies"] }
+                        ];
+                        break;
+                    case 'German':
+                        allTopics = ["Basic German Grammar", "German Vocabulary", "German Culture", "German Literature"];
+                        allResources = [
+                            { name: "Beginner German Grammar", class: "Senior 1", type: "PDF", description: "Fundamental grammar rules for beginners.", downloads: 90, rating: 4.4, reviews: 15, topics: ["Basic German Grammar"] },
+                            { name: "Common German Phrases", class: "Senior 2", type: "DOCX", description: "Useful phrases for everyday conversations.", downloads: 85, rating: 4.5, reviews: 14, topics: ["German Vocabulary"] }
+                        ];
+                        break;
+                    case 'History':
+                        allTopics = ["World War I", "Ancient Civilizations", "The Industrial Revolution", "African History"];
+                        allResources = [
+                            { name: "Causes of World War I", class: "Senior 4", type: "PDF", description: "Analysis of the political and social factors leading to WWI.", downloads: 170, rating: 4.8, reviews: 32, topics: ["World War I"] },
+                            { name: "Ancient Egypt", class: "Senior 3", type: "PDF", description: "Society, culture, and achievements of ancient Egypt.", downloads: 160, rating: 4.7, reviews: 29, topics: ["Ancient Civilizations"] }
+                        ];
+                        break;
+                    case 'Literature':
+                        allTopics = ["Literary Devices", "Famous Novels", "Poetry Forms", "Literary Movements"];
+                        allResources = [
+                            { name: "Understanding Literary Devices", class: "Senior 4", type: "PDF", description: "Explaining common literary techniques used in writing.", downloads: 130, rating: 4.6, reviews: 21, topics: ["Literary Devices"] },
+                            { name: "Introduction to Romantic Poetry", class: "Senior 5", type: "DOCX", description: "Key poets and themes of the Romantic era.", downloads: 125, rating: 4.7, reviews: 20, topics: ["Poetry Forms", "Literary Movements"] }
+                        ];
+                        break;
+                    case 'Luganda':
+                        allTopics = ["Luganda Grammar", "Luganda Vocabulary", "Luganda Proverbs", "Luganda Literature"];
+                        allResources = [
+                            { name: "Basic Luganda Grammar", class: "Senior 1", type: "PDF", description: "Fundamental grammar rules for the Luganda language.", downloads: 70, rating: 4.3, reviews: 10, topics: ["Luganda Grammar"] },
+                            { name: "Common Luganda Phrases", class: "Senior 2", type: "DOCX", description: "Useful phrases for daily communication.", downloads: 65, rating: 4.4, reviews: 9, topics: ["Luganda Vocabulary"] }
+                        ];
+                        break;
+                    case 'Physics':
+                        allTopics = ["Mechanics", "Electricity and Magnetism", "Waves", "Modern Physics"];
+                        allResources = [
+                            { name: "Introduction to Mechanics", class: "Senior 3", type: "PDF", description: "Study of motion, forces, and energy.", downloads: 210, rating: 4.8, reviews: 45, topics: ["Mechanics"] },
+                            { name: "Fundamentals of Electricity", class: "Senior 4", type: "PDF", description: "Basic principles of electric circuits and fields.", downloads: 200, rating: 4.7, reviews: 42, topics: ["Electricity and Magnetism"] }
+                        ];
+                        break;
+                    case 'Biology':
+                        allTopics = ["Cell Biology", "Genetics", "Ecology", "Human Physiology"];
+                        allResources = [
+                            { name: "Cell Structure and Function", class: "Senior 3", type: "PDF", description: "Detailed explanation of cell organelles and processes.", downloads: 250, rating: 4.9, reviews: 50, topics: ["Cell Biology"] },
+                            { name: "Principles of Genetics", class: "Senior 4", type: "DOCX", description: "Mendelian genetics, DNA, and gene expression.", downloads: 230, rating: 4.8, reviews: 48, topics: ["Genetics"] }
+                        ];
+                        break;
+                    case 'Geography':
+                        allTopics = ["Physical Geography", "Human Geography", "Map Skills", "Environmental Issues"];
+                        allResources = [
+                            { name: "Introduction to Physical Geography", class: "Senior 3", type: "PDF", description: "Study of Earth's landforms, climate, and natural processes.", downloads: 190, rating: 4.7, reviews: 35, topics: ["Physical Geography"] },
+                            { name: "Population Dynamics", class: "Senior 4", type: "PDF", description: "Analysis of population growth, distribution, and migration.", downloads: 180, rating: 4.6, reviews: 33, topics: ["Human Geography"] }
+                        ];
+                        break;
+                    case 'Agriculture':
+                        allTopics = ["Crop Production", "Animal Husbandry", "Soil Science", "Agricultural Technology"];
+                        allResources = [
+                            { name: "Principles of Crop Production", class: "Senior 3", type: "PDF", description: "Techniques for cultivating various crops.", downloads: 140, rating: 4.5, reviews: 24, topics: ["Crop Production"] },
+                            { name: "Introduction to Animal Husbandry", class: "Senior 4", type: "DOCX", description: "Care and management of farm animals.", downloads: 130, rating: 4.6, reviews: 22, topics: ["Animal Husbandry"] }
+                        ];
+                        break;
+                    case 'Mathematics':
+                        allTopics = ["Algebra", "Geometry", "Calculus", "Statistics"];
+                        allResources = [
+                            { name: "Algebraic Equations and Functions", class: "Senior 3", type: "PDF", description: "Solving linear and quadratic equations, functions.", downloads: 220, rating: 4.8, reviews: 40, topics: ["Algebra"] },
+                            { name: "Introduction to Calculus", class: "Senior 5", type: "PDF", description: "Limits, derivatives, and integrals.", downloads: 200, rating: 4.9, reviews: 38, topics: ["Calculus"] }
+                        ];
+                        break;
+                    case 'Kiswahili':
+                        allTopics = ["Kiswahili Grammar", "Kiswahili Vocabulary", "Kiswahili Literature", "Kenyan Culture"];
+                        allResources = [
+                            { name: "Basic Kiswahili Grammar", class: "Senior 1", type: "PDF", description: "Fundamental grammar rules for Kiswahili.", downloads: 80, rating: 4.4, reviews: 12, topics: ["Kiswahili Grammar"] },
+                            { name: "Common Kiswahili Phrases", class: "Senior 2", type: "DOCX", description: "Useful phrases for daily communication.", downloads: 75, rating: 4.5, reviews: 11, topics: ["Kiswahili Vocabulary"] }
+                        ];
+                        break;
+                    default:
+                        allTopics = [];
+                        allResources = [];
+                        break;
                 }
-            ];
+            }
+
+            fetchSubjectData(SUBJECT); // Load data for the current subject
 
             // Student Data
             const studentName = localStorage.getItem('studentName') || 'Student';
@@ -837,7 +985,7 @@
                 const filtered = allResources.filter(resource => 
                     resource.name.toLowerCase().includes(query.toLowerCase()) ||
                     resource.topics.some(topic => topic.toLowerCase().includes(query.toLowerCase()))
-                ).sort((a, b) => b.downloads - a.downloads);
+                ).sort((a, b) => b.downloads - a.downloads); // Sort by downloads by default
 
                 resultsContainer.innerHTML = '';
 

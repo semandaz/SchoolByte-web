@@ -692,7 +692,10 @@
             const resultsCount = document.getElementById('resultsCount');
             const noResults = document.getElementById('noResults');
 
-            // Sample data - Swahili Language topics and resources
+            // Define the subject
+            const SUBJECT = 'Kiswahili'; 
+
+            // Sample data - Kiswahili Language topics and resources
             const allTopics = [
                 "Grammar", "Vocabulary", "Proverbs", 
                 "Verb Conjugation", "Noun Classes", "Conversation",
@@ -826,6 +829,30 @@
                 }
             }
 
+            // Fetch and display notes based on subject and class
+            function fetchAndDisplayNotes(subject, studentClass) {
+                // In a real application, you would fetch this data from an API.
+                // For this example, we'll use the hardcoded `allResources` and filter it.
+                
+                // Filter resources by subject (case-insensitive match for now)
+                // In a real scenario, the API would handle this filtering.
+                const subjectFilteredResources = allResources.filter(resource => 
+                    subject.toLowerCase() === 'kiswahili' // Hardcoded for Kiswahili page
+                );
+
+                // Filter by student's class. 
+                // Here, we assume a simple mapping. A real system might have more complex logic.
+                const classFilteredResources = subjectFilteredResources.filter(resource => {
+                    // This is a placeholder for actual class mapping.
+                    // For demonstration, let's assume we can fetch the student's class.
+                    // For now, we'll display all resources for the subject.
+                    return true; // Display all for now
+                }).sort((a, b) => b.downloads - a.downloads); // Sort by downloads
+
+                return classFilteredResources;
+            }
+
+
             // Perform search
             function performSearch(query) {
                 if (query.length < 2) {
@@ -834,10 +861,13 @@
                     return;
                 }
 
-                const filtered = allResources.filter(resource => 
+                // Get student's class (this is a placeholder, ideally fetched from user profile)
+                const studentClass = "Senior 4"; // Example: fetched class
+
+                const filtered = fetchAndDisplayNotes(SUBJECT, studentClass).filter(resource => 
                     resource.name.toLowerCase().includes(query.toLowerCase()) ||
                     resource.topics.some(topic => topic.toLowerCase().includes(query.toLowerCase()))
-                ).sort((a, b) => b.downloads - a.downloads);
+                );
 
                 resultsContainer.innerHTML = '';
 
@@ -920,6 +950,29 @@
                     performSearch(searchInput.value);
                 }
             });
+
+            // Display initial resources for the subject, filtered by class
+            const studentClass = "Senior 4"; // Example: fetched class
+            const initialResources = fetchAndDisplayNotes(SUBJECT, studentClass);
+            
+            // Display initial resources - only popular ones for now
+            const popularResourcesContainer = document.querySelector('.popular-resources .resource-cards');
+            if (popularResourcesContainer) {
+                initialResources.slice(0, 3).forEach(resource => { // Display first 3 as popular
+                    const card = createResourceCard(resource);
+                    popularResourcesContainer.appendChild(card);
+                });
+            }
+            
+            // Display initial top-rated resources (can be the same as popular or different logic)
+            const topRatedResourcesContainer = document.querySelectorAll('.popular-resources')[1].querySelector('.resource-cards');
+             if (topRatedResourcesContainer) {
+                initialResources.slice(0, 3).forEach(resource => { // Display first 3 as top-rated
+                    const card = createResourceCard(resource);
+                    topRatedResourcesContainer.appendChild(card);
+                });
+            }
+
 
             // Initialize
             createParticles();

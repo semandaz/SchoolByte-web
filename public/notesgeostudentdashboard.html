@@ -490,7 +490,7 @@
         <div class="subject-header">
             <h1 class="subject-title">
                 <i class="fas fa-flask subject-icon"></i>
-                Biology Resources
+                Geography Resources
             </h1>
             <p class="subject-subtitle">Search for study materials by topic, or browse popular resources below</p>
         </div>
@@ -498,7 +498,7 @@
         <!-- Search Section -->
         <div class="search-section">
             <div class="search-container">
-                <input type="text" class="search-input" id="searchInput" placeholder="Search for topics (e.g., Cells, DNA, Evolution)...">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search for topics (e.g., Maps, Climate, Population)...">
                 <i class="fas fa-search search-icon"></i>
                 <div class="search-suggestions" id="searchSuggestions">
                     <!-- Suggestions will be added here dynamically -->
@@ -624,7 +624,7 @@
                     }
                 }
 
-                const notesResponse = await fetch('/api/workfiles/Biology', {
+                const notesResponse = await fetch('/api/workfiles/Geography', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -642,7 +642,7 @@
             resourceCards.innerHTML = '';
 
             if (workFiles.length === 0) {
-                resourceCards.innerHTML = '<div class="no-results">No Biology notes available yet.</div>';
+                resourceCards.innerHTML = '<div class="no-results">No Geography notes available yet.</div>';
                 return;
             }
 

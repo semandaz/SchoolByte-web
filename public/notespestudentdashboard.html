@@ -465,6 +465,100 @@
     </style>
 </head>
 <body>
+    <script>
+        const SUBJECT = 'Physical Education';
+        
+        async function loadNotesData() {
+            try {
+                const token = localStorage.getItem('studentToken');
+                if (!token) {
+                    window.location.href = 'studentlogin.html';
+                    return;
+                }
+
+                const response = await fetch(`/api/workfiles/${encodeURIComponent(SUBJECT)}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch notes');
+
+                const data = await response.json();
+                displayNotes(data.workFiles, data.studentClass);
+                updateStudentInfo();
+            } catch (error) {
+                console.error('Error loading notes:', error);
+            }
+        }
+
+        function displayNotes(workFiles, studentClass) {
+            const container = document.querySelector('.resource-cards');
+            if (!workFiles || workFiles.length === 0) {
+                container.innerHTML = '<div class="no-results">No notes available for this subject yet.</div>';
+                return;
+            }
+
+            container.innerHTML = workFiles.map(file => `
+                <div class="resource-card">
+                    <h3 class="resource-name">${file.title}</h3>
+                    <div class="resource-meta">
+                        <span><i class="fas fa-file-pdf"></i> PDF</span>
+                        <span class="resource-class">${file.intendedClass}</span>
+                    </div>
+                    <p class="resource-description">${file.description || 'No description available'}</p>
+                    <div class="resource-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-download"></i> ${file.downloadCount} downloads
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-coins"></i> ${file.costBytes} bytes
+                        </div>
+                    </div>
+                    <button class="download-btn" onclick="downloadFile('${file._id}', ${file.costBytes})">
+                        <i class="fas fa-download"></i> Download (${file.costBytes} bytes)
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function downloadFile(fileId, cost) {
+            try {
+                const token = localStorage.getItem('studentToken');
+                const response = await fetch(`/api/workfiles/${fileId}/download`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    alert(data.message || 'Download failed');
+                    return;
+                }
+
+                window.open(data.fileUrl, '_blank');
+                alert(`Download successful! Bytes remaining: ${data.bytesRemaining}`);
+                location.reload();
+            } catch (error) {
+                console.error('Error downloading file:', error);
+                alert('Download failed');
+            }
+        }
+
+        async function updateStudentInfo() {
+            try {
+                const token = localStorage.getItem('studentToken');
+                const response = await fetch('/api/student/profile', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const student = await response.json();
+                document.getElementById('studentNameDisplay').textContent = student.studentName || 'Student';
+            } catch (error) {
+                console.error('Error loading student info:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadNotesData);
+    </script>
     <!-- Floating Particles -->
     <div class="floating-particles" id="floatingParticles"></div>
 

@@ -692,6 +692,9 @@
             const resultsCount = document.getElementById('resultsCount');
             const noResults = document.getElementById('noResults');
 
+            // Define the subject based on the page
+            const SUBJECT = 'History';
+
             // Sample data - History topics and resources
             const allTopics = [
                 "Ancient Civilizations", "World Wars", "Independence Movements", 
@@ -834,15 +837,17 @@
                     return;
                 }
 
-                const filtered = allResources.filter(resource => 
-                    resource.name.toLowerCase().includes(query.toLowerCase()) ||
-                    resource.topics.some(topic => topic.toLowerCase().includes(query.toLowerCase()))
-                ).sort((a, b) => b.downloads - a.downloads);
+                // Filter resources by subject and then by query
+                const filtered = allResources
+                    .filter(resource => 
+                        resource.topics.some(topic => topic.toLowerCase().includes(query.toLowerCase()))
+                    )
+                    .sort((a, b) => b.downloads - a.downloads);
 
                 resultsContainer.innerHTML = '';
 
                 if (filtered.length > 0) {
-                    resultsCount.textContent = `${filtered.length} result${filtered.length === 1 ? '' : 's'} found for "${query}"`;
+                    resultsCount.textContent = `${filtered.length} result${filtered.length === 1 ? '' : 's'} found for "${query}" in ${SUBJECT}`;
 
                     filtered.forEach(resource => {
                         const card = createResourceCard(resource);
@@ -910,7 +915,7 @@
             });
 
             document.addEventListener('click', (e) => {
-                if (!searchInput.contains(e.target)) {
+                if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
                     searchSuggestions.classList.remove('active');
                 }
             });

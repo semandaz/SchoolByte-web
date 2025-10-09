@@ -692,7 +692,100 @@
             const resultsCount = document.getElementById('resultsCount');
             const noResults = document.getElementById('noResults');
 
-            // Sample data - CRE topics and resources
+            // Subject and Class Information
+            const SUBJECT = 'Christian Religious Education'; // Updated subject
+            const studentClass = localStorage.getItem('studentClass') || 'Senior 1'; // Default to Senior 1 if not found
+
+            // Fetch notes based on subject and class
+            async function fetchNotes(subject, studentClass) {
+                try {
+                    // In a real application, you would fetch this from your backend API
+                    // For now, we'll use a placeholder and simulate fetching
+                    console.log(`Fetching notes for ${subject} for class ${studentClass}`);
+                    
+                    // Placeholder for actual data fetching logic
+                    // This mock data should be replaced with real API calls
+                    const mockNotes = [
+                        {
+                            name: "Old Testament Stories",
+                            class: "Senior 3",
+                            type: "PDF",
+                            description: "Key narratives from Genesis to Malachi with analysis and moral lessons.",
+                            downloads: 245,
+                            rating: 4.8,
+                            reviews: 42,
+                            topics: ["Old Testament"]
+                        },
+                        {
+                            name: "The Life of Jesus Christ",
+                            class: "Senior 4",
+                            type: "PDF",
+                            description: "Comprehensive study of Jesus' life, teachings, miracles, and parables.",
+                            downloads: 218,
+                            rating: 4.9,
+                            reviews: 47,
+                            topics: ["Life of Jesus", "Miracles of Jesus", "Parables of Jesus"]
+                        },
+                        {
+                            name: "Christian Ethics",
+                            class: "Senior 5",
+                            type: "DOCX",
+                            description: "Biblical principles for moral decision-making in modern society.",
+                            downloads: 195,
+                            rating: 4.7,
+                            reviews: 38,
+                            topics: ["Christian Ethics"]
+                        },
+                        {
+                            name: "The Book of Acts",
+                            class: "Senior 4",
+                            type: "PDF",
+                            description: "Detailed study of the early church and the work of the Holy Spirit.",
+                            downloads: 176,
+                            rating: 4.9,
+                            reviews: 51,
+                            topics: ["The Early Church", "New Testament"]
+                        },
+                        {
+                            name: "Paul's Epistles",
+                            class: "Senior 6",
+                            type: "PDF",
+                            description: "Analysis of Paul's letters and their relevance to Christian life today.",
+                            downloads: 162,
+                            rating: 4.8,
+                            reviews: 43,
+                            topics: ["Paul's Missionary Journeys", "New Testament"]
+                        },
+                        {
+                            name: "Christian Marriage & Family",
+                            class: "Senior 3",
+                            type: "DOCX",
+                            description: "Biblical teachings on marriage, family relationships, and parenting.",
+                            downloads: 148,
+                            rating: 4.8,
+                            reviews: 39,
+                            topics: ["Christian Marriage"]
+                        }
+                    ];
+                    
+                    // Filter notes by subject and class
+                    const filteredNotes = mockNotes.filter(note => 
+                        note.topics.includes(subject) && note.class === studentClass
+                    );
+
+                    // Simulate network delay
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    return filteredNotes;
+
+                } catch (error) {
+                    console.error("Error fetching notes:", error);
+                    // Handle error display to the user
+                    return [];
+                }
+            }
+
+            // Sample data - Topics for suggestions
             const allTopics = [
                 "Old Testament", "New Testament", "Life of Jesus", 
                 "Miracles of Jesus", "Parables of Jesus", "Paul's Missionary Journeys",
@@ -702,68 +795,44 @@
                 "Christian Leadership", "The Beatitudes", "Resurrection of Jesus"
             ];
 
-            const allResources = [
-                {
-                    name: "Old Testament Stories",
-                    class: "Senior 3",
-                    type: "PDF",
-                    description: "Key narratives from Genesis to Malachi with analysis and moral lessons.",
-                    downloads: 245,
-                    rating: 4.8,
-                    reviews: 42,
-                    topics: ["Old Testament"]
-                },
-                {
-                    name: "The Life of Jesus Christ",
-                    class: "Senior 4",
-                    type: "PDF",
-                    description: "Comprehensive study of Jesus' life, teachings, miracles, and parables.",
-                    downloads: 218,
-                    rating: 4.9,
-                    reviews: 47,
-                    topics: ["Life of Jesus", "Miracles of Jesus", "Parables of Jesus"]
-                },
-                {
-                    name: "Christian Ethics",
-                    class: "Senior 5",
-                    type: "DOCX",
-                    description: "Biblical principles for moral decision-making in modern society.",
-                    downloads: 195,
-                    rating: 4.7,
-                    reviews: 38,
-                    topics: ["Christian Ethics"]
-                },
-                {
-                    name: "The Book of Acts",
-                    class: "Senior 4",
-                    type: "PDF",
-                    description: "Detailed study of the early church and the work of the Holy Spirit.",
-                    downloads: 176,
-                    rating: 4.9,
-                    reviews: 51,
-                    topics: ["The Early Church", "New Testament"]
-                },
-                {
-                    name: "Paul's Epistles",
-                    class: "Senior 6",
-                    type: "PDF",
-                    description: "Analysis of Paul's letters and their relevance to Christian life today.",
-                    downloads: 162,
-                    rating: 4.8,
-                    reviews: 43,
-                    topics: ["Paul's Missionary Journeys", "New Testament"]
-                },
-                {
-                    name: "Christian Marriage & Family",
-                    class: "Senior 3",
-                    type: "DOCX",
-                    description: "Biblical teachings on marriage, family relationships, and parenting.",
-                    downloads: 148,
-                    rating: 4.8,
-                    reviews: 39,
-                    topics: ["Christian Marriage"]
+            // All resources (used for search, will be filtered by fetched notes)
+            let allResources = [];
+
+            // Function to render resources
+            function renderResources(resources) {
+                const resourceCardsContainer = document.querySelector('.resource-cards'); // Target the correct container
+                resourceCardsContainer.innerHTML = ''; // Clear existing cards
+
+                if (resources.length === 0) {
+                    resourceCardsContainer.innerHTML = '<p class="no-results">No resources found for your class.</p>';
+                    return;
                 }
-            ];
+
+                resources.forEach(resource => {
+                    const card = document.createElement('div');
+                    card.classList.add('resource-card');
+                    card.innerHTML = `
+                        <h3 class="resource-name">${resource.name}</h3>
+                        <div class="resource-meta">
+                            <span><i class="fas fa-file-${resource.type.toLowerCase() === 'pdf' ? 'pdf' : 'word'}"></i> ${resource.type}</span>
+                            <span class="resource-class">${resource.class}</span>
+                        </div>
+                        <p class="resource-description">${resource.description}</p>
+                        <div class="resource-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-download"></i> ${resource.downloads} downloads
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-star"></i> ${resource.rating} (${resource.reviews})
+                            </div>
+                        </div>
+                        <a href="#" class="download-btn" onclick="downloadResource('${resource.name.replace(/\s+/g, '_').toLowerCase()}.${resource.type.toLowerCase()}')">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    `;
+                    resourceCardsContainer.appendChild(card);
+                });
+            }
 
             // Student Data
             const studentName = localStorage.getItem('studentName') || 'Student';
@@ -834,6 +903,7 @@
                     return;
                 }
 
+                // Filter from the initially fetched notes for the current class
                 const filtered = allResources.filter(resource => 
                     resource.name.toLowerCase().includes(query.toLowerCase()) ||
                     resource.topics.some(topic => topic.toLowerCase().includes(query.toLowerCase()))
@@ -857,7 +927,7 @@
                 }
             }
 
-            // Create resource card element
+            // Create resource card element for search results
             function createResourceCard(resource) {
                 const card = document.createElement('div');
                 card.classList.add('resource-card');
@@ -910,7 +980,7 @@
             });
 
             document.addEventListener('click', (e) => {
-                if (!searchInput.contains(e.target)) {
+                if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
                     searchSuggestions.classList.remove('active');
                 }
             });
@@ -923,6 +993,10 @@
 
             // Initialize
             createParticles();
+            fetchNotes(SUBJECT, studentClass).then(notes => {
+                allResources = notes; // Populate allResources with fetched notes for searching within them
+                renderResources(notes);
+            });
         });
     </script>
 </body>

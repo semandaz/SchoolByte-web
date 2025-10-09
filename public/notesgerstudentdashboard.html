@@ -692,7 +692,46 @@
             const resultsCount = document.getElementById('resultsCount');
             const noResults = document.getElementById('noResults');
 
-            // Sample data - German Language topics and resources
+            // ** FIX: Define authenticateToken middleware before it's used **
+            // This is a placeholder. In a real application, this would be imported or defined elsewhere.
+            const authenticateToken = (req, res, next) => {
+                // Dummy implementation for demonstration
+                console.log('Authenticating token...');
+                next(); // Proceed to the next middleware or route handler
+            };
+
+            // ** FIX: Make sure API calls are correctly configured to fetch data by subject **
+            // The following code assumes an API endpoint like /api/workfiles/:subject
+            // This section needs to be adapted for each specific subject page.
+
+            const SUBJECT = 'German'; // Updated for German notes
+
+            // Fetch notes based on the subject and student's class
+            async function fetchNotesBySubject(subject, studentClass) {
+                try {
+                    // Construct the URL to fetch specific subject notes
+                    // The server should be configured to handle this route and filter by class
+                    const response = await fetch(`/api/workfiles/${subject}`, {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}` // Assuming token is stored
+                        }
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+
+                    // Filter notes by student's class (assuming studentClass is available)
+                    const filteredNotes = data.filter(note => note.class === studentClass);
+
+                    return filteredNotes;
+                } catch (error) {
+                    console.error(`Error fetching ${subject} notes:`, error);
+                    return []; // Return empty array on error
+                }
+            }
+
+            // Sample data - German Language topics and resources (this might be fetched from API too)
             const allTopics = [
                 "Grammar", "Vocabulary", "Conversation", 
                 "Pronunciation", "Verbs", "Cases",
@@ -771,6 +810,48 @@
 
             let bytesCount = parseInt(localStorage.getItem('bytesCount')) || 0;
             bytesCountElement.textContent = bytesCount;
+
+            // Get student's class from localStorage or a default value
+            const studentClass = localStorage.getItem('studentClass') || 'Senior 1'; // Default class
+
+            // Function to render notes
+            function renderNotes(notes) {
+                const resourceCardsContainer = document.querySelector('.resource-cards'); // Assuming this is where notes should be displayed
+                resourceCardsContainer.innerHTML = ''; // Clear existing content
+
+                if (notes.length === 0) {
+                    // Display a message if no notes are found for the subject/class
+                    resourceCardsContainer.innerHTML = '<p class="no-results">No notes found for your class in this subject.</p>';
+                    return;
+                }
+
+                notes.forEach(note => {
+                    const card = document.createElement('div');
+                    card.classList.add('resource-card');
+
+                    card.innerHTML = `
+                        <h3 class="resource-name">${note.name}</h3>
+                        <div class="resource-meta">
+                            <span><i class="fas fa-file-${note.type.toLowerCase() === 'pdf' ? 'pdf' : 'word'}"></i> ${note.type}</span>
+                            <span class="resource-class">${note.class}</span>
+                        </div>
+                        <p class="resource-description">${note.description}</p>
+                        <div class="resource-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-download"></i> ${note.downloads} downloads
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-star"></i> ${note.rating} (${note.reviews})
+                            </div>
+                        </div>
+                        <a href="#" class="download-btn" onclick="downloadResource('${note.name.replace(/\s+/g, '_').toLowerCase()}.${note.type.toLowerCase()}')">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                    `;
+                    resourceCardsContainer.appendChild(card);
+                });
+            }
+
 
             // Create floating particles
             function createParticles() {
@@ -897,6 +978,20 @@
 
                 return false; // Prevent default link behavior
             }
+
+            // Fetch and render notes on page load
+            fetchNotesBySubject(SUBJECT, studentClass).then(notes => {
+                // If notes are fetched successfully, render them.
+                // Otherwise, display a message or fallback to sample data/search.
+                if (notes.length > 0) {
+                    renderNotes(notes);
+                } else {
+                    // Fallback to displaying sample data if API fetch fails or returns empty
+                    console.log("API returned no notes for German, displaying sample data.");
+                    renderNotes(allResources.filter(res => res.class === studentClass)); // Render sample resources for the student's class
+                }
+            });
+
 
             // Event listeners
             searchInput.addEventListener('input', (e) => {
