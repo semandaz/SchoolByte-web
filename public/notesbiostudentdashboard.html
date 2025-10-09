@@ -692,77 +692,64 @@
             const resultsCount = document.getElementById('resultsCount');
             const noResults = document.getElementById('noResults');
 
-            // Sample data - in a real app, this would come from your database
-            const allTopics = [
-                "Cell Structure", "Photosynthesis", "Human Digestive System", 
-                "DNA Replication", "Genetics Problems", "Plant Transport Systems",
-                "Enzymes", "Respiration", "Nervous System", "Ecology",
-                "Evolution", "Microbiology", "Immunology", "Plant Reproduction",
-                "Human Circulatory System", "Homeostasis", "Excretion", "Coordination"
-            ];
+            // Fetch real data from backend
+            let allTopics = [];
+            let allResources = [];
 
-            const allResources = [
-                {
-                    name: "Cell Structure & Function",
-                    class: "Senior 3",
-                    type: "PDF",
-                    description: "Comprehensive notes on cell organelles and their functions with labeled diagrams.",
-                    downloads: 245,
-                    rating: 4.8,
-                    reviews: 36,
-                    topics: ["Cell Structure"]
-                },
-                {
-                    name: "Photosynthesis Process",
-                    class: "Senior 2",
-                    type: "PDF",
-                    description: "Detailed explanation of the photosynthesis process with chemical equations.",
-                    downloads: 198,
-                    rating: 4.7,
-                    reviews: 28,
-                    topics: ["Photosynthesis"]
-                },
-                {
-                    name: "Human Digestive System",
-                    class: "Senior 4",
-                    type: "DOCX",
-                    description: "Complete notes on the human digestive system with diagrams and enzyme functions.",
-                    downloads: 176,
-                    rating: 4.9,
-                    reviews: 42,
-                    topics: ["Human Digestive System"]
-                },
-                {
-                    name: "DNA Replication",
-                    class: "Senior 5",
-                    type: "PDF",
-                    description: "Step-by-step explanation of DNA replication process with animations.",
-                    downloads: 154,
-                    rating: 4.9,
-                    reviews: 45,
-                    topics: ["DNA Replication"]
-                },
-                {
-                    name: "Genetics Problems",
-                    class: "Senior 6",
-                    type: "DOCX",
-                    description: "Collection of genetics problems with solutions and Punnett square examples.",
-                    downloads: 132,
-                    rating: 4.8,
-                    reviews: 38,
-                    topics: ["Genetics Problems"]
-                },
-                {
-                    name: "Plant Transport Systems",
-                    class: "Senior 3",
-                    type: "PDF",
-                    description: "Detailed notes on xylem, phloem and transpiration with experiments.",
-                    downloads: 121,
-                    rating: 4.9,
-                    reviews: 31,
-                    topics: ["Plant Transport Systems"]
+            // Fetch Biology work files from the server
+            async function fetchBiologyResources() {
+                try {
+                    const token = localStorage.getItem('studentToken');
+                    if (!token) {
+                        console.warn('No token found, redirecting to login');
+                        window.location.href = 'studentlogin.html';
+                        return;
+                    }
+
+                    const response = await fetch(`${window.location.origin}/student/workfiles?subject=Biology`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        // Transform server data to match our display format
+                        allResources = data.workFiles.map(file => ({
+                            _id: file._id,
+                            name: file.title,
+                            class: file.intendedClass,
+                            type: "PDF",
+                            description: file.description || "Educational material",
+                            downloads: file.downloadCount || 0,
+                            rating: 0,
+                            reviews: 0,
+                            topics: [file.title],
+                            fileUrl: file.fileUrl,
+                            costBytes: file.costBytes,
+                            uploadedBy: file.uploadedBy.teacherName
+                        }));
+
+                        // Extract unique topics
+                        allTopics = [...new Set(allResources.map(r => r.name))];
+
+                        // Re-render the resources on the page
+                        renderInitialResources();
+                        
+                    } else if (response.status === 401 || response.status === 403) {
+                        console.warn('Authentication failed, redirecting to login');
+                        localStorage.removeItem('studentToken');
+                        window.location.href = 'studentlogin.html';
+                    } else {
+                        console.error('Failed to fetch resources:', response.status);
+                    }
+                } catch (error) {
+                    console.error('Error fetching Biology resources:', error);
                 }
-            ];
+            }
 
             // Student Data
             const studentName = localStorage.getItem('studentName') || 'Student';
@@ -864,7 +851,7 @@
                 card.innerHTML = `
                     <h3 class="resource-name">${resource.name}</h3>
                     <div class="resource-meta">
-                        <span><i class="fas fa-file-${resource.type.toLowerCase() === 'pdf' ? 'pdf' : 'word'}"></i> ${resource.type}</span>
+                        <span><i class="fas fa-file-pdf"></i> ${resource.type}</span>
                         <span class="resource-class">${resource.class}</span>
                     </div>
                     <p class="resource-description">${resource.description}</p>
@@ -873,28 +860,91 @@
                             <i class="fas fa-download"></i> ${resource.downloads} downloads
                         </div>
                         <div class="stat-item">
-                            <i class="fas fa-star"></i> ${resource.rating} (${resource.reviews})
+                            <i class="fas fa-coins"></i> ${resource.costBytes} bytes
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-user"></i> ${resource.uploadedBy}
                         </div>
                     </div>
-                    <a href="#" class="download-btn" onclick="downloadResource('${resource.name.replace(/\s+/g, '_').toLowerCase()}.${resource.type.toLowerCase()}')">
-                        <i class="fas fa-download"></i> Download
+                    <a href="#" class="download-btn" onclick="return downloadResource('${resource._id}', ${resource.costBytes})">
+                        <i class="fas fa-download"></i> Download (${resource.costBytes} bytes)
                     </a>
                 `;
 
                 return card;
             }
 
-            // Simulate download (will be replaced with Cloudinary integration)
-            window.downloadResource = function(filename) {
-                // In production, this would trigger the Cloudinary download
-                alert(`Downloading ${filename}... (This will connect to Cloudinary in production)`);
+            // Function to render initial resources
+            function renderInitialResources() {
+                // Clear and re-populate the popular resources section
+                const popularContainer = document.querySelector('.popular-resources .resource-cards');
+                if (popularContainer) {
+                    popularContainer.innerHTML = '';
+                    allResources.slice(0, 6).forEach(resource => {
+                        popularContainer.appendChild(createResourceCard(resource));
+                    });
+                }
+            }
 
-                // Add some bytes for downloading (optional)
-                bytesCount += 2;
-                bytesCountElement.textContent = bytesCount;
-                localStorage.setItem('bytesCount', bytesCount);
+            // Handle real file downloads with bytes deduction
+            window.downloadResource = async function(workFileId, costBytes) {
+                try {
+                    const token = localStorage.getItem('studentToken');
+                    if (!token) {
+                        alert('Please log in to download files');
+                        window.location.href = 'studentlogin.html';
+                        return false;
+                    }
 
-                return false; // Prevent default link behavior
+                    // Check if student has enough bytes
+                    if (bytesCount < costBytes) {
+                        alert(`Insufficient bytes! You need ${costBytes} bytes but only have ${bytesCount} bytes. Complete more quizzes to earn bytes.`);
+                        return false;
+                    }
+
+                    // Confirm download
+                    const confirmDownload = confirm(`This file costs ${costBytes} bytes. You currently have ${bytesCount} bytes. Do you want to proceed with the download?`);
+                    if (!confirmDownload) {
+                        return false;
+                    }
+
+                    // Request download from server
+                    const response = await fetch(`${window.location.origin}/student/download-workfile/${workFileId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        // Update bytes count
+                        bytesCount = data.remainingBytes;
+                        bytesCountElement.textContent = bytesCount;
+                        localStorage.setItem('bytesCount', bytesCount);
+
+                        // Trigger actual download
+                        window.open(data.downloadUrl, '_blank');
+                        
+                        alert(`Download started! ${costBytes} bytes deducted. You now have ${bytesCount} bytes.`);
+                        
+                    } else if (response.status === 401 || response.status === 403) {
+                        alert('Session expired. Please log in again.');
+                        localStorage.removeItem('studentToken');
+                        window.location.href = 'studentlogin.html';
+                    } else {
+                        const errorData = await response.json();
+                        alert(errorData.message || 'Download failed. Please try again.');
+                    }
+
+                } catch (error) {
+                    console.error('Download error:', error);
+                    alert('An error occurred during download. Please try again.');
+                }
+
+                return false;
             }
 
             // Event listeners
@@ -922,6 +972,7 @@
 
             // Initialize
             createParticles();
+            fetchBiologyResources();
         });
     </script>
 </body>

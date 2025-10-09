@@ -410,6 +410,7 @@ const workFileSchema = new mongoose.Schema({
     // This field links the WorkFile to its corresponding Activity
     activity: { type: mongoose.Schema.Types.ObjectId, ref: 'Activity', required: true, unique: true },
     applyDownloadWatermark: { type: Boolean, default: true },
+    downloadCount: { type: Number, default: 0, min: 0 },
     createdAt: { type: Date, default: Date.now }
 });
 const WorkFile = mongoose.model('WorkFile', workFileSchema);
@@ -2097,6 +2098,102 @@ app.post('/teacher/quiz-questions', authenticateTeacherToken, [
     } catch (error) {
         await session.abortTransaction();
         console.error('Error creating quiz question:', error);
+
+// Student endpoint to fetch work files by subject
+app.get('/student/workfiles', authenticateToken, async (req, res) => {
+    try {
+        const { subject, intendedClass } = req.query;
+
+        let query = {};
+        if (subject) query.subject = subject;
+        if (intendedClass) query.intendedClass = intendedClass;
+
+        const workFiles = await WorkFile.find(query)
+            .populate('uploadedBy.teacherId', 'teacherName')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            message: 'Work files fetched successfully.',
+            workFiles: workFiles.map(file => ({
+                _id: file._id,
+                title: file.title,
+                description: file.description,
+                fileUrl: file.fileUrl,
+                subject: file.subject,
+                intendedClass: file.intendedClass,
+                costBytes: file.costBytes,
+                uploadedBy: {
+                    teacherName: file.uploadedBy.teacherName
+                },
+                downloadCount: file.downloadCount || 0,
+                createdAt: file.createdAt
+            }))
+        });
+    } catch (error) {
+        console.error('Error fetching work files:', error);
+        res.status(500).json({ message: 'Failed to fetch work files.', error: error.message });
+    }
+});
+
+// Student endpoint to download a work file (with bytes deduction)
+app.post('/student/download-workfile/:workFileId', authenticateToken, async (req, res) => {
+    const { workFileId } = req.params;
+    const studentId = req.student.id;
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const student = await Student.findById(studentId).session(session);
+        if (!student) {
+            await session.abortTransaction();
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        const workFile = await WorkFile.findById(workFileId).session(session);
+        if (!workFile) {
+            await session.abortTransaction();
+            return res.status(404).json({ message: 'Work file not found.' });
+        }
+
+        // Check if student has enough bytes
+        if (student.bytes < workFile.costBytes) {
+            await session.abortTransaction();
+            return res.status(400).json({ 
+                message: `Insufficient bytes. You need ${workFile.costBytes} bytes but only have ${student.bytes} bytes.`,
+                requiredBytes: workFile.costBytes,
+                currentBytes: student.bytes
+            });
+        }
+
+        // Deduct bytes
+        student.bytes -= workFile.costBytes;
+        await student.save({ session });
+
+        // Increment download count
+        await WorkFile.updateOne(
+            { _id: workFileId },
+            { $inc: { downloadCount: 1 } }
+        ).session(session);
+
+        await session.commitTransaction();
+
+        res.status(200).json({
+            message: 'Download authorized successfully.',
+            downloadUrl: workFile.fileUrl,
+            bytesDeducted: workFile.costBytes,
+            remainingBytes: student.bytes
+        });
+
+    } catch (error) {
+        await session.abortTransaction();
+        console.error('Error processing download:', error);
+        res.status(500).json({ message: 'Failed to process download.', error: error.message });
+    } finally {
+        session.endSession();
+    }
+});
+
         res.status(500).json({ message: 'Failed to create quiz question.', error: error.message });
     } finally {
         session.endSession();
