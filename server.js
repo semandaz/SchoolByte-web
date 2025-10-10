@@ -145,26 +145,29 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
             });
         }
 
-        // Deduct bytes AFTER successful file retrieval
-        const https = require('https');
-        const http = require('http');
+        // Use Cloudinary SDK to generate a signed URL or stream the file
+        console.log(`Downloading file from Cloudinary: ${workFile.fileUrl}`);
         
-        const fileUrl = workFile.fileUrl;
-        const protocol = fileUrl.startsWith('https') ? https : http;
+        // Extract public_id from the URL
+        const urlParts = workFile.fileUrl.split('/upload/');
+        if (urlParts.length < 2) {
+            return res.status(500).json({ message: 'Invalid Cloudinary URL format' });
+        }
+        
+        const publicIdWithExtension = urlParts[1].substring(urlParts[1].indexOf('/') + 1);
+        const publicId = publicIdWithExtension.replace('.pdf', '');
 
-        console.log(`Attempting to download file from: ${fileUrl}`);
-
-        // First, verify the file exists and is accessible
-        protocol.get(fileUrl, async (proxyRes) => {
-            if (proxyRes.statusCode !== 200) {
-                console.error('Cloudinary download failed with status:', proxyRes.statusCode);
+        // Stream file directly from Cloudinary using the SDK
+        const stream = cloudinary.api.resource(publicId, { resource_type: 'raw' }, async (error, result) => {
+            if (error) {
+                console.error('Cloudinary API error:', error);
                 return res.status(500).json({ 
-                    message: `Failed to download file from storage (Status: ${proxyRes.statusCode})`,
-                    bytesRefunded: false
+                    message: 'Failed to access file from storage. Please check Cloudinary credentials.',
+                    error: error.message
                 });
             }
 
-            // File is accessible - NOW deduct bytes
+            // File exists and is accessible - NOW deduct bytes
             try {
                 student.bytes -= workFile.costBytes;
                 await student.save();
@@ -182,64 +185,81 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
                 });
             }
 
+            // Use the secure_url from Cloudinary response
+            const fileDownloadUrl = result.secure_url;
+            const https = require('https');
+
+            https.get(fileDownloadUrl, (proxyRes) => {
+                if (proxyRes.statusCode !== 200) {
+                    console.error('Download failed with status:', proxyRes.statusCode);
+                    // Refund bytes
+                    if (bytesDeducted && student) {
+                        student.bytes += workFile.costBytes;
+                        student.save().catch(err => console.error('Failed to refund bytes:', err));
+                    }
+                    return res.status(500).json({ 
+                        message: `Download failed (Status: ${proxyRes.statusCode})`,
+                        bytesRefunded: bytesDeducted
+                    });
+                }
+
             // Set headers for file download
-            const fileName = `${workFile.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-            res.setHeader('Content-Length', proxyRes.headers['content-length']);
-            
-            // Stream file to client with error handling
-            proxyRes.on('error', async (streamError) => {
-                console.error('Stream error during download:', streamError);
+                const fileName = `${workFile.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+                res.setHeader('Content-Type', 'application/pdf');
+                res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+                if (proxyRes.headers['content-length']) {
+                    res.setHeader('Content-Length', proxyRes.headers['content-length']);
+                }
                 
-                // Refund bytes if streaming fails after deduction
-                if (bytesDeducted && student) {
-                    try {
-                        student.bytes += workFile.costBytes;
-                        await student.save();
-                        console.log(`Bytes refunded due to stream error: ${workFile.costBytes}`);
-                    } catch (refundError) {
-                        console.error('Failed to refund bytes:', refundError);
+                // Stream file to client with error handling
+                proxyRes.on('error', async (streamError) => {
+                    console.error('Stream error during download:', streamError);
+                    
+                    if (bytesDeducted && student) {
+                        try {
+                            student.bytes += workFile.costBytes;
+                            await student.save();
+                            console.log(`Bytes refunded due to stream error: ${workFile.costBytes}`);
+                        } catch (refundError) {
+                            console.error('Failed to refund bytes:', refundError);
+                        }
                     }
-                }
-            });
-
-            proxyRes.pipe(res).on('error', async (pipeError) => {
-                console.error('Pipe error during download:', pipeError);
-                
-                // Refund bytes if piping fails
-                if (bytesDeducted && student) {
-                    try {
-                        student.bytes += workFile.costBytes;
-                        await student.save();
-                        console.log(`Bytes refunded due to pipe error: ${workFile.costBytes}`);
-                    } catch (refundError) {
-                        console.error('Failed to refund bytes:', refundError);
-                    }
-                }
-            });
-
-        }).on('error', async (err) => {
-            console.error('Error fetching file from Cloudinary:', err);
-            
-            // Refund bytes if there was an error
-            if (bytesDeducted && student) {
-                try {
-                    student.bytes += workFile.costBytes;
-                    await student.save();
-                    console.log(`Bytes refunded due to fetch error: ${workFile.costBytes}`);
-                } catch (refundError) {
-                    console.error('Failed to refund bytes:', refundError);
-                }
-            }
-
-            if (!res.headersSent) {
-                return res.status(500).json({ 
-                    message: 'Network error connecting to storage',
-                    error: err.message,
-                    bytesRefunded: bytesDeducted
                 });
-            }
+
+                proxyRes.pipe(res).on('error', async (pipeError) => {
+                    console.error('Pipe error during download:', pipeError);
+                    
+                    if (bytesDeducted && student) {
+                        try {
+                            student.bytes += workFile.costBytes;
+                            await student.save();
+                            console.log(`Bytes refunded due to pipe error: ${workFile.costBytes}`);
+                        } catch (refundError) {
+                            console.error('Failed to refund bytes:', refundError);
+                        }
+                    }
+                });
+            }).on('error', async (err) => {
+                console.error('Error downloading file:', err);
+                
+                if (bytesDeducted && student) {
+                    try {
+                        student.bytes += workFile.costBytes;
+                        await student.save();
+                        console.log(`Bytes refunded: ${workFile.costBytes}`);
+                    } catch (refundError) {
+                        console.error('Failed to refund bytes:', refundError);
+                    }
+                }
+
+                if (!res.headersSent) {
+                    return res.status(500).json({ 
+                        message: 'Download error',
+                        error: err.message,
+                        bytesRefunded: bytesDeducted
+                    });
+                }
+            });
         });
 
     } catch (error) {
