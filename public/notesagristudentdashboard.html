@@ -980,7 +980,7 @@
                             <i class="fas fa-star"></i> ${resource.rating} (${resource.reviews})
                         </div>
                     </div>
-                    <a href="#" class="download-btn" onclick="downloadResource('${resource.file}')">
+                    <a href="#" class="download-btn" onclick="downloadResource('${resource.file}', '${resource.name}', null, ${resource.costBytes || 0})">
                         <i class="fas fa-download"></i> Download
                     </a>
                 `;
@@ -989,14 +989,53 @@
             }
 
             // Simulate download (will be replaced with Cloudinary integration)
-            window.downloadResource = function(filename) {
-                // In production, this would trigger the Cloudinary download
-                alert(`Downloading ${filename}... (This will connect to Cloudinary in production)`);
+            window.downloadResource = async function(filename, title, teacherName, costBytes) {
+                const studentClass = localStorage.getItem('studentClass') || 'Senior 3'; // Default class
 
-                // Add some bytes for downloading (optional)
-                bytesCount += 2;
-                bytesCountElement.textContent = bytesCount;
-                localStorage.setItem('bytesCount', bytesCount);
+                try {
+                    const response = await fetch('/api/download', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ filename, subject: SUBJECT, class: studentClass }),
+                    });
+
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const now = new Date();
+                        const timeStamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`;
+                        // Dynamically determine file extension
+                        const fileExtension = filename.split('.').pop().toLowerCase();
+                        const fileName = `${title.replace(/[^a-z0-9]/gi, '_')}_${timeStamp}.${fileExtension}`;
+
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = fileName;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+
+                        // Update bytes count and local storage
+                        bytesCount = parseInt(localStorage.getItem('bytesCount')) || 0;
+                        bytesCount -= costBytes; // Deduct costBytes
+                        bytesCountElement.textContent = bytesCount;
+                        localStorage.setItem('bytesCount', bytesCount);
+
+                        alert(`Download complete! ${costBytes} bytes deducted. You now have ${bytesCount} bytes.`);
+                        // In a real app, you might want to call loadStudentData() here if it exists and is relevant
+                        // loadStudentData();
+                    } else if (response.status === 402) {
+                        alert("You don't have enough bytes to download this resource.");
+                    } else {
+                        alert("Download failed. Please try again later.");
+                    }
+                } catch (error) {
+                    console.error("Download error:", error);
+                    alert("An error occurred during download. Please check your connection or try again later.");
+                }
 
                 return false; // Prevent default link behavior
             }
@@ -1014,10 +1053,30 @@
                     const topRatedCardsContainer = document.querySelector('.popular-resources:nth-of-type(2) .resource-cards'); // Select the second popular-resources div
 
                     popularCardsContainer.innerHTML = '';
-                    topRatedResources.forEach(resource => popularCardsContainer.appendChild(createResourceCard(resource)));
+                    topRatedResources.forEach(resource => {
+                        // Assuming a 'costBytes' property exists or can be inferred
+                        const costBytes = resource.costBytes || 5; // Default cost if not specified
+                        const card = createResourceCard(resource);
+                        // Add costBytes to the download button if it's not already there
+                        const downloadButton = card.querySelector('.download-btn');
+                        if (downloadButton && !downloadButton.onclick.toString().includes('costBytes')) {
+                             const onclickHandler = downloadButton.getAttribute('onclick');
+                             downloadButton.setAttribute('onclick', `${onclickHandler.slice(0, -1)}, ${costBytes})`);
+                        }
+                        popularCardsContainer.appendChild(card);
+                    });
 
                     topRatedCardsContainer.innerHTML = '';
-                    popularResources.forEach(resource => topRatedCardsContainer.appendChild(createResourceCard(resource)));
+                    popularResources.forEach(resource => {
+                        const costBytes = resource.costBytes || 5; // Default cost if not specified
+                        const card = createResourceCard(resource);
+                         const downloadButton = card.querySelector('.download-btn');
+                        if (downloadButton && !downloadButton.onclick.toString().includes('costBytes')) {
+                             const onclickHandler = downloadButton.getAttribute('onclick');
+                             downloadButton.setAttribute('onclick', `${onclickHandler.slice(0, -1)}, ${costBytes})`);
+                        }
+                        topRatedCardsContainer.appendChild(card);
+                    });
                 });
             }
 

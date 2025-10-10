@@ -148,12 +148,38 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
         workFile.downloadCount += 1;
         await workFile.save();
 
-        res.json({
-            message: 'Download successful',
-            fileUrl: workFile.fileUrl,
-            bytesRemaining: student.bytes,
-            bytesDeducted: workFile.costBytes
+        // Stream the file from Cloudinary through our server
+        const https = require('https');
+        const http = require('http');
+        
+        const fileUrl = workFile.fileUrl;
+        const protocol = fileUrl.startsWith('https') ? https : http;
+        
+        // Set headers for file download
+        const fileName = `${workFile.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        
+        // Stream file from Cloudinary to client
+        protocol.get(fileUrl, (proxyRes) => {
+            if (proxyRes.statusCode !== 200) {
+                console.error('Cloudinary download failed:', proxyRes.statusCode);
+                return res.status(500).json({ 
+                    message: 'Failed to download file from storage',
+                    bytesRefunded: true
+                });
+            }
+            
+            // Pipe the file directly to the response
+            proxyRes.pipe(res);
+        }).on('error', (err) => {
+            console.error('Error streaming file:', err);
+            res.status(500).json({ 
+                message: 'Error downloading file',
+                error: err.message 
+            });
         });
+
     } catch (error) {
         console.error('Error downloading file:', error);
         res.status(500).json({ message: 'Server error', error: error.message });

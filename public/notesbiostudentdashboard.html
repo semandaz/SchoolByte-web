@@ -587,23 +587,23 @@
                 });
 
                 if (response.ok) {
-                    const data = await response.json();
-
-                    document.getElementById('bytesCount').textContent = data.bytesRemaining;
-
+                    // File is being streamed - trigger download
+                    const blob = await response.blob();
+                    
                     const now = new Date();
                     const timeStamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`;
                     const fileName = `${title.replace(/[^a-z0-9]/gi, '_')}_${teacherName.replace(/[^a-z0-9]/gi, '_')}_${timeStamp}.pdf`;
 
+                    const url = window.URL.createObjectURL(blob);
                     const link = document.createElement('a');
-                    link.href = data.fileUrl;
+                    link.href = url;
                     link.download = fileName;
-                    link.target = '_blank';
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
 
-                    alert(`Download started! ${costBytes} bytes deducted. You now have ${data.bytesRemaining} bytes.`);
+                    alert(`Download complete! ${costBytes} bytes deducted.`);
 
                     loadStudentData();
                 } else if (response.status === 401 || response.status === 403) {
