@@ -578,6 +578,12 @@
                 const confirmDownload = confirm(`This file costs ${costBytes} bytes. You currently have ${currentBytes} bytes. Do you want to proceed with the download?`);
                 if (!confirmDownload) return;
 
+                // Show loading indicator
+                const originalButton = event.target;
+                const originalText = originalButton.innerHTML;
+                originalButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
+                originalButton.disabled = true;
+
                 const response = await fetch(`/api/workfiles/${workFileId}/download`, {
                     method: 'POST',
                     headers: {
@@ -586,10 +592,14 @@
                     }
                 });
 
-                if (response.ok) {
+                if (response.ok && response.headers.get('content-type') === 'application/pdf') {
                     // File is being streamed - trigger download
                     const blob = await response.blob();
                     
+                    if (blob.size === 0) {
+                        throw new Error('Downloaded file is empty');
+                    }
+
                     const now = new Date();
                     const timeStamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`;
                     const fileName = `${title.replace(/[^a-z0-9]/gi, '_')}_${teacherName.replace(/[^a-z0-9]/gi, '_')}_${timeStamp}.pdf`;
@@ -603,21 +613,42 @@
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(url);
 
-                    alert(`Download complete! ${costBytes} bytes deducted.`);
-
-                    loadStudentData();
+                    alert(`Download complete! ${costBytes} bytes deducted. Your file has been saved.`);
+                    await loadStudentData();
                 } else if (response.status === 401 || response.status === 403) {
                     alert('Session expired. Please log in again.');
                     localStorage.removeItem('token');
                     localStorage.removeItem('studentToken');
                     window.location.href = 'studentlogin.html';
                 } else {
-                    const errorData = await response.json().catch(() => ({ message: 'Download failed' }));
-                    alert(errorData.message || 'Download failed. Please try again.');
+                    const errorData = await response.json().catch(() => ({ 
+                        message: 'Download failed',
+                        bytesRefunded: false
+                    }));
+                    
+                    let errorMessage = errorData.message || 'Download failed. Please try again.';
+                    if (errorData.bytesRefunded) {
+                        errorMessage += '\n\nYour bytes have been refunded.';
+                    }
+                    
+                    alert(errorMessage);
+                    await loadStudentData(); // Refresh to show refunded bytes
                 }
+
+                // Restore button
+                originalButton.innerHTML = originalText;
+                originalButton.disabled = false;
+
             } catch (error) {
                 console.error('Download error:', error);
-                alert('An error occurred during download. Please try again.');
+                alert('An error occurred during download: ' + error.message + '\n\nPlease refresh the page and try again. If bytes were deducted, they should be refunded automatically.');
+                await loadStudentData();
+                
+                // Restore button if it exists
+                if (event && event.target) {
+                    event.target.disabled = false;
+                    event.target.innerHTML = '<i class="fas fa-download"></i> Download';
+                }
             }
         }
 

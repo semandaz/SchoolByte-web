@@ -531,7 +531,7 @@
                                 <i class="fas fa-star"></i> 4.7 (38)
                             </div>
                         </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('nutrition_fundamentals.pdf')">
+                        <a href="#" class="download-btn" onclick="downloadResource('nutrition_fundamentals.pdf', 10, 'Nutrition Fundamentals', 'Teacher A')">
                             <i class="fas fa-download"></i> Download
                         </a>
                     </div>
@@ -552,7 +552,7 @@
                                 <i class="fas fa-star"></i> 4.6 (32)
                             </div>
                         </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('food_preparation.pdf')">
+                        <a href="#" class="download-btn" onclick="downloadResource('food_preparation.pdf', 10, 'Food Preparation Techniques', 'Teacher B')">
                             <i class="fas fa-download"></i> Download
                         </a>
                     </div>
@@ -573,7 +573,7 @@
                                 <i class="fas fa-star"></i> 4.5 (28)
                             </div>
                         </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('meal_planning.docx')">
+                        <a href="#" class="download-btn" onclick="downloadResource('meal_planning.docx', 15, 'Meal Planning Guide', 'Teacher C')">
                             <i class="fas fa-download"></i> Download
                         </a>
                     </div>
@@ -603,7 +603,7 @@
                                 <i class="fas fa-star"></i> 4.9 (42)
                             </div>
                         </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('food_safety.pdf')">
+                        <a href="#" class="download-btn" onclick="downloadResource('food_safety.pdf', 10, 'Food Safety and Hygiene', 'Teacher D')">
                             <i class="fas fa-download"></i> Download
                         </a>
                     </div>
@@ -624,7 +624,7 @@
                                 <i class="fas fa-star"></i> 4.8 (35)
                             </div>
                         </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('dietary_requirements.pdf')">
+                        <a href="#" class="download-btn" onclick="downloadResource('dietary_requirements.pdf', 15, 'Dietary Requirements', 'Teacher E')">
                             <i class="fas fa-download"></i> Download
                         </a>
                     </div>
@@ -645,7 +645,7 @@
                                 <i class="fas fa-star"></i> 4.7 (26)
                             </div>
                         </div>
-                        <a href="#" class="download-btn" onclick="downloadResource('food_preservation.docx')">
+                        <a href="#" class="download-btn" onclick="downloadResource('food_preservation.docx', 10, 'Food Preservation Methods', 'Teacher F')">
                             <i class="fas fa-download"></i> Download
                         </a>
                     </div>
@@ -763,26 +763,86 @@
                             <i class="fas fa-coins"></i> ${file.costBytes} bytes
                         </div>
                     </div>
-                    <button class="download-btn" onclick="downloadResource('${file._id}', ${file.costBytes})">
+                    <button class="download-btn" onclick="downloadResource('${file._id}', ${file.costBytes}, '${file.title}', 'Teacher Name')">
                         <i class="fas fa-download"></i> Download (${file.costBytes} bytes)
                     </button>
                 `;
                 resourceCardsContainer.appendChild(card);
             });
         }
-        async function downloadResource(fileId, cost) {
+        async function downloadResource(workFileId, costBytes, title, teacherName) {
             try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`/api/workfiles/${fileId}/download`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } });
-                const data = await response.json();
-                if (response.ok) {
-                    const bytesCounter = document.querySelector('.bytes-counter');
-                    if (bytesCounter) bytesCounter.querySelector('.bytes-icon').nextSibling.textContent = ` ${data.bytesRemaining} Bytes`;
-                    window.open(data.fileUrl, '_blank');
-                    alert(`Download successful! ${cost} bytes deducted. Remaining: ${data.bytesRemaining} bytes`);
-                    loadStudentData(); // Reload data to reflect potential changes in user's bytes
-                } else { alert(data.message || 'Download failed'); }
-            } catch (error) { alert('Error downloading file.'); }
+                const token = localStorage.getItem('studentToken') || localStorage.getItem('token');
+                if (!token) {
+                    alert('Please log in to download files');
+                    window.location.href = 'studentlogin.html';
+                    return;
+                }
+
+                const currentBytes = parseInt(document.getElementById('bytesCount').textContent) || 0;
+
+                if (currentBytes < costBytes) {
+                    alert(`Insufficient bytes! You need ${costBytes} bytes but only have ${currentBytes} bytes. Complete more quizzes to earn bytes.`);
+                    return;
+                }
+
+                const confirmDownload = confirm(`This file costs ${costBytes} bytes. You currently have ${currentBytes} bytes. Do you want to proceed with the download?`);
+                if (!confirmDownload) return;
+
+                const response = await fetch(`/api/workfiles/${workFileId}/download`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok && response.headers.get('content-type').includes('application/pdf')) {
+                    const blob = await response.blob();
+
+                    if (blob.size === 0) {
+                        throw new Error('Downloaded file is empty');
+                    }
+
+                    const now = new Date();
+                    const timeStamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`;
+                    const fileName = `${title.replace(/[^a-z0-9]/gi, '_')}_${teacherName.replace(/[^a-z0-9]/gi, '_')}_${timeStamp}.pdf`;
+
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+
+                    alert(`Download complete! ${costBytes} bytes deducted. Your file has been saved.`);
+                    await loadStudentData();
+                } else if (response.status === 401 || response.status === 403) {
+                    alert('Session expired. Please log in again.');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('studentToken');
+                    window.location.href = 'studentlogin.html';
+                } else {
+                    const errorData = await response.json().catch(() => ({
+                        message: 'Download failed',
+                        bytesRefunded: false
+                    }));
+
+                    let errorMessage = errorData.message || 'Download failed. Please try again.';
+                    if (errorData.bytesRefunded) {
+                        errorMessage += '\n\nYour bytes have been refunded.';
+                    }
+
+                    alert(errorMessage);
+                    await loadStudentData();
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('An error occurred during download: ' + error.message + '\n\nPlease refresh the page. If bytes were deducted, they should be refunded automatically.');
+                await loadStudentData();
+            }
         }
         document.addEventListener('DOMContentLoaded', loadStudentData);
         // Create floating particles
@@ -866,7 +926,7 @@
                 noResults.classList.add('hidden');
             } else {
                 searchResults.classList.remove('active');
-                noResults.classList.remove('hidden');
+                noResults.classList.add('hidden');
             }
         }
 
@@ -890,7 +950,7 @@
                         <i class="fas fa-star"></i> ${resource.rating} (${resource.reviews})
                     </div>
                 </div>
-                <a href="#" class="download-btn" onclick="downloadResource('${resource.name.replace(/\s+/g, '_').toLowerCase()}.${resource.type.toLowerCase()}')">
+                <a href="#" class="download-btn" onclick="downloadResource('${resource.name.replace(/\s+/g, '_').toLowerCase()}.${resource.type.toLowerCase()}', 10, '${resource.name}', 'Teacher Name')">
                     <i class="fas fa-download"></i> Download
                 </a>
             `;
