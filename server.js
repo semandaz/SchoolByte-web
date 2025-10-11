@@ -155,13 +155,14 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
         }
         
         const baseUrl = urlParts[0] + '/upload/';
-        const publicIdPath = urlParts[1].substring(urlParts[1].indexOf('/') + 1);
+        const publicIdWithPath = urlParts[1]; // This includes version and full path with extension
         
         // Create custom filename for download
         const customFilename = `${workFile.subject}_${workFile.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
         
         // Build the download URL with fl_attachment transformation
-        const downloadUrl = `${baseUrl}fl_attachment:${encodeURIComponent(customFilename)}/${publicIdPath}`;
+        // Format: https://res.cloudinary.com/{cloud_name}/raw/upload/fl_attachment:{filename}/{public_id_with_extension}
+        const downloadUrl = `${baseUrl}fl_attachment:${encodeURIComponent(customFilename)}/${publicIdWithPath}`;
         
         console.log(`Download URL constructed: ${downloadUrl}`);
 
