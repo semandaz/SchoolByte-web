@@ -147,23 +147,23 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
 
         // Construct the download URL with fl_attachment flag for force download
         console.log(`Downloading file from Cloudinary: ${workFile.fileUrl}`);
-        
+
         // Extract parts from the fileUrl to build the correct download URL
         const urlParts = workFile.fileUrl.split('/upload/');
         if (urlParts.length < 2) {
             return res.status(500).json({ message: 'Invalid Cloudinary URL format' });
         }
-        
+
         const baseUrl = urlParts[0] + '/upload/';
         const publicIdWithPath = urlParts[1]; // This includes version and full path with extension
-        
+
         // Create custom filename for download
         const customFilename = `${workFile.subject}_${workFile.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
-        
+
         // Build the download URL with fl_attachment transformation
         // Format: https://res.cloudinary.com/{cloud_name}/raw/upload/fl_attachment:{filename}/{public_id_with_extension}
         const downloadUrl = `${baseUrl}fl_attachment:${encodeURIComponent(customFilename)}/${publicIdWithPath}`;
-        
+
         console.log(`Download URL constructed: ${downloadUrl}`);
 
         // Deduct bytes BEFORE streaming (so we can track if bytes were deducted)
