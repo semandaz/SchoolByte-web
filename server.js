@@ -154,19 +154,25 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
             return res.status(500).json({ message: 'Invalid Cloudinary URL format' });
         }
 
-        const baseUrl = urlParts[0] + '/upload/';
-        const publicIdWithPath = urlParts[1]; // This includes version and full path with extension
+        // Extract Public ID without extension for correct URL construction
+        const publicIdMatch = workFile.fileUrl.match(/\/upload\/(.*)\.pdf/i);
+        
+        if (!publicIdMatch || publicIdMatch.length < 2) {
+            return res.status(500).json({ message: 'Invalid Cloudinary URL structure in database.' });
+        }
+        
+        const publicIdWithoutExtension = publicIdMatch[1];
+        
+        // Create custom filename and encode it
+        const customFilename = `${workFile.subject}_${workFile.title.replace(/[^a-z0-9\s-]/gi, '')}.pdf`;
+        const encodedFilename = encodeURIComponent(customFilename);
 
-        // Create custom filename for download
-        const customFilename = `${workFile.subject}_${workFile.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
-
-        // Build the download URL with fl_attachment transformation
-        // Format: https://res.cloudinary.com/{cloud_name}/raw/upload/fl_attachment:{filename}/{public_id_with_extension}
-        const downloadUrl = `${baseUrl}fl_attachment:${encodeURIComponent(customFilename)}/${publicIdWithPath}`;
+        // Construct correct download URL with fl_attachment transformation
+        const downloadUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/fl_attachment:${encodedFilename}/${publicIdWithoutExtension}`;
 
         console.log(`Download URL constructed: ${downloadUrl}`);
 
-        // Deduct bytes BEFORE streaming (so we can track if bytes were deducted)
+        // Deduct bytes before sending URL
         try {
             student.bytes -= workFile.costBytes;
             await student.save();
@@ -184,80 +190,10 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
             });
         }
 
-        // Stream the file from Cloudinary
-        const https = require('https');
-        
-        https.get(downloadUrl, (cloudinaryRes) => {
-            if (cloudinaryRes.statusCode !== 200) {
-                console.error('Cloudinary download failed with status:', cloudinaryRes.statusCode);
-                
-                // Refund bytes on error
-                if (bytesDeducted && student) {
-                    student.bytes += workFile.costBytes;
-                    student.save().catch(err => console.error('Failed to refund bytes:', err));
-                }
-                
-                return res.status(500).json({ 
-                    message: `Failed to access file from storage (Status: ${cloudinaryRes.statusCode})`,
-                    bytesRefunded: true
-                });
-            }
-
-            // Set headers for file download
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename="${customFilename}"`);
-            if (cloudinaryRes.headers['content-length']) {
-                res.setHeader('Content-Length', cloudinaryRes.headers['content-length']);
-            }
-            
-            // Stream file to client with error handling
-            cloudinaryRes.on('error', async (streamError) => {
-                console.error('Stream error during download:', streamError);
-                
-                if (bytesDeducted && student) {
-                    try {
-                        student.bytes += workFile.costBytes;
-                        await student.save();
-                        console.log(`Bytes refunded due to stream error: ${workFile.costBytes}`);
-                    } catch (refundError) {
-                        console.error('Failed to refund bytes:', refundError);
-                    }
-                }
-            });
-
-            cloudinaryRes.pipe(res).on('error', async (pipeError) => {
-                console.error('Pipe error during download:', pipeError);
-                
-                if (bytesDeducted && student) {
-                    try {
-                        student.bytes += workFile.costBytes;
-                        await student.save();
-                        console.log(`Bytes refunded due to pipe error: ${workFile.costBytes}`);
-                    } catch (refundError) {
-                        console.error('Failed to refund bytes:', refundError);
-                    }
-                }
-            });
-        }).on('error', async (err) => {
-            console.error('Error downloading file from Cloudinary:', err);
-            
-            if (bytesDeducted && student) {
-                try {
-                    student.bytes += workFile.costBytes;
-                    await student.save();
-                    console.log(`Bytes refunded: ${workFile.costBytes}`);
-                } catch (refundError) {
-                    console.error('Failed to refund bytes:', refundError);
-                }
-            }
-
-            if (!res.headersSent) {
-                return res.status(500).json({ 
-                    message: 'Network error accessing file from storage',
-                    error: err.message,
-                    bytesRefunded: bytesDeducted
-                });
-            }
+        // Return URL to client for browser-handled download
+        return res.json({ 
+            message: 'File access granted. Redirecting for download.',
+            downloadUrl: downloadUrl
         });
 
     } catch (error) {

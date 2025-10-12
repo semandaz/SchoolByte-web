@@ -592,29 +592,18 @@
                     }
                 });
 
-                if (response.ok && response.headers.get('content-type') === 'application/pdf') {
-                    // File is being streamed - trigger download
-                    const blob = await response.blob();
+                if (response.ok) {
+                    const data = await response.json();
                     
-                    if (blob.size === 0) {
-                        throw new Error('Downloaded file is empty');
+                    if (data.downloadUrl) {
+                        // Redirect browser to Cloudinary URL for direct download
+                        window.location.href = data.downloadUrl;
+                        
+                        alert(`Download started! ${costBytes} bytes deducted.`);
+                        await loadStudentData();
+                    } else {
+                        throw new Error('No download URL received from server');
                     }
-
-                    const now = new Date();
-                    const timeStamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}`;
-                    const fileName = `${title.replace(/[^a-z0-9]/gi, '_')}_${teacherName.replace(/[^a-z0-9]/gi, '_')}_${timeStamp}.pdf`;
-
-                    const url = window.URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = fileName;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-
-                    alert(`Download complete! ${costBytes} bytes deducted. Your file has been saved.`);
-                    await loadStudentData();
                 } else if (response.status === 401 || response.status === 403) {
                     alert('Session expired. Please log in again.');
                     localStorage.removeItem('token');
