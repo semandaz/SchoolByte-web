@@ -127,7 +127,7 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
     let workFile = null;
 
     try {
-        workFile = await WorkFile.findById(id);
+        workFile = await WorkFile.findById(id).populate('uploadedBy.teacherId', 'teacherName');
         if (!workFile) {
             return res.status(404).json({ message: 'File not found' });
         }
@@ -138,98 +138,71 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
         }
 
         if (student.bytes < workFile.costBytes) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'Insufficient bytes',
                 required: workFile.costBytes,
                 available: student.bytes
             });
         }
 
-        const fullCloudinaryUrl = workFile.fileUrl;
         const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "dq5mdy0yq";
-        const teacherName = workfile.uploadedBy?.teacherName || 'Teacher'
-        
-        // 1. Generate the desired friendly filename (and URL-encode it)
+        const teacherName = workFile.uploadedBy?.teacherName || 'Teacher';
+
+        // 1. Create a clean, URL-safe base filename (without extension)
         const cleanTitle = workFile.title.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_');
         const cleanSubject = workFile.subject.replace(/\s+/g, '_');
         const cleanTeacher = teacherName.replace(/\s+/g, '_');
         const customFilenameBase = `${cleanSubject}_${cleanTitle}_by_${cleanTeacher}`;
 
-        // This regex handles URLs with or without version numbers and folders.
+        // 2. Robustly extract the public_id from the full Cloudinary URL
         const urlParts = workFile.fileUrl.split('/upload/');
         const pathAndVersion = urlParts.length > 1 ? urlParts[1] : '';
         const publicIdWithExtension = pathAndVersion.replace(/^v\d+\//, ''); // Remove version if present
         const publicId = publicIdWithExtension.substring(0, publicIdWithExtension.lastIndexOf('.'));
 
         if (!publicId) {
-             console.error("Could not extract public_id from URL:", workFile.fileUrl);
-             return res.status(500).json({ message: 'Could not process file URL.' });
+            console.error("Could not extract public_id from URL:", workFile.fileUrl);
+            return res.status(500).json({ message: 'Could not process file URL.' });
         }
 
+        // 3. Assemble the final URL with the correct transformation syntax
         const downloadUrl = `https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/fl_attachment:${customFilenameBase}/${publicId}.pdf`;
-
+        
         console.log(`Download URL constructed: ${downloadUrl}`);
 
-
-        // 2. Extract the Public ID Path: Strip URL prefix and version number, but KEEP the file extension
-        let publicIdPath = fullCloudinaryUrl.split('/upload/')[1];
-        
-        if (!publicIdPath) {
-            return res.status(500).json({ message: 'Invalid Cloudinary URL format' });
-        }
-        
-        // CRITICAL STEP 1: Remove the version number (e.g., v12345678/) from the path
-        const publicIdWithoutVersion = publicIdPath.replace(/^v\d+\//, '');
-        
-        // 3. The final Public ID to use is the path *with* the extension
-        // The custom filename flag will override the final saved name, but the extension is required for lookup
-
-        // 4. FINAL, CORRECT URL ASSEMBLY
-        // This structure uses the custom filename flag AND the full Public ID (including .pdf),
-        // which is the only way to satisfy both Cloudinary rules simultaneously
-
-        console.log(`Download URL constructed (Custom Filename): ${downloadUrl}`);
-
         // Deduct bytes before sending URL
-        try {
-            student.bytes -= workFile.costBytes;
-            await student.save();
-            bytesDeducted = true;
+        student.bytes -= workFile.costBytes;
+        bytesDeducted = true;
 
-            workFile.downloadCount += 1;
-            await workFile.save();
+        workFile.downloadCount += 1;
+        
+        await student.save();
+        await workFile.save();
 
-            console.log(`Bytes deducted: ${workFile.costBytes}. Student now has ${student.bytes} bytes`);
-        } catch (saveError) {
-            console.error('Error saving student data:', saveError);
-            return res.status(500).json({ 
-                message: 'Database error during download',
-                error: saveError.message 
-            });
-        }
+        console.log(`Bytes deducted: ${workFile.costBytes}. Student now has ${student.bytes} bytes`);
 
         // Return URL to client for browser-handled download
-        return res.json({ 
+        return res.json({
             message: 'File access granted. Redirecting for download.',
             downloadUrl: downloadUrl
         });
 
     } catch (error) {
         console.error('Error in download handler:', error);
-        
-        // Refund bytes if any were deducted
+
+        // Refund bytes if the process failed after deduction
         if (bytesDeducted && student && workFile) {
             try {
-                student.bytes += workFile.costBytes;
-                await student.save();
+                // Use updateOne to avoid versioning conflicts
+                await Student.updateOne({ _id: studentId }, { $inc: { bytes: workFile.costBytes } });
                 console.log(`Bytes refunded due to handler error: ${workFile.costBytes}`);
             } catch (refundError) {
-                console.error('Failed to refund bytes:', refundError);
+                console.error('CRITICAL: Failed to refund bytes:', refundError);
             }
         }
 
         if (!res.headersSent) {
-            return res.status(500).json({ 
+            return res.status(500).json({
                 message: 'Server error during download',
                 error: error.message,
                 bytesRefunded: bytesDeducted
