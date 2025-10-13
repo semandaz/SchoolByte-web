@@ -164,6 +164,7 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
         const publicIdWithoutExtension = publicIdMatch[1];
         
         // Create custom filename and encode it
+        const fullCloudinaryUrl = workFile.fileUrl; 
         const customFilename = `${workFile.subject}_${workFile.title.replace(/[^a-z0-9\s-]/gi, '')}.pdf`;
         const encodedFilename = encodeURIComponent(customFilename);
 
