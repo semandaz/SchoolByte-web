@@ -146,26 +146,30 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
         }
 
         const fullCloudinaryUrl = workFile.fileUrl;
+        const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "dq5mdy0yq";
         
-        // Generate custom filename and URL-encode it
+        // 1. Generate the desired friendly filename (and URL-encode it)
         const customFilename = `${workFile.subject}_${workFile.title.replace(/[^a-z0-9\s-]/gi, '')}.pdf`;
         const encodedFilename = encodeURIComponent(customFilename);
 
-        // Extract Public ID Path: Strip URL prefix, version number, and file extension
+        // 2. Extract the Public ID Path: Strip URL prefix and version number, but KEEP the file extension
         let publicIdPath = fullCloudinaryUrl.split('/upload/')[1];
         
         if (!publicIdPath) {
             return res.status(500).json({ message: 'Invalid Cloudinary URL format' });
         }
         
-        // CRITICAL: Remove version number (e.g., v12345678/) from the path
+        // CRITICAL STEP 1: Remove the version number (e.g., v12345678/) from the path
         const publicIdWithoutVersion = publicIdPath.replace(/^v\d+\//, '');
         
-        // CRITICAL: Remove file extension (.pdf) from the end of the path
-        const publicIdWithoutExtension = publicIdWithoutVersion.replace(/\.pdf$/i, '');
+        // 3. The final Public ID to use is the path *with* the extension
+        // The custom filename flag will override the final saved name, but the extension is required for lookup
+        const publicIdWithExtension = publicIdWithoutVersion;
 
-        // Construct the final download URL with custom filename
-        const downloadUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/fl_attachment:${encodedFilename}/${publicIdWithoutExtension}`;
+        // 4. FINAL, CORRECT URL ASSEMBLY
+        // This structure uses the custom filename flag AND the full Public ID (including .pdf),
+        // which is the only way to satisfy both Cloudinary rules simultaneously
+        const downloadUrl = `https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/fl_attachment:${encodedFilename}/${publicIdWithExtension}`;
 
         console.log(`Download URL constructed (Custom Filename): ${downloadUrl}`);
 
