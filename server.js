@@ -145,33 +145,29 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
             });
         }
 
-        // Construct the download URL with fl_attachment flag for force download
-        console.log(`Downloading file from Cloudinary: ${workFile.fileUrl}`);
-
-        // Extract parts from the fileUrl to build the correct download URL
-        const urlParts = workFile.fileUrl.split('/upload/');
-        if (urlParts.length < 2) {
-            return res.status(500).json({ message: 'Invalid Cloudinary URL format' });
-        }
-
-        // Extract Public ID without extension for correct URL construction
-        const publicIdMatch = workFile.fileUrl.match(/\/upload\/(.*)\.pdf/i);
+        const fullCloudinaryUrl = workFile.fileUrl;
         
-        if (!publicIdMatch || publicIdMatch.length < 2) {
-            return res.status(500).json({ message: 'Invalid Cloudinary URL structure in database.' });
-        }
-        
-        const publicIdWithoutExtension = publicIdMatch[1];
-        
-        // Create custom filename and encode it
-        const fullCloudinaryUrl = workFile.fileUrl; 
+        // Generate custom filename and URL-encode it
         const customFilename = `${workFile.subject}_${workFile.title.replace(/[^a-z0-9\s-]/gi, '')}.pdf`;
         const encodedFilename = encodeURIComponent(customFilename);
 
-        // Construct correct download URL with fl_attachment transformation
+        // Extract Public ID Path: Strip URL prefix, version number, and file extension
+        let publicIdPath = fullCloudinaryUrl.split('/upload/')[1];
+        
+        if (!publicIdPath) {
+            return res.status(500).json({ message: 'Invalid Cloudinary URL format' });
+        }
+        
+        // CRITICAL: Remove version number (e.g., v12345678/) from the path
+        const publicIdWithoutVersion = publicIdPath.replace(/^v\d+\//, '');
+        
+        // CRITICAL: Remove file extension (.pdf) from the end of the path
+        const publicIdWithoutExtension = publicIdWithoutVersion.replace(/\.pdf$/i, '');
+
+        // Construct the final download URL with custom filename
         const downloadUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/fl_attachment:${encodedFilename}/${publicIdWithoutExtension}`;
 
-        console.log(`Download URL constructed: ${downloadUrl}`);
+        console.log(`Download URL constructed (Custom Filename): ${downloadUrl}`);
 
         // Deduct bytes before sending URL
         try {
