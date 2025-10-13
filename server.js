@@ -147,10 +147,29 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
 
         const fullCloudinaryUrl = workFile.fileUrl;
         const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "dq5mdy0yq";
+        const teacherName = workfile.uploadedBy?.teacherName || 'Teacher'
         
         // 1. Generate the desired friendly filename (and URL-encode it)
-        const customFilename = `${workFile.subject}_${workFile.title.replace(/[^a-z0-9\s-]/gi, '')}.pdf`;
-        const encodedFilename = encodeURIComponent(customFilename);
+        const cleanTitle = workFile.title.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_');
+        const cleanSubject = workFile.subject.replace(/\s+/g, '_');
+        const cleanTeacher = teacherName.replace(/\s+/g, '_');
+        const customFilenameBase = `${cleanSubject}_${cleanTitle}_by_${cleanTeacher}`;
+
+        // This regex handles URLs with or without version numbers and folders.
+        const urlParts = workFile.fileUrl.split('/upload/');
+        const pathAndVersion = urlParts.length > 1 ? urlParts[1] : '';
+        const publicIdWithExtension = pathAndVersion.replace(/^v\d+\//, ''); // Remove version if present
+        const publicId = publicIdWithExtension.substring(0, publicIdWithExtension.lastIndexOf('.'));
+
+        if (!publicId) {
+             console.error("Could not extract public_id from URL:", workFile.fileUrl);
+             return res.status(500).json({ message: 'Could not process file URL.' });
+        }
+
+        const downloadUrl = `https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/fl_attachment:${customFilenameBase}/${publicId}.pdf`;
+
+        console.log(`Download URL constructed: ${downloadUrl}`);
+
 
         // 2. Extract the Public ID Path: Strip URL prefix and version number, but KEEP the file extension
         let publicIdPath = fullCloudinaryUrl.split('/upload/')[1];
@@ -164,12 +183,10 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
         
         // 3. The final Public ID to use is the path *with* the extension
         // The custom filename flag will override the final saved name, but the extension is required for lookup
-        const publicIdWithExtension = publicIdWithoutVersion;
 
         // 4. FINAL, CORRECT URL ASSEMBLY
         // This structure uses the custom filename flag AND the full Public ID (including .pdf),
         // which is the only way to satisfy both Cloudinary rules simultaneously
-        const downloadUrl = `https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/fl_attachment:${encodedFilename}/${publicIdWithExtension}`;
 
         console.log(`Download URL constructed (Custom Filename): ${downloadUrl}`);
 
