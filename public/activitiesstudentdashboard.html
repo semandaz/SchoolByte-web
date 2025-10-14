@@ -670,12 +670,57 @@
     </div>
 
     <script>
+        // Subject configuration mapping
+        const subjectConfig = {
+            'biology': { icon: 'fas fa-flask', backLink: 'biostudentdashboard.html', name: 'Biology' },
+            'chemistry': { icon: 'fas fa-atom', backLink: 'chestudentdashboard.html', name: 'Chemistry' },
+            'physics': { icon: 'fas fa-bolt', backLink: 'phystudentdashboard.html', name: 'Physics' },
+            'mathematics': { icon: 'fas fa-calculator', backLink: 'mathstudentdashboard.html', name: 'Mathematics' },
+            'english language': { icon: 'fas fa-book', backLink: 'engstudentdashboard.html', name: 'English Language' },
+            'history': { icon: 'fas fa-landmark', backLink: 'hisstudentdashboard.html', name: 'History' },
+            'geography': { icon: 'fas fa-globe-africa', backLink: 'geostudentdashboard.html', name: 'Geography' },
+            'computer science': { icon: 'fas fa-laptop-code', backLink: 'crestudentdashboard.html', name: 'Computer Science' },
+            'agriculture': { icon: 'fas fa-tractor', backLink: 'agristudentdashboard.html', name: 'Agriculture' },
+            'literature in english': { icon: 'fas fa-book-reader', backLink: 'litstudentdashboard.html', name: 'Literature in English' },
+            'french': { icon: 'fas fa-language', backLink: 'fnstudentdashboard.html', name: 'French' },
+            'german': { icon: 'fas fa-language', backLink: 'gerstudentdashboard.html', name: 'German' },
+            'kiswahili': { icon: 'fas fa-language', backLink: 'kiswastudentdashboard.html', name: 'Kiswahili' },
+            'luganda': { icon: 'fas fa-language', backLink: 'lugstudentdashboard.html', name: 'Luganda' },
+            'fine art': { icon: 'fas fa-palette', backLink: 'pastudentdashboard.html', name: 'Fine Art' },
+            'performing arts': { icon: 'fas fa-theater-masks', backLink: 'entstudentdashboard.html', name: 'Performing Arts' },
+            'physical education': { icon: 'fas fa-running', backLink: 'pestudentdashboard.html', name: 'Physical Education' },
+            'technology and design': { icon: 'fas fa-tools', backLink: 'tdstudentdashboard.html', name: 'Technology and Design' }
+        };
+
         let allActivities = [];
         let studentClass = '';
         let currentActivityId = null;
+        let currentSubject = '';
 
         async function loadStudentData() {
             try {
+                // Get subject from URL parameter
+                const urlParams = new URLSearchParams(window.location.search);
+                currentSubject = urlParams.get('subject');
+
+                if (!currentSubject) {
+                    alert('No subject specified. Redirecting to dashboard.');
+                    window.location.href = 'studentdashboard.html';
+                    return;
+                }
+
+                // Normalize subject name (lowercase)
+                currentSubject = currentSubject.toLowerCase();
+
+                // Update page content based on subject
+                if (subjectConfig[currentSubject]) {
+                    const config = subjectConfig[currentSubject];
+                    document.title = `SchoolByte - ${config.name} Activities`;
+                    document.querySelector('.back-btn').href = config.backLink;
+                    document.querySelector('.subject-title').innerHTML = `<i class="${config.icon} subject-icon"></i> ${config.name} Activities`;
+                    document.getElementById('searchInput').placeholder = `Search for ${config.name} topics...`;
+                }
+
                 const token = localStorage.getItem('studentToken') || localStorage.getItem('token');
                 if (!token) {
                     window.location.href = 'studentlogin.html';
@@ -699,7 +744,8 @@
                     return;
                 }
 
-                const activitiesResponse = await fetch('/student/activities?subject=Biology', {
+                // Fetch activities for the specific subject from URL
+                const activitiesResponse = await fetch(`/student/activities?subject=${encodeURIComponent(currentSubject)}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -708,7 +754,7 @@
                     allActivities = activitiesData.activities || [];
                     displayActivities(allActivities);
                 } else {
-                    console.error('Failed to fetch Biology activities:', activitiesResponse.status);
+                    console.error(`Failed to fetch ${currentSubject} activities:`, activitiesResponse.status);
                     document.getElementById('noResults').classList.remove('hidden');
                 }
             } catch (error) {
@@ -877,9 +923,10 @@
                     // Update bytes counter
                     document.getElementById('bytesCount').textContent = result.studentCurrentBytes || document.getElementById('bytesCount').textContent;
 
-                    // Set up redirect after 3 seconds
+                    // Set up redirect after 3 seconds to the correct subject dashboard
                     setTimeout(() => {
-                        window.location.href = 'biostudentdashboard.html';
+                        const redirectLink = subjectConfig[currentSubject]?.backLink || 'studentdashboard.html';
+                        window.location.href = redirectLink;
                     }, 3000);
                 } else {
                     const errorData = await response.json().catch(() => ({ message: 'Submission failed' }));

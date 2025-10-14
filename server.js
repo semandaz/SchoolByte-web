@@ -154,7 +154,7 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
         const cleanTeacher = teacherName.replace(/\s+/g, '_');
         const customFilenameBase = `${cleanSubject}_${cleanTitle}_by_${cleanTeacher}`;
 
-        // 2. Robustly extract the public_id from the full Cloudinary URL
+        // 2. Robustly extract the public_id from the Cloudinary URL
         const urlParts = workFile.fileUrl.split('/upload/');
         const pathAndVersion = urlParts.length > 1 ? urlParts[1] : '';
         const publicIdWithExtension = pathAndVersion.replace(/^v\d+\//, ''); // Remove version if present
@@ -167,7 +167,7 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
 
         // 3. Assemble the final URL with the correct transformation syntax
         const downloadUrl = `https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/fl_attachment:${customFilenameBase}/${publicId}.pdf`;
-        
+
         console.log(`Download URL constructed: ${downloadUrl}`);
 
         // Deduct bytes before sending URL
@@ -175,7 +175,7 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
         bytesDeducted = true;
 
         workFile.downloadCount += 1;
-        
+
         await student.save();
         await workFile.save();
 
@@ -3999,5 +3999,116 @@ app.get('/student/activities/:activityId', authenticateToken, async (req, res) =
     } catch (error) {
         console.error('Error fetching activity:', error);
         res.status(500).json({ message: 'Failed to fetch activity.', error: error.message });
+    }
+});
+
+
+// Student endpoint to submit activity answers with NLP grading
+app.post('/student/activities/submit', authenticateToken, [
+    body('activityId').isMongoId().withMessage('Valid activity ID is required.'),
+    body('answers').isArray({ min: 1 }).withMessage('Answers array is required.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { activityId, answers } = req.body;
+    const studentId = req.student.id;
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const student = await Student.findById(studentId).session(session);
+        if (!student) {
+            await session.abortTransaction();
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        const activity = await Activity.findById(activityId).session(session);
+        if (!activity) {
+            await session.abortTransaction();
+            return res.status(404).json({ message: 'Activity not found.' });
+        }
+
+        // Grade each answer using NLP keyword matching
+        let totalScore = 0;
+        let maxPossibleScore = activity.questions.length;
+        const gradedAnswers = [];
+
+        for (let i = 0; i < activity.questions.length; i++) {
+            const question = activity.questions[i];
+            const studentAnswer = answers[i]?.answer || '';
+
+            if (!studentAnswer.trim()) {
+                gradedAnswers.push({
+                    questionIndex: i,
+                    score: 0,
+                    feedback: 'No answer provided.'
+                });
+                continue;
+            }
+
+            // NLP Grading: Count matching keywords
+            const keywords = question.keywordsForMarking || [];
+            const normalizedAnswer = studentAnswer.toLowerCase();
+            let matchedKeywords = 0;
+
+            for (const keyword of keywords) {
+                if (normalizedAnswer.includes(keyword.toLowerCase())) {
+                    matchedKeywords++;
+                }
+            }
+
+            // Calculate score as percentage of keywords found
+            const questionScore = keywords.length > 0 ? matchedKeywords / keywords.length : 0;
+            totalScore += questionScore;
+
+            gradedAnswers.push({
+                questionIndex: i,
+                score: questionScore,
+                matchedKeywords: matchedKeywords,
+                totalKeywords: keywords.length,
+                feedback: questionScore >= 0.7 ? 'Good answer!' : questionScore >= 0.4 ? 'Partial credit.' : 'Needs improvement.'
+            });
+        }
+
+        // Calculate bytes earned (proportional to score)
+        const scorePercentage = maxPossibleScore > 0 ? totalScore / maxPossibleScore : 0;
+        const bytesEarned = Math.round(activity.maxBytesReward * scorePercentage);
+
+        // Award bytes to student
+        student.bytes += bytesEarned;
+        await student.save({ session });
+
+        // Save submission record
+        const submission = new StudentActivitySubmission({
+            student: studentId,
+            activity: activityId,
+            answers: answers,
+            score: scorePercentage,
+            bytesEarned: bytesEarned,
+            submittedAt: new Date(),
+            isGraded: true
+        });
+        await submission.save({ session });
+
+        await session.commitTransaction();
+
+        res.status(200).json({
+            message: 'Activity submitted and graded successfully!',
+            bytesEarned: bytesEarned,
+            studentCurrentBytes: student.bytes,
+            scorePercentage: Math.round(scorePercentage * 100),
+            gradedAnswers: gradedAnswers
+        });
+
+    } catch (error) {
+        await session.abortTransaction();
+        console.error('Error submitting activity:', error);
+        res.status(500).json({ message: 'Failed to submit activity.', error: error.message });
+    } finally {
+        session.endSession();
     }
 });
