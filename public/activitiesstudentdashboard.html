@@ -797,6 +797,7 @@
             }
 
             const teacherName = activity.uploadedBy?.teacherName || 'Unknown Teacher';
+            const attemptCount = activity.attemptCount || 0;
 
             card.innerHTML = `
                 <h3 class="activity-name">${activity.title}</h3>
@@ -811,6 +812,9 @@
                     </div>
                     <div class="stat-item">
                         <i class="fas fa-user"></i> ${teacherName}
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-users"></i> ${attemptCount} attempt${attemptCount !== 1 ? 's' : ''}
                     </div>
                 </div>
                 <button class="start-btn" onclick="startActivity('${activity._id}', '${activity.title}', '${teacherName}')">
@@ -983,12 +987,16 @@
             overlay.classList.add('active');
         }
 
-        // Search functionality
+        // Search functionality with backend integration
         const searchInput = document.getElementById('searchInput');
         const searchSuggestions = document.getElementById('searchSuggestions');
+        let searchTimeout;
 
-        searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase().trim();
+        searchInput.addEventListener('input', async (e) => {
+            const query = e.target.value.trim();
+
+            // Clear previous timeout
+            clearTimeout(searchTimeout);
 
             if (query.length < 2) {
                 searchSuggestions.classList.remove('active');
@@ -996,29 +1004,41 @@
                 return;
             }
 
-            const suggestions = [];
-            const filtered = allActivities.filter(activity => {
-                const matchesTitle = activity.title.toLowerCase().includes(query);
-                const matchesDescription = activity.description?.toLowerCase().includes(query);
-                const matchesTopic = activity.topic?.toLowerCase().includes(query);
+            // Debounce search
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const token = localStorage.getItem('studentToken') || localStorage.getItem('token');
+                    const response = await fetch(`/student/activities?subject=${encodeURIComponent(currentSubject)}&search=${encodeURIComponent(query)}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
 
-                if (matchesTitle && !suggestions.includes(activity.title)) {
-                    suggestions.push(activity.title);
+                    if (response.ok) {
+                        const data = await response.json();
+                        const filtered = data.activities || [];
+
+                        // Build suggestions from filtered results
+                        const suggestions = [];
+                        filtered.forEach(activity => {
+                            if (suggestions.length < 5 && !suggestions.includes(activity.title)) {
+                                suggestions.push(activity.title);
+                            }
+                        });
+
+                        if (suggestions.length > 0) {
+                            searchSuggestions.innerHTML = suggestions.map(suggestion => 
+                                `<div class="suggestion-item" onclick="selectSuggestion('${suggestion.replace(/'/g, "\\'")}')">${suggestion}</div>`
+                            ).join('');
+                            searchSuggestions.classList.add('active');
+                        } else {
+                            searchSuggestions.classList.remove('active');
+                        }
+
+                        displayActivities(filtered);
+                    }
+                } catch (error) {
+                    console.error('Search error:', error);
                 }
-
-                return matchesTitle || matchesDescription || matchesTopic;
-            });
-
-            if (suggestions.length > 0) {
-                searchSuggestions.innerHTML = suggestions.slice(0, 5).map(suggestion => 
-                    `<div class="suggestion-item" onclick="selectSuggestion('${suggestion.replace(/'/g, "\\'")}')">${suggestion}</div>`
-                ).join('');
-                searchSuggestions.classList.add('active');
-            } else {
-                searchSuggestions.classList.remove('active');
-            }
-
-            displayActivities(filtered);
+            }, 300);
         });
 
         function selectSuggestion(suggestion) {

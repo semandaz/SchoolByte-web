@@ -3931,22 +3931,43 @@ module.exports = {
 // Student endpoint to fetch activities by subject and class
 app.get('/student/activities', authenticateToken, async (req, res) => {
     try {
-        const { subject, intendedClass } = req.query;
+        const { subject, intendedClass, search } = req.query;
+        const studentId = req.student.id;
 
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
 
         let query = {};
         if (subject) query.subject = subject;
         if (intendedClass) query.intendedClass = intendedClass;
 
+        // Add search functionality
+        if (search && search.trim()) {
+            query.$or = [
+                { title: { $regex: search.trim(), $options: 'i' } },
+                { description: { $regex: search.trim(), $options: 'i' } }
+            ];
+        }
 
         const activities = await Activity.find(query)
             .populate('associatedWorkFile', 'title fileUrl costBytes')
+            .populate('uploadedBy.teacherId', 'teacherName')
             .sort({ createdAt: -1 });
 
+        // Sort activities by relevance to student's class
+        const studentClass = student.class;
+        const sortedActivities = activities.sort((a, b) => {
+            if (a.intendedClass === studentClass && b.intendedClass !== studentClass) return -1;
+            if (b.intendedClass === studentClass && a.intendedClass !== studentClass) return 1;
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
 
         res.status(200).json({
             message: 'Activities fetched successfully.',
-            activities: activities.map(activity => ({
+            studentClass: studentClass,
+            activities: sortedActivities.map(activity => ({
                 _id: activity._id,
                 title: activity.title,
                 description: activity.description,
@@ -3954,7 +3975,11 @@ app.get('/student/activities', authenticateToken, async (req, res) => {
                 intendedClass: activity.intendedClass,
                 maxBytesReward: activity.maxBytesReward,
                 questions: activity.questions,
-                uploadedBy: activity.uploadedBy,
+                uploadedBy: {
+                    teacherId: activity.uploadedBy.teacherId?._id,
+                    teacherName: activity.uploadedBy.teacherName
+                },
+                attemptCount: activity.attemptCount || 0,
                 associatedWorkFile: activity.associatedWorkFile,
                 createdAt: activity.createdAt
             }))
