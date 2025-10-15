@@ -614,6 +614,19 @@ const activitySchema = new mongoose.Schema({
     },
     createdAt: { type: Date, default: Date.now }
 });
+
+// Virtual field to calculate attempt count
+activitySchema.virtual('attemptCount', {
+    ref: 'StudentActivitySubmission',
+    localField: '_id',
+    foreignField: 'activity',
+    count: true
+});
+
+// Ensure virtuals are included in JSON
+activitySchema.set('toJSON', { virtuals: true });
+activitySchema.set('toObject', { virtuals: true });
+
 const Activity = mongoose.model('Activity', activitySchema);
 
 
@@ -3954,6 +3967,7 @@ app.get('/student/activities', authenticateToken, async (req, res) => {
         const activities = await Activity.find(query)
             .populate('associatedWorkFile', 'title fileUrl costBytes')
             .populate('uploadedBy.teacherId', 'teacherName')
+            .populate('attemptCount')
             .sort({ createdAt: -1 });
 
         // Sort activities by relevance to student's class
@@ -3962,6 +3976,18 @@ app.get('/student/activities', authenticateToken, async (req, res) => {
             if (a.intendedClass === studentClass && b.intendedClass !== studentClass) return -1;
             if (b.intendedClass === studentClass && a.intendedClass !== studentClass) return 1;
             return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+
+        // Get attempt counts for all activities
+        const activityIds = sortedActivities.map(a => a._id);
+        const attemptCounts = await StudentActivitySubmission.aggregate([
+            { $match: { activity: { $in: activityIds } } },
+            { $group: { _id: '$activity', count: { $sum: 1 } } }
+        ]);
+
+        const attemptCountMap = {};
+        attemptCounts.forEach(ac => {
+            attemptCountMap[ac._id.toString()] = ac.count;
         });
 
         res.status(200).json({
@@ -3979,7 +4005,7 @@ app.get('/student/activities', authenticateToken, async (req, res) => {
                     teacherId: activity.uploadedBy.teacherId?._id,
                     teacherName: activity.uploadedBy.teacherName
                 },
-                attemptCount: activity.attemptCount || 0,
+                attemptCount: attemptCountMap[activity._id.toString()] || 0,
                 associatedWorkFile: activity.associatedWorkFile,
                 createdAt: activity.createdAt
             }))

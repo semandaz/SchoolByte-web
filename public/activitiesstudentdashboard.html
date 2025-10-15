@@ -752,9 +752,11 @@
                 if (activitiesResponse.ok) {
                     const activitiesData = await activitiesResponse.json();
                     allActivities = activitiesData.activities || [];
+                    console.log(`Fetched ${allActivities.length} activities for ${currentSubject}:`, allActivities);
                     displayActivities(allActivities);
                 } else {
-                    console.error(`Failed to fetch ${currentSubject} activities:`, activitiesResponse.status);
+                    const errorText = await activitiesResponse.text();
+                    console.error(`Failed to fetch ${currentSubject} activities:`, activitiesResponse.status, errorText);
                     document.getElementById('noResults').classList.remove('hidden');
                 }
             } catch (error) {
@@ -1016,27 +1018,36 @@
                         const data = await response.json();
                         const filtered = data.activities || [];
 
-                        // Build suggestions from filtered results
+                        // Build suggestions from filtered results - get unique titles
                         const suggestions = [];
+                        const seenTitles = new Set();
+                        
                         filtered.forEach(activity => {
-                            if (suggestions.length < 5 && !suggestions.includes(activity.title)) {
+                            if (suggestions.length < 5 && !seenTitles.has(activity.title)) {
                                 suggestions.push(activity.title);
+                                seenTitles.add(activity.title);
                             }
                         });
 
                         if (suggestions.length > 0) {
-                            searchSuggestions.innerHTML = suggestions.map(suggestion => 
-                                `<div class="suggestion-item" onclick="selectSuggestion('${suggestion.replace(/'/g, "\\'")}')">${suggestion}</div>`
-                            ).join('');
+                            searchSuggestions.innerHTML = suggestions.map(suggestion => {
+                                const escapedSuggestion = suggestion.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                                return `<div class="suggestion-item" onclick="selectSuggestion('${escapedSuggestion}')">${suggestion}</div>`;
+                            }).join('');
                             searchSuggestions.classList.add('active');
                         } else {
                             searchSuggestions.classList.remove('active');
                         }
 
+                        // Update displayed activities
                         displayActivities(filtered);
+                    } else {
+                        console.error('Failed to search activities:', response.status);
+                        searchSuggestions.classList.remove('active');
                     }
                 } catch (error) {
                     console.error('Search error:', error);
+                    searchSuggestions.classList.remove('active');
                 }
             }, 300);
         });
