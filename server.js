@@ -86,7 +86,8 @@ app.get('/api/workfiles/:subject', authenticateToken, async (req, res) => {
             return res.status(404).json({ message: 'Student not found' });
         }
 
-        const workFiles = await WorkFile.find({ subject: subject })
+        // Case-insensitive subject search
+        const workFiles = await WorkFile.find({ subject: { $regex: new RegExp(`^${subject}$`, 'i') } })
             .populate('activity')
             .sort({ createdAt: -1 });
 
@@ -3953,7 +3954,8 @@ app.get('/student/activities', authenticateToken, async (req, res) => {
         }
 
         let query = {};
-        if (subject) query.subject = subject;
+        // Case-insensitive subject search
+        if (subject) query.subject = { $regex: new RegExp(`^${subject}$`, 'i') };
         if (intendedClass) query.intendedClass = intendedClass;
 
         // Add search functionality
