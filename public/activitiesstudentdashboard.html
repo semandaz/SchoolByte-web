@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SchoolByte - Biology Activities</title>
+    <title>SchoolByte - Activities</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -188,34 +188,6 @@
             font-size: 1.2rem;
         }
 
-        .search-suggestions {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border-radius: 0 0 10px 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            z-index: 10;
-            max-height: 300px;
-            overflow-y: auto;
-            display: none;
-        }
-
-        .search-suggestions.active {
-            display: block;
-        }
-
-        .suggestion-item {
-            padding: 0.8rem 1.5rem;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .suggestion-item:hover {
-            background: var(--color-neutral-lightest);
-        }
-
         .activities-content {
             background-color: var(--color-neutral-white);
             border-radius: 12px;
@@ -375,194 +347,11 @@
             display: none;
         }
 
-        /* Activity Questions Page Styles */
-        .questions-container {
-            background-color: var(--color-neutral-white);
-            border-radius: 12px;
-            padding: 2.5rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            margin-bottom: 3rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .questions-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 5px;
-            height: 100%;
-            background: var(--gradient-background-primary);
-        }
-
-        .question-card {
-            background-color: var(--color-neutral-lightest);
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-            border-left: 4px solid var(--color-brand-primary);
-        }
-
-        .question-text {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: var(--color-brand-primary);
-        }
-
-        .answer-input {
-            width: 100%;
-            padding: 1rem;
-            border: 1px solid var(--color-neutral-light);
-            border-radius: 5px;
-            font-size: 1rem;
-            resize: vertical;
-            min-height: 100px;
-            transition: border-color 0.3s;
-        }
-
-        .answer-input:focus {
-            outline: none;
-            border-color: var(--color-brand-primary);
-            box-shadow: 0 0 0 2px rgba(26, 42, 108, 0.2);
-        }
-
-        .submit-btn {
-            display: block;
-            padding: 0.8rem 2rem;
-            background: var(--gradient-button-active);
-            color: white;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s;
-            margin: 2rem auto 0;
-            border: none;
-            cursor: pointer;
-            font-size: 1.1rem;
-        }
-
-        .submit-btn:hover {
-            background: var(--gradient-background-primary);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .submit-btn:disabled {
-            background: var(--color-neutral-medium);
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .teacher-info {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            color: var(--color-neutral-medium);
-            font-size: 0.9rem;
-        }
-
-        .teacher-info i {
-            color: var(--color-brand-gold);
-        }
-
-        .activity-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .activity-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--color-brand-primary);
-        }
-
-        .message-box {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
+        .loading {
             text-align: center;
-            max-width: 400px;
-            width: 90%;
-            display: none;
-        }
-
-        .message-box.active {
-            display: block;
-        }
-
-        .message-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .message-icon.success {
-            color: var(--color-success-green);
-        }
-
-        .message-icon.loading {
-            color: var(--color-brand-gold);
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .message-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: var(--color-brand-primary);
-        }
-
-        .message-text {
-            margin-bottom: 1.5rem;
-            color: var(--color-neutral-dark);
-        }
-
-        .message-btn {
-            padding: 0.6rem 1.5rem;
-            background: var(--gradient-button-active);
-            color: white;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s;
-            border: none;
-            cursor: pointer;
-        }
-
-        .message-btn:hover {
-            background: var(--gradient-background-primary);
-        }
-
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 999;
-            display: none;
-        }
-
-        .overlay.active {
-            display: block;
+            padding: 2rem;
+            color: var(--color-neutral-white);
+            font-size: 1.1rem;
         }
 
         @media (max-width: 768px) {
@@ -581,18 +370,12 @@
                 font-size: 1.8rem;
             }
 
-            .activities-content, .questions-container {
+            .activities-content {
                 padding: 1.5rem;
             }
 
             .activity-cards {
                 grid-template-columns: 1fr;
-            }
-
-            .activity-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
             }
         }
     </style>
@@ -600,7 +383,7 @@
 <body>
     <header>
         <div class="header-container">
-            <a href="biostudentdashboard.html" class="back-btn">
+            <a href="javascript:history.back()" class="back-btn">
                 <i class="fas fa-arrow-left"></i>
             </a>
             <a href="studentdashboard.html" class="logo">SchoolByte</a>
@@ -616,42 +399,27 @@
     <div class="container">
         <div class="subject-header">
             <h1 class="subject-title">
-                <i class="fas fa-flask subject-icon"></i>
-                Biology Activities
+                <i class="fas fa-tasks subject-icon" id="subjectIcon"></i>
+                <span id="subjectName">Activities</span>
             </h1>
-            <p class="subject-subtitle">Search for activities by topic, or browse activities below</p>
+            <p class="subject-subtitle" id="subjectSubtitle">Test your knowledge with interactive activities and earn Bytes.</p>
         </div>
 
         <div class="search-section">
             <div class="search-container">
-                <input type="text" class="search-input" id="searchInput" placeholder="Search for topics (e.g., Cell Structure, Photosynthesis)...">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search activities...">
                 <i class="fas fa-search search-icon"></i>
-                <div class="search-suggestions" id="searchSuggestions"></div>
             </div>
         </div>
 
-        <div class="activities-content" id="activitiesContent">
+        <div class="activities-content">
             <h2 class="section-title">
-                <i class="fas fa-tasks"></i>
+                <i class="fas fa-list-check"></i>
                 Available Activities
             </h2>
-            <div class="activity-cards" id="activityCardsContainer"></div>
-            <div class="no-results hidden" id="noResults">
-                <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; color: var(--color-neutral-medium);"></i>
-                <p>No activities found matching your search.</p>
-            </div>
-        </div>
-
-        <div class="questions-container hidden" id="questionsContainer">
-            <div class="activity-header">
-                <h2 class="activity-title" id="activityTitle">Activity Questions</h2>
-                <div class="teacher-info">
-                    <i class="fas fa-user"></i>
-                    <span id="teacherName">Teacher Name</span>
-                </div>
-            </div>
-            <div id="questionsList"></div>
-            <button class="submit-btn" id="submitAnswersBtn">Submit Answers</button>
+            <div id="loadingMessage" class="loading">Loading activities...</div>
+            <div id="activitiesContainer" class="activity-cards hidden"></div>
+            <div id="noResults" class="no-results hidden">No activities found.</div>
         </div>
     </div>
 
@@ -660,420 +428,226 @@
         <span id="bytesCount">0</span> Bytes
     </div>
 
-    <!-- Message Box -->
-    <div class="overlay" id="overlay"></div>
-    <div class="message-box" id="messageBox">
-        <i class="fas fa-spinner fa-spin message-icon loading" id="messageIcon"></i>
-        <h3 class="message-title" id="messageTitle">Submitting Answers</h3>
-        <p class="message-text" id="messageText">Please wait while we process your answers...</p>
-        <button class="message-btn hidden" id="messageBtn">Continue</button>
-    </div>
-
     <script>
-        // Subject configuration mapping
+        // Subject configuration with icons
         const subjectConfig = {
-            'biology': { icon: 'fas fa-flask', backLink: 'biostudentdashboard.html', name: 'Biology' },
-            'chemistry': { icon: 'fas fa-atom', backLink: 'chestudentdashboard.html', name: 'Chemistry' },
-            'physics': { icon: 'fas fa-bolt', backLink: 'phystudentdashboard.html', name: 'Physics' },
-            'mathematics': { icon: 'fas fa-calculator', backLink: 'mathstudentdashboard.html', name: 'Mathematics' },
-            'english language': { icon: 'fas fa-book', backLink: 'engstudentdashboard.html', name: 'English Language' },
-            'history': { icon: 'fas fa-landmark', backLink: 'hisstudentdashboard.html', name: 'History' },
-            'geography': { icon: 'fas fa-globe-africa', backLink: 'geostudentdashboard.html', name: 'Geography' },
-            'computer science': { icon: 'fas fa-laptop-code', backLink: 'crestudentdashboard.html', name: 'Computer Science' },
-            'agriculture': { icon: 'fas fa-tractor', backLink: 'agristudentdashboard.html', name: 'Agriculture' },
-            'literature in english': { icon: 'fas fa-book-reader', backLink: 'litstudentdashboard.html', name: 'Literature in English' },
-            'french': { icon: 'fas fa-language', backLink: 'fnstudentdashboard.html', name: 'French' },
-            'german': { icon: 'fas fa-language', backLink: 'gerstudentdashboard.html', name: 'German' },
-            'kiswahili': { icon: 'fas fa-language', backLink: 'kiswastudentdashboard.html', name: 'Kiswahili' },
-            'luganda': { icon: 'fas fa-language', backLink: 'lugstudentdashboard.html', name: 'Luganda' },
-            'fine art': { icon: 'fas fa-palette', backLink: 'pastudentdashboard.html', name: 'Fine Art' },
-            'performing arts': { icon: 'fas fa-theater-masks', backLink: 'entstudentdashboard.html', name: 'Performing Arts' },
-            'physical education': { icon: 'fas fa-running', backLink: 'pestudentdashboard.html', name: 'Physical Education' },
-            'technology and design': { icon: 'fas fa-tools', backLink: 'tdstudentdashboard.html', name: 'Technology and Design' }
+            'agriculture': { name: 'Agriculture', icon: 'fa-tractor' },
+            'biology': { name: 'Biology', icon: 'fa-dna' },
+            'chemistry': { name: 'Chemistry', icon: 'fa-flask' },
+            'christian religious education': { name: 'Christian Religious Education', icon: 'fa-bible' },
+            'english language': { name: 'English Language', icon: 'fa-language' },
+            'entrepreneurship education': { name: 'Entrepreneurship Education', icon: 'fa-lightbulb' },
+            'food and nutrition': { name: 'Food and Nutrition', icon: 'fa-utensils' },
+            'geography': { name: 'Geography', icon: 'fa-globe' },
+            'german': { name: 'German', icon: 'fa-language' },
+            'history': { name: 'History', icon: 'fa-landmark' },
+            'kiswahili': { name: 'Kiswahili', icon: 'fa-language' },
+            'literature in english': { name: 'Literature in English', icon: 'fa-book' },
+            'luganda': { name: 'Luganda', icon: 'fa-language' },
+            'mathematics': { name: 'Mathematics', icon: 'fa-calculator' },
+            'performing arts': { name: 'Performing Arts', icon: 'fa-masks-theater' },
+            'physical education': { name: 'Physical Education', icon: 'fa-running' },
+            'physics': { name: 'Physics', icon: 'fa-atom' },
+            'computer science': { name: 'Computer Science', icon: 'fa-computer' },
+            'technology and design': { name: 'Technology and Design', icon: 'fa-cog' }
         };
 
         let allActivities = [];
         let studentClass = '';
-        let currentActivityId = null;
-        let currentSubject = '';
 
-        async function loadStudentData() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Get subject from URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const subject = urlParams.get('subject');
+
+            if (!subject) {
+                window.location.href = 'studentdashboard.html';
+                return;
+            }
+
+            // Update page title and header
+            const subjectInfo = subjectConfig[subject.toLowerCase()] || { name: subject, icon: 'fa-tasks' };
+            document.title = `SchoolByte - ${subjectInfo.name} Activities`;
+            document.getElementById('subjectName').textContent = `${subjectInfo.name} Activities`;
+            document.getElementById('subjectIcon').className = `fas ${subjectInfo.icon} subject-icon`;
+
+            // Initialize elements
+            const studentNameDisplay = document.getElementById('studentNameDisplay');
+            const bytesCountElement = document.getElementById('bytesCount');
+            const searchInput = document.getElementById('searchInput');
+
+            // Get student data
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'studentlogin.html';
+                return;
+            }
+
             try {
-                // Get subject from URL parameter
-                const urlParams = new URLSearchParams(window.location.search);
-                currentSubject = urlParams.get('subject');
-
-                if (!currentSubject) {
-                    alert('No subject specified. Redirecting to dashboard.');
-                    window.location.href = 'studentdashboard.html';
-                    return;
-                }
-
-                // Normalize subject name (lowercase)
-                currentSubject = currentSubject.toLowerCase();
-
-                // Update page content based on subject
-                if (subjectConfig[currentSubject]) {
-                    const config = subjectConfig[currentSubject];
-                    document.title = `SchoolByte - ${config.name} Activities`;
-                    document.querySelector('.back-btn').href = config.backLink;
-                    document.querySelector('.subject-title').innerHTML = `<i class="${config.icon} subject-icon"></i> ${config.name} Activities`;
-                    document.getElementById('searchInput').placeholder = `Search for ${config.name} topics...`;
-                }
-
-                const token = localStorage.getItem('studentToken') || localStorage.getItem('token');
-                if (!token) {
-                    window.location.href = 'studentlogin.html';
-                    return;
-                }
-
-                const profileResponse = await fetch('/student/dashboard', {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                // Fetch student dashboard data
+                const dashboardResponse = await fetch('/student/dashboard', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
 
-                if (profileResponse.ok) {
-                    const profileData = await profileResponse.json();
-                    const student = profileData.student;
-                    document.getElementById('studentNameDisplay').textContent = student.preferredName || student.studentName;
-                    document.getElementById('bytesCount').textContent = student.bytes || 0;
-                    studentClass = student.class;
-                } else if (profileResponse.status === 401 || profileResponse.status === 403) {
+                if (dashboardResponse.ok) {
+                    const data = await dashboardResponse.json();
+                    const displayName = data.student.preferredName || data.student.studentName;
+                    studentNameDisplay.textContent = displayName;
+                    bytesCountElement.textContent = data.student.bytes || 0;
+                    studentClass = data.student.class;
+                } else if (dashboardResponse.status === 401 || dashboardResponse.status === 403) {
                     localStorage.removeItem('token');
-                    localStorage.removeItem('studentToken');
                     window.location.href = 'studentlogin.html';
                     return;
-                }
-
-                // Fetch activities for the specific subject from URL
-                const activitiesResponse = await fetch(`/student/activities?subject=${encodeURIComponent(currentSubject)}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (activitiesResponse.ok) {
-                    const activitiesData = await activitiesResponse.json();
-                    allActivities = activitiesData.activities || [];
-                    console.log(`Fetched ${allActivities.length} activities for ${currentSubject}:`, allActivities);
-                    displayActivities(allActivities);
                 } else {
-                    const errorText = await activitiesResponse.text();
-                    console.error(`Failed to fetch ${currentSubject} activities:`, activitiesResponse.status, errorText);
-                    document.getElementById('noResults').classList.remove('hidden');
+                    throw new Error(`Failed to fetch student data: ${dashboardResponse.status}`);
                 }
+
+                // Fetch activities for this subject
+                await fetchActivities(subject, token);
+
             } catch (error) {
                 console.error('Error loading data:', error);
-                document.getElementById('noResults').classList.remove('hidden');
+                document.getElementById('loadingMessage').textContent = 'Error loading activities. Please try again.';
+                document.getElementById('loadingMessage').style.color = 'var(--color-error-red)';
+            }
+
+            // Search functionality
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                filterActivities(searchTerm);
+            });
+        });
+
+        async function fetchActivities(subject, token) {
+            const loadingMessage = document.getElementById('loadingMessage');
+            const activitiesContainer = document.getElementById('activitiesContainer');
+            const noResults = document.getElementById('noResults');
+
+            try {
+                const response = await fetch(`/student/activities?subject=${encodeURIComponent(subject)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        localStorage.removeItem('token');
+                        window.location.href = 'studentlogin.html';
+                        return;
+                    }
+                    throw new Error(`Failed to fetch activities: ${response.status}`);
+                }
+
+                const data = await response.json();
+                allActivities = data.activities || [];
+                studentClass = data.studentClass; // Assuming studentClass is also returned here
+
+                loadingMessage.classList.add('hidden');
+
+                if (allActivities.length === 0) {
+                    noResults.classList.remove('hidden');
+                    activitiesContainer.classList.add('hidden');
+                } else {
+                    displayActivities(allActivities);
+                    activitiesContainer.classList.remove('hidden');
+                    noResults.classList.add('hidden');
+                }
+
+            } catch (error) {
+                console.error('Error fetching activities:', error);
+                loadingMessage.textContent = 'Error loading activities. Please try again.';
+                loadingMessage.style.color = 'var(--color-error-red)';
+                noResults.classList.remove('hidden');
+                activitiesContainer.classList.add('hidden');
             }
         }
 
         function displayActivities(activities) {
-            const container = document.getElementById('activityCardsContainer');
+            const activitiesContainer = document.getElementById('activitiesContainer');
             const noResults = document.getElementById('noResults');
 
-            container.innerHTML = '';
+            activitiesContainer.innerHTML = ''; // Clear previous activities
 
-            if (!activities || activities.length === 0) {
+            if (activities.length === 0) {
+                activitiesContainer.classList.add('hidden');
                 noResults.classList.remove('hidden');
                 return;
             }
 
+            activitiesContainer.classList.remove('hidden');
             noResults.classList.add('hidden');
 
-            // Sort activities - user's class first, then by creation date
-            const sorted = [...activities].sort((a, b) => {
-                if (a.intendedClass === studentClass && b.intendedClass !== studentClass) return -1;
-                if (b.intendedClass === studentClass && a.intendedClass !== studentClass) return 1;
-                return new Date(b.createdAt) - new Date(a.createdAt);
+            activities.forEach(activity => {
+                const isUserClass = activity.intendedClass === studentClass;
+                const card = document.createElement('div');
+                card.className = `activity-card ${isUserClass ? 'user-class' : ''}`;
+
+                // Determine correct back link based on subject
+                const subject = new URLSearchParams(window.location.search).get('subject');
+                const backLink = subjectConfig[subject?.toLowerCase()]?.backLink || 'studentdashboard.html'; // Fallback to general dashboard
+
+                card.innerHTML = `
+                    <h3 class="activity-name">${activity.activityName}</h3>
+                    <div class="activity-meta">
+                        <span class="activity-class">${activity.intendedClass}</span>
+                        ${isUserClass ? '<span style="color: var(--color-brand-gold); font-weight: 600;">Your Class</span>' : ''}
+                    </div>
+                    <p class="activity-description">${activity.description || 'Complete this activity to earn Bytes!'}</p>
+                    <div class="activity-stats">
+                        <span class="stat-item">
+                            <i class="fas fa-question-circle"></i>
+                            ${activity.questions ? activity.questions.length : 0} Questions
+                        </span>
+                        <span class="stat-item">
+                            <i class="fas fa-coins"></i>
+                            ${activity.totalBytesReward || (activity.questions ? activity.questions.length : 0)} Bytes
+                        </span>
+                    </div>
+                    <button class="start-btn" onclick="startActivity('${activity._id}')">
+                        <i class="fas fa-play"></i> Start Activity
+                    </button>
+                `;
+
+                activitiesContainer.appendChild(card);
             });
-
-            sorted.forEach(activity => {
-                const card = createActivityCard(activity);
-                container.appendChild(card);
-            });
         }
 
-        function createActivityCard(activity) {
-            const card = document.createElement('div');
-            card.className = 'activity-card';
-            if (activity.intendedClass === studentClass) {
-                card.classList.add('user-class');
-            }
+        function filterActivities(searchTerm) {
+            const activitiesContainer = document.getElementById('activitiesContainer');
+            const noResults = document.getElementById('noResults');
 
-            const teacherName = activity.uploadedBy?.teacherName || 'Unknown Teacher';
-            const attemptCount = activity.attemptCount || 0;
-
-            card.innerHTML = `
-                <h3 class="activity-name">${activity.title}</h3>
-                <div class="activity-meta">
-                    <span><i class="fas fa-book"></i> ${activity.questions ? activity.questions.length : 0} Questions</span>
-                    <span class="activity-class">${activity.intendedClass}</span>
-                </div>
-                <p class="activity-description">${activity.description || 'No description available'}</p>
-                <div class="activity-stats">
-                    <div class="stat-item">
-                        <i class="fas fa-coins"></i> ${activity.maxBytesReward || 5} bytes max
-                    </div>
-                    <div class="stat-item">
-                        <i class="fas fa-user"></i> ${teacherName}
-                    </div>
-                    <div class="stat-item">
-                        <i class="fas fa-users"></i> ${attemptCount} attempt${attemptCount !== 1 ? 's' : ''}
-                    </div>
-                </div>
-                <button class="start-btn" onclick="startActivity('${activity._id}', '${activity.title}', '${teacherName}')">
-                    <i class="fas fa-play"></i> Start Activity
-                </button>
-            `;
-            return card;
-        }
-
-        async function startActivity(activityId, title, teacherName) {
-            try {
-                const token = localStorage.getItem('studentToken') || localStorage.getItem('token');
-                if (!token) {
-                    alert('Please log in to start activities');
-                    window.location.href = 'studentlogin.html';
-                    return;
-                }
-
-                const response = await fetch(`/student/activities/${activityId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (response.ok) {
-                    const activityData = await response.json();
-                    displayActivityQuestions(activityData.activity, title, teacherName);
-                } else {
-                    console.error('Failed to fetch activity details:', response.status);
-                    alert('Failed to load activity. Please try again.');
-                }
-            } catch (error) {
-                console.error('Error starting activity:', error);
-                alert('An error occurred while starting the activity.');
-            }
-        }
-
-        function displayActivityQuestions(activity, title, teacherName) {
-            document.getElementById('activitiesContent').classList.add('hidden');
-            document.getElementById('questionsContainer').classList.remove('hidden');
-
-            document.getElementById('activityTitle').textContent = title;
-            document.getElementById('teacherName').textContent = teacherName;
-
-            const questionsList = document.getElementById('questionsList');
-            questionsList.innerHTML = '';
-
-            currentActivityId = activity._id;
-
-            if (activity.questions && activity.questions.length > 0) {
-                activity.questions.forEach((question, index) => {
-                    const questionCard = document.createElement('div');
-                    questionCard.className = 'question-card';
-                    questionCard.innerHTML = `
-                        <h3 class="question-text">${index + 1}. ${question.questionText}</h3>
-                        <textarea class="answer-input" id="answer-${index}" placeholder="Type your answer here..." data-question-index="${index}"></textarea>
-                    `;
-                    questionsList.appendChild(questionCard);
-                });
-            } else {
-                questionsList.innerHTML = '<p>No questions available for this activity.</p>';
-            }
-        }
-
-        async function submitAnswers() {
-            const submitBtn = document.getElementById('submitAnswersBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-
-            try {
-                const token = localStorage.getItem('studentToken') || localStorage.getItem('token');
-                if (!token) {
-                    alert('Please log in to submit answers');
-                    window.location.href = 'studentlogin.html';
-                    return;
-                }
-
-                // Collect all answers
-                const answers = [];
-                const answerInputs = document.querySelectorAll('.answer-input');
-
-                answerInputs.forEach(input => {
-                    const questionIndex = parseInt(input.dataset.questionIndex);
-                    answers.push({
-                        questionIndex: questionIndex,
-                        answer: input.value
-                    });
-                });
-
-                // Show submission message
-                showMessage('Submitting Answers', 'Please wait while we process your answers...', 'loading');
-
-                // Submit answers to backend
-                const response = await fetch('/student/activities/submit', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        activityId: currentActivityId,
-                        answers: answers
-                    })
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-
-                    // Show success message
-                    showMessage('Answers Submitted!', `You earned ${result.bytesEarned || 0} bytes!`, 'success');
-
-                    // Update bytes counter
-                    document.getElementById('bytesCount').textContent = result.studentCurrentBytes || document.getElementById('bytesCount').textContent;
-
-                    // Set up redirect after 3 seconds to the correct subject dashboard
-                    setTimeout(() => {
-                        const redirectLink = subjectConfig[currentSubject]?.backLink || 'studentdashboard.html';
-                        window.location.href = redirectLink;
-                    }, 3000);
-                } else {
-                    const errorData = await response.json().catch(() => ({ message: 'Submission failed' }));
-                    showMessage('Submission Failed', errorData.message || 'Please try again.', 'error');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = 'Submit Answers';
-                }
-            } catch (error) {
-                console.error('Error submitting answers:', error);
-                showMessage('Submission Error', 'An error occurred. Please try again.', 'error');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Submit Answers';
-            }
-        }
-
-        function showMessage(title, text, type) {
-            const messageBox = document.getElementById('messageBox');
-            const messageTitle = document.getElementById('messageTitle');
-            const messageText = document.getElementById('messageText');
-            const messageIcon = document.getElementById('messageIcon');
-            const messageBtn = document.getElementById('messageBtn');
-            const overlay = document.getElementById('overlay');
-
-            messageTitle.textContent = title;
-            messageText.textContent = text;
-
-            // Reset icon classes
-            messageIcon.className = 'message-icon';
-
-            if (type === 'loading') {
-                messageIcon.classList.add('fas', 'fa-spinner', 'fa-spin', 'loading');
-                messageBtn.classList.add('hidden');
-            } else if (type === 'success') {
-                messageIcon.classList.add('fas', 'fa-check-circle', 'success');
-                messageBtn.classList.remove('hidden');
-                messageBtn.textContent = 'Continue';
-                messageBtn.onclick = () => {
-                    messageBox.classList.remove('active');
-                    overlay.classList.remove('active');
-                    window.location.href = 'biostudentdashboard.html';
-                };
-            } else {
-                messageIcon.classList.add('fas', 'fa-exclamation-circle');
-                messageIcon.style.color = 'var(--color-error-red)';
-                messageBtn.classList.remove('hidden');
-                messageBtn.textContent = 'Try Again';
-                messageBtn.onclick = () => {
-                    messageBox.classList.remove('active');
-                    overlay.classList.remove('active');
-                };
-            }
-
-            messageBox.classList.add('active');
-            overlay.classList.add('active');
-        }
-
-        // Search functionality with backend integration
-        const searchInput = document.getElementById('searchInput');
-        const searchSuggestions = document.getElementById('searchSuggestions');
-        let searchTimeout;
-
-        searchInput.addEventListener('input', async (e) => {
-            const query = e.target.value.trim();
-
-            // Clear previous timeout
-            clearTimeout(searchTimeout);
-
-            if (query.length < 2) {
-                searchSuggestions.classList.remove('active');
+            if (!searchTerm) {
                 displayActivities(allActivities);
+                activitiesContainer.classList.remove('hidden');
+                noResults.classList.add('hidden');
                 return;
             }
 
-            // Debounce search
-            searchTimeout = setTimeout(async () => {
-                try {
-                    const token = localStorage.getItem('studentToken') || localStorage.getItem('token');
-                    const response = await fetch(`/student/activities?subject=${encodeURIComponent(currentSubject)}&search=${encodeURIComponent(query)}`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
+            const filtered = allActivities.filter(activity => {
+                const lowerCaseSearchTerm = searchTerm.toLowerCase();
+                return activity.activityName.toLowerCase().includes(lowerCaseSearchTerm) ||
+                       (activity.description && activity.description.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                       activity.intendedClass.toLowerCase().includes(lowerCaseSearchTerm);
+            });
 
-                    if (response.ok) {
-                        const data = await response.json();
-                        const filtered = data.activities || [];
-
-                        // Build suggestions from filtered results - get unique titles
-                        const suggestions = [];
-                        const seenTitles = new Set();
-                        
-                        filtered.forEach(activity => {
-                            if (suggestions.length < 5 && !seenTitles.has(activity.title)) {
-                                suggestions.push(activity.title);
-                                seenTitles.add(activity.title);
-                            }
-                        });
-
-                        if (suggestions.length > 0) {
-                            searchSuggestions.innerHTML = suggestions.map(suggestion => {
-                                const escapedSuggestion = suggestion.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                                return `<div class="suggestion-item" onclick="selectSuggestion('${escapedSuggestion}')">${suggestion}</div>`;
-                            }).join('');
-                            searchSuggestions.classList.add('active');
-                        } else {
-                            searchSuggestions.classList.remove('active');
-                        }
-
-                        // Update displayed activities
-                        displayActivities(filtered);
-                    } else {
-                        console.error('Failed to search activities:', response.status);
-                        searchSuggestions.classList.remove('active');
-                    }
-                } catch (error) {
-                    console.error('Search error:', error);
-                    searchSuggestions.classList.remove('active');
-                }
-            }, 300);
-        });
-
-        function selectSuggestion(suggestion) {
-            searchInput.value = suggestion;
-            searchSuggestions.classList.remove('active');
-            const filtered = allActivities.filter(activity => 
-                activity.title.toLowerCase().includes(suggestion.toLowerCase())
-            );
             displayActivities(filtered);
+            if (filtered.length === 0) {
+                activitiesContainer.classList.add('hidden');
+                noResults.classList.remove('hidden');
+            } else {
+                activitiesContainer.classList.remove('hidden');
+                noResults.classList.add('hidden');
+            }
         }
 
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.search-container')) {
-                searchSuggestions.classList.remove('active');
-            }
-        });
-
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', () => {
-            loadStudentData();
-
-            // Set up submit button event listener
-            document.getElementById('submitAnswersBtn').addEventListener('click', submitAnswers);
-        });
+        function startActivity(activityId) {
+            // Redirect to activity questions page
+            window.location.href = `activity-questions.html?id=${activityId}`;
+        }
     </script>
 </body>
 </html>
