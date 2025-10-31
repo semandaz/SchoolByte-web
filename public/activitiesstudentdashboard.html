@@ -477,7 +477,7 @@
             const searchInput = document.getElementById('searchInput');
 
             // Get student data
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('studentToken');
             if (!token) {
                 window.location.href = 'studentlogin.html';
                 return;
