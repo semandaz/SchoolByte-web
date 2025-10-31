@@ -621,20 +621,46 @@
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
       // Initialize elements
       const studentNameDisplay = document.getElementById('studentNameDisplay');
       const welcomeMessage = document.getElementById('welcomeMessage');
       const bytesCountElement = document.getElementById('bytesCount');
 
-      // Try to get student data from localStorage
-      const studentData = JSON.parse(localStorage.getItem('studentData'));
+      // Get student token
+      const token = localStorage.getItem('studentToken');
+      if (!token) {
+        window.location.href = 'studentlogin.html';
+        return;
+      }
 
-      if (studentData) {
-        const displayName = studentData.preferredName || studentData.studentName;
+      try {
+        // Fetch student dashboard data to verify authentication
+        const response = await fetch('/student/dashboard', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            localStorage.removeItem('studentToken');
+            window.location.href = 'studentlogin.html';
+            return;
+          }
+          throw new Error('Failed to fetch student data');
+        }
+
+        const data = await response.json();
+        const displayName = data.student.preferredName || data.student.studentName;
         studentNameDisplay.textContent = displayName;
         welcomeMessage.textContent = `Hello ${displayName}, ready to explore the language of England?`;
-        bytesCountElement.textContent = studentData.bytes || 125;
+        bytesCountElement.textContent = data.student.bytes || 0;
+
+      } catch (error) {
+        console.error('Error loading student data:', error);
+        window.location.href = 'studentlogin.html';
+        return;
       }
 
       // Create floating particles
