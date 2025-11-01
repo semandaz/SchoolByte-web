@@ -353,7 +353,7 @@
                 transition-duration: 0.01ms !important;
                 scroll-behavior: auto !important;
             }
-            
+
             .book, .moving-gradient {
                 display: none !important;
             }
@@ -364,11 +364,11 @@
             .main-content {
                 padding: 2rem 1rem;
             }
-            
+
             .logo {
                 font-size: 3rem;
             }
-            
+
             .avatar {
                 width: 80px;
                 height: 80px;
@@ -390,31 +390,31 @@
 <body>
     <!-- Moving Gradient Background -->
     <div class="moving-gradient"></div>
-    
+
     <!-- Floating Books -->
     <div class="floating-books" id="floatingBooks"></div>
-    
+
     <!-- Main Content -->
     <div class="main-content">
         <h1 class="logo">SchoolByte</h1>
-        
+
         <div class="avatar">
             <i class="fas fa-user-graduate"></i>
         </div>
-        
+
         <h2 class="text-2xl font-semibold mb-6">Student Login</h2>
-        
+
         <form id="loginForm">
             <div class="form-group">
                 <label for="studentName">Student's Full Name</label>
                 <input type="text" id="studentName" placeholder="e.g., Naluwagga Joy" required>
             </div>
-            
+
             <div class="form-group">
                 <label for="indexNumber">Index Number</label>
                 <input type="text" id="indexNumber" placeholder="e.g., 23MMS22" pattern="[A-Za-z0-9]+" required>
             </div>
-            
+
             <div class="form-group">
                 <label for="class">Class</label>
                 <select id="class" required>
@@ -427,7 +427,7 @@
                     <option value="S6">S6</option>
                 </select>
             </div>
-            
+
             <div class="form-group">
                 <label for="stream">Stream</label>
                 <select id="stream" required>
@@ -447,17 +447,17 @@
                     <option value="West">West</option>
                 </select>
             </div>
-            
+
             <div class="form-group">
                 <label for="classTeacher">Class Teacher's Name</label>
                 <input type="text" id="classTeacher" placeholder="e.g., Mr. Katongole" required>
             </div>
-            
+
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input type="email" id="email" placeholder="schoolbyte@gmail.com" required>
             </div>
-            
+
             <div class="form-group">
                 <label for="password">Password</label>
                 <div style="position: relative;">
@@ -465,7 +465,7 @@
                     <i class="fas fa-eye password-toggle" id="togglePassword"></i>
                 </div>
             </div>
-            
+
             <div class="options">
                 <div class="remember-me">
                     <input type="checkbox" id="rememberMe">
@@ -475,11 +475,11 @@
                     <a href="#">Forgot password?</a>
                 </div>
             </div>
-            
+
             <button type="submit" class="login-btn" id="loginBtn">Log In</button>
-            
+
             <div class="divider">or continue with</div>
-            
+
             <div class="social-login">
                 <a href="#" class="social-btn">
                     <i class="fab fa-google"></i>
@@ -491,7 +491,7 @@
                     <i class="fab fa-apple"></i>
                 </a>
             </div>
-            
+
             <p class="register-link">
                 Don't have an account? <a href="studentsignup.html">Sign up</a>
             </p>
@@ -502,7 +502,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Create floating books
             createFloatingBooks();
-            
+
             // DOM Elements
             const loginForm = document.getElementById('loginForm');
             const loginBtn = document.getElementById('loginBtn');
@@ -521,26 +521,26 @@
                 const container = document.getElementById('floatingBooks');
                 const bookCount = 15;
                 const bookIcons = ['book', 'book-open', 'bookmark', 'graduation-cap', 'scroll', 'file-alt'];
-                
+
                 // Check for reduced motion preference
                 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
                 if (reducedMotion) return;
-                
+
                 for (let i = 0; i < bookCount; i++) {
                     const book = document.createElement('i');
                     book.classList.add('book', 'fas', `fa-${bookIcons[Math.floor(Math.random() * bookIcons.length)]}`);
-                    
+
                     // Random position and animation
                     const posX = Math.random() * 100;
                     const delay = Math.random() * 10;
                     const duration = Math.random() * 15 + 10;
                     const size = Math.random() * 1 + 1;
-                    
+
                     book.style.left = `${posX}%`;
                     book.style.animationDuration = `${duration}s`;
                     book.style.animationDelay = `${delay}s`;
                     book.style.fontSize = `${size}rem`;
-                    
+
                     container.appendChild(book);
                 }
             }
@@ -562,22 +562,22 @@
                 const isTeacherValid = classTeacherInput.value.trim() !== '';
                 const isEmailValid = emailInput.value.trim() !== '';
                 const isPasswordValid = passwordInput.value.trim() !== '';
-                
+
                 loginBtn.disabled = !(isNameValid && isIndexValid && isClassSelected && isStreamSelected && isTeacherValid && isEmailValid && isPasswordValid);
             }
 
             // Form submission
             loginForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                
+
                 if (!studentNameInput.value || !indexNumberInput.value || !classSelect.value || !streamSelect.value || !classTeacherInput.value || !emailInput.value || !passwordInput.value) {
                     alert('Please fill in all fields.');
                     return;
                 }
-                
+
                 loginBtn.disabled = true;
                 loginBtn.textContent = 'Logging in...';
-                
+
                 try {
                     const response = await fetch(`${window.location.origin}/login-student`, {
                         method: 'POST',
@@ -589,21 +589,17 @@
                             password: passwordInput.value
                         })
                     });
-                    
+
                     const data = await response.json();
+
+                    // Store token in localStorage (use 'token' as the key)
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userData', JSON.stringify(data.student));
+
+
+                    alert('Login successful! Redirecting to dashboard...');
+                    window.location.href = 'studentdashboard.html';
                     
-                    if (response.ok) {
-                        // Store the JWT token with correct key name
-                        localStorage.setItem('studentToken', data.token);
-                        localStorage.setItem('userData', JSON.stringify(data.student));
-                        
-                        alert('Login successful! Redirecting to dashboard...');
-                        window.location.href = 'studentdashboard.html';
-                    } else {
-                        alert(data.message || 'Login failed. Please try again.');
-                        loginBtn.disabled = false;
-                        loginBtn.textContent = 'Log In';
-                    }
                 } catch (error) {
                     console.error('Login error:', error);
                     alert('Network error. Please check your connection and try again.');
