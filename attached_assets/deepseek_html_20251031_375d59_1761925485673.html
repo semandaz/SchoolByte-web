@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Byte-Sudoku</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+        }
+
+        .difficulty-selector {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 20px;
+        }
+
+        .difficulty-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .difficulty-btn {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .difficulty-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-3px);
+        }
+
+        .difficulty-btn.active {
+            background: rgba(255, 165, 0, 0.5);
+            border-color: #ff9800;
+        }
+
+        .sudoku-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #sudoku-board {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            grid-template-rows: repeat(9, 1fr);
+            gap: 1px;
+            width: 100%;
+            max-width: 450px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .cell:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .cell.selected {
+            background-color: rgba(255, 165, 0, 0.3);
+        }
+
+        .cell.given {
+            color: #ffcc00;
+            font-weight: 700;
+        }
+
+        .cell.user-input {
+            color: #a5d6a7;
+        }
+
+        .cell.error {
+            background-color: rgba(244, 67, 54, 0.3);
+            color: #ef9a9a;
+        }
+
+        .cell:nth-child(3n):not(:nth-child(9n)) {
+            border-right: 2px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .cell:nth-child(n+19):nth-child(-n+27),
+        .cell:nth-child(n+46):nth-child(-n+54) {
+            border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .number-pad {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .number-btn {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .number-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .number-btn.active {
+            background: rgba(255, 165, 0, 0.5);
+            border-color: #ff9800;
+        }
+
+        .game-controls {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #ffcc00;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            background: #ff9800;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: #f57c00;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #4CAF50;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #45a049;
+        }
+
+        .btn-danger {
+            background: #f44336;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #d32f2f;
+        }
+
+        .score-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .score-item {
+            text-align: center;
+        }
+
+        .score-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffcc00;
+        }
+
+        .chances-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .chance-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chance-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .chance-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ffcc00;
+        }
+
+        .instructions {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .timer-display {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .timer-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffcc00;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+            margin: 10% auto;
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content h2 {
+            color: #ffcc00;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .summary-stats {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .summary-value {
+            color: #ffcc00;
+            font-weight: 700;
+        }
+
+        .new-game-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .new-game-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .hint-modal {
+            display: none;
+            position: fixed;
+            z-index: 1100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+
+        .hint-modal-content {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .hint-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .hint-option {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .hint-option:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .hint-cost {
+            color: #ffcc00;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                flex-direction: column;
+            }
+
+            .difficulty-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .modal-content {
+                margin: 20% auto;
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧩 Byte-Sudoku</h1>
+            <p class="subtitle">Challenge your mind with Sudoku puzzles of varying difficulty levels!</p>
+        </header>
+
+        <div class="difficulty-selector">
+            <h2>Select Difficulty</h2>
+            <div class="difficulty-buttons">
+                <button class="difficulty-btn" data-difficulty="easy">Easy (10 bytes)</button>
+                <button class="difficulty-btn" data-difficulty="medium">Medium (15 bytes)</button>
+                <button class="difficulty-btn" data-difficulty="hard">Hard (25 bytes)</button>
+                <button class="difficulty-btn" data-difficulty="impossible">Impossible (40 bytes)</button>
+                <button class="difficulty-btn" data-difficulty="insane">Insane (60 bytes)</button>
+                <button class="difficulty-btn" data-difficulty="brutal">Brutal (100 bytes)</button>
+            </div>
+        </div>
+
+        <div class="timer-display">
+            <div>⏱️ Game Timer</div>
+            <div class="timer-value" id="game-timer">2:30</div>
+        </div>
+
+        <div class="game-container">
+            <div class="sudoku-container">
+                <h2 id="current-difficulty">Select a difficulty to begin</h2>
+                <div id="sudoku-board">
+                    <!-- Sudoku board will be generated here -->
+                </div>
+                <div class="number-pad">
+                    <div class="number-btn" data-number="1">1</div>
+                    <div class="number-btn" data-number="2">2</div>
+                    <div class="number-btn" data-number="3">3</div>
+                    <div class="number-btn" data-number="4">4</div>
+                    <div class="number-btn" data-number="5">5</div>
+                    <div class="number-btn" data-number="6">6</div>
+                    <div class="number-btn" data-number="7">7</div>
+                    <div class="number-btn" data-number="8">8</div>
+                    <div class="number-btn" data-number="9">9</div>
+                    <div class="number-btn" data-number="erase">⌫</div>
+                </div>
+            </div>
+
+            <div class="game-controls">
+                <div class="control-group">
+                    <h2>Game Controls</h2>
+                    <button id="start-btn" class="btn" disabled>
+                        <span>▶ Start Game</span>
+                    </button>
+                    
+                    <button id="hint-btn" class="btn btn-secondary" disabled>
+                        <span>💡 I'm Stuck</span>
+                    </button>
+
+                    <div class="score-container">
+                        <div class="score-item">
+                            <div class="score-label">Bytes</div>
+                            <div class="score-value" id="bytes-score">0</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-label">Accuracy</div>
+                            <div class="score-value" id="accuracy">0%</div>
+                        </div>
+                        <div class="score-item">
+                            <div class="score-label">Grade</div>
+                            <div class="score-value" id="grade">0%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="chances-container">
+                        <div class="chance-item">
+                            <span class="chance-label">Chances Remaining:</span>
+                            <span class="chance-value" id="chances-remaining">0</span>
+                        </div>
+                        <div class="chance-item">
+                            <span class="chance-label">Free Hints:</span>
+                            <span class="chance-value" id="free-hints">0</span>
+                        </div>
+                        <div class="chance-item">
+                            <span class="chance-label">Consecutive Correct:</span>
+                            <span class="chance-value" id="consecutive-correct">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="instructions">
+                    <h3>📚 How to Play:</h3>
+                    <p>1. Select a difficulty level from the options above</p>
+                    <p>2. Click "Start Game" to begin the puzzle</p>
+                    <p>3. Fill the grid so that each row, column, and 3x3 box contains all digits from 1 to 9</p>
+                    <p>4. Click on a cell and then select a number from the keypad</p>
+                    <p>5. Each wrong answer uses one chance</p>
+                    <p>6. Use "I'm Stuck" for hints (free ones available, then pay with bytes)</p>
+                    <p>7. Complete as much as possible within the time limit</p>
+                    <p>8. Your grade is calculated based on accuracy and bytes earned</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="summary-modal" class="modal">
+        <div class="modal-content">
+            <h2>🎮 Game Session Complete!</h2>
+            <div class="summary-stats">
+                <div class="summary-item">
+                    <span class="summary-label">Final Grade:</span>
+                    <span class="summary-value" id="final-grade">0%</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Accuracy:</span>
+                    <span class="summary-value" id="final-accuracy">0%</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Bytes Earned:</span>
+                    <span class="summary-value" id="final-bytes">0</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Max Bytes:</span>
+                    <span class="summary-value" id="final-max-bytes">10</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Time Played:</span>
+                    <span class="summary-value" id="final-time">2:30</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Perfect Game Bonus:</span>
+                    <span class="summary-value" id="perfect-bonus">No</span>
+                </div>
+            </div>
+            <button class="new-game-btn" onclick="startNewGame()">🎯 New Game?</button>
+        </div>
+    </div>
+
+    <div id="hint-modal" class="hint-modal">
+        <div class="hint-modal-content">
+            <h2>💡 Need Help?</h2>
+            <p>Select the type of hint you'd like:</p>
+            <div class="hint-options">
+                <div class="hint-option" data-hint-type="number">
+                    <div>Just the correct number</div>
+                    <div class="hint-cost" id="number-hint-cost">Cost: 0 bytes</div>
+                </div>
+                <div class="hint-option" data-hint-type="explanation">
+                    <div>Number + explanation</div>
+                    <div class="hint-cost" id="explanation-hint-cost">Cost: 0 bytes</div>
+                </div>
+                <div class="hint-option" data-hint-type="strategy">
+                    <div>Number + explanation + strategy tip</div>
+                    <div class="hint-cost" id="strategy-hint-cost">Cost: 0 bytes</div>
+                </div>
+            </div>
+            <button class="btn" onclick="closeHintModal()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        const gameState = {
+            currentDifficulty: null,
+            board: [],
+            solution: [],
+            userBoard: [],
+            selectedCell: null,
+            isPlaying: false,
+            gameTimer: null,
+            gameTimeRemaining: 150, // 2.5 minutes in seconds
+            gameStartTime: null,
+            bytesScore: 0,
+            maxBytes: 10,
+            correctAnswers: 0,
+            totalAttempts: 0,
+            difficultyBytes: {
+                easy: 10,
+                medium: 15,
+                hard: 25,
+                impossible: 40,
+                insane: 60,
+                brutal: 100
+            },
+            // Chance system
+            initialChances: {
+                easy: 10,
+                medium: 8,
+                hard: 6,
+                impossible: 4,
+                insane: 3,
+                brutal: 2
+            },
+            remainingChances: 0,
+            // Free "I'm Stuck" chances
+            freeStuckChances: {
+                easy: 3,
+                medium: 2,
+                hard: 1,
+                impossible: 0,
+                insane: 0,
+                brutal: 0
+            },
+            remainingFreeHints: 0,
+            // Byte costs for hints
+            hintCosts: {
+                easy: { number: 2, explanation: 3, strategy: 4 },
+                medium: { number: 5, explanation: 7, strategy: 10 },
+                hard: { number: 10, explanation: 15, strategy: 20 },
+                impossible: { number: 15, explanation: 22, strategy: 30 },
+                insane: { number: 20, explanation: 30, strategy: 40 },
+                brutal: { number: 25, explanation: 37, strategy: 50 }
+            },
+            // Bonus bytes per remaining chance
+            bonusBytesPerChance: {
+                easy: 2,
+                medium: 3,
+                hard: 5,
+                impossible: 8,
+                insane: 12,
+                brutal: 20
+            },
+            // Consecutive correct answers
+            consecutiveCorrect: 0
+        };
+
+        // DOM elements
+        const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+        const startBtn = document.getElementById('start-btn');
+        const hintBtn = document.getElementById('hint-btn');
+        const sudokuBoard = document.getElementById('sudoku-board');
+        const currentDifficultyDisplay = document.getElementById('current-difficulty');
+        const bytesScoreDisplay = document.getElementById('bytes-score');
+        const accuracyDisplay = document.getElementById('accuracy');
+        const gradeDisplay = document.getElementById('grade');
+        const gameTimerDisplay = document.getElementById('game-timer');
+        const summaryModal = document.getElementById('summary-modal');
+        const hintModal = document.getElementById('hint-modal');
+        const numberButtons = document.querySelectorAll('.number-btn');
+        const chancesRemainingDisplay = document.getElementById('chances-remaining');
+        const freeHintsDisplay = document.getElementById('free-hints');
+        const consecutiveCorrectDisplay = document.getElementById('consecutive-correct');
+
+        // Event listeners
+        difficultyButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const difficulty = button.getAttribute('data-difficulty');
+                selectDifficulty(difficulty);
+
+                // Update active state
+                difficultyButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+            });
+        });
+
+        startBtn.addEventListener('click', startGame);
+        hintBtn.addEventListener('click', openHintModal);
+
+        numberButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                if (!gameState.isPlaying || !gameState.selectedCell) return;
+                
+                const number = button.getAttribute('data-number');
+                if (number === 'erase') {
+                    eraseCell();
+                } else {
+                    fillCell(parseInt(number));
+                }
+            });
+        });
+
+        // Hint option event listeners
+        document.querySelectorAll('.hint-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const hintType = option.getAttribute('data-hint-type');
+                useHint(hintType);
+            });
+        });
+
+        function selectDifficulty(difficulty) {
+            gameState.currentDifficulty = difficulty;
+            gameState.maxBytes = gameState.difficultyBytes[difficulty];
+            gameState.remainingChances = gameState.initialChances[difficulty];
+            gameState.remainingFreeHints = gameState.freeStuckChances[difficulty];
+            
+            currentDifficultyDisplay.textContent = `Difficulty: ${formatDifficultyName(difficulty)} (${gameState.maxBytes} bytes)`;
+            startBtn.disabled = false;
+            
+            // Update hint costs display
+            updateHintCosts();
+            
+            // Generate a new board for the selected difficulty
+            generateSudoku(difficulty);
+        }
+
+        function formatDifficultyName(difficulty) {
+            return difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+        }
+
+        function updateHintCosts() {
+            const costs = gameState.hintCosts[gameState.currentDifficulty];
+            document.getElementById('number-hint-cost').textContent = 
+                `Cost: ${costs.number} bytes`;
+            document.getElementById('explanation-hint-cost').textContent = 
+                `Cost: ${costs.explanation} bytes`;
+            document.getElementById('strategy-hint-cost').textContent = 
+                `Cost: ${costs.strategy} bytes`;
+        }
+
+        function generateSudoku(difficulty) {
+            // Clear the board
+            sudokuBoard.innerHTML = '';
+            gameState.board = [];
+            gameState.userBoard = [];
+            
+            // Generate a solved Sudoku board
+            gameState.solution = generateSolvedBoard();
+            
+            // Create a playable board by removing numbers based on difficulty
+            gameState.board = createPlayableBoard(gameState.solution, difficulty);
+            
+            // Initialize user board
+            for (let i = 0; i < 9; i++) {
+                gameState.userBoard[i] = [...gameState.board[i]];
+            }
+            
+            // Render the board
+            renderBoard();
+            updateChancesDisplay();
+        }
+
+        function generateSolvedBoard() {
+            // Create an empty 9x9 board
+            const board = Array(9).fill().map(() => Array(9).fill(0));
+            
+            // Fill the board using backtracking
+            solveSudoku(board);
+            
+            return board;
+        }
+
+        function solveSudoku(board) {
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (board[row][col] === 0) {
+                        // Shuffle numbers 1-9 for random selection
+                        const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+                        shuffleArray(numbers);
+                        
+                        for (let num of numbers) {
+                            if (isValidMove(board, row, col, num)) {
+                                board[row][col] = num;
+                                
+                                if (solveSudoku(board)) {
+                                    return true;
+                                }
+                                
+                                board[row][col] = 0;
+                            }
+                        }
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function isValidMove(board, row, col, num) {
+            // Check row
+            for (let x = 0; x < 9; x++) {
+                if (board[row][x] === num) return false;
+            }
+            
+            // Check column
+            for (let x = 0; x < 9; x++) {
+                if (board[x][col] === num) return false;
+            }
+            
+            // Check 3x3 box
+            const startRow = Math.floor(row / 3) * 3;
+            const startCol = Math.floor(col / 3) * 3;
+            
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    if (board[startRow + i][startCol + j] === num) return false;
+                }
+            }
+            
+            return true;
+        }
+
+        function createPlayableBoard(solution, difficulty) {
+            // Copy the solution
+            const board = solution.map(row => [...row]);
+            
+            // Determine number of cells to remove based on difficulty
+            let cellsToRemove;
+            switch(difficulty) {
+                case 'easy': cellsToRemove = 40; break;
+                case 'medium': cellsToRemove = 45; break;
+                case 'hard': cellsToRemove = 50; break;
+                case 'impossible': cellsToRemove = 55; break;
+                case 'insane': cellsToRemove = 60; break;
+                case 'brutal': cellsToRemove = 64; break;
+                default: cellsToRemove = 40;
+            }
+            
+            // Remove cells
+            let removed = 0;
+            while (removed < cellsToRemove) {
+                const row = Math.floor(Math.random() * 9);
+                const col = Math.floor(Math.random() * 9);
+                
+                if (board[row][col] !== 0) {
+                    board[row][col] = 0;
+                    removed++;
+                }
+            }
+            
+            return board;
+        }
+
+        function renderBoard() {
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    
+                    if (gameState.board[row][col] !== 0) {
+                        cell.textContent = gameState.board[row][col];
+                        cell.classList.add('given');
+                    } else if (gameState.userBoard[row][col] !== 0) {
+                        cell.textContent = gameState.userBoard[row][col];
+                        cell.classList.add('user-input');
+                        
+                        // Check if the user input is correct
+                        if (gameState.userBoard[row][col] !== gameState.solution[row][col]) {
+                            cell.classList.add('error');
+                        }
+                    }
+                    
+                    cell.addEventListener('click', () => selectCell(row, col));
+                    sudokuBoard.appendChild(cell);
+                }
+            }
+        }
+
+        function selectCell(row, col) {
+            if (!gameState.isPlaying || gameState.board[row][col] !== 0) return;
+            
+            // Remove selection from previous cell
+            if (gameState.selectedCell) {
+                const prevCell = document.querySelector(`.cell[data-row="${gameState.selectedCell.row}"][data-col="${gameState.selectedCell.col}"]`);
+                if (prevCell) prevCell.classList.remove('selected');
+            }
+            
+            // Select new cell
+            gameState.selectedCell = { row, col };
+            const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+            cell.classList.add('selected');
+        }
+
+        function fillCell(number) {
+            if (!gameState.selectedCell) return;
+            
+            const { row, col } = gameState.selectedCell;
+            
+            // Update user board
+            gameState.userBoard[row][col] = number;
+            
+            // Update UI
+            const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+            cell.textContent = number;
+            cell.classList.add('user-input');
+            
+            // Check if the answer is correct
+            if (number === gameState.solution[row][col]) {
+                // Correct answer
+                gameState.correctAnswers++;
+                gameState.consecutiveCorrect++;
+                
+                // Check for bonus chance
+                if (gameState.consecutiveCorrect >= 5) {
+                    gameState.remainingChances++;
+                    gameState.consecutiveCorrect = 0;
+                    alert("🎉 Bonus! You've earned an extra chance for 5 consecutive correct answers!");
+                }
+                
+                updateBytesScore();
+            } else {
+                // Incorrect answer
+                cell.classList.add('error');
+                gameState.remainingChances--;
+                gameState.consecutiveCorrect = 0;
+                
+                // Check if out of chances
+                if (gameState.remainingChances <= 0) {
+                    gameState.remainingChances = 0;
+                    alert("❌ Out of chances! Game over.");
+                    showGameSummary();
+                    return;
+                }
+            }
+            
+            gameState.totalAttempts++;
+            updateScoreDisplays();
+            updateChancesDisplay();
+            
+            // Check if the board is complete
+            checkBoardCompletion();
+        }
+
+        function eraseCell() {
+            if (!gameState.selectedCell) return;
+            
+            const { row, col } = gameState.selectedCell;
+            
+            // Only allow erasing user inputs
+            if (gameState.board[row][col] !== 0) return;
+            
+            // Update user board
+            gameState.userBoard[row][col] = 0;
+            
+            // Update UI
+            const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+            cell.textContent = '';
+            cell.classList.remove('user-input', 'error');
+            
+            updateScoreDisplays();
+        }
+
+        function updateBytesScore() {
+            // Calculate bytes based on correct answers and difficulty
+            const percentageComplete = gameState.correctAnswers / (81 - countGivenCells());
+            gameState.bytesScore = Math.floor(percentageComplete * gameState.maxBytes);
+        }
+
+        function countGivenCells() {
+            let count = 0;
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (gameState.board[row][col] !== 0) {
+                        count++;
+                    }
+                }
+            }
+            return count;
+        }
+
+        function updateScoreDisplays() {
+            bytesScoreDisplay.textContent = gameState.bytesScore;
+            
+            // Calculate accuracy
+            let accuracy = 0;
+            if (gameState.totalAttempts > 0) {
+                accuracy = Math.round((gameState.correctAnswers / gameState.totalAttempts) * 100);
+            }
+            accuracyDisplay.textContent = `${accuracy}%`;
+            
+            // Calculate grade
+            const accuracyComponent = (accuracy / 100) * 50;
+            const bytesComponent = (gameState.bytesScore / gameState.maxBytes) * 50;
+            const grade = Math.round(accuracyComponent + bytesComponent);
+            gradeDisplay.textContent = `${grade}%`;
+        }
+
+        function updateChancesDisplay() {
+            chancesRemainingDisplay.textContent = gameState.remainingChances;
+            freeHintsDisplay.textContent = gameState.remainingFreeHints;
+            consecutiveCorrectDisplay.textContent = gameState.consecutiveCorrect;
+        }
+
+        function openHintModal() {
+            if (!gameState.isPlaying || !gameState.selectedCell) {
+                alert("Please select a cell first!");
+                return;
+            }
+            
+            hintModal.style.display = 'block';
+        }
+
+        function closeHintModal() {
+            hintModal.style.display = 'none';
+        }
+
+        function useHint(hintType) {
+            if (!gameState.selectedCell) {
+                closeHintModal();
+                return;
+            }
+            
+            const { row, col } = gameState.selectedCell;
+            const correctNumber = gameState.solution[row][col];
+            
+            // Calculate cost
+            let cost = gameState.hintCosts[gameState.currentDifficulty][hintType];
+            
+            // Use free hint if available
+            if (gameState.remainingFreeHints > 0) {
+                cost = 0;
+                gameState.remainingFreeHints--;
+            }
+            
+            // Check if player can afford the hint
+            if (cost > gameState.bytesScore) {
+                alert(`Not enough bytes! You need ${cost} bytes but only have ${gameState.bytesScore}.`);
+                closeHintModal();
+                return;
+            }
+            
+            // Deduct cost
+            gameState.bytesScore = Math.max(0, gameState.bytesScore - cost);
+            
+            // Apply the hint
+            switch(hintType) {
+                case 'number':
+                    fillCell(correctNumber);
+                    alert(`The correct number is ${correctNumber}`);
+                    break;
+                case 'explanation':
+                    fillCell(correctNumber);
+                    const explanation = getCellExplanation(row, col, correctNumber);
+                    alert(`The correct number is ${correctNumber}. ${explanation}`);
+                    break;
+                case 'strategy':
+                    fillCell(correctNumber);
+                    const strategy = getCellStrategy(row, col, correctNumber);
+                    alert(`The correct number is ${correctNumber}. ${strategy}`);
+                    break;
+            }
+            
+            closeHintModal();
+            updateScoreDisplays();
+            updateChancesDisplay();
+        }
+
+        function getCellExplanation(row, col, number) {
+            // This would be a more sophisticated explanation in a real implementation
+            return `This number completes the row, column, and 3x3 box without conflicts.`;
+        }
+
+        function getCellStrategy(row, col, number) {
+            // This would be a more sophisticated strategy tip in a real implementation
+            return `Look for numbers that can only go in one position in this row, column, or box.`;
+        }
+
+        function checkBoardCompletion() {
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (gameState.userBoard[row][col] !== gameState.solution[row][col]) {
+                        return false;
+                    }
+                }
+            }
+            
+            // If we get here, the board is complete
+            showGameSummary();
+            return true;
+        }
+
+        function startGame() {
+            if (!gameState.currentDifficulty) return;
+            
+            gameState.isPlaying = true;
+            startBtn.disabled = true;
+            hintBtn.disabled = false;
+            
+            // Reset game state (but keep difficulty settings)
+            gameState.bytesScore = 0;
+            gameState.correctAnswers = 0;
+            gameState.totalAttempts = 0;
+            gameState.consecutiveCorrect = 0;
+            
+            // Start game timer if not already started
+            if (!gameState.gameTimer && !gameState.gameStartTime) {
+                gameState.gameStartTime = Date.now();
+                startGameTimer();
+            }
+            
+            updateScoreDisplays();
+            updateChancesDisplay();
+        }
+
+        function startGameTimer() {
+            updateTimerDisplay();
+
+            gameState.gameTimer = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - gameState.gameStartTime) / 1000);
+                gameState.gameTimeRemaining = Math.max(0, 150 - elapsed);
+
+                updateTimerDisplay();
+
+                if (gameState.gameTimeRemaining <= 0) {
+                    clearInterval(gameState.gameTimer);
+                    showGameSummary();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(gameState.gameTimeRemaining / 60);
+            const seconds = gameState.gameTimeRemaining % 60;
+            gameTimerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            // Change color when time is running low
+            if (gameState.gameTimeRemaining <= 30) {
+                gameTimerDisplay.style.color = '#ff5252';
+            } else {
+                gameTimerDisplay.style.color = '#ffcc00';
+            }
+        }
+
+        function showGameSummary() {
+            // Stop the game
+            gameState.isPlaying = false;
+            startBtn.disabled = true;
+            hintBtn.disabled = true;
+
+            // Calculate final accuracy
+            let accuracy = 0;
+            if (gameState.totalAttempts > 0) {
+                accuracy = Math.round((gameState.correctAnswers / gameState.totalAttempts) * 100);
+            }
+
+            // Calculate bonus bytes for remaining chances
+            const bonusBytes = gameState.remainingChances * gameState.bonusBytesPerChance[gameState.currentDifficulty];
+            const totalBytes = gameState.bytesScore + bonusBytes;
+            
+            // Check for perfect game bonus
+            let perfectBonus = false;
+            if (gameState.remainingChances === gameState.initialChances[gameState.currentDifficulty] && 
+                gameState.remainingFreeHints === gameState.freeStuckChances[gameState.currentDifficulty]) {
+                perfectBonus = true;
+                totalBytes *= 2;
+            }
+
+            // Calculate final grade
+            const accuracyComponent = (accuracy / 100) * 50;
+            const bytesComponent = (totalBytes / gameState.maxBytes) * 50;
+            const grade = Math.min(100, Math.round(accuracyComponent + bytesComponent));
+
+            // Update modal with final stats
+            document.getElementById('final-grade').textContent = `${grade}%`;
+            document.getElementById('final-accuracy').textContent = `${accuracy}%`;
+            document.getElementById('final-bytes').textContent = totalBytes;
+            document.getElementById('final-max-bytes').textContent = gameState.maxBytes;
+            document.getElementById('perfect-bonus').textContent = perfectBonus ? "Yes! (2x bytes)" : "No";
+
+            const elapsed = 150 - gameState.gameTimeRemaining;
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            document.getElementById('final-time').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            // Show modal
+            summaryModal.style.display = 'block';
+        }
+
+        function startNewGame() {
+            // Hide modal
+            summaryModal.style.display = 'none';
+
+            // Reset all game state
+            gameState.bytesScore = 0;
+            gameState.correctAnswers = 0;
+            gameState.totalAttempts = 0;
+            gameState.consecutiveCorrect = 0;
+            gameState.isPlaying = false;
+            gameState.selectedCell = null;
+            gameState.gameTimeRemaining = 150;
+            gameState.gameStartTime = null;
+
+            if (gameState.gameTimer) {
+                clearInterval(gameState.gameTimer);
+                gameState.gameTimer = null;
+            }
+
+            // Reset UI
+            updateTimerDisplay();
+            updateScoreDisplays();
+            updateChancesDisplay();
+
+            // Re-enable difficulty selection and start button
+            startBtn.disabled = gameState.currentDifficulty === null;
+            hintBtn.disabled = true;
+
+            // Regenerate the current difficulty board
+            if (gameState.currentDifficulty) {
+                generateSudoku(gameState.currentDifficulty);
+            }
+        }
+
+        // Utility functions
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Initialize
+        updateScoreDisplays();
+        updateChancesDisplay();
+    </script>
+</body>
+</html>
