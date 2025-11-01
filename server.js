@@ -1181,7 +1181,7 @@ const authenticateAdminToken = (req, res, next) => {
 
 
 // --- AI Service Configuration ---
-const MODEL_NAME = "gemini-1.5-flash";
+const MODEL_NAME = "gemini-1.5-flash-latest";
 const API_KEY = process.env.GEMINI_API_KEY;
 
 
@@ -2495,6 +2495,40 @@ const upload = multer({
     storage: storage,
     fileFilter: fileFilter,
     limits: { fileSize: 25 * 1024 * 1024 } // 25MB file size limit
+});
+
+
+
+// Game bytes award endpoint
+app.post('/api/games/award-bytes', authenticateToken, async (req, res) => {
+    try {
+        const { gameName, bytesEarned, ...gameData } = req.body;
+        const studentId = req.student.id;
+
+        if (!bytesEarned || bytesEarned <= 0) {
+            return res.status(400).json({ message: 'Invalid bytes amount' });
+        }
+
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
+        // Award bytes
+        student.bytes += Math.round(bytesEarned);
+        await student.save();
+
+        res.status(200).json({
+            message: 'Bytes awarded successfully!',
+            bytesEarned: Math.round(bytesEarned),
+            totalBytes: student.bytes,
+            gameName: gameName
+        });
+
+    } catch (error) {
+        console.error('Error awarding game bytes:', error);
+        res.status(500).json({ message: 'Failed to award bytes', error: error.message });
+    }
 });
 
 app.post(

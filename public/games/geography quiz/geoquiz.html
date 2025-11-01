@@ -1,0 +1,1107 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Geography Quiz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+        }
+
+        .continent-selector {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 20px;
+        }
+
+        .continent-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .continent-btn {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .continent-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-3px);
+        }
+
+        .continent-btn.active {
+            background: rgba(255, 165, 0, 0.5);
+            border-color: #ff9800;
+        }
+
+        .map-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #continent-map {
+            width: 100%;
+            min-height: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #continent-map svg {
+            max-width: 100%;
+            max-height: 500px;
+            width: auto;
+            height: auto;
+        }
+
+        .country-path {
+            fill: rgba(255, 255, 255, 0.2);
+            stroke: rgba(255, 255, 255, 0.5);
+            stroke-width: 0.5;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .country-path:hover {
+            fill: rgba(255, 255, 255, 0.3);
+        }
+
+        .highlighted {
+            animation: pulse 0.8s ease-in-out;
+            fill: rgba(255, 165, 0, 0.7) !important;
+            stroke: rgba(255, 140, 0, 1) !important;
+            stroke-width: 2 !important;
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                transform: scale(1);
+                filter: drop-shadow(0 0 5px rgba(255, 165, 0, 0.7));
+            }
+            50% { 
+                transform: scale(1.05);
+                filter: drop-shadow(0 0 15px rgba(255, 165, 0, 0.9));
+            }
+        }
+
+        .correct {
+            fill: rgba(76, 175, 80, 0.7) !important;
+            stroke: rgba(76, 175, 80, 1) !important;
+            stroke-width: 2 !important;
+        }
+
+        .incorrect {
+            fill: rgba(244, 67, 54, 0.7) !important;
+            stroke: rgba(244, 67, 54, 1) !important;
+            stroke-width: 2 !important;
+        }
+
+        .quiz-controls {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #ffcc00;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            background: #ff9800;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: #f57c00;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .input-group {
+            margin-top: 20px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #ff9800;
+        }
+
+        .feedback {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+
+        .correct-feedback {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            color: #a5d6a7;
+        }
+
+        .incorrect-feedback {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+            color: #ef9a9a;
+        }
+
+        .score-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .score-item {
+            text-align: center;
+        }
+
+        .score-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffcc00;
+        }
+
+        .instructions {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .timer-display {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .timer-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffcc00;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+            margin: 10% auto;
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content h2 {
+            color: #ffcc00;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .summary-stats {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .summary-value {
+            color: #ffcc00;
+            font-weight: 700;
+        }
+
+        .new-game-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .new-game-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                flex-direction: column;
+            }
+
+            .continent-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .modal-content {
+                margin: 20% auto;
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌍 World Geography Quiz</h1>
+            <p class="subtitle">Test your knowledge of world geography - select a continent and identify countries!</p>
+        </header>
+
+        <div class="continent-selector">
+            <h2>Select a Continent</h2>
+            <div class="continent-buttons">
+                <button class="continent-btn" data-continent="africa">🌍 Africa</button>
+                <button class="continent-btn" data-continent="south-america">🗺️ South America</button>
+            </div>
+        </div>
+
+        <div class="game-container">
+            <div class="map-container">
+                <h2 id="current-continent">Select a continent to begin</h2>
+                <div id="continent-map">
+                    <p style="color: rgba(255,255,255,0.5);">Choose a continent above to load the map</p>
+                </div>
+            </div>
+
+            <div class="quiz-controls">
+                <div class="control-group">
+                    <h2>Quiz Controls</h2>
+                    <button id="start-btn" class="btn" disabled>
+                        <span>▶ Start Quiz</span>
+                    </button>
+
+                    <div class="input-group">
+                        <input type="text" id="country-input" placeholder="Enter country name" disabled>
+                        <button id="submit-btn" class="btn" disabled>
+                            <span>✓ Submit Answer</span>
+                        </button>
+                    </div>
+
+                    <div id="feedback" class="feedback"></div>
+                </div>
+
+                <div class="score-container">
+                    <div class="score-item">
+                        <div class="score-label">Score</div>
+                        <div class="score-value" id="score">0</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-label">Correct</div>
+                        <div class="score-value" id="countries-count">0</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-label">Accuracy</div>
+                        <div class="score-value" id="accuracy">0%</div>
+                    </div>
+                </div>
+
+                <div class="instructions">
+                    <h3>📚 How to Play:</h3>
+                    <p>1. Select a continent from the options above</p>
+                    <p>2. Click "Start Quiz" to begin the game</p>
+                    <p>3. A country will be highlighted on the map</p>
+                    <p>4. Type its name and submit your answer</p>
+                    <p>5. Continue to improve your score!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="summary-modal" class="modal">
+        <div class="modal-content">
+            <h2>🎮 Game Session Complete!</h2>
+            <div class="summary-stats">
+                <div class="summary-item">
+                    <span class="summary-label">Total Score:</span>
+                    <span class="summary-value" id="final-score">0</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Countries Correct:</span>
+                    <span class="summary-value" id="final-correct">0</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Total Questions:</span>
+                    <span class="summary-value" id="final-total">0</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Accuracy:</span>
+                    <span class="summary-value" id="final-accuracy">0%</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Time Played:</span>
+                    <span class="summary-value" id="final-time">2:30</span>
+                </div>
+            </div>
+            <button class="new-game-btn" onclick="startNewGame()">🎯 New Game?</button>
+        </div>
+    </div>
+
+    <audio id="correct-sound" preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/2870/2870.wav" type="audio/wav">
+    </audio>
+    <audio id="incorrect-sound" preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/2955/2955.wav" type="audio/wav">
+    </audio>
+
+    <script>
+        // Country name aliases for better matching - maps country codes to full names
+        const COUNTRY_ALIASES = {
+            // Africa
+            'dz': ['algeria', 'dz'],
+            'ao': ['angola', 'ao'],
+            'bf': ['burkina faso', 'bf'],
+            'bh': ['bahrain', 'bh'],
+            'bi': ['burundi', 'bi'],
+            'bw': ['botswana', 'bw'],
+            'cd': ['democratic republic of the congo', 'dr congo', 'drc', 'congo-kinshasa', 'zaire', 'cd'],
+            'cf': ['central african republic', 'cf'],
+            'cg': ['republic of the congo', 'congo', 'congo-brazzaville', 'cg'],
+            'ci': ['ivory coast', 'côte d\'ivoire', 'cote d\'ivoire', 'ci'],
+            'cv': ['cape verde', 'cabo verde', 'cv'],
+            'dj': ['djibouti', 'dj'],
+            'eg': ['egypt', 'eg'],
+            'eh': ['western sahara', 'eh'],
+            'er': ['eritrea', 'er'],
+            'et': ['ethiopia', 'et'],
+            'ga': ['gabon', 'ga'],
+            'gh': ['ghana', 'gh'],
+            'gm': ['gambia', 'gm'],
+            'gn': ['guinea', 'gn'],
+            'gq': ['equatorial guinea', 'gq'],
+            'gw': ['guinea-bissau', 'gw'],
+            'il': ['israel', 'il'],
+            'iq': ['iraq', 'iq'],
+            'jo': ['jordan', 'jo'],
+            'ke': ['kenya', 'ke'],
+            'km': ['comoros', 'km'],
+            'kw': ['kuwait', 'kw'],
+            'lb': ['lebanon', 'lb'],
+            'lr': ['liberia', 'lr'],
+            'ls': ['lesotho', 'ls'],
+            'ly': ['libya', 'ly'],
+            'ma': ['morocco', 'ma'],
+            'mr': ['mauritania', 'mr'],
+            'mu': ['mauritius', 'mu'],
+            'mw': ['malawi', 'mw'],
+            'mz': ['mozambique', 'mz'],
+            'na': ['namibia', 'na'],
+            'ne': ['niger', 'ne'],
+            'ng': ['nigeria', 'ng'],
+            'rw': ['rwanda', 'rw'],
+            'sd': ['sudan', 'sd'],
+            'sl': ['sierra leone', 'sl'],
+            'sn': ['senegal', 'sn'],
+            'so': ['somalia', 'so'],
+            'ss': ['south sudan', 'ss'],
+            'sz': ['eswatini', 'swaziland', 'sz'],
+            'td': ['chad', 'td'],
+            'tg': ['togo', 'tg'],
+            'tn': ['tunisia', 'tn'],
+            'tz': ['tanzania', 'tz'],
+            'ug': ['uganda', 'ug'],
+            'za': ['south africa', 'za'],
+            'zm': ['zambia', 'zm'],
+            'zw': ['zimbabwe', 'zw'],
+            // South America
+            'ar': ['argentina', 'ar'],
+            'bo': ['bolivia', 'bo'],
+            'br': ['brazil', 'br'],
+            'cl': ['chile', 'cl'],
+            'co': ['colombia', 'co'],
+            'ec': ['ecuador', 'ec'],
+            'fk': ['falkland islands', 'fk'],
+            'gf': ['french guiana', 'gf'],
+            'gy': ['guyana', 'gy'],
+            'pe': ['peru', 'pe'],
+            'py': ['paraguay', 'py'],
+            'sr': ['suriname', 'sr'],
+            'uy': ['uruguay', 'uy'],
+            've': ['venezuela', 've']
+        };
+
+        // Game state
+        const gameState = {
+            currentContinent: null,
+            countries: [],
+            currentCountry: null,
+            score: 0,
+            totalQuestions: 0,
+            correctAnswers: 0,
+            isPlaying: false,
+            nearnessScores: [], // Track nearness scores for accuracy calculation
+            };
+
+        // DOM elements
+        const continentButtons = document.querySelectorAll('.continent-btn');
+        const startBtn = document.getElementById('start-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const countryInput = document.getElementById('country-input');
+        const continentMap = document.getElementById('continent-map');
+        const currentContinentDisplay = document.getElementById('current-continent');
+        const feedback = document.getElementById('feedback');
+        const scoreDisplay = document.getElementById('score');
+        const countriesCountDisplay = document.getElementById('countries-count');
+        const accuracyDisplay = document.getElementById('accuracy');
+        const correctSound = document.getElementById('correct-sound');
+        const incorrectSound = document.getElementById('incorrect-sound');
+        const summaryModal = document.getElementById('summary-modal');
+
+        // Event listeners
+        continentButtons.forEach(button => {
+            button.addEventListener('click', async () => {
+                const continent = button.getAttribute('data-continent');
+                await selectContinent(continent);
+
+                // Update active state
+                continentButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+            });
+        });
+
+        startBtn.addEventListener('click', startGame);
+        submitBtn.addEventListener('click', checkAnswer);
+        countryInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        async function selectContinent(continent) {
+            gameState.currentContinent = continent;
+            currentContinentDisplay.textContent = `Continent: ${formatContinentName(continent)}`;
+            startBtn.disabled = false;
+            await loadContinentMap(continent);
+
+            // Only reset current country and countries array, keep stats
+            gameState.currentCountry = null;
+            countryInput.value = '';
+            feedback.style.display = "none";
+        }
+
+        function formatContinentName(continent) {
+            return continent.split('-')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        }
+
+        async function loadContinentMap(continent) {
+            continentMap.innerHTML = '<p style="color: rgba(255,255,255,0.5);">Loading map...</p>';
+            const svgMap = await getSVGMap(continent);
+            continentMap.innerHTML = svgMap;
+            extractCountriesFromSVG();
+        }
+
+        function extractCountriesFromSVG() {
+            gameState.countries = [];
+
+            // Select all potential country elements (path, polygon, g groups)
+            const svg = continentMap.querySelector('svg');
+            if (!svg) {
+                console.log('No SVG found');
+                return;
+            }
+
+            // Find all elements that could be countries
+            const elements = svg.querySelectorAll('path, polygon, g');
+
+            elements.forEach(el => {
+                let countryName = null;
+                let countryCode = null;
+
+                // Try different ways to find the country name
+                // 1. Check for title element (common in Wikimedia SVGs)
+                const titleEl = el.querySelector('title');
+                if (titleEl) {
+                    const titleText = titleEl.textContent.trim().toLowerCase();
+                    // Check if title is a country code and convert to full name
+                    if (COUNTRY_ALIASES[titleText]) {
+                        countryName = COUNTRY_ALIASES[titleText][0]; // Use full name
+                        countryCode = titleText;
+                    } else {
+                        countryName = titleEl.textContent.trim();
+                    }
+                }
+
+                // 2. Check id attribute (often contains country code)
+                if (el.id) {
+                    const idLower = el.id.trim().toLowerCase();
+                    countryCode = idLower;
+
+                    // If we have a code, convert to full name
+                    if (COUNTRY_ALIASES[idLower]) {
+                        countryName = COUNTRY_ALIASES[idLower][0]; // First alias is full name
+                    } else if (!countryName) {
+                        // Try to clean up the id as a fallback
+                        countryName = el.id.replace(/_/g, ' ').replace(/-/g, ' ').trim();
+                        // Capitalize each word
+                        countryName = countryName.split(' ').map(word => 
+                            word.charAt(0).toUpperCase() + word.slice(1)
+                        ).join(' ');
+                    }
+                }
+
+                // 3. Check aria-label
+                if (!countryName && el.getAttribute('aria-label')) {
+                    const ariaLabel = el.getAttribute('aria-label').trim().toLowerCase();
+                    if (COUNTRY_ALIASES[ariaLabel]) {
+                        countryName = COUNTRY_ALIASES[ariaLabel][0];
+                        countryCode = ariaLabel;
+                    } else {
+                        countryName = el.getAttribute('aria-label').trim();
+                    }
+                }
+
+                // 4. Check data-name (for our custom SVGs)
+                if (!countryName && el.getAttribute('data-name')) {
+                    const dataName = el.getAttribute('data-name').trim().toLowerCase();
+                    if (COUNTRY_ALIASES[dataName]) {
+                        countryName = COUNTRY_ALIASES[dataName][0];
+                        countryCode = dataName;
+                    } else {
+                        countryName = el.getAttribute('data-name').trim();
+                    }
+                }
+
+                // 5. Check inkscape:label (common in Inkscape-created SVGs)
+                if (!countryName && el.getAttribute('inkscape:label')) {
+                    const inkscapeLabel = el.getAttribute('inkscape:label').trim().toLowerCase();
+                    if (COUNTRY_ALIASES[inkscapeLabel]) {
+                        countryName = COUNTRY_ALIASES[inkscapeLabel][0];
+                        countryCode = inkscapeLabel;
+                    } else {
+                        countryName = el.getAttribute('inkscape:label').trim();
+                    }
+                }
+
+                // Final check: if countryName looks like a code, try to convert it
+                if (countryName && countryName.length <= 3) {
+                    const nameLower = countryName.toLowerCase();
+                    if (COUNTRY_ALIASES[nameLower]) {
+                        countryCode = nameLower;
+                        countryName = COUNTRY_ALIASES[nameLower][0];
+                    }
+                }
+
+                if (countryName && countryName.length > 0) {
+                    // Add class for styling if it doesn't have it
+                    if (!el.classList.contains('country-path')) {
+                        el.classList.add('country-path');
+                    }
+
+                    gameState.countries.push({
+                        name: countryName,
+                        code: countryCode,
+                        element: el
+                    });
+                }
+            });
+
+            console.log(`Loaded ${gameState.countries.length} countries`);
+            if (gameState.countries.length > 0) {
+                console.log('Sample countries:', gameState.countries.slice(0, 5).map(c => c.name));
+            }
+        }
+
+        function startGame() {
+            if (!gameState.currentContinent || gameState.countries.length === 0) return;
+
+            gameState.isPlaying = true;
+            startBtn.disabled = true;
+            countryInput.disabled = false;
+            submitBtn.disabled = false;
+            countryInput.value = '';
+            countryInput.focus();
+            feedback.style.display = 'none';
+
+            nextQuestion();
+        }
+
+        async function showGameSummary() {
+            // Stop the game
+            gameState.isPlaying = false;
+            startBtn.disabled = true;
+            countryInput.disabled = true;
+            submitBtn.disabled = true;
+
+            // Calculate final accuracy
+            let accuracy = 0;
+            if (gameState.totalQuestions > 0) {
+                const correctnessScore = (gameState.correctAnswers / gameState.totalQuestions) * 50;
+                let totalNearness = 0;
+                if (gameState.nearnessScores && gameState.nearnessScores.length > 0) {
+                    totalNearness = gameState.nearnessScores.reduce((a, b) => a + b, 0) / gameState.nearnessScores.length;
+                }
+                accuracy = Math.min(100, Math.round(correctnessScore + totalNearness));
+            }
+
+            // Award bytes to backend
+            try {
+                const token = localStorage.getItem('studentToken');
+                if (token && gameState.score > 0) {
+                    const response = await fetch('/api/games/award-bytes', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            gameName: 'Geography Quiz',
+                            bytesEarned: gameState.score,
+                            continent: gameState.currentContinent,
+                            accuracy: accuracy,
+                            correctAnswers: gameState.correctAnswers,
+                            totalQuestions: gameState.totalQuestions
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('Bytes awarded successfully:', data);
+                    }
+                }
+            } catch (error) {
+                console.error('Error awarding bytes:', error);
+            }
+
+            // Update modal with final stats
+            document.getElementById('final-score').textContent = gameState.score;
+            document.getElementById('final-correct').textContent = gameState.correctAnswers;
+            document.getElementById('final-total').textContent = gameState.totalQuestions;
+            document.getElementById('final-accuracy').textContent = `${accuracy}%`;
+            document.getElementById('final-time').textContent = 'N/A';
+
+            // Show modal
+            summaryModal.style.display = 'block';
+        }
+
+        function startNewGame() {
+            // Hide modal
+            summaryModal.style.display = 'none';
+
+            // Reset all game state
+            gameState.score = 0;
+            gameState.totalQuestions = 0;
+            gameState.correctAnswers = 0;
+            gameState.nearnessScores = [];
+            gameState.isPlaying = false;
+            gameState.currentCountry = null;
+
+            // Reset UI
+            updateScoreDisplays();
+            countryInput.value = '';
+            feedback.style.display = 'none';
+
+            // Remove all highlights
+            document.querySelectorAll('.country-path').forEach(path => {
+                path.classList.remove('highlighted', 'correct', 'incorrect');
+            });
+
+            // Re-enable continent selection and start button
+            startBtn.disabled = gameState.currentContinent === null || gameState.countries.length === 0;
+            countryInput.disabled = true;
+            submitBtn.disabled = true;
+
+            // Reload current continent map if one was selected
+            if (gameState.currentContinent) {
+                loadContinentMap(gameState.currentContinent);
+            }
+        }
+
+        function nextQuestion() {
+            if (gameState.countries.length === 0) {
+                endGame();
+                return;
+            }
+
+            // Remove previous highlights
+            document.querySelectorAll('.country-path').forEach(path => {
+                path.classList.remove('highlighted', 'correct', 'incorrect');
+            });
+
+            // Fisher-Yates shuffle for truly random selection
+            function getRandomIndex(max) {
+                // Use crypto.getRandomValues for better randomness
+                const array = new Uint32Array(1);
+                crypto.getRandomValues(array);
+                return array[0] % max;
+            }
+
+            // Orange random-picking animation - moves quickly across countries
+            let animationCount = 0;
+            const maxAnimations = 15; // More iterations for better visual effect
+            let currentHighlighted = null;
+
+            const animationInterval = setInterval(() => {
+                // Remove previous highlight
+                if (currentHighlighted) {
+                    currentHighlighted.classList.remove('highlighted');
+                }
+
+                // Pick a random country to highlight using better randomness
+                const randomIndex = getRandomIndex(gameState.countries.length);
+                const country = gameState.countries[randomIndex];
+
+                if (country && country.element) {
+                    country.element.classList.add('highlighted');
+                    currentHighlighted = country.element;
+                }
+
+                animationCount++;
+
+                if (animationCount >= maxAnimations) {
+                    clearInterval(animationInterval);
+
+                    // Final selection - pick the target country with better randomness
+                    const finalIndex = getRandomIndex(gameState.countries.length);
+                    gameState.currentCountry = gameState.countries[finalIndex];
+
+                    // Remove animation highlight
+                    if (currentHighlighted) {
+                        currentHighlighted.classList.remove('highlighted');
+                    }
+
+                    // Add final highlight to the selected country
+                    if (gameState.currentCountry && gameState.currentCountry.element) {
+                        gameState.currentCountry.element.classList.add('highlighted');
+
+                        // Scroll the country into view if needed
+                        gameState.currentCountry.element.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'nearest' 
+                        });
+                    }
+                }
+            }, 120); // 120ms interval for smooth but visible animation
+        }
+
+        function normalizeCountryName(name) {
+            return name.toLowerCase()
+                .replace(/[^a-z0-9\s]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        // Calculate Levenshtein distance for nearness scoring
+        function calculateLevenshteinDistance(str1, str2) {
+            const matrix = [];
+
+            for (let i = 0; i <= str2.length; i++) {
+                matrix[i] = [i];
+            }
+
+            for (let j = 0; j <= str1.length; j++) {
+                matrix[0][j] = j;
+            }
+
+            for (let i = 1; i <= str2.length; i++) {
+                for (let j = 1; j <= str1.length; j++) {
+                    if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+
+            return matrix[str2.length][str1.length];
+        }
+
+        // Calculate nearness score (0-50) based on how close the answer was
+        function calculateNearnessScore(userAnswer, correctAnswer) {
+            if (userAnswer === correctAnswer) {
+                return 50; // Perfect match
+            }
+
+            const maxLength = Math.max(userAnswer.length, correctAnswer.length);
+            if (maxLength === 0) return 0;
+
+            const distance = calculateLevenshteinDistance(userAnswer, correctAnswer);
+            const similarity = 1 - (distance / maxLength);
+
+            // Convert similarity (0-1) to score (0-50)
+            return Math.max(0, Math.round(similarity * 50));
+        }
+
+        function checkAnswer() {
+            if (!gameState.isPlaying || !gameState.currentCountry) return;
+
+            const userAnswer = normalizeCountryName(countryInput.value);
+            const correctAnswer = normalizeCountryName(gameState.currentCountry.name);
+            const countryCode = gameState.currentCountry.code ? gameState.currentCountry.code.toLowerCase() : null;
+
+            gameState.totalQuestions++;
+
+            let isCorrect = userAnswer === correctAnswer;
+
+            // Check if user answered with any valid alias or the country code
+            if (!isCorrect && countryCode && COUNTRY_ALIASES[countryCode]) {
+                const validAnswers = COUNTRY_ALIASES[countryCode].map(a => normalizeCountryName(a));
+                isCorrect = validAnswers.includes(userAnswer);
+            }
+
+            // Also check if the answer matches the canonical name or any other alias
+            if (!isCorrect) {
+                for (const [code, aliases] of Object.entries(COUNTRY_ALIASES)) {
+                    const normalizedAliases = aliases.map(a => normalizeCountryName(a));
+                    if (normalizedAliases.includes(correctAnswer) && normalizedAliases.includes(userAnswer)) {
+                        isCorrect = true;
+                        break;
+                    }
+                }
+            }
+
+            const currentCountryElement = gameState.currentCountry.element;
+
+            // Calculate nearness score for accuracy tracking
+            const nearnessScore = calculateNearnessScore(userAnswer, correctAnswer);
+            gameState.nearnessScores.push(nearnessScore);
+
+            if (isCorrect) {
+                gameState.score += 10;
+                gameState.correctAnswers++;
+
+                currentCountryElement.classList.remove('highlighted');
+                currentCountryElement.classList.add('correct');
+
+                correctSound.play().catch(e => console.log('Audio play failed:', e));
+
+                feedback.textContent = "✓ Correct! Well done!";
+                feedback.className = "feedback correct-feedback";
+                feedback.style.display = "block";
+            } else {
+                gameState.score = Math.max(0, gameState.score - 5);
+
+                currentCountryElement.classList.remove('highlighted');
+                currentCountryElement.classList.add('incorrect');
+
+                incorrectSound.play().catch(e => console.log('Audio play failed:', e));
+
+                feedback.textContent = `✗ Incorrect. The answer is ${gameState.currentCountry.name}.`;
+                feedback.className = "feedback incorrect-feedback";
+                feedback.style.display = "block";
+            }
+
+            updateScoreDisplays();
+            countryInput.value = '';
+
+            // Remove country from pool
+            gameState.countries = gameState.countries.filter(
+                country => country.name !== gameState.currentCountry.name
+            );
+
+            // Wait 5 seconds before next question to give player time to see correction
+            setTimeout(() => {
+                currentCountryElement.classList.remove('correct', 'incorrect');
+                feedback.style.display = "none";
+
+                if (gameState.countries.length > 0) {
+                    nextQuestion();
+                } else {
+                    endGame();
+                }
+            }, 5000);
+        }
+
+        function updateScoreDisplays() {
+            scoreDisplay.textContent = gameState.score;
+            countriesCountDisplay.textContent = gameState.correctAnswers;
+
+            if (gameState.totalQuestions > 0) {
+                // Accuracy = (correct/total) * 50 + average nearness score (0-50)
+                // This ensures max 100% accuracy
+                const correctnessScore = (gameState.correctAnswers / gameState.totalQuestions) * 50;
+
+                // Calculate average nearness across all attempts
+                let totalNearness = 0;
+                if (gameState.nearnessScores && gameState.nearnessScores.length > 0) {
+                    totalNearness = gameState.nearnessScores.reduce((a, b) => a + b, 0) / gameState.nearnessScores.length;
+                }
+
+                const accuracy = Math.min(100, Math.round(correctnessScore + totalNearness));
+                accuracyDisplay.textContent = `${accuracy}%`;
+            } else {
+                accuracyDisplay.textContent = '0%';
+            }
+        }
+
+        function endGame() {
+            gameState.isPlaying = false;
+            startBtn.disabled = false;
+            countryInput.disabled = true;
+            submitBtn.disabled = true;
+
+            feedback.textContent = `🎉 Continent Complete! Continue with another continent or wait for game timer to end.`;
+            feedback.className = "feedback correct-feedback";
+            feedback.style.display = "block";
+        }
+
+        // SVG maps for continents
+        async function getSVGMap(continent) {
+            const mapFiles = {
+                'africa': '/maps/africa.svg',
+                'south-america': '/maps/South_America.svg'
+            };
+
+            if (mapFiles[continent]) {
+                try {
+                    const response = await fetch(mapFiles[continent]);
+                    const svgText = await response.text();
+                    return svgText;
+                } catch (error) {
+                    console.error(`Error loading ${continent} map:`, error);
+                    return '<p>Error loading map. Please try again.</p>';
+                }
+            }
+
+            return '<p>Map not available</p>';
+        }
+
+        // Initialize
+        updateScoreDisplays();
+    </script>
+</body>
+</html>
