@@ -4782,6 +4782,81 @@ app.post('/api/games/sudoku/submit-result', authenticateToken, async (req, res) 
     }
 });
 
+// Career Guidance AI Endpoint using Gemini
+app.post('/api/career-guidance/chat', authenticateToken, async (req, res) => {
+    try {
+        const studentId = req.student.id;
+        const { message, chatHistory } = req.body;
+
+        if (!message) {
+            return res.status(400).json({ message: 'Message is required.' });
+        }
+
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ 
+            model: 'gemini-1.5-flash',
+            safetySettings: [
+                {
+                    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                },
+                {
+                    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                },
+            ],
+        });
+
+        const studentContext = `
+Student Profile:
+- Name: ${student.preferredName || student.studentName}
+- Current Tier: Level ${student.currentTier} (out of 10)
+- Total XP Earned: ${student.xp}
+- Bytes (Virtual Currency): ${student.bytes}
+- Total Countries Identified (Geography): ${student.totalCountriesIdentified || 0}
+- Total Sudoku Puzzles Completed: ${student.totalSudokuPuzzlesCompleted || 0}
+- Geography Quiz Stats: ${JSON.stringify(student.geoQuizStats || {})}
+- Sudoku Stats: ${JSON.stringify(student.sudokuStats || {})}
+
+You are a professional career guidance counselor AI for SchoolByte, an educational platform in Uganda. Based on the student's academic performance, interests, and skills demonstrated through their gameplay and quiz results, provide personalized career advice, study tips, and motivational guidance.
+
+Be encouraging, specific, and culturally relevant to Uganda and East Africa. Suggest careers that match their demonstrated skills (e.g., geography knowledge → cartography, tourism, geology; logical thinking from Sudoku → engineering, computer science, data analysis).
+
+Keep responses concise (2-4 paragraphs), friendly, and actionable. Use their performance data to give specific feedback.
+`;
+
+        const fullPrompt = chatHistory && chatHistory.length > 0 
+            ? `${studentContext}\n\nConversation history:\n${chatHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n')}\n\nStudent: ${message}\n\nCareer Counselor:`
+            : `${studentContext}\n\nStudent: ${message}\n\nCareer Counselor:`;
+
+        const result = await model.generateContent(fullPrompt);
+        const response = result.response;
+        const aiReply = response.text();
+
+        res.status(200).json({
+            message: 'Career guidance response generated successfully.',
+            reply: aiReply,
+            studentStats: {
+                tier: student.currentTier,
+                xp: student.xp,
+                bytes: student.bytes
+            }
+        });
+
+    } catch (error) {
+        console.error('Error in career guidance chat:', error);
+        res.status(500).json({ 
+            message: 'Failed to generate career guidance response.', 
+            error: error.message 
+        });
+    }
+});
+
 // Serve admin login page
 app.get('/admin-login.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'adminlogin.html'));
