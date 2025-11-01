@@ -4536,102 +4536,251 @@ app.get('/api/leaderboard', authenticateToken, async (req, res) => {
     }
 });
 
-// Internal Helper: Award Achievement to Student
-async function awardAchievement(studentId, achievementId, progressIncrement = 1) {
+// GeoQuiz Game Progress Tracking Endpoint
+app.post('/api/games/geoquiz/submit-answer', authenticateToken, async (req, res) => {
     try {
+        const studentId = req.student.id;
+        const { countryName, isCorrect, isAlias, nearnessScore, continent, finalScore, accuracy } = req.body;
+
         const student = await Student.findById(studentId);
-        if (!student) return null;
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
 
-        const achievement = await Achievement.findOne({ achievementId });
-        if (!achievement) return null;
+        const achievementsUnlocked = [];
 
-        // Find or create student achievement progress
-        let studentAchievement = await StudentAchievement.findOne({
-            student: studentId,
-            achievementId: achievementId
+        if (isCorrect) {
+            student.totalCountriesIdentified = (student.totalCountriesIdentified || 0) + 1;
+            
+            if (!student.geoQuizStats) {
+                student.geoQuizStats = {
+                    totalCountriesIdentified: 0,
+                    perfectSpellings: 0,
+                    aliasesUsed: 0,
+                    continentsCompleted: [],
+                    highestScore: 0,
+                    totalGamesPlayed: 0
+                };
+            }
+
+            student.geoQuizStats.totalCountriesIdentified++;
+
+            // First Steps Achievement
+            if (student.totalCountriesIdentified === 1) {
+                const result = await awardAchievement(studentId, 'geo_first_steps');
+                if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+            }
+
+            // Alias User Achievement
+            if (isAlias) {
+                student.geoQuizStats.aliasesUsed++;
+                const result = await awardAchievement(studentId, 'geo_alias_user');
+                if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+            }
+
+            // The Speller Achievement (5 perfect spellings in a row tracked client-side)
+            if (nearnessScore === 100) {
+                student.geoQuizStats.perfectSpellings++;
+            }
+
+            // Geography Adept (100 countries total)
+            if (student.totalCountriesIdentified === 100) {
+                const result = await awardAchievement(studentId, 'geo_geography_adept');
+                if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+            }
+
+            // Globe Trotter (500 countries total)
+            if (student.totalCountriesIdentified === 500) {
+                const result = await awardAchievement(studentId, 'geo_globe_trotter');
+                if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+            }
+        }
+
+        // Track continent-specific achievements
+        if (finalScore && continent) {
+            // High Scorer Achievement (150+ score)
+            if (finalScore >= 150) {
+                const result = await awardAchievement(studentId, 'geo_high_scorer');
+                if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+            }
+
+            // Update highest score
+            if (finalScore > (student.geoQuizStats?.highestScore || 0)) {
+                student.geoQuizStats.highestScore = finalScore;
+            }
+
+            // Track continent completion
+            if (!student.geoQuizStats.continentsCompleted.includes(continent)) {
+                student.geoQuizStats.continentsCompleted.push(continent);
+                
+                // African Explorer
+                if (continent === 'Africa') {
+                    const result = await awardAchievement(studentId, 'geo_african_explorer');
+                    if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+                }
+                
+                // South American Voyager
+                if (continent === 'South America') {
+                    const result = await awardAchievement(studentId, 'geo_south_american_voyager');
+                    if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+                }
+            }
+
+            // Human GPS (90%+ accuracy)
+            if (accuracy && accuracy >= 90) {
+                const result = await awardAchievement(studentId, 'geo_human_gps');
+                if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+            }
+
+            // Flawless Cartographer (100% accuracy)
+            if (accuracy === 100) {
+                const result = await awardAchievement(studentId, 'geo_flawless_cartographer');
+                if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+            }
+
+            // World-Class (completed both Africa and South America)
+            if (student.geoQuizStats.continentsCompleted.includes('Africa') && 
+                student.geoQuizStats.continentsCompleted.includes('South America')) {
+                const result = await awardAchievement(studentId, 'geo_world_class');
+                if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+            }
+        }
+
+        await student.save();
+
+        res.status(200).json({
+            message: 'GeoQuiz progress tracked successfully!',
+            achievementsUnlocked,
+            stats: {
+                totalCountries: student.totalCountriesIdentified,
+                geoQuizStats: student.geoQuizStats
+            }
         });
 
-        if (!studentAchievement) {
-            studentAchievement = new StudentAchievement({
-                student: studentId,
-                achievement: achievement._id,
-                achievementId: achievementId,
-                progress: 0,
-                target: 1
-            });
+    } catch (error) {
+        console.error('Error tracking GeoQuiz progress:', error);
+        res.status(500).json({ message: 'Failed to track progress', error: error.message });
+    }
+});
+
+// Byte-Sudoku Game Progress Tracking Endpoint
+app.post('/api/games/sudoku/submit-result', authenticateToken, async (req, res) => {
+    try {
+        const studentId = req.student.id;
+        const { difficulty, completed, hintsUsed, paidHintsUsed, chancesRemaining, grade, isPerfectGame } = req.body;
+
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
         }
 
-        // Already unlocked?
-        if (studentAchievement.unlocked) {
-            return { alreadyUnlocked: true };
-        }
+        const achievementsUnlocked = [];
 
-        // Increment progress
-        studentAchievement.progress += progressIncrement;
-
-        // Check if unlocked
-        if (studentAchievement.progress >= studentAchievement.target) {
-            studentAchievement.unlocked = true;
-            studentAchievement.unlockedAt = new Date();
-
-            // Award bytes and XP
-            student.bytes += achievement.byteReward;
-            student.xp += achievement.xpReward;
-
-            // Check for tier level up
-            const currentTierInfo = await PlayerLevel.findOne({ tier: student.currentTier });
-            const nextTierInfo = await PlayerLevel.findOne({ tier: student.currentTier + 1 });
-
-            if (nextTierInfo && student.xp >= nextTierInfo.totalXPRequired) {
-                student.currentTier = nextTierInfo.tier;
-                student.bytes += nextTierInfo.levelUpByteReward;
-
-                // Create level up notification
-                const levelUpNotif = new Notification({
-                    student: studentId,
-                    type: 'level_up',
-                    title: 'Level Up!',
-                    message: `Congratulations! You've reached ${nextTierInfo.name} (Tier ${nextTierInfo.tier})! You earned ${nextTierInfo.levelUpByteReward} bonus bytes!`,
-                    data: { tier: nextTierInfo.tier, tierName: nextTierInfo.name, bonusBytes: nextTierInfo.levelUpByteReward }
-                });
-                await levelUpNotif.save();
-            }
-
-            await student.save();
-
-            // Create achievement notification
-            if (!studentAchievement.notificationSent) {
-                const achievementNotif = new Notification({
-                    student: studentId,
-                    type: 'achievement',
-                    title: 'Achievement Unlocked!',
-                    message: `You've unlocked "${achievement.name}"! Earned ${achievement.byteReward} bytes and ${achievement.xpReward} XP.`,
-                    data: { achievementId, tier: achievement.tier }
-                });
-                await achievementNotif.save();
-                studentAchievement.notificationSent = true;
-            }
-
-            await studentAchievement.save();
-
-            return {
-                unlocked: true,
-                achievement,
-                bytesEarned: achievement.byteReward,
-                xpEarned: achievement.xpReward,
-                leveledUp: nextTierInfo && student.currentTier === nextTierInfo.tier,
-                newTier: student.currentTier
+        if (!student.sudokuStats) {
+            student.sudokuStats = {
+                totalPuzzlesCompleted: 0,
+                easyCompleted: 0,
+                mediumCompleted: 0,
+                hardCompleted: 0,
+                impossibleCompleted: 0,
+                insaneCompleted: 0,
+                brutalCompleted: 0,
+                perfectGames: 0,
+                hintsUsed: 0,
+                paidHintsUsed: 0
             };
         }
 
-        await studentAchievement.save();
-        return { progress: studentAchievement.progress, target: studentAchievement.target };
+        // First Digit Achievement (tracked client-side on first correct number)
+        
+        // Just a Nudge Achievement (first hint used)
+        if (hintsUsed > 0 && student.sudokuStats.hintsUsed === 0) {
+            const result = await awardAchievement(studentId, 'sudoku_just_a_nudge');
+            if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+        }
+
+        if (completed) {
+            student.totalSudokuPuzzlesCompleted = (student.totalSudokuPuzzlesCompleted || 0) + 1;
+            student.sudokuStats.totalPuzzlesCompleted++;
+
+            // Track difficulty-specific completions
+            if (difficulty === 'Easy') {
+                student.sudokuStats.easyCompleted++;
+                const result = await awardAchievement(studentId, 'sudoku_novice');
+                if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+            } else if (difficulty === 'Hard') {
+                student.sudokuStats.hardCompleted++;
+                const result = await awardAchievement(studentId, 'sudoku_adept');
+                if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+            } else if (difficulty === 'Brutal') {
+                student.sudokuStats.brutalCompleted++;
+                const result = await awardAchievement(studentId, 'sudoku_grandmaster');
+                if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+            }
+
+            // Close Shave (0 chances remaining)
+            if (chancesRemaining === 0) {
+                const result = await awardAchievement(studentId, 'sudoku_close_shave');
+                if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+            }
+
+            // Self-Sufficient (Hard or harder with no hints)
+            if ((difficulty === 'Hard' || difficulty === 'Impossible' || difficulty === 'Insane' || difficulty === 'Brutal') && 
+                hintsUsed === 0 && paidHintsUsed === 0) {
+                const result = await awardAchievement(studentId, 'sudoku_self_sufficient');
+                if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+            }
+
+            // Valedictorian (100% grade)
+            if (grade === 100) {
+                const result = await awardAchievement(studentId, 'sudoku_valedictorian');
+                if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+            }
+
+            // Perfect Game
+            if (isPerfectGame) {
+                student.sudokuStats.perfectGames++;
+                const result = await awardAchievement(studentId, 'sudoku_perfect_game');
+                if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+            }
+
+            // Full Grid (one of each difficulty)
+            if (student.sudokuStats.easyCompleted >= 1 && 
+                student.sudokuStats.mediumCompleted >= 1 &&
+                student.sudokuStats.hardCompleted >= 1 &&
+                student.sudokuStats.impossibleCompleted >= 1 &&
+                student.sudokuStats.insaneCompleted >= 1 &&
+                student.sudokuStats.brutalCompleted >= 1) {
+                const result = await awardAchievement(studentId, 'sudoku_full_grid');
+                if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+            }
+        }
+
+        // Cost of Knowledge (paid for a hint)
+        if (paidHintsUsed > 0 && student.sudokuStats.paidHintsUsed === 0) {
+            const result = await awardAchievement(studentId, 'sudoku_cost_of_knowledge');
+            if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
+        }
+
+        student.sudokuStats.hintsUsed += hintsUsed || 0;
+        student.sudokuStats.paidHintsUsed += paidHintsUsed || 0;
+
+        await student.save();
+
+        res.status(200).json({
+            message: 'Sudoku progress tracked successfully!',
+            achievementsUnlocked,
+            stats: {
+                totalPuzzles: student.totalSudokuPuzzlesCompleted,
+                sudokuStats: student.sudokuStats
+            }
+        });
 
     } catch (error) {
-        console.error('Error awarding achievement:', error);
-        return null;
+        console.error('Error tracking Sudoku progress:', error);
+        res.status(500).json({ message: 'Failed to track progress', error: error.message });
     }
-}
+});
 
 // Serve admin login page
 app.get('/admin-login.html', (req, res) => {
