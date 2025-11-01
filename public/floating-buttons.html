@@ -1,4 +1,3 @@
-
 <!-- Floating Action Buttons - Global Component -->
 <style>
     .floating-buttons-container {
@@ -265,34 +264,66 @@
 </div>
 
 <script>
+    // Load floating buttons component
+    fetch('floating-buttons.html')
+        .then(response => {
+            if (!response.ok) {
+                console.error('Failed to load floating buttons component:', response.statusText);
+                return;
+            }
+            return response.text();
+        })
+        .then(html => {
+            if (html) {
+                const container = document.createElement('div');
+                container.innerHTML = html;
+                document.body.appendChild(container);
+            }
+        })
+        .catch(err => console.error('Error loading floating buttons:', err));
+
+
     // Initialize floating buttons
     (function() {
-        const token = localStorage.getItem('token') || localStorage.getItem('studentToken');
+        // Corrected token retrieval to prioritize 'token' from login.
+        const token = localStorage.getItem('token'); 
 
         // Update bytes count from localStorage or fetch from server
-        function updateBytesCount() {
-            if (!token) return;
-
-            fetch(`${window.location.origin}/student/dashboard`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.student && data.student.bytes !== undefined) {
-                    const bytesElement = document.getElementById('globalBytesCount');
-                    if (bytesElement) {
-                        bytesElement.textContent = data.student.bytes;
-                    }
+        async function updateBytesCount() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    console.warn('No token found for bytes count update');
+                    return;
                 }
-            })
-            .catch(err => console.error('Error fetching bytes:', err));
+
+                const response = await fetch(`${window.location.origin}/student/dashboard`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const bytesElement = document.getElementById('bytesCount'); // Assuming this ID exists in studentdashboard.html
+                    if (bytesElement) {
+                        bytesElement.textContent = data.student.bytes || 0;
+                    }
+                } else if (response.status === 401 || response.status === 403) {
+                    console.warn('Token invalid, bytes count not updated');
+                }
+            } catch (error) {
+                console.error('Error fetching bytes count:', error);
+            }
         }
 
         // Toggle notifications drawer
         window.toggleNotificationsDrawer = function() {
             const drawer = document.getElementById('notificationsDrawer');
             drawer.classList.toggle('open');
-            
+
             if (drawer.classList.contains('open')) {
                 loadNotifications();
             }
@@ -307,6 +338,11 @@
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
+                if (!response.ok) {
+                    console.error('Failed to load notifications:', response.statusText);
+                    return;
+                }
+
                 const data = await response.json();
                 displayNotifications(data.notifications);
                 updateNotificationBadge(data.unreadCount);
@@ -319,7 +355,7 @@
         // Display notifications in drawer
         function displayNotifications(notifications) {
             const listEl = document.getElementById('notificationsDrawerList');
-            
+
             if (!notifications || notifications.length === 0) {
                 listEl.innerHTML = `
                     <div class="empty-notifications">
@@ -334,7 +370,7 @@
                 const date = new Date(notif.createdAt);
                 const timeAgo = getTimeAgo(date);
                 const icon = getNotificationIcon(notif.type);
-                
+
                 return `
                     <div class="notification-item ${notif.read ? '' : 'unread'} ${notif.type}" 
                          onclick="markNotificationAsRead('${notif._id}')">
@@ -363,7 +399,7 @@
         // Get time ago string
         function getTimeAgo(date) {
             const seconds = Math.floor((new Date() - date) / 1000);
-            
+
             if (seconds < 60) return 'Just now';
             if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
             if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
@@ -376,11 +412,16 @@
             if (!token) return;
 
             try {
-                await fetch(`${window.location.origin}/api/student/notifications/${notificationId}/read`, {
+                const response = await fetch(`${window.location.origin}/api/student/notifications/${notificationId}/read`, {
                     method: 'PATCH',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                
+
+                if (!response.ok) {
+                    console.error('Failed to mark notification as read:', response.statusText);
+                    return;
+                }
+
                 loadNotifications();
 
             } catch (error) {
@@ -407,6 +448,11 @@
                 const response = await fetch(`${window.location.origin}/api/student/notifications?unreadOnly=true`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+
+                if (!response.ok) {
+                    console.error('Failed to check notifications:', response.statusText);
+                    return;
+                }
 
                 const data = await response.json();
                 updateNotificationBadge(data.unreadCount);
@@ -438,7 +484,7 @@
 
             // Update bytes count periodically
             setInterval(updateBytesCount, 30000);
-            
+
             // Check notifications periodically
             setInterval(checkNotifications, 30000);
         }
