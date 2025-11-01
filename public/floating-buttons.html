@@ -12,8 +12,8 @@
     }
 
     .floating-btn {
-        width: 56px;
-        height: 56px;
+        width: 50px;
+        height: 50px;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -22,13 +22,13 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         transition: all 0.3s ease;
         color: white;
-        font-size: 1.5rem;
+        font-size: 1.3rem;
         border: none;
         position: relative;
     }
 
     .floating-btn:hover {
-        transform: translateY(-3px) scale(1.05);
+        transform: translateY(-3px) scale(1.08);
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
     }
 
@@ -46,6 +46,10 @@
 
     .floating-btn.ai-btn {
         background: linear-gradient(135deg, #4facfe, #00f2fe);
+    }
+
+    .floating-btn.career-guidance-btn {
+        background: linear-gradient(135deg, #11998e, #38ef7d);
     }
 
     .notification-badge {
@@ -72,9 +76,9 @@
         }
 
         .floating-btn {
-            width: 48px;
-            height: 48px;
-            font-size: 1.2rem;
+            width: 45px;
+            height: 45px;
+            font-size: 1.1rem;
         }
     }
 
@@ -114,8 +118,13 @@
     </button>
 
     <!-- ByteNexus Chat -->
-    <button class="floating-btn chat-btn" data-tooltip="ByteNexus Chat" onclick="window.location.href='bytenexus-chat.html'">
+    <button class="floating-btn chat-btn" data-tooltip="ByteNexus Chat" onclick="window.location.href='/byteNexus/index.html'">
         <i class="fas fa-comments"></i>
+    </button>
+
+    <!-- Career Guidance AI -->
+    <button class="floating-btn career-guidance-btn" data-tooltip="Career Guidance" id="careerGuidanceBtn">
+        <i class="fas fa-graduation-cap"></i>
     </button>
 
     <!-- AI Buddy -->
@@ -151,6 +160,11 @@
         document.getElementById('notificationsBtn')?.addEventListener('click', function() {
             // TODO: Implement notifications panel
             alert('Notifications feature coming soon!');
+        });
+
+        // Career Guidance click handler
+        document.getElementById('careerGuidanceBtn')?.addEventListener('click', function() {
+            window.location.href = 'career-guidance.html';
         });
 
         // AI Buddy click handler
