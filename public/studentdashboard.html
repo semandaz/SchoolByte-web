@@ -680,7 +680,7 @@
                 </div>
                 <div class="activity-card">
                     <div class="activity-title">
-                        Preader Games
+                        Byte Games
                         <div class="info-icon">
                             i
                             <div class="info-tooltip">Get more bytes while you shape your character. Get 5 bytes for every game played.</div>
@@ -706,10 +706,18 @@
         </div>
     </div>
 
-    <div class="bytes-counter">
-        <i class="fas fa-coins bytes-icon"></i>
-        <span id="bytesCount">0</span> Bytes
-    </div>
+    <!-- Global Floating Buttons Component -->
+    <script>
+        // Load floating buttons component
+        fetch('floating-buttons.html')
+            .then(response => response.text())
+            .then(html => {
+                const container = document.createElement('div');
+                container.innerHTML = html;
+                document.body.appendChild(container);
+            })
+            .catch(err => console.error('Error loading floating buttons:', err));
+    </script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -1001,7 +1009,7 @@
                 addBytes(5, this);
                 addActivity('Played a game', 'game');
                 setTimeout(() => {
-                    window.location.href = 'preadergamesstudentdashboard.html';
+                    window.location.href = 'gamesstudentdashboard.html';
                 }, 800);
             });
 
