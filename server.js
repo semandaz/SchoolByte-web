@@ -3956,6 +3956,117 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 
+// Student search and contact suggestions endpoint for ByteNexus chat
+app.get('/api/students/search', authenticateToken, async (req, res) => {
+    try {
+        const { query } = req.query;
+        const currentStudentId = req.student.id;
+
+        const currentStudent = await Student.findById(currentStudentId);
+        if (!currentStudent) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        let searchQuery = {
+            _id: { $ne: currentStudentId }
+        };
+
+        if (query && query.trim().length >= 2) {
+            searchQuery.$or = [
+                { email: { $regex: query.trim(), $options: 'i' } },
+                { studentName: { $regex: query.trim(), $options: 'i' } },
+                { indexNumber: { $regex: query.trim(), $options: 'i' } }
+            ];
+        }
+
+        const students = await Student.find(searchQuery)
+            .select('studentName email class stream avatar_url')
+            .limit(50)
+            .lean();
+
+        res.status(200).json({
+            message: 'Students found successfully.',
+            students: students.map(student => ({
+                id: student._id.toString(),
+                studentName: student.studentName,
+                email: student.email,
+                class: student.class,
+                stream: student.stream,
+                avatar_url: student.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${student.studentName}`
+            }))
+        });
+    } catch (error) {
+        console.error('Error searching students:', error);
+        res.status(500).json({ message: 'Failed to search students.', error: error.message });
+    }
+});
+
+// Get contact suggestions based on stream, class, and other students
+app.get('/api/students/suggestions', authenticateToken, async (req, res) => {
+    try {
+        const currentStudentId = req.student.id;
+
+        const currentStudent = await Student.findById(currentStudentId);
+        if (!currentStudent) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        const allStudents = await Student.find({
+            _id: { $ne: currentStudentId }
+        })
+            .select('studentName email class stream subjectsEnrolled')
+            .lean();
+
+        // Categorize students
+        const sameStreamAndClass = [];
+        const sameStream = [];
+        const sameClass = [];
+        const others = [];
+
+        allStudents.forEach(student => {
+            if (student.stream === currentStudent.stream && student.class === currentStudent.class) {
+                sameStreamAndClass.push(student);
+            } else if (student.stream === currentStudent.stream) {
+                sameStream.push(student);
+            } else if (student.class === currentStudent.class) {
+                sameClass.push(student);
+            } else {
+                others.push(student);
+            }
+        });
+
+        // Format and combine suggestions
+        const formatStudent = (student, category) => ({
+            id: student._id.toString(),
+            studentName: student.studentName,
+            email: student.email,
+            class: student.class,
+            stream: student.stream,
+            category: category,
+            avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${student.studentName}`
+        });
+
+        const suggestions = [
+            ...sameStreamAndClass.map(s => formatStudent(s, 'Same Stream & Class')),
+            ...sameStream.map(s => formatStudent(s, 'Same Stream')),
+            ...sameClass.map(s => formatStudent(s, 'Same Class')),
+            ...others.map(s => formatStudent(s, 'Other Students'))
+        ];
+
+        res.status(200).json({
+            message: 'Contact suggestions fetched successfully.',
+            currentStudent: {
+                class: currentStudent.class,
+                stream: currentStudent.stream
+            },
+            suggestions: suggestions.slice(0, 100) // Limit to 100 suggestions
+        });
+    } catch (error) {
+        console.error('Error fetching contact suggestions:', error);
+        res.status(500).json({ message: 'Failed to fetch suggestions.', error: error.message });
+    }
+});
+
 // Export models for use in other files
 module.exports = {
     Student,
