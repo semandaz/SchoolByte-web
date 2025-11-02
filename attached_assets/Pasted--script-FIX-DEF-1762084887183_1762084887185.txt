@@ -1,0 +1,62 @@
+<script>
+    // ------------------------------------------------------------------
+    // FIX: DEFINE THESE FUNCTIONS IN THE GLOBAL SCOPE (OUTSIDE DOMContentLoaded)
+    // The floating-buttons.html script needs access to these.
+    // ------------------------------------------------------------------
+
+    const token = localStorage.getItem('token');
+
+    async function updateBytesCount() {
+        if (!token) return;
+        try {
+            const response = await fetch(`${window.location.origin}/api/student/bytes`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById('globalBytesCount').textContent = data.bytes;
+            }
+        } catch (error) {
+            console.error('Error fetching bytes:', error);
+        }
+    }
+
+    // NOTE: You may also need to define the 'updateNotificationBadge' function globally
+    // or ensure 'checkNotifications' is fully self-contained.
+    async function checkNotifications() {
+        if (!token) return;
+        try {
+            const response = await fetch(`${window.location.origin}/api/student/notifications/unread-count`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                // Ensure this function (if it exists) or logic is in the dashboard file
+                // If updateNotificationBadge is internal to floating-buttons.html, you can remove this comment.
+                // updateNotificationBadge(data.unreadCount); 
+            }
+        } catch (error) {
+            console.error('Error checking notifications:', error);
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Keep the main logic inside DOMContentLoaded
+    // ------------------------------------------------------------------
+    document.addEventListener('DOMContentLoaded', async () => {
+
+        // ... all your other dashboard setup code (fetchStudentData(), etc.)
+
+        // The fetch call for the floating buttons (already present in your file [cite: 1, 3])
+        fetch('floating-buttons.html')
+            .then(response => response.text())
+            .then(html => {
+                const container = document.createElement('div');
+                container.innerHTML = html;
+                document.body.appendChild(container);
+            })
+            .catch(err => console.error('Error loading floating buttons:', err));
+
+        // ... rest of your DOMContentLoaded logic
+    });
+</script>
