@@ -537,6 +537,69 @@
             cursor: pointer;
             z-index: 95;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .toggle-feed:hover {
+            transform: scale(1.1);
+            background-color: var(--color-brand-secondary);
+        }
+
+        /* NEW FLOATING ICONS */
+        .floating-icon {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            background-color: var(--color-brand-primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 95;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .floating-icon:hover {
+            transform: scale(1.1);
+            background-color: var(--color-brand-secondary);
+        }
+
+        .floating-icon .tooltip {
+            position: absolute;
+            right: 50px;
+            background-color: var(--color-neutral-darkest);
+            color: var(--color-neutral-white);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .floating-icon:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .floating-icon.bytenexus {
+            top: 160px;
+            right: 20px;
+        }
+
+        .floating-icon.ai-buddy {
+            top: 220px;
+            right: 20px;
+        }
+
+        .floating-icon.counselling {
+            top: 280px;
+            right: 20px;
         }
 
         /* Reduced Motion Styles */
@@ -563,6 +626,11 @@
 
             .particle {
                 display: none !important;
+            }
+
+            .floating-icon:hover,
+            .toggle-feed:hover {
+                transform: none !important;
             }
         }
 
@@ -625,6 +693,31 @@
                 width: 250px;
                 right: 10px;
             }
+
+            .floating-icon {
+                width: 35px;
+                height: 35px;
+            }
+
+            .floating-icon.bytenexus {
+                top: 140px;
+                right: 10px;
+            }
+
+            .floating-icon.ai-buddy {
+                top: 190px;
+                right: 10px;
+            }
+
+            .floating-icon.counselling {
+                top: 240px;
+                right: 10px;
+            }
+
+            .toggle-feed {
+                top: 90px;
+                right: 10px;
+            }
         }
     </style>
 </head>
@@ -651,6 +744,20 @@
     <div class="activity-feed" id="activityFeed">
         <h3 style="margin-bottom: 15px; color: var(--color-brand-primary);">Activity Feed</h3>
         <div id="feedItems"></div>
+    </div>
+
+    <!-- NEW FLOATING ICONS -->
+    <div class="floating-icon bytenexus" id="bytenexusBtn">
+        <i class="fas fa-comments"></i>
+        <span class="tooltip">Bytenexus Chat</span>
+    </div>
+    <div class="floating-icon ai-buddy" id="aiBuddyBtn">
+        <i class="fas fa-robot"></i>
+        <span class="tooltip">AI Buddy (Coming Soon)</span>
+    </div>
+    <div class="floating-icon counselling" id="counsellingBtn">
+        <i class="fas fa-hands-helping"></i>
+        <span class="tooltip">Counselling & Career (Coming Soon)</span>
     </div>
 
     <div class="container">
@@ -680,7 +787,7 @@
                 </div>
                 <div class="activity-card">
                     <div class="activity-title">
-                        Byte Games
+                        Preader Games
                         <div class="info-icon">
                             i
                             <div class="info-tooltip">Get more bytes while you shape your character. Get 5 bytes for every game played.</div>
@@ -706,10 +813,12 @@
         </div>
     </div>
 
+    <div class="bytes-counter">
+        <i class="fas fa-coins bytes-icon"></i>
+        <span id="bytesCount">0</span> Bytes
+    </div>
+
     <script>
-        // ===================================================================
-        // MAIN INITIALIZATION (runs when DOM is ready)
-        // ===================================================================
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize elements
             const studentNameDisplay = document.getElementById('studentNameDisplay');
@@ -726,6 +835,11 @@
             const feedItems = document.getElementById('feedItems');
             const floatingParticles = document.getElementById('floatingParticles');
             const subjectsContainer = document.getElementById('subjectsContainer');
+            
+            // NEW: Floating icon elements
+            const bytenexusBtn = document.getElementById('bytenexusBtn');
+            const aiBuddyBtn = document.getElementById('aiBuddyBtn');
+            const counsellingBtn = document.getElementById('counsellingBtn');
 
             let bytesCount = 0; // Initialize bytes count
 
@@ -758,16 +872,9 @@
             // Function to fetch student data from server
             async function fetchStudentData() {
                 try {
-                    const token = localStorage.getItem('token');
-                    
+                    const token = localStorage.getItem('studentToken');
                     if (!token) {
-                        console.error('No authentication token found');
-                        errorMessage.querySelector('.error-message').textContent = 'No authentication token found. Please log in again.';
-                        loadingMessage.classList.add('hidden');
-                        errorMessage.classList.remove('hidden');
-                        setTimeout(() => {
-                            window.location.href = 'studentlogin.html';
-                        }, 2000);
+                        window.location.href = 'studentlogin.html';
                         return;
                     }
 
@@ -782,8 +889,6 @@
                     if (response.ok) {
                         const data = await response.json();
                         const student = data.student;
-                        
-                        console.log('Student data loaded successfully:', student);
 
                         // Update display with real data
                         const displayName = student.preferredName || student.studentName;
@@ -809,35 +914,22 @@
 
                     } else if (response.status === 401 || response.status === 403) {
                         // Token is invalid or expired
-                        console.error('Authentication failed: Token invalid or expired');
-                        localStorage.removeItem('token');
+                        localStorage.removeItem('studentToken');
                         localStorage.removeItem('studentData');
-                        errorMessage.querySelector('.error-message').textContent = 'Session expired. Redirecting to login...';
-                        loadingMessage.classList.add('hidden');
-                        errorMessage.classList.remove('hidden');
-                        setTimeout(() => {
-                            window.location.href = 'studentlogin.html';
-                        }, 2000);
+                        window.location.href = 'studentlogin.html';
                     } else {
-                        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-                        throw new Error(errorData.message || `Server error: ${response.status}`);
+                        throw new Error(`Server error: ${response.status}`);
                     }
                 } catch (error) {
                     console.error('Error fetching student data:', error);
-                    let errorMessageText = 'Failed to load dashboard. ';
-                    
-                    if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
-                        errorMessageText += 'Cannot connect to server. Please check your internet connection.';
-                    } else if (error.message.includes('Server error')) {
-                        errorMessageText += 'Server error. Please try again later.';
-                    } else {
-                        errorMessageText += error.message || 'Please try refreshing the page.';
+                    let errorMessageText = 'Failed to load dashboard. Please try refreshing the page.';
+                    if (error.message.includes('Server error')) {
+                        errorMessageText = 'Server error during registration. Please try again later.';
                     }
-                    
                     errorMessage.querySelector('.error-message').textContent = errorMessageText;
                     loadingMessage.classList.add('hidden');
                     errorMessage.classList.remove('hidden');
-                    mainContent.classList.add('hidden');
+                    mainContent.classList.add('hidden'); // Hide main content on error
                 }
             }
 
@@ -1005,6 +1097,25 @@
                 activityFeed.classList.toggle('active');
             });
 
+            // NEW: Bytenexus button click
+            bytenexusBtn.addEventListener('click', function() {
+                window.location.href = 'bytenexus-chat.html';
+            });
+
+            // NEW: AI Buddy button click
+            aiBuddyBtn.addEventListener('click', function() {
+                // Placeholder for future AI integration
+                addActivity('AI Buddy feature coming soon', 'coin');
+                showNotification();
+            });
+
+            // NEW: Counselling button click
+            counsellingBtn.addEventListener('click', function() {
+                // Placeholder for future AI integration
+                addActivity('Counselling & Career Guidance coming soon', 'coin');
+                showNotification();
+            });
+
             // Quiz button click
             quizBtn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -1021,13 +1132,12 @@
                 addBytes(5, this);
                 addActivity('Played a game', 'game');
                 setTimeout(() => {
-                    window.location.href = 'gamesstudentdashboard.html';
+                    window.location.href = 'preadergamesstudentdashboard.html';
                 }, 800);
             });
 
             // Sign out function
             signOutBtn.addEventListener('click', function() {
-                localStorage.removeItem('token');
                 localStorage.removeItem('studentToken');
                 localStorage.removeItem('studentData');
                 localStorage.removeItem('bytesCount');
@@ -1049,16 +1159,6 @@
                     this.querySelector('.info-tooltip').style.visibility = 'hidden';
                 });
             });
-
-            // Load floating buttons component after DOM is ready
-            fetch('floating-buttons.html')
-                .then(response => response.text())
-                .then(html => {
-                    const container = document.createElement('div');
-                    container.innerHTML = html;
-                    document.body.appendChild(container);
-                })
-                .catch(err => console.error('Error loading floating buttons:', err));
 
             // Fetch student data on page load
             fetchStudentData();
