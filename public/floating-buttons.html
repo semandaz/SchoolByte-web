@@ -264,25 +264,6 @@
 </div>
 
 <script>
-    // Load floating buttons component
-    fetch('floating-buttons.html')
-        .then(response => {
-            if (!response.ok) {
-                console.error('Failed to load floating buttons component:', response.statusText);
-                return;
-            }
-            return response.text();
-        })
-        .then(html => {
-            if (html) {
-                const container = document.createElement('div');
-                container.innerHTML = html;
-                document.body.appendChild(container);
-            }
-        })
-        .catch(err => console.error('Error loading floating buttons:', err));
-
-
     // Initialize floating buttons
     (function() {
         // Corrected token retrieval to prioritize 'token' from login.
