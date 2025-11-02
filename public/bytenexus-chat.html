@@ -281,6 +281,8 @@
         let currentUser = null;
         let activeContact = null;
         let currentTab = 'suggestions';
+        let socket = null;
+        let messages = [];
 
         // Initialize chat using SchoolByte authentication
         async function initByteNexusSession() {
@@ -311,7 +313,36 @@
                 avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${data.student.studentName}`
             };
 
+            // Initialize Socket.io connection
+            initSocket();
             loadContacts();
+        }
+
+        // Initialize Socket.io connection
+        function initSocket() {
+            socket = io(API_URL, {
+                auth: { token: token }
+            });
+
+            socket.on('connect', () => {
+                console.log('Connected to ByteNexus chat server');
+            });
+
+            socket.on('new_personal_message', (message) => {
+                if (activeContact && 
+                    (message.sender_id === activeContact.id || message.recipient_id === activeContact.id)) {
+                    messages.push(message);
+                    displayMessages();
+                }
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Disconnected from chat server');
+            });
+
+            socket.on('connect_error', (error) => {
+                console.error('Connection error:', error);
+            });
         }
 
         async function loadContacts() {
@@ -365,23 +396,89 @@
             });
         }
 
-        function openChat(contact) {
+        async function openChat(contact) {
             activeContact = contact;
             document.getElementById('emptyState').style.display = 'none';
             document.getElementById('chatContainer').style.display = 'flex';
             document.getElementById('chatName').textContent = contact.studentName;
             document.getElementById('chatDetails').textContent = `${contact.class} - ${contact.stream}`;
             document.getElementById('chatAvatar').src = contact.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${contact.studentName}`;
-            document.getElementById('chatMessages').innerHTML = '<div class="loading">Chat functionality coming soon!</div>';
+            
+            // Join personal chat room
+            const conversationId = [currentUser.id, contact.id].sort().join('_');
+            socket.emit('join_personal_room', { conversationId });
+
+            // Load chat history
+            await loadMessages(contact.id);
         }
 
-        document.getElementById('sendButton').addEventListener('click', () => {
-            alert('Chat messaging will be available soon!');
-        });
+        async function loadMessages(contactId) {
+            const conversationId = [currentUser.id, contactId].sort().join('_');
+            
+            try {
+                const response = await fetch(`${API_URL}/api/messages/personal/${conversationId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    messages = await response.json();
+                    displayMessages();
+                } else {
+                    console.error('Failed to load messages');
+                    messages = [];
+                    displayMessages();
+                }
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                messages = [];
+                displayMessages();
+            }
+        }
+
+        function displayMessages() {
+            const chatMessages = document.getElementById('chatMessages');
+            
+            if (messages.length === 0) {
+                chatMessages.innerHTML = '<div class="loading">No messages yet. Start the conversation!</div>';
+                return;
+            }
+
+            chatMessages.innerHTML = messages.map(msg => {
+                const isSent = msg.sender_id === currentUser.id;
+                return `
+                    <div class="message ${isSent ? 'sent' : 'received'}">
+                        <div class="message-bubble">
+                            ${msg.content}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const content = messageInput.value.trim();
+
+            if (!content || !activeContact) return;
+
+            // Emit message via Socket.io
+            socket.emit('send_personal_message', {
+                recipientId: activeContact.id,
+                content: content
+            });
+
+            messageInput.value = '';
+        }
+
+        document.getElementById('sendButton').addEventListener('click', sendMessage);
 
         document.getElementById('messageInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                alert('Chat messaging will be available soon!');
+                e.preventDefault();
+                sendMessage();
             }
         });
 
