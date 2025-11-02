@@ -232,7 +232,7 @@
     </button>
 
     <!-- ByteNexus Chat -->
-    <button class="floating-btn chat-btn" data-tooltip="ByteNexus Chat" onclick="window.location.href='/byteNexus/index.html'">
+    <button class="floating-btn chat-btn" data-tooltip="ByteNexus Chat" id="openChatBtn">
         <i class="fas fa-comments"></i>
     </button>
 
@@ -246,6 +246,17 @@
         <i class="fas fa-robot"></i>
     </button>
 </div>
+
+<!-- ByteNexus Chat Modal (PiP) -->
+<div id="chatModal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 1200px; height: 80vh; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); z-index: 10000; overflow: hidden;">
+    <div style="position: absolute; top: 10px; right: 10px; z-index: 10001;">
+        <button id="closeChatBtn" style="background: #e74c3c; color: white; border: none; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; font-size: 1.2rem;">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <iframe id="chatIframe" src="" style="width: 100%; height: 100%; border: none; border-radius: 20px;"></iframe>
+</div>
+<div id="chatOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999;"></div>
 
 <!-- Notifications Drawer -->
 <div class="notifications-drawer" id="notificationsDrawer">
@@ -445,6 +456,38 @@
         // Notifications click handler
         document.getElementById('notificationsBtn')?.addEventListener('click', function() {
             toggleNotificationsDrawer();
+        });
+
+        // ByteNexus Chat modal handlers
+        document.getElementById('openChatBtn')?.addEventListener('click', function() {
+            const chatModal = document.getElementById('chatModal');
+            const chatOverlay = document.getElementById('chatOverlay');
+            const chatIframe = document.getElementById('chatIframe');
+            
+            chatIframe.src = '/bytenexus-chat.html';
+            chatModal.style.display = 'block';
+            chatOverlay.style.display = 'block';
+        });
+
+        document.getElementById('closeChatBtn')?.addEventListener('click', function() {
+            const chatModal = document.getElementById('chatModal');
+            const chatOverlay = document.getElementById('chatOverlay');
+            const chatIframe = document.getElementById('chatIframe');
+            
+            chatModal.style.display = 'none';
+            chatOverlay.style.display = 'none';
+            chatIframe.src = '';
+        });
+
+        document.getElementById('chatOverlay')?.addEventListener('click', function() {
+            document.getElementById('closeChatBtn').click();
+        });
+
+        // Listen for close messages from chat iframe
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'closeChat') {
+                document.getElementById('closeChatBtn').click();
+            }
         });
 
         // Career Guidance click handler

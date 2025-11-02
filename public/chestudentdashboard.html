@@ -735,5 +735,16 @@
       }
     });
   </script>
+    <!-- Load floating buttons component -->
+    <script>
+        fetch('floating-buttons.html')
+            .then(response => response.text())
+            .then(html => {
+                const container = document.createElement('div');
+                container.innerHTML = html;
+                document.body.appendChild(container);
+            })
+            .catch(err => console.error('Error loading floating buttons:', err));
+    </script>
 </body>
 </html>

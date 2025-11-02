@@ -276,82 +276,42 @@
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script>
-        // Load floating buttons component
-        fetch('floating-buttons.html')
-            .then(response => response.text())
-            .then(html => {
-                const container = document.createElement('div');
-                container.innerHTML = html;
-                document.body.appendChild(container);
-            })
-            .catch(err => console.error('Error loading floating buttons:', err));
-    </script>
-    <script>
         const API_URL = window.location.origin;
-        const BYTENEXUS_WS = 'http://localhost:5000'; // ByteNexus server port
-        let token = localStorage.getItem('byteNexusToken');
+        let token = localStorage.getItem('token'); // Use SchoolByte token directly
         let currentUser = null;
         let activeContact = null;
-        let socket = null;
         let currentTab = 'suggestions';
 
-        // Initialize ByteNexus session from SchoolByte
+        // Initialize chat using SchoolByte authentication
         async function initByteNexusSession() {
-            const schoolByteToken = localStorage.getItem('token');
-            if (!schoolByteToken) {
-                window.location.href = '/studentlogin.html';
+            if (!token) {
+                alert('Please log in to use ByteNexus Chat');
+                window.parent.postMessage({ type: 'closeChat' }, '*');
                 return;
             }
 
             // Get student data from SchoolByte
             const response = await fetch(`${API_URL}/student/dashboard`, {
-                headers: { 'Authorization': `Bearer ${schoolByteToken}` }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
 
             if (!response.ok) {
-                window.location.href = '/studentlogin.html';
+                alert('Authentication failed. Please log in again.');
+                window.parent.postMessage({ type: 'closeChat' }, '*');
                 return;
             }
 
             const data = await response.json();
-            const student = data.student;
+            currentUser = {
+                id: data.student._id || data.student.studentName,
+                username: data.student.studentName,
+                email: data.student.email,
+                class: data.student.class,
+                stream: data.student.stream,
+                avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${data.student.studentName}`
+            };
 
-            // Sync with ByteNexus
-            const syncResponse = await fetch(`${API_URL}/api/auth/sync-schoolbyte`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email: student.email,
-                    studentName: student.studentName,
-                    class: student.class,
-                    stream: student.stream
-                })
-            });
-
-            const syncData = await syncResponse.json();
-            token = syncData.token;
-            localStorage.setItem('byteNexusToken', token);
-            currentUser = syncData.user;
-
-            initSocket();
             loadContacts();
-        }
-
-        function initSocket() {
-            socket = io(BYTENEXUS_WS, {
-                auth: { token: token }
-            });
-
-            socket.on('connect', () => {
-                console.log('Connected to ByteNexus');
-            });
-
-            socket.on('new_personal_message', (message) => {
-                if (activeContact && 
-                    (message.sender_id === activeContact.id || message.recipient_id === activeContact.id)) {
-                    displayMessage(message);
-                }
-            });
         }
 
         async function loadContacts() {
@@ -360,12 +320,21 @@
             if (currentTab === 'suggestions') {
                 contactsList.innerHTML = '<div class="loading">Loading suggestions...</div>';
                 
-                const response = await fetch(`${API_URL}/api/contacts/suggestions`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                try {
+                    const response = await fetch(`${API_URL}/api/students/suggestions`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
 
-                const data = await response.json();
-                displayContacts(data.suggestions);
+                    if (!response.ok) {
+                        throw new Error('Failed to load contacts');
+                    }
+
+                    const data = await response.json();
+                    displayContacts(data.suggestions || []);
+                } catch (error) {
+                    console.error('Error loading contacts:', error);
+                    contactsList.innerHTML = '<div class="loading">Failed to load contacts. Please refresh.</div>';
+                }
             }
         }
 
@@ -379,9 +348,9 @@
 
             contactsList.innerHTML = contacts.map(contact => `
                 <div class="contact-item" data-contact='${JSON.stringify(contact)}'>
-                    <img class="contact-avatar" src="${contact.avatar_url}" alt="${contact.username}">
+                    <img class="contact-avatar" src="${contact.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${contact.studentName}`}" alt="${contact.studentName}">
                     <div class="contact-info">
-                        <div class="contact-name">${contact.username}</div>
+                        <div class="contact-name">${contact.studentName}</div>
                         <div class="contact-details">${contact.email}</div>
                         <span class="category-badge">${contact.category}</span>
                     </div>
@@ -400,70 +369,47 @@
             activeContact = contact;
             document.getElementById('emptyState').style.display = 'none';
             document.getElementById('chatContainer').style.display = 'flex';
-            document.getElementById('chatName').textContent = contact.username;
+            document.getElementById('chatName').textContent = contact.studentName;
             document.getElementById('chatDetails').textContent = `${contact.class} - ${contact.stream}`;
-            document.getElementById('chatAvatar').src = contact.avatar_url;
-            document.getElementById('chatMessages').innerHTML = '';
-
-            const conversationId = [currentUser.id, contact.id].sort().join('_');
-            socket.emit('join_personal_room', { conversationId });
-
-            loadMessages(conversationId);
+            document.getElementById('chatAvatar').src = contact.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${contact.studentName}`;
+            document.getElementById('chatMessages').innerHTML = '<div class="loading">Chat functionality coming soon!</div>';
         }
 
-        async function loadMessages(conversationId) {
-            const response = await fetch(`${API_URL}/api/messages/personal/${conversationId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            const messages = await response.json();
-            messages.forEach(displayMessage);
-        }
-
-        function displayMessage(message) {
-            const messagesDiv = document.getElementById('chatMessages');
-            const isSent = message.sender_id === currentUser.id;
-            
-            const messageEl = document.createElement('div');
-            messageEl.className = `message ${isSent ? 'sent' : 'received'}`;
-            messageEl.innerHTML = `<div class="message-bubble">${message.content}</div>`;
-            
-            messagesDiv.appendChild(messageEl);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-
-        document.getElementById('sendButton').addEventListener('click', sendMessage);
-        document.getElementById('messageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
+        document.getElementById('sendButton').addEventListener('click', () => {
+            alert('Chat messaging will be available soon!');
         });
 
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const content = input.value.trim();
-            
-            if (!content || !activeContact) return;
-
-            socket.emit('send_personal_message', {
-                recipientId: activeContact.id,
-                content: content
-            });
-
-            input.value = '';
-        }
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                alert('Chat messaging will be available soon!');
+            }
+        });
 
         let searchTimeout;
         document.getElementById('searchInput').addEventListener('input', (e) => {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(async () => {
                 const query = e.target.value.trim();
-                if (query.length < 2) return;
+                if (query.length < 2) {
+                    loadContacts();
+                    return;
+                }
 
-                const response = await fetch(`${API_URL}/api/search/users?q=${encodeURIComponent(query)}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                try {
+                    const response = await fetch(`${API_URL}/api/students/search?query=${encodeURIComponent(query)}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
 
-                const users = await response.json();
-                displayContacts(users);
+                    if (!response.ok) throw new Error('Search failed');
+
+                    const data = await response.json();
+                    displayContacts(data.students.map(s => ({
+                        ...s,
+                        category: 'Search Result'
+                    })));
+                } catch (error) {
+                    console.error('Search error:', error);
+                }
             }, 300);
         });
 

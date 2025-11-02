@@ -735,5 +735,105 @@
       }
     });
   </script>
+    <!-- Load floating buttons component -->
+    <script>
+        fetch('floating-buttons.html')
+            .then(response => response.text())
+            .then(html => {
+                const container = document.createElement('div');
+                container.innerHTML = html;
+                document.body.appendChild(container);
+            })
+            .catch(err => console.error('Error loading floating buttons:', err));
+    </script>
+    <script>
+        // Add logic for ByteNexus chat as a PiP modal and contact fetching
+        // This part requires more specific implementation details based on how
+        // the chat functionality is structured.
+        // For now, we'll add a placeholder for the chat modal and a basic fetch for contacts.
+
+        // Function to open the chat modal
+        function openChatModal() {
+            const chatModal = document.getElementById('bytenexusChatModal');
+            if (chatModal) {
+                chatModal.style.display = 'block';
+                fetchContacts(); // Fetch contacts when modal opens
+            }
+        }
+
+        // Function to close the chat modal
+        function closeChatModal() {
+            const chatModal = document.getElementById('bytenexusChatModal');
+            if (chatModal) {
+                chatModal.style.display = 'none';
+            }
+        }
+
+        // Function to fetch contacts (Placeholder)
+        async function fetchContacts() {
+            // Replace with actual API call to fetch contacts
+            // This assumes your SchoolByte authentication token is available
+            const token = localStorage.getItem('studentToken');
+            try {
+                const response = await fetch('/api/bytenexus/contacts', { // Example endpoint
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to fetch contacts');
+                }
+                const contacts = await response.json();
+                // Populate contacts in the chat UI
+                populateContacts(contacts);
+            } catch (error) {
+                console.error('Error fetching contacts:', error);
+                // Display error message to the user
+            }
+        }
+
+        // Function to populate contacts in the chat UI (Placeholder)
+        function populateContacts(contacts) {
+            const contactList = document.getElementById('bytenexusContactList'); // Assuming an element with this ID exists in chat modal
+            if (contactList) {
+                contactList.innerHTML = ''; // Clear existing contacts
+                contacts.forEach(contact => {
+                    const contactElement = document.createElement('div');
+                    contactElement.classList.add('chat-contact'); // Add a class for styling
+                    contactElement.innerHTML = `
+                        <div class="contact-avatar">${contact.name.charAt(0)}</div>
+                        <div class="contact-name">${contact.name}</div>
+                    `;
+                    contactElement.onclick = () => startChat(contact); // Function to start chat with a contact
+                    contactList.appendChild(contactElement);
+                });
+            }
+        }
+
+        // Function to start a chat with a contact (Placeholder)
+        function startChat(contact) {
+            console.log(`Starting chat with ${contact.name}`);
+            // Implement chat logic here, e.g., open a chat window, send messages
+        }
+
+        // Example of how to trigger the chat modal from a button click
+        // You'll need to add a button with id="openChatButton" in your HTML
+        document.addEventListener('DOMContentLoaded', () => {
+            const openChatButton = document.getElementById('openChatButton'); // Example button ID
+            if (openChatButton) {
+                openChatButton.addEventListener('click', openChatModal);
+            }
+
+            // Add event listener to close modal if clicking outside of it
+            const chatModal = document.getElementById('bytenexusChatModal');
+            if (chatModal) {
+                chatModal.addEventListener('click', (event) => {
+                    if (event.target === chatModal) {
+                        closeChatModal();
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
