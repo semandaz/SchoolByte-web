@@ -188,6 +188,33 @@
             color: white;
         }
 
+        .message-meta {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 5px;
+            margin-top: 5px;
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        .message.received .message-meta {
+            justify-content: flex-start;
+        }
+
+        .message-time {
+            font-size: 10px;
+        }
+
+        .message-status {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .message-status i {
+            font-size: 12px;
+        }
+
         .chat-input {
             padding: 20px;
             background: white;
@@ -331,7 +358,74 @@
             socket.on('new_personal_message', (message) => {
                 if (activeContact && 
                     (message.sender_id === activeContact.id || message.recipient_id === activeContact.id)) {
-                    messages.push(message);
+                    
+                    // If this is our own sent message coming back, update the pending one
+                    if (message.sender_id === currentUser.id && message.tempId) {
+                        const pendingIndex = messages.findIndex(m => m.tempId === message.tempId);
+                        if (pendingIndex !== -1) {
+                            messages[pendingIndex] = { ...message, status: 'sent' };
+                        } else {
+                            messages.push({ ...message, status: 'sent' });
+                        }
+                    } else {
+                        // Received message from other person
+                        messages.push(message);
+                        
+                        // Auto-mark as read when viewing the chat
+                        if (message.sender_id === activeContact.id) {
+                            socket.emit('mark_message_read', { messageId: message._id });
+                        }
+                    }
+                    
+                    displayMessages();
+                }
+            });
+
+            // Listen for message status updates
+            socket.on('message_status_update', (data) => {
+                const { messageId, status } = data;
+                const msgIndex = messages.findIndex(m => m._id === messageId);
+                if (msgIndex !== -1) {
+                    messages[msgIndex].status = status;
+                    if (status === 'read') {
+                        messages[msgIndex].read = true;
+                    } else if (status === 'delivered') {
+                        messages[msgIndex].delivered = true;
+                    }
+                    displayMessages();
+                }
+            });
+
+            // Listen for message sent confirmation
+            socket.on('message_sent_confirmation', (data) => {
+                const { tempId, messageId, status } = data;
+                const msgIndex = messages.findIndex(m => m.tempId === tempId);
+                if (msgIndex !== -1) {
+                    messages[msgIndex]._id = messageId;
+                    messages[msgIndex].status = status || 'sent';
+                    delete messages[msgIndex].tempId;
+                    displayMessages();
+                }
+            });
+
+            // Handle delivery confirmations
+            socket.on('message_delivered', (data) => {
+                const { messageId } = data;
+                const msgIndex = messages.findIndex(m => m._id === messageId);
+                if (msgIndex !== -1) {
+                    messages[msgIndex].delivered = true;
+                    messages[msgIndex].status = 'delivered';
+                    displayMessages();
+                }
+            });
+
+            // Handle read receipts
+            socket.on('message_read_receipt', (data) => {
+                const { messageId } = data;
+                const msgIndex = messages.findIndex(m => m._id === messageId);
+                if (msgIndex !== -1) {
+                    messages[msgIndex].read = true;
+                    messages[msgIndex].status = 'read';
                     displayMessages();
                 }
             });
@@ -410,6 +504,13 @@
 
             // Load chat history
             await loadMessages(contact.id);
+
+            // Mark all received messages as read
+            messages.forEach(msg => {
+                if (msg.sender_id === contact.id && !msg.read) {
+                    socket.emit('mark_message_read', { messageId: msg._id });
+                }
+            });
         }
 
         async function loadMessages(contactId) {
@@ -445,10 +546,23 @@
 
             chatMessages.innerHTML = messages.map(msg => {
                 const isSent = msg.sender_id === currentUser.id;
+                const statusIcon = getMessageStatusIcon(msg);
+                const timestamp = new Date(msg.created_at || msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
                 return `
                     <div class="message ${isSent ? 'sent' : 'received'}">
                         <div class="message-bubble">
                             ${msg.content}
+                            ${isSent ? `
+                                <div class="message-meta">
+                                    <span class="message-time">${timestamp}</span>
+                                    <span class="message-status">${statusIcon}</span>
+                                </div>
+                            ` : `
+                                <div class="message-meta">
+                                    <span class="message-time">${timestamp}</span>
+                                </div>
+                            `}
                         </div>
                     </div>
                 `;
@@ -458,16 +572,56 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
+        function getMessageStatusIcon(msg) {
+            // If message has no _id, it's pending (not yet sent to server)
+            if (!msg._id && msg.status === 'pending') {
+                return '<i class="fas fa-clock" style="color: #999;" title="Sending..."></i>';
+            }
+            
+            // If message is read (double green ticks)
+            if (msg.read || msg.status === 'read') {
+                return '<i class="fas fa-check-double" style="color: #00d084;" title="Read"></i>';
+            }
+            
+            // If message is delivered but not read (double grey ticks)
+            if (msg.delivered || msg.status === 'delivered') {
+                return '<i class="fas fa-check-double" style="color: #999;" title="Delivered"></i>';
+            }
+            
+            // If message is sent but not delivered (single grey tick)
+            if (msg._id || msg.status === 'sent') {
+                return '<i class="fas fa-check" style="color: #999;" title="Sent"></i>';
+            }
+            
+            // Default: pending
+            return '<i class="fas fa-clock" style="color: #999;" title="Pending"></i>';
+        }
+
         function sendMessage() {
             const messageInput = document.getElementById('messageInput');
             const content = messageInput.value.trim();
 
             if (!content || !activeContact) return;
 
+            // Create temporary pending message
+            const tempMessage = {
+                sender_id: currentUser.id,
+                recipient_id: activeContact.id,
+                content: content,
+                status: 'pending',
+                timestamp: new Date(),
+                tempId: Date.now() + Math.random() // Temporary ID
+            };
+
+            // Add to messages array immediately for instant UI feedback
+            messages.push(tempMessage);
+            displayMessages();
+
             // Emit message via Socket.io
             socket.emit('send_personal_message', {
                 recipientId: activeContact.id,
-                content: content
+                content: content,
+                tempId: tempMessage.tempId
             });
 
             messageInput.value = '';

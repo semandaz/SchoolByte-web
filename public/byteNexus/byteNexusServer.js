@@ -153,7 +153,7 @@ io.on('connection', (socket) => {
 
   socket.on('send_personal_message', async (data) => {
     try {
-      const { recipientId, content } = data;
+      const { recipientId, content, tempId } = data;
 
       const newMessage = new PersonalMessage({
         sender_id: socket.userId,
@@ -170,12 +170,14 @@ io.on('connection', (socket) => {
         .lean();
 
       const formattedMessage = {
+        _id: messageWithSender._id.toString(),
         id: messageWithSender._id.toString(),
         sender_id: messageWithSender.sender_id._id.toString(),
         recipient_id: messageWithSender.recipient_id._id.toString(),
         content: messageWithSender.content,
         read: messageWithSender.read,
         created_at: messageWithSender.created_at,
+        tempId: tempId,
         sender: {
           id: messageWithSender.sender_id._id.toString(),
           username: messageWithSender.sender_id.username,
@@ -189,20 +191,63 @@ io.on('connection', (socket) => {
       };
 
       const conversationId = [socket.userId, recipientId].sort().join('_');
+      
+      // Send confirmation to sender
+      socket.emit('message_sent_confirmation', {
+        tempId: tempId,
+        messageId: formattedMessage._id,
+        status: 'sent'
+      });
+
+      // Broadcast to conversation room
       io.to(`personal_${conversationId}`).emit('new_personal_message', formattedMessage);
 
+      // Check if recipient is online
       const recipientSocket = authenticatedSockets.get(recipientId);
       if (recipientSocket) {
+        // Recipient is online - mark as delivered
+        socket.emit('message_status_update', {
+          messageId: formattedMessage._id,
+          status: 'delivered'
+        });
+
         recipientSocket.emit('new_message_notification', {
           type: 'personal',
           senderId: socket.userId,
           conversationId: conversationId,
-          content: content
+          content: content,
+          messageId: formattedMessage._id
         });
       }
     } catch (error) {
       console.error('Error sending personal message:', error);
       socket.emit('message_error', { error: 'Failed to send message' });
+    }
+  });
+
+  socket.on('mark_message_read', async (data) => {
+    try {
+      const { messageId } = data;
+
+      await PersonalMessage.updateOne(
+        { _id: messageId, recipient_id: socket.userId },
+        { read: true }
+      );
+
+      // Find the sender and notify them
+      const message = await PersonalMessage.findById(messageId).lean();
+      if (message) {
+        const senderSocket = authenticatedSockets.get(message.sender_id.toString());
+        if (senderSocket) {
+          senderSocket.emit('message_read_receipt', {
+            messageId: messageId
+          });
+        }
+      }
+
+      socket.emit('message_marked_read', { messageId });
+    } catch (error) {
+      console.error('Error marking message as read:', error);
     }
   });
 
