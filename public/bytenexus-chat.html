@@ -313,36 +313,47 @@
 
         // Initialize chat using SchoolByte authentication
         async function initByteNexusSession() {
+            const contactsList = document.getElementById('contactsList');
+            
             if (!token) {
-                alert('Please log in to use ByteNexus Chat');
-                window.parent.postMessage({ type: 'closeChat' }, '*');
+                contactsList.innerHTML = '<div class="loading" style="color: #f44336;">❌ Please log in to SchoolByte first to use ByteNexus Chat<br><br><a href="/" style="color: #667eea; text-decoration: underline;">Go to Login</a></div>';
+                console.error('No authentication token found');
                 return;
             }
 
-            // Get student data from SchoolByte
-            const response = await fetch(`${API_URL}/student/dashboard`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            try {
+                // Get student data from SchoolByte
+                contactsList.innerHTML = '<div class="loading">Verifying authentication...</div>';
+                const response = await fetch(`${API_URL}/student/dashboard`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
 
-            if (!response.ok) {
-                alert('Authentication failed. Please log in again.');
-                window.parent.postMessage({ type: 'closeChat' }, '*');
-                return;
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Authentication failed:', response.status, errorText);
+                    contactsList.innerHTML = '<div class="loading" style="color: #f44336;">❌ Authentication failed. Your session may have expired.<br><br><a href="/" style="color: #667eea; text-decoration: underline;">Please log in again</a></div>';
+                    return;
+                }
+
+                const data = await response.json();
+                currentUser = {
+                    id: data.student._id.toString(),
+                    username: data.student.studentName,
+                    email: data.student.email,
+                    class: data.student.class,
+                    stream: data.student.stream,
+                    avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${data.student.studentName}`
+                };
+
+                console.log('ByteNexus initialized for:', currentUser.username);
+
+                // Initialize Socket.io connection
+                initSocket();
+                loadContacts();
+            } catch (error) {
+                console.error('ByteNexus initialization error:', error);
+                contactsList.innerHTML = '<div class="loading" style="color: #f44336;">❌ Failed to initialize chat. Please try again.<br><br><a href="/" style="color: #667eea; text-decoration: underline;">Back to Login</a></div>';
             }
-
-            const data = await response.json();
-            currentUser = {
-                id: data.student._id.toString(),
-                username: data.student.studentName,
-                email: data.student.email,
-                class: data.student.class,
-                stream: data.student.stream,
-                avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${data.student.studentName}`
-            };
-
-            // Initialize Socket.io connection
-            initSocket();
-            loadContacts();
         }
 
         // Initialize Socket.io connection
