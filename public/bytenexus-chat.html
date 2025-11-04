@@ -332,7 +332,7 @@
 
             const data = await response.json();
             currentUser = {
-                id: data.student._id || data.student.studentName,
+                id: data.student._id.toString(),
                 username: data.student.studentName,
                 email: data.student.email,
                 class: data.student.class,

@@ -16,10 +16,18 @@ const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai');
 const crypto = require('crypto');
+const http = require('http');
+const { Server } = require('socket.io');
 
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
 
 
 // --- Middleware ---
@@ -56,6 +64,203 @@ if (!JWT_SECRET) {
     process.exit(1);
 }
 
+// --- Personal Message Schema for ByteNexus Chat ---
+const personalMessageSchema = new mongoose.Schema({
+  sender_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student',
+    required: true
+  },
+  recipient_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student',
+    required: true
+  },
+  content: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  read: {
+    type: Boolean,
+    default: false
+  },
+  delivered: {
+    type: Boolean,
+    default: false
+  },
+  created_at: {
+    type: Date,
+    default: Date.now
+  }
+}, {
+  timestamps: true
+});
+
+personalMessageSchema.index({ sender_id: 1, recipient_id: 1, created_at: -1 });
+personalMessageSchema.index({ recipient_id: 1, read: 1 });
+
+const PersonalMessage = mongoose.model('PersonalMessage', personalMessageSchema);
+
+// --- Socket.io Chat Management ---
+const authenticatedSockets = new Map();
+
+io.use(async (socket, next) => {
+  const token = socket.handshake.auth.token;
+
+  if (!token) {
+    return next(new Error('Authentication token required'));
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    // Ensure the token payload contains studentId, not just id
+    const studentId = decoded.id || decoded.studentId; 
+    if (!studentId) {
+        return next(new Error('Invalid token payload: student ID missing'));
+    }
+    const student = await Student.findById(studentId);
+
+    if (!student) {
+      return next(new Error('Invalid authentication token: student not found'));
+    }
+
+    socket.userId = student._id.toString();
+    socket.userEmail = student.email;
+    socket.username = student.studentName;
+    next();
+  } catch (error) {
+    console.error('Socket authentication error:', error.message);
+    next(new Error('Invalid authentication token'));
+  }
+});
+
+io.on('connection', (socket) => {
+  console.log(`Student connected to chat: ${socket.userId} (${socket.username})`);
+  authenticatedSockets.set(socket.userId, socket);
+
+  socket.on('join_personal_room', ({ conversationId }) => {
+    const userIds = conversationId.split('_');
+    if (!userIds.includes(socket.userId)) {
+      socket.emit('error', { message: 'Unauthorized to join this conversation' });
+      return;
+    }
+    socket.join(`personal_${conversationId}`);
+    console.log(`Student ${socket.userId} joined personal room: ${conversationId}`);
+  });
+
+  socket.on('send_personal_message', async (data) => {
+    try {
+      const { recipientId, content, tempId } = data;
+
+      const newMessage = new PersonalMessage({
+        sender_id: socket.userId,
+        recipient_id: recipientId,
+        content: content,
+        read: false,
+        delivered: false
+      });
+
+      await newMessage.save();
+
+      const messageWithSender = await PersonalMessage.findById(newMessage._id)
+        .populate('sender_id', 'studentName email')
+        .populate('recipient_id', 'studentName email')
+        .lean();
+
+      const formattedMessage = {
+        _id: messageWithSender._id.toString(),
+        id: messageWithSender._id.toString(),
+        sender_id: messageWithSender.sender_id._id.toString(),
+        recipient_id: messageWithSender.recipient_id._id.toString(),
+        content: messageWithSender.content,
+        read: messageWithSender.read,
+        delivered: messageWithSender.delivered,
+        created_at: messageWithSender.created_at,
+        tempId: tempId,
+        sender: {
+          id: messageWithSender.sender_id._id.toString(),
+          username: messageWithSender.sender_id.studentName,
+          avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${messageWithSender.sender_id.studentName}`
+        },
+        recipient: {
+          id: messageWithSender.recipient_id._id.toString(),
+          username: messageWithSender.recipient_id.studentName,
+          avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${messageWithSender.recipient_id.studentName}`
+        }
+      };
+
+      const conversationId = [socket.userId, recipientId].sort().join('_');
+
+      // Send confirmation to sender
+      socket.emit('message_sent_confirmation', {
+        tempId: tempId,
+        messageId: formattedMessage._id,
+        status: 'sent'
+      });
+
+      // Broadcast to conversation room
+      io.to(`personal_${conversationId}`).emit('new_personal_message', formattedMessage);
+
+      // Check if recipient is online
+      const recipientSocket = authenticatedSockets.get(recipientId);
+      if (recipientSocket) {
+        // Mark as delivered since recipient is online
+        await PersonalMessage.updateOne(
+          { _id: formattedMessage._id },
+          { delivered: true }
+        );
+
+        socket.emit('message_status_update', {
+          messageId: formattedMessage._id,
+          status: 'delivered'
+        });
+
+        recipientSocket.emit('new_message_notification', {
+          type: 'personal',
+          senderId: socket.userId,
+          conversationId: conversationId,
+          content: content,
+          messageId: formattedMessage._id
+        });
+      }
+    } catch (error) {
+      console.error('Error sending personal message:', error);
+      socket.emit('message_error', { error: 'Failed to send message' });
+    }
+  });
+
+  socket.on('mark_message_read', async (data) => {
+    try {
+      const { messageId } = data;
+
+      await PersonalMessage.updateOne(
+        { _id: messageId, recipient_id: socket.userId },
+        { read: true }
+      );
+
+      const message = await PersonalMessage.findById(messageId).lean();
+      if (message) {
+        const senderSocket = authenticatedSockets.get(message.sender_id.toString());
+        if (senderSocket) {
+          senderSocket.emit('message_read_receipt', {
+            messageId: messageId
+          });
+        }
+      }
+
+      socket.emit('message_marked_read', { messageId });
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`Student disconnected from chat: ${socket.userId}`);
+    authenticatedSockets.delete(socket.userId);
+  });
+});
+
 
 // --- Authentication Middleware ---
 const authenticateToken = (req, res, next) => {
@@ -66,11 +271,12 @@ const authenticateToken = (req, res, next) => {
         return res.status(401).json({ message: 'Access token required' });
     }
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
         if (err) {
             return res.status(403).json({ message: 'Invalid or expired token' });
         }
-        req.student = user;
+        // Assuming the token payload contains 'id' which maps to student._id
+        req.student = { id: decoded.id || decoded.studentId }; // Use decoded.id or decoded.studentId
         next();
     });
 };
@@ -301,7 +507,7 @@ const studentSchema = new mongoose.Schema({
     // Achievement and XP System
     xp: { type: Number, default: 0, min: 0 },
     currentTier: { type: Number, default: 1, min: 1, max: 10 },
-    
+
     // Achievement tracking stats
     totalCountriesIdentified: { type: Number, default: 0, min: 0 },
     totalSudokuPuzzlesCompleted: { type: Number, default: 0, min: 0 },
@@ -1312,7 +1518,6 @@ if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !pr
 
 // --- Authentication Middleware ---
 // authenticateToken is defined above
-
 
 const authenticateTeacherToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -2444,19 +2649,43 @@ app.post('/teacher/quiz-questions', authenticateTeacherToken, [
 // Student endpoint to fetch work files by subject
 app.get('/student/workfiles', authenticateToken, async (req, res) => {
     try {
-        const { subject, intendedClass } = req.query;
+        const { subject, intendedClass, search } = req.query;
+        const studentId = req.student.id;
+
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
 
         let query = {};
-        if (subject) query.subject = subject;
+        // Case-insensitive subject search
+        if (subject) query.subject = subject; // Keeping original behavior, adjust if case-insensitivity is needed broadly
         if (intendedClass) query.intendedClass = intendedClass;
+
+        // Add search functionality
+        if (search && search.trim()) {
+            query.$or = [
+                { title: { $regex: search.trim(), $options: 'i' } },
+                { description: { $regex: search.trim(), $options: 'i' } }
+            ];
+        }
 
         const workFiles = await WorkFile.find(query)
             .populate('uploadedBy.teacherId', 'teacherName')
             .sort({ createdAt: -1 });
 
+        // Sort files based on relevance to student's class
+        const studentClass = student.class;
+        const sortedFiles = workFiles.sort((a, b) => {
+            if (a.intendedClass === studentClass && b.intendedClass !== studentClass) return -1;
+            if (b.intendedClass === studentClass && a.intendedClass !== studentClass) return 1;
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+
         res.status(200).json({
             message: 'Work files fetched successfully.',
-            workFiles: workFiles.map(file => ({
+            studentClass: studentClass, // Include student's class for frontend filtering/display
+            workFiles: sortedFiles.map(file => ({
                 _id: file._id,
                 title: file.title,
                 description: file.description,
@@ -2468,7 +2697,8 @@ app.get('/student/workfiles', authenticateToken, async (req, res) => {
                     teacherName: file.uploadedBy.teacherName
                 },
                 downloadCount: file.downloadCount || 0,
-                createdAt: file.createdAt
+                createdAt: file.createdAt,
+                hasActivity: !!file.activity // Boolean indicating if an associated activity exists
             }))
         });
     } catch (error) {
@@ -2727,147 +2957,6 @@ app.post(
     upload.single('workFilePdf'),
     [
         // Validation chain to check all incoming data
-        body('workFileTitle').notEmpty().withMessage('WorkFile title is required.').trim(),
-        body('workFileSubject').notEmpty().withMessage('Subject is required.').trim(),
-        body('workFileIntendedClass').notEmpty().withMessage('Intended class is required.').trim(),
-        body('workFileCostBytes').isInt({ min: 0 }).withMessage('Cost in Bytes must be a number.'),
-        body('applyDownloadWatermark').optional().toBoolean(),
-        body('activityJson').notEmpty().withMessage('Activity data is required.'),
-    ],
-    async (req, res) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-
-        if (!req.file) {
-            return res.status(400).json({ message: 'A PDF file is required.' });
-        }
-
-        let activityData;
-        try {
-            activityData = JSON.parse(req.body.activityJson);
-        } catch (e) {
-            return res.status(400).json({ message: 'Invalid activity JSON format.' });
-        }
-
-        const {
-            workFileTitle,
-            workFileDescription,
-            workFileSubject,
-            workFileIntendedClass,
-            workFileCostBytes,
-            applyDownloadWatermark
-        } = req.body;
-
-        const teacherId = req.teacher.id;
-        const teacherName = req.teacher.teacherName;
-
-        const session = await mongoose.startSession();
-        session.startTransaction();
-
-        let uploadedFileUrl = null;
-        let workFilePublicId = null;
-
-        try {
-            // 1. Upload file to Cloudinary with organized folder structure
-            const timestamp = Date.now();
-            const randomId = Math.random().toString(36).substring(2, 10);
-            workFilePublicId = `schoolbyte/workfiles/${teacherId}/workfile-${timestamp}-${randomId}`;
-
-            const uploadResult = await new Promise((resolve, reject) => {
-                const uploadStream = cloudinary.uploader.upload_stream({
-                    resource_type: 'raw',
-                    public_id: workFilePublicId,
-                    folder: `schoolbyte/workfiles/${teacherId}`,
-                    format: 'pdf'
-                }, (error, result) => {
-                    if (error) {
-                        return reject(new Error(`Cloudinary upload failed: ${error.message}`));
-                    }
-                    resolve(result);
-                });
-                uploadStream.end(req.file.buffer);
-            });
-
-            uploadedFileUrl = uploadResult.secure_url;
-            console.log(`PDF uploaded to Cloudinary: ${uploadedFileUrl}`);
-
-            // 2. Create the two linked documents in the database
-            const newActivity = new Activity({
-                title: activityData.title,
-                description: activityData.description,
-                subject: activityData.subject,
-                intendedClass: activityData.intendedClass,
-                maxBytesReward: 5, // Or get from form
-                questions: activityData.questions, // This saves all questions and keywords
-                uploadedBy: { teacherId, teacherName },
-                // Temporarily set associatedWorkFile to a placeholder
-                associatedWorkFile: new mongoose.Types.ObjectId()
-            });
-
-            const newWorkFile = new WorkFile({
-                title: workFileTitle,
-                description: workFileDescription,
-                fileUrl: uploadedFileUrl,
-                subject: workFileSubject,
-                intendedClass: workFileIntendedClass,
-                costBytes: workFileCostBytes,
-                uploadedBy: { teacherId, teacherName },
-                applyDownloadWatermark: applyDownloadWatermark,
-                activity: newActivity._id // Link to the new activity
-            });
-
-            // Now update the activity with the real WorkFile ID
-            newActivity.associatedWorkFile = newWorkFile._id;
-
-            // 3. Save both to the database
-            await newWorkFile.save({ session });
-            await newActivity.save({ session });
-
-            // 4. Commit the transaction if everything succeeded
-            await session.commitTransaction();
-
-            res.status(201).json({
-                message: 'Content uploaded successfully!',
-                workFile: newWorkFile,
-                activity: newActivity
-            });
-
-        } catch (error) {
-            // If anything fails, roll back the transaction
-            await session.abortTransaction();
-            console.error('Upload transaction failed:', error);
-
-            // If the file was uploaded to Cloudinary but the DB failed, delete it
-            if (workFilePublicId) {
-                try {
-                    await cloudinary.uploader.destroy(workFilePublicId, { resource_type: 'raw' });
-                } catch (deleteError) {
-                    console.error('Failed to delete orphaned Cloudinary file:', deleteError);
-                }
-            }
-
-            res.status(500).json({ message: 'Failed to upload content. Please try again.' });
-        } finally {
-            // End the session
-            session.endSession();
-        }
-    }
-);
-
-
-
-// Existing endpoints for teacher upload, admin management, etc.
-
-
-// Endpoint for Teacher to upload a WorkFile PDF and its associated Activity
-app.post(
-    '/teacher/upload-content',
-    authenticateTeacherToken,
-    upload.single('workFilePdf'),
-    [
-        // Validation chain with the fix applied
         body('workFileTitle').notEmpty().withMessage('WorkFile title is required.').trim().isLength({ min: 3, max: 200 }),
         body('workFileDescription').optional().isString().withMessage('WorkFile description must be a string.').trim().isLength({ max: 500 }),
         body('workFileSubject').notEmpty().withMessage('WorkFile subject is required.').trim().isLength({ min: 2, max: 100 }),
@@ -3695,7 +3784,7 @@ app.get('/leaderboard', async (req, res) => {
     try {
         const students = await Student.find({})
             .sort({ bytes: -1 })
-            .select('studentName firstNameDisplay bytes')
+            .select('firstNameDisplay studentName bytes')
             .lean();
 
 
@@ -4223,7 +4312,7 @@ async function checkAndUpdateTier(studentId) {
         if (!student) return null;
 
         const nextTier = await PlayerLevel.findOne({ tier: student.currentTier + 1 });
-        
+
         if (nextTier && student.xp >= nextTier.totalXPRequired) {
             const oldTier = student.currentTier;
             student.currentTier = nextTier.tier;
@@ -4309,7 +4398,7 @@ app.post('/api/admin/initialize-achievements', async (req, res) => {
         ];
 
         const allAchievements = [...geoQuizAchievements, ...sudokuAchievements];
-        
+
         for (const achievement of allAchievements) {
             await Achievement.findOneAndUpdate(
                 { achievementId: achievement.achievementId },
@@ -4334,7 +4423,7 @@ app.post('/api/admin/initialize-achievements', async (req, res) => {
 app.get('/api/student/achievements', authenticateToken, async (req, res) => {
     try {
         const studentId = req.student.id;
-        
+
         const student = await Student.findById(studentId);
         if (!student) {
             return res.status(404).json({ message: 'Student not found.' });
@@ -4342,7 +4431,7 @@ app.get('/api/student/achievements', authenticateToken, async (req, res) => {
 
         // Get all achievements
         const allAchievements = await Achievement.find({}).sort({ tier: 1, xpReward: 1 });
-        
+
         // Get student's progress on achievements
         const studentAchievements = await StudentAchievement.find({ student: studentId })
             .populate('achievement');
@@ -4551,7 +4640,7 @@ app.post('/api/games/geoquiz/submit-answer', authenticateToken, async (req, res)
 
         if (isCorrect) {
             student.totalCountriesIdentified = (student.totalCountriesIdentified || 0) + 1;
-            
+
             if (!student.geoQuizStats) {
                 student.geoQuizStats = {
                     totalCountriesIdentified: 0,
@@ -4612,13 +4701,13 @@ app.post('/api/games/geoquiz/submit-answer', authenticateToken, async (req, res)
             // Track continent completion
             if (!student.geoQuizStats.continentsCompleted.includes(continent)) {
                 student.geoQuizStats.continentsCompleted.push(continent);
-                
+
                 // African Explorer
                 if (continent === 'Africa') {
                     const result = await awardAchievement(studentId, 'geo_african_explorer');
                     if (result?.newlyUnlocked) achievementsUnlocked.push(result.achievement);
                 }
-                
+
                 // South American Voyager
                 if (continent === 'South America') {
                     const result = await awardAchievement(studentId, 'geo_south_american_voyager');
@@ -4692,7 +4781,7 @@ app.post('/api/games/sudoku/submit-result', authenticateToken, async (req, res) 
         }
 
         // First Digit Achievement (tracked client-side on first correct number)
-        
+
         // Just a Nudge Achievement (first hint used)
         if (hintsUsed > 0 && student.sudokuStats.hintsUsed === 0) {
             const result = await awardAchievement(studentId, 'sudoku_just_a_nudge');
@@ -4863,150 +4952,194 @@ app.get('/admin-login.html', (req, res) => {
 });
 
 
-// Start the server
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`SchoolByte server running on port ${PORT}`);
-    console.log('All quiz system features implemented:');
-    console.log('✓ Enhanced database schemas');
-    console.log('✓ "Fats and Beef" quiz balancing mechanism');
-    console.log('✓ Advanced NLP grading system');
-    console.log('✓ Duplicate detection with hashing');
-    console.log('✓ Weekly tracking for students and teachers');
-    console.log('✓ Comprehensive analytics');
-    console.log('✓ Multiple question types support');
-    console.log('✓ Subject-based curriculum management');
-});
+// --- ByteNexus Chat API Endpoints ---
 
-
-// Student search and contact suggestions endpoint for ByteNexus chat
-app.get('/api/students/search', authenticateToken, async (req, res) => {
-    try {
-        const { query } = req.query;
-        const currentStudentId = req.student.id;
-
-        const currentStudent = await Student.findById(currentStudentId);
-        if (!currentStudent) {
-            return res.status(404).json({ message: 'Student not found.' });
-        }
-
-        let searchQuery = {
-            _id: { $ne: currentStudentId }
-        };
-
-        if (query && query.trim().length >= 2) {
-            searchQuery.$or = [
-                { email: { $regex: query.trim(), $options: 'i' } },
-                { studentName: { $regex: query.trim(), $options: 'i' } },
-                { indexNumber: { $regex: query.trim(), $options: 'i' } }
-            ];
-        }
-
-        const students = await Student.find(searchQuery)
-            .select('studentName email class stream avatar_url')
-            .limit(50)
-            .lean();
-
-        res.status(200).json({
-            message: 'Students found successfully.',
-            students: students.map(student => ({
-                id: student._id.toString(),
-                studentName: student.studentName,
-                email: student.email,
-                class: student.class,
-                stream: student.stream,
-                avatar_url: student.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${student.studentName}`
-            }))
-        });
-    } catch (error) {
-        console.error('Error searching students:', error);
-        res.status(500).json({ message: 'Failed to search students.', error: error.message });
-    }
-});
-
-// Get contact suggestions based on stream, class, and other students
+// Get contact suggestions for chat
 app.get('/api/students/suggestions', authenticateToken, async (req, res) => {
-    try {
-        const currentStudentId = req.student.id;
+  try {
+    // Ensure studentId is correctly extracted from the token payload
+    const currentStudentId = req.student.id; 
+    const currentStudent = await Student.findById(currentStudentId).lean();
 
-        const currentStudent = await Student.findById(currentStudentId);
-        if (!currentStudent) {
-            return res.status(404).json({ message: 'Student not found.' });
-        }
-
-        const allStudents = await Student.find({
-            _id: { $ne: currentStudentId }
-        })
-            .select('studentName email class stream subjectsEnrolled')
-            .lean();
-
-        // Categorize students
-        const sameStreamAndClass = [];
-        const sameStream = [];
-        const sameClass = [];
-        const others = [];
-
-        allStudents.forEach(student => {
-            if (student.stream === currentStudent.stream && student.class === currentStudent.class) {
-                sameStreamAndClass.push(student);
-            } else if (student.stream === currentStudent.stream) {
-                sameStream.push(student);
-            } else if (student.class === currentStudent.class) {
-                sameClass.push(student);
-            } else {
-                others.push(student);
-            }
-        });
-
-        // Format and combine suggestions
-        const formatStudent = (student, category) => ({
-            id: student._id.toString(),
-            studentName: student.studentName,
-            email: student.email,
-            class: student.class,
-            stream: student.stream,
-            category: category,
-            avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${student.studentName}`
-        });
-
-        const suggestions = [
-            ...sameStreamAndClass.map(s => formatStudent(s, 'Same Stream & Class')),
-            ...sameStream.map(s => formatStudent(s, 'Same Stream')),
-            ...sameClass.map(s => formatStudent(s, 'Same Class')),
-            ...others.map(s => formatStudent(s, 'Other Students'))
-        ];
-
-        res.status(200).json({
-            message: 'Contact suggestions fetched successfully.',
-            currentStudent: {
-                class: currentStudent.class,
-                stream: currentStudent.stream
-            },
-            suggestions: suggestions.slice(0, 100) // Limit to 100 suggestions
-        });
-    } catch (error) {
-        console.error('Error fetching contact suggestions:', error);
-        res.status(500).json({ message: 'Failed to fetch suggestions.', error: error.message });
+    if (!currentStudent) {
+      return res.status(404).json({ error: 'Student not found' });
     }
+
+    const allStudents = await Student.find({
+      _id: { $ne: currentStudentId }
+    })
+      .select('studentName email class stream')
+      .lean();
+
+    // Categorize students by relevance
+    const sameStreamAndClass = [];
+    const sameStream = [];
+    const sameClass = [];
+    const others = [];
+
+    allStudents.forEach(student => {
+      if (currentStudent.stream && currentStudent.class) {
+        if (student.stream === currentStudent.stream && student.class === currentStudent.class) {
+          sameStreamAndClass.push(student);
+        } else if (student.stream === currentStudent.stream) {
+          sameStream.push(student);
+        } else if (student.class === currentStudent.class) {
+          sameClass.push(student);
+        } else {
+          others.push(student);
+        }
+      } else if (currentStudent.stream && student.stream === currentStudent.stream) {
+        sameStream.push(student);
+      } else if (currentStudent.class && student.class === currentStudent.class) {
+        sameClass.push(student);
+      } else {
+        others.push(student);
+      }
+    });
+
+    const formatStudent = (student, category) => ({
+      id: student._id.toString(),
+      studentName: student.studentName,
+      email: student.email,
+      avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${student.studentName}`,
+      class: student.class,
+      stream: student.stream,
+      category: category
+    });
+
+    const suggestions = [
+      ...sameStreamAndClass.map(s => formatStudent(s, 'Same Stream & Class')),
+      ...sameStream.map(s => formatStudent(s, 'Same Stream')),
+      ...sameClass.map(s => formatStudent(s, 'Same Class')),
+      ...others.slice(0, 30).map(s => formatStudent(s, 'Other Students'))
+    ];
+
+    res.json({
+      currentStudent: {
+        class: currentStudent.class,
+        stream: currentStudent.stream
+      },
+      suggestions: suggestions
+    });
+  } catch (error) {
+    console.error('Contact suggestions error:', error);
+    res.status(500).json({ error: 'Failed to fetch suggestions' });
+  }
 });
 
-// Export models for use in other files
-module.exports = {
-    Student,
-    Teacher,
-    Subject,
-    QuizSession,
-    QuizQuestion,
-    CompletedQuizAttempt,
-    WorkFile,
-    Activity,
-    StudentActivitySubmission,
-    Administrator,
-    VerificationCode,
-    PreaderGameSession,
-    PreaderGameSessionLog
-};
+// Search students for chat
+app.get('/api/students/search', authenticateToken, async (req, res) => {
+  try {
+    const { query } = req.query;
+    const currentStudentId = req.student.id; // Assuming authenticateToken sets req.student.id
 
+    if (!query || query.length < 2) {
+      return res.json({ students: [] });
+    }
 
+    const students = await Student.find({
+      $or: [
+        { studentName: { $regex: query, $options: 'i' } },
+        { email: { $regex: query, $options: 'i' } }
+      ],
+      _id: { $ne: currentStudentId } // Exclude the current student
+    })
+      .select('studentName email class stream')
+      .limit(20)
+      .lean();
+
+    const formattedStudents = students.map(student => ({
+      id: student._id.toString(),
+      studentName: student.studentName,
+      email: student.email,
+      avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${student.studentName}`,
+      class: student.class,
+      stream: student.stream
+    }));
+
+    res.json({ students: formattedStudents });
+  } catch (error) {
+    console.error('Student search error:', error);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+// Get personal messages for a conversation
+app.get('/api/messages/personal/:conversationId', authenticateToken, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { before, limit = 50 } = req.query;
+    const currentStudentId = req.student.id;
+
+    const [userId1, userId2] = conversationId.split('_');
+
+    // Check if the current student is part of this conversation
+    if (!userId1 || !userId2 || (userId1 !== currentStudentId && userId2 !== currentStudentId)) {
+      return res.status(403).json({ error: 'Unauthorized to access this conversation' });
+    }
+
+    let query = PersonalMessage.find({
+      $or: [
+        { sender_id: userId1, recipient_id: userId2 },
+        { sender_id: userId2, recipient_id: userId1 }
+      ]
+    })
+      .populate('sender_id', 'studentName email')
+      .populate('recipient_id', 'studentName email')
+      .sort({ created_at: -1 }) // Fetch newest messages first
+      .limit(parseInt(limit));
+
+    // If 'before' is provided, fetch messages created before that timestamp
+    if (before) {
+      query = query.where('created_at').lt(new Date(before));
+    }
+
+    const messages = await query.lean();
+
+    // Reverse messages to display them in chronological order (oldest first)
+    const formattedMessages = messages.map(msg => ({
+      id: msg._id.toString(),
+      _id: msg._id.toString(),
+      sender_id: msg.sender_id._id.toString(),
+      recipient_id: msg.recipient_id._id.toString(),
+      content: msg.content,
+      read: msg.read,
+      delivered: msg.delivered,
+      created_at: msg.created_at,
+      sender: {
+        id: msg.sender_id._id.toString(),
+        username: msg.sender_id.studentName,
+        avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${msg.sender_id.studentName}`
+      },
+      recipient: {
+        id: msg.recipient_id._id.toString(),
+        username: msg.recipient_id.studentName,
+        avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${msg.recipient_id.studentName}`
+      }
+    })).reverse();
+
+    res.json(formattedMessages);
+  } catch (error) {
+    console.error('Failed to load personal messages:', error);
+    res.status(500).json({ error: 'Failed to load messages' });
+  }
+});
+
+// Start the server
+const PORT = process.env.PORT || 5000;
+httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log(`SchoolByte server running on port ${PORT}`);
+  console.log(`Socket.io chat server ready`);
+  console.log('All quiz system features implemented:');
+  console.log('✓ Enhanced database schemas');
+  console.log('✓ "Fats and Beef" quiz balancing mechanism');
+  console.log('✓ Advanced NLP grading system');
+  console.log('✓ Duplicate detection with hashing');
+  console.log('✓ Weekly tracking for students and teachers');
+  console.log('✓ Comprehensive analytics');
+  console.log('✓ Multiple question types support');
+  console.log('✓ Subject-based curriculum management');
+});
 
 
 // Student endpoint to fetch activities by subject and class
