@@ -325,6 +325,57 @@ app.get('/api/workfiles/:subject', authenticateToken, async (req, res) => {
     }
 });
 
+// --- Preview Work File (Free, no bytes deduction) ---
+app.get('/api/workfiles/:id/preview', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const studentId = req.student.id;
+
+    try {
+        const workFile = await WorkFile.findById(id).populate('uploadedBy.teacherId', 'teacherName');
+        if (!workFile) {
+            return res.status(404).json({ message: 'File not found' });
+        }
+
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+
+        // Return the Cloudinary URL for inline viewing (no fl_attachment)
+        const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "dq5mdy0yq";
+        
+        const urlParts = workFile.fileUrl.split('/upload/');
+        const pathAndVersion = urlParts.length > 1 ? urlParts[1] : '';
+        const publicIdWithExtension = pathAndVersion.replace(/^v\d+\//, '');
+        const publicId = publicIdWithExtension.substring(0, publicIdWithExtension.lastIndexOf('.'));
+
+        if (!publicId) {
+            console.error("Could not extract public_id from URL:", workFile.fileUrl);
+            return res.status(500).json({ message: 'Could not process file URL.' });
+        }
+
+        // Construct preview URL (no download flag, allows inline viewing)
+        const previewUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${publicId}.pdf`;
+
+        console.log(`Preview URL constructed: ${previewUrl}`);
+
+        return res.json({
+            message: 'Preview URL generated successfully.',
+            previewUrl: previewUrl,
+            title: workFile.title,
+            description: workFile.description,
+            teacherName: workFile.uploadedBy?.teacherName || 'Unknown'
+        });
+
+    } catch (error) {
+        console.error('Error in preview handler:', error);
+        return res.status(500).json({
+            message: 'Server error during preview',
+            error: error.message
+        });
+    }
+});
+
 // --- Download Work File ---
 app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
     const { id } = req.params;
