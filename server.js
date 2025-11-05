@@ -420,11 +420,12 @@ app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
 
 // --- Enhanced Database Schemas ---
 
-// VerificationCode Schema
+// VerificationCode Schema with rate limiting
 const verificationCodeSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     code: { type: String, required: true },
-    createdAt: { type: Date, default: Date.now, expires: '10m' }
+    createdAt: { type: Date, default: Date.now, expires: '10m' },
+    lastSentAt: { type: Date, default: Date.now }
 });
 const VerificationCode = mongoose.model('VerificationCode', verificationCodeSchema);
 
@@ -2087,6 +2088,197 @@ app.post('/login-student', [
 });
 
 
+// Send password reset verification code
+app.post('/student/send-password-reset-code', [
+    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email address.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email } = req.body;
+
+    try {
+        // Check if student exists silently (don't reveal if email exists or not for security)
+        const student = await Student.findOne({ email });
+
+        // Only send email if student exists, but always return success message (prevents email enumeration)
+        if (student) {
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+
+            // Atomic rate limiting: only update if lastSentAt is old enough or doesn't exist
+            // This prevents race conditions from concurrent requests
+            const updated = await VerificationCode.findOneAndUpdate(
+                { 
+                    email,
+                    $or: [
+                        { lastSentAt: { $exists: false } },
+                        { lastSentAt: { $lt: twoMinutesAgo } }
+                    ]
+                },
+                { 
+                    email, 
+                    code, 
+                    lastSentAt: new Date(),
+                    createdAt: new Date()
+                },
+                { 
+                    upsert: true, 
+                    new: true,
+                    setDefaultsOnInsert: true
+                }
+            );
+
+            // If update failed, it means rate limit was hit
+            if (!updated) {
+                // Get the existing code to calculate retry time
+                const existingCode = await VerificationCode.findOne({ email });
+                if (existingCode && existingCode.lastSentAt) {
+                    const timeSinceLastSent = Date.now() - existingCode.lastSentAt.getTime();
+                    const secondsRemaining = Math.ceil((2 * 60 * 1000 - timeSinceLastSent) / 1000);
+                    return res.status(429).json({ 
+                        message: `Please wait ${secondsRemaining} seconds before requesting another code.`,
+                        retryAfter: secondsRemaining
+                    });
+                }
+            }
+
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS
+                }
+            });
+
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: 'SchoolByte - Password Reset Code',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #1a2a6c;">SchoolByte Password Reset</h2>
+                        <p>Hello ${student.studentName},</p>
+                        <p>You requested to reset your password. Use the code below to proceed:</p>
+                        <div style="background: #f0f4f8; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1a2a6c; margin: 20px 0;">
+                            ${code}
+                        </div>
+                        <p><strong>This code will expire in 10 minutes.</strong></p>
+                        <p>If you didn't request this, please ignore this email.</p>
+                        <p>Best regards,<br>SchoolByte Team</p>
+                    </div>
+                `
+            };
+
+            await transporter.sendMail(mailOptions);
+        }
+
+        // Always return success to prevent email enumeration attacks
+        res.status(200).json({
+            message: 'If a student account exists with this email, a password reset code has been sent.',
+            email: email
+        });
+
+    } catch (error) {
+        console.error('Error sending password reset code:', error);
+        res.status(500).json({ message: 'Failed to send reset code. Please try again later.' });
+    }
+});
+
+
+// Change password using old password (requires authentication)
+app.post('/student/change-password', authenticateToken, [
+    body('oldPassword').notEmpty().withMessage('Current password is required.'),
+    body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters long.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { oldPassword, newPassword } = req.body;
+
+    try {
+        const student = await Student.findById(req.student.id);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        const isMatch = await bcrypt.compare(oldPassword, student.password);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Current password is incorrect.' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 12);
+        student.password = hashedPassword;
+        await student.save();
+
+        res.status(200).json({
+            message: 'Password changed successfully!',
+            student: {
+                studentName: student.studentName,
+                email: student.email
+            }
+        });
+
+    } catch (error) {
+        console.error('Error changing password:', error);
+        res.status(500).json({ message: 'Failed to change password.', error: error.message });
+    }
+});
+
+
+// Reset password using verification code (no authentication required)
+app.post('/student/reset-password-with-code', [
+    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email address.'),
+    body('code').notEmpty().withMessage('Verification code is required.'),
+    body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters long.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email, code, newPassword } = req.body;
+
+    try {
+        const storedCode = await VerificationCode.findOne({ email });
+        if (!storedCode) {
+            return res.status(400).json({ message: 'No verification code found or it has expired.' });
+        }
+
+        if (storedCode.code !== code) {
+            return res.status(400).json({ message: 'Invalid verification code.' });
+        }
+
+        const student = await Student.findOne({ email });
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 12);
+        student.password = hashedPassword;
+        await student.save();
+
+        await VerificationCode.deleteOne({ email });
+
+        res.status(200).json({
+            message: 'Password reset successfully! You can now log in with your new password.',
+            student: {
+                studentName: student.studentName,
+                email: student.email
+            }
+        });
+
+    } catch (error) {
+        console.error('Error resetting password:', error);
+        res.status(500).json({ message: 'Failed to reset password.', error: error.message });
+    }
+});
+
+
 // Enhanced student dashboard
 app.get('/student/dashboard', authenticateToken, async (req, res) => {
     try {
@@ -2106,6 +2298,7 @@ app.get('/student/dashboard', authenticateToken, async (req, res) => {
         res.status(200).json({
             message: `Welcome to your dashboard, ${studentData.studentName}!`,
             student: {
+                _id: studentData._id,
                 studentName: studentData.studentName,
                 indexNumber: studentData.indexNumber,
                 email: studentData.email,
