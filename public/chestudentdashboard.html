@@ -644,7 +644,7 @@
 
         if (!response.ok) {
           if (response.status === 401 || response.status === 403) {
-            localStorage.removeItem('studentToken');
+            localStorage.removeItem('token');
             window.location.href = 'studentlogin.html';
             return;
           }
