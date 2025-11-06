@@ -692,6 +692,240 @@
                 display: block !important;
             }
         }
+
+        .create-group-btn {
+            width: 100%;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .create-group-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--glass-border);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--glass-border);
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--gray);
+            cursor: pointer;
+            transition: var(--transition);
+            padding: 5px 10px;
+        }
+
+        .modal-close:hover {
+            color: var(--danger);
+            transform: rotate(90deg);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            transition: var(--transition);
+            background: var(--gray-light);
+            color: var(--dark);
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            background: var(--white);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .contacts-selector {
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--gray-light);
+            border-radius: var(--radius-sm);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .contacts-selector h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: var(--dark);
+        }
+
+        .contact-checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+            background: var(--white);
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .contact-checkbox-item:hover {
+            background: var(--glass);
+            transform: translateX(5px);
+        }
+
+        .contact-checkbox-item input[type="checkbox"] {
+            margin-right: 12px;
+            cursor: pointer;
+        }
+
+        .contact-checkbox-item .contact-avatar {
+            margin-right: 12px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid var(--glass-border);
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: var(--gray-light);
+            color: var(--dark);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray);
+            color: white;
+        }
+
+        .selected-count {
+            display: inline-block;
+            margin-left: 10px;
+            padding: 4px 12px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -726,6 +960,12 @@
                 <div class="tab" data-tab="groups">Groups</div>
                 <div class="tab" data-tab="teams">Teams</div>
                 <div class="tab" data-tab="search">Search</div>
+            </div>
+            
+            <div style="padding: 10px 15px; border-bottom: 1px solid var(--glass-border);">
+                <button id="createGroupBtn" class="create-group-btn">
+                    <i class="fas fa-plus-circle"></i> Create Discussion Group
+                </button>
             </div>
             
             <div class="contacts" id="contactsList">
@@ -770,6 +1010,59 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Create Group Modal -->
+    <div id="createGroupModal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-users"></i> Create Discussion Group</h2>
+                <button class="modal-close" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="createGroupForm">
+                <div class="form-group">
+                    <label for="groupName">Group Name *</label>
+                    <input type="text" id="groupName" required placeholder="Enter group name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="groupDescription">Description</label>
+                    <textarea id="groupDescription" placeholder="What is this group about?"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="groupRules">Group Rules</label>
+                    <textarea id="groupRules" placeholder="Set some ground rules for members"></textarea>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="isPublic" checked>
+                    <label for="isPublic">Make this group public (anyone can join)</label>
+                </div>
+                
+                <div class="contacts-selector">
+                    <h4>
+                        Invite Members 
+                        <span class="selected-count" id="selectedCount">0 selected</span>
+                    </h4>
+                    <div id="contactsToInvite">
+                        <div class="loading">Loading contacts...</div>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelGroupBtn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submitGroupBtn">
+                        <i class="fas fa-check"></i> Create Group
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -927,6 +1220,14 @@
                     messages[msgIndex].read = true;
                     messages[msgIndex].status = 'read';
                     displayMessages();
+                }
+            });
+
+            socket.on('group_invitation', (data) => {
+                const { groupId, groupName, invitedBy, invitationToken, message } = data;
+                
+                if (confirm(`${message}\n\nWould you like to join this group now?`)) {
+                    joinGroupByInvitation(invitationToken);
                 }
             });
 
@@ -1381,7 +1682,190 @@
             });
         });
 
+        // Create Group Modal functionality
+        let allContactsForInvite = [];
+
+        document.getElementById('createGroupBtn').addEventListener('click', async () => {
+            document.getElementById('createGroupModal').style.display = 'flex';
+            await loadContactsForInvite();
+        });
+
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('createGroupModal').style.display = 'none';
+            resetCreateGroupForm();
+        });
+
+        document.getElementById('cancelGroupBtn').addEventListener('click', () => {
+            document.getElementById('createGroupModal').style.display = 'none';
+            resetCreateGroupForm();
+        });
+
+        async function loadContactsForInvite() {
+            const container = document.getElementById('contactsToInvite');
+            container.innerHTML = '<div class="loading">Loading contacts...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/api/students/suggestions`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load contacts');
+
+                const data = await response.json();
+                allContactsForInvite = data.suggestions || [];
+                displayContactsForInvite(allContactsForInvite);
+            } catch (error) {
+                console.error('Error loading contacts for invite:', error);
+                container.innerHTML = '<div class="loading">Failed to load contacts</div>';
+            }
+        }
+
+        function displayContactsForInvite(contacts) {
+            const container = document.getElementById('contactsToInvite');
+            
+            if (contacts.length === 0) {
+                container.innerHTML = '<div class="loading">No contacts available</div>';
+                return;
+            }
+
+            container.innerHTML = contacts.map(contact => {
+                const initials = contact.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
+                return `
+                    <label class="contact-checkbox-item">
+                        <input type="checkbox" value="${contact.id}" data-contact='${JSON.stringify(contact)}'>
+                        <div class="contact-avatar" style="width: 35px; height: 35px; font-size: 14px;">${initials}</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 14px;">${contact.studentName}</div>
+                            <div style="font-size: 12px; color: var(--gray);">${contact.email}</div>
+                        </div>
+                    </label>
+                `;
+            }).join('');
+
+            // Update selected count
+            container.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedCount);
+            });
+        }
+
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('#contactsToInvite input[type="checkbox"]:checked');
+            document.getElementById('selectedCount').textContent = `${checkboxes.length} selected`;
+        }
+
+        function resetCreateGroupForm() {
+            document.getElementById('createGroupForm').reset();
+            document.getElementById('selectedCount').textContent = '0 selected';
+        }
+
+        document.getElementById('createGroupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const groupName = document.getElementById('groupName').value.trim();
+            const groupDescription = document.getElementById('groupDescription').value.trim();
+            const groupRules = document.getElementById('groupRules').value.trim();
+            const isPublic = document.getElementById('isPublic').checked;
+
+            const selectedCheckboxes = document.querySelectorAll('#contactsToInvite input[type="checkbox"]:checked');
+            const invitedMembers = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+            if (!groupName) {
+                alert('Please enter a group name');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitGroupBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+            try {
+                const response = await fetch(`${API_URL}/api/groups/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        name: groupName,
+                        description: groupDescription,
+                        rules: groupRules,
+                        is_public: isPublic,
+                        invited_members: invitedMembers
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to create group');
+                }
+
+                alert(`Group "${groupName}" created successfully! ${invitedMembers.length > 0 ? 'Invitations sent to selected members.' : ''}`);
+                
+                document.getElementById('createGroupModal').style.display = 'none';
+                resetCreateGroupForm();
+
+                // Refresh groups list if on groups tab
+                if (currentTab === 'groups') {
+                    loadContacts();
+                }
+            } catch (error) {
+                console.error('Error creating group:', error);
+                alert(error.message || 'Failed to create group. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check"></i> Create Group';
+            }
+        });
+
+        async function joinGroupByInvitation(invitationToken) {
+            try {
+                const response = await fetch(`${API_URL}/api/groups/join-by-invite`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ invitationToken })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to join group');
+                }
+
+                alert(data.message || 'Successfully joined the group!');
+                
+                // Switch to groups tab and refresh
+                currentTab = 'groups';
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelector('[data-tab="groups"]').classList.add('active');
+                loadContacts();
+            } catch (error) {
+                console.error('Error joining group:', error);
+                alert(error.message || 'Failed to join group');
+            }
+        }
+
+        // Check for invitation in URL on page load
+        function checkForInvitation() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const inviteToken = urlParams.get('invite');
+            
+            if (inviteToken && token) {
+                // Clear the URL parameter
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+                // Join the group
+                setTimeout(() => {
+                    joinGroupByInvitation(inviteToken);
+                }, 1000);
+            }
+        }
+
         initByteNexusSession();
+        checkForInvitation();
     </script>
 </body>
 </html>

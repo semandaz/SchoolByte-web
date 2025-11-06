@@ -653,6 +653,144 @@ app.get('/api/search/groups', authenticateRequest, async (req, res) => {
   }
 });
 
+app.post('/api/groups/create', authenticateRequest, async (req, res) => {
+  try {
+    const { name, description, rules, is_public, invited_members } = req.body;
+
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({ error: 'Group name is required' });
+    }
+
+    const newGroup = new DiscussionGroup({
+      name: name.trim(),
+      description: description ? description.trim() : '',
+      rules: rules ? rules.trim() : '',
+      is_public: is_public !== false,
+      created_by: req.userId
+    });
+
+    await newGroup.save();
+
+    // Automatically add creator as member
+    const creatorMembership = new GroupMember({
+      group_id: newGroup._id,
+      user_id: req.userId
+    });
+    await creatorMembership.save();
+
+    // Send invitations to selected members
+    if (invited_members && invited_members.length > 0) {
+      const invitationToken = Buffer.from(JSON.stringify({
+        groupId: newGroup._id.toString(),
+        groupName: name,
+        invitedBy: req.userId,
+        timestamp: Date.now()
+      })).toString('base64');
+
+      for (const memberId of invited_members) {
+        const invitedUser = await User.findById(memberId);
+        if (invitedUser) {
+          const invitationLink = `${process.env.FRONTEND_URL || req.get('origin')}/bytenexus-chat.html?invite=${invitationToken}`;
+          
+          // Send invitation message via socket if user is online
+          const memberSocket = authenticatedSockets.get(memberId);
+          if (memberSocket) {
+            memberSocket.emit('group_invitation', {
+              groupId: newGroup._id.toString(),
+              groupName: name,
+              invitedBy: req.user.username,
+              invitationToken: invitationToken,
+              message: `${req.user.username} has invited you to join "${name}" discussion group.`
+            });
+          }
+
+          console.log(`Invitation sent to ${invitedUser.username} for group ${name}`);
+        }
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      group: {
+        id: newGroup._id.toString(),
+        name: newGroup.name,
+        description: newGroup.description,
+        rules: newGroup.rules,
+        is_public: newGroup.is_public,
+        created_by: newGroup.created_by.toString(),
+        created_at: newGroup.created_at
+      },
+      message: `Group created successfully. ${invited_members?.length || 0} invitation(s) sent.`
+    });
+  } catch (error) {
+    console.error('Error creating group:', error);
+    res.status(500).json({ error: 'Failed to create group' });
+  }
+});
+
+app.post('/api/groups/join-by-invite', authenticateRequest, async (req, res) => {
+  try {
+    const { invitationToken } = req.body;
+
+    if (!invitationToken) {
+      return res.status(400).json({ error: 'Invitation token is required' });
+    }
+
+    let invitationData;
+    try {
+      const decoded = Buffer.from(invitationToken, 'base64').toString('utf-8');
+      invitationData = JSON.parse(decoded);
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid invitation token' });
+    }
+
+    const { groupId, groupName, timestamp } = invitationData;
+
+    // Check if invitation is not too old (7 days)
+    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    if (timestamp < sevenDaysAgo) {
+      return res.status(400).json({ error: 'Invitation has expired' });
+    }
+
+    // Verify group exists
+    const group = await DiscussionGroup.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    // Check if already a member
+    const existingMembership = await GroupMember.findOne({
+      group_id: groupId,
+      user_id: req.userId
+    });
+
+    if (existingMembership) {
+      return res.status(400).json({ error: 'You are already a member of this group' });
+    }
+
+    // Add user as member
+    const newMembership = new GroupMember({
+      group_id: groupId,
+      user_id: req.userId
+    });
+    await newMembership.save();
+
+    res.json({
+      success: true,
+      group: {
+        id: group._id.toString(),
+        name: group.name,
+        description: group.description,
+        rules: group.rules
+      },
+      message: `Successfully joined "${group.name}"`
+    });
+  } catch (error) {
+    console.error('Error joining group by invitation:', error);
+    res.status(500).json({ error: 'Failed to join group' });
+  }
+});
+
 app.get('/api/messages/personal/:conversationId', authenticateRequest, async (req, res) => {
   try {
     const { conversationId } = req.params;
