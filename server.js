@@ -5218,13 +5218,96 @@ app.post('/api/groups/create', authenticateToken, [
   const creatorId = req.student.id;
 
   try {
-    // For now, we'll create a simple group without full ByteNexus integration
-    // You can expand this to use MongoDB models if needed
+    const creator = await Student.findById(creatorId);
+    if (!creator) {
+      return res.status(404).json({ error: 'Creator not found' });
+    }
+
+    // Create the group ID
+    const groupId = new mongoose.Types.ObjectId().toString();
+    
+    // Generate invitation token
+    const invitationToken = Buffer.from(JSON.stringify({
+      groupId: groupId,
+      groupName: name,
+      invitedBy: creatorId,
+      timestamp: Date.now()
+    })).toString('base64');
+
+    // Create invitation link
+    const invitationLink = `${req.protocol}://${req.get('host')}/bytenexus-chat.html?invite=${invitationToken}`;
+
+    // Send invitation messages to each invited member
+    if (invited_members && invited_members.length > 0) {
+      for (const memberId of invited_members) {
+        const invitedUser = await Student.findById(memberId);
+        if (invitedUser) {
+          // Create invitation message
+          const invitationMessage = new PersonalMessage({
+            sender_id: creatorId,
+            recipient_id: memberId,
+            content: `🎉 You've been invited to join the discussion group "${name}"!\n\n📋 Description: ${description || 'No description provided'}\n\n✅ Click here to join: ${invitationLink}\n\nInvited by: ${creator.studentName}`,
+            read: false,
+            delivered: false
+          });
+          
+          await invitationMessage.save();
+
+          // Send real-time notification if user is online
+          const recipientSocket = authenticatedSockets.get(memberId);
+          if (recipientSocket) {
+            const messageWithSender = await PersonalMessage.findById(invitationMessage._id)
+              .populate('sender_id', 'studentName email')
+              .populate('recipient_id', 'studentName email')
+              .lean();
+
+            const formattedMessage = {
+              _id: messageWithSender._id.toString(),
+              id: messageWithSender._id.toString(),
+              sender_id: messageWithSender.sender_id._id.toString(),
+              recipient_id: messageWithSender.recipient_id._id.toString(),
+              content: messageWithSender.content,
+              read: messageWithSender.read,
+              delivered: true,
+              created_at: messageWithSender.created_at,
+              sender: {
+                id: messageWithSender.sender_id._id.toString(),
+                username: messageWithSender.sender_id.studentName,
+                avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${messageWithSender.sender_id.studentName}`
+              },
+              recipient: {
+                id: messageWithSender.recipient_id._id.toString(),
+                username: messageWithSender.recipient_id.studentName,
+                avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${messageWithSender.recipient_id.studentName}`
+              }
+            };
+
+            // Mark as delivered
+            await PersonalMessage.updateOne(
+              { _id: invitationMessage._id },
+              { delivered: true }
+            );
+
+            const conversationId = [creatorId, memberId].sort().join('_');
+            recipientSocket.emit('new_personal_message', formattedMessage);
+            recipientSocket.emit('group_invitation', {
+              groupId: groupId,
+              groupName: name,
+              invitedBy: creator.studentName,
+              invitationToken: invitationToken,
+              message: `${creator.studentName} has invited you to join "${name}" discussion group.`
+            });
+          }
+
+          console.log(`Invitation sent to ${invitedUser.studentName} for group ${name}`);
+        }
+      }
+    }
     
     res.status(201).json({
       success: true,
       group: {
-        id: new mongoose.Types.ObjectId().toString(),
+        id: groupId,
         name: name,
         description: description || '',
         rules: rules || '',
@@ -5253,6 +5336,52 @@ app.get('/api/search/groups', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error searching groups:', error);
     res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+// Join group via invitation
+app.post('/api/groups/join-by-invite', authenticateToken, async (req, res) => {
+  try {
+    const { invitationToken } = req.body;
+    const studentId = req.student.id;
+
+    if (!invitationToken) {
+      return res.status(400).json({ error: 'Invitation token is required' });
+    }
+
+    let invitationData;
+    try {
+      const decoded = Buffer.from(invitationToken, 'base64').toString('utf-8');
+      invitationData = JSON.parse(decoded);
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid invitation token' });
+    }
+
+    const { groupId, groupName, timestamp } = invitationData;
+
+    // Check if invitation is not too old (7 days)
+    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    if (timestamp < sevenDaysAgo) {
+      return res.status(400).json({ error: 'Invitation has expired' });
+    }
+
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    res.json({
+      success: true,
+      group: {
+        id: groupId,
+        name: groupName
+      },
+      message: `Successfully joined "${groupName}"`
+    });
+
+  } catch (error) {
+    console.error('Error joining group by invitation:', error);
+    res.status(500).json({ error: 'Failed to join group' });
   }
 });
 

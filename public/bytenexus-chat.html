@@ -1864,6 +1864,54 @@
             }
         }
 
+        // Check for invitation in URL on page load
+        function checkForInvitation() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const inviteToken = urlParams.get('invite');
+            
+            if (inviteToken && token) {
+                // Clear the URL parameter
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+                // Show confirmation dialog
+                setTimeout(() => {
+                    if (confirm('You have been invited to join a discussion group. Would you like to join now?')) {
+                        joinGroupByInvitation(inviteToken);
+                    }
+                }, 1000);
+            }
+        }
+
+        async function joinGroupByInvitation(invitationToken) {
+            try {
+                const response = await fetch(`${API_URL}/api/groups/join-by-invite`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ invitationToken })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to join group');
+                }
+
+                alert(data.message || 'Successfully joined the group!');
+                
+                // Switch to groups tab and refresh
+                currentTab = 'groups';
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelector('[data-tab="groups"]').classList.add('active');
+                loadContacts();
+            } catch (error) {
+                console.error('Error joining group:', error);
+                alert(error.message || 'Failed to join group');
+            }
+        }
+
         initByteNexusSession();
         checkForInvitation();
     </script>
