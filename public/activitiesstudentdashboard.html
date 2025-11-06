@@ -354,6 +354,190 @@
             font-size: 1.1rem;
         }
 
+        /* Preview Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .modal-content {
+            background: var(--color-neutral-white);
+            border-radius: 15px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: var(--gradient-background-primary);
+            color: var(--color-neutral-white);
+            padding: 1.5rem 2rem;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: var(--color-neutral-white);
+            font-size: 1.8rem;
+            cursor: pointer;
+            padding: 0;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .preview-info {
+            background: var(--color-neutral-lightest);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .preview-info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .preview-info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .preview-info-item i {
+            color: var(--color-brand-primary);
+        }
+
+        .preview-question {
+            background: var(--color-neutral-white);
+            border: 2px solid var(--color-neutral-light);
+            border-radius: 10px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .preview-question-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+            color: var(--color-brand-primary);
+        }
+
+        .preview-question-text {
+            margin-bottom: 0.8rem;
+            font-size: 1rem;
+            color: var(--color-neutral-darkest);
+        }
+
+        .preview-options {
+            list-style: none;
+            padding: 0;
+        }
+
+        .preview-option {
+            padding: 0.5rem 1rem;
+            background: var(--color-neutral-lightest);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--color-neutral-light);
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .btn-secondary {
+            background: var(--color-neutral-medium);
+            color: var(--color-neutral-white);
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--color-neutral-dark);
+            transform: translateY(-2px);
+        }
+
+        .activity-buttons {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 1rem;
+        }
+
+        .activity-buttons button {
+            flex: 1;
+        }
+
+        .preview-btn {
+            background: var(--color-info-blue);
+            color: var(--color-neutral-white);
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .preview-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
         @media (max-width: 768px) {
             .header-container {
                 flex-direction: row;
@@ -428,6 +612,29 @@
         <span id="bytesCount">0</span> Bytes
     </div>
 
+    <!-- Preview Modal -->
+    <div id="previewModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Activity Preview</h2>
+                <button class="modal-close" onclick="closePreviewModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Preview content will be dynamically inserted here -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closePreviewModal()">
+                    <i class="fas fa-times"></i> Close
+                </button>
+                <button class="start-btn" id="modalStartBtn">
+                    <i class="fas fa-play"></i> Start Activity
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Subject configuration with icons
         const subjectConfig = {
@@ -476,8 +683,16 @@
             const bytesCountElement = document.getElementById('bytesCount');
             const searchInput = document.getElementById('searchInput');
 
-            // Get student data
-            const token = localStorage.getItem('studentToken');
+            // Get student data with token standardization
+            let token = localStorage.getItem('token');
+            if (!token) {
+                token = localStorage.getItem('studentToken');
+                if (token) {
+                    localStorage.setItem('token', token);
+                    localStorage.removeItem('studentToken');
+                }
+            }
+            
             if (!token) {
                 window.location.href = 'studentlogin.html';
                 return;
@@ -607,9 +822,14 @@
                             ${activity.totalBytesReward || (activity.questions ? activity.questions.length : 0)} Bytes
                         </span>
                     </div>
-                    <button class="start-btn" onclick="startActivity('${activity._id}')">
-                        <i class="fas fa-play"></i> Start Activity
-                    </button>
+                    <div class="activity-buttons">
+                        <button class="preview-btn" onclick="previewActivity('${activity._id}')">
+                            <i class="fas fa-eye"></i> Preview
+                        </button>
+                        <button class="start-btn" onclick="startActivity('${activity._id}')">
+                            <i class="fas fa-play"></i> Start
+                        </button>
+                    </div>
                 `;
 
                 activitiesContainer.appendChild(card);
@@ -648,6 +868,88 @@
             // Redirect to activity questions page
             window.location.href = `activity-questions.html?id=${activityId}`;
         }
+
+        function previewActivity(activityId) {
+            const activity = allActivities.find(a => a._id === activityId);
+            if (!activity) {
+                alert('Activity not found');
+                return;
+            }
+
+            const modal = document.getElementById('previewModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            const modalStartBtn = document.getElementById('modalStartBtn');
+
+            modalTitle.textContent = `${activity.activityName} - Preview`;
+            
+            let previewHTML = `
+                <div class="preview-info">
+                    <div class="preview-info-item">
+                        <i class="fas fa-book"></i>
+                        <strong>Subject:</strong> ${activity.subject || 'General'}
+                    </div>
+                    <div class="preview-info-item">
+                        <i class="fas fa-graduation-cap"></i>
+                        <strong>Class:</strong> ${activity.intendedClass}
+                    </div>
+                    <div class="preview-info-item">
+                        <i class="fas fa-question-circle"></i>
+                        <strong>Total Questions:</strong> ${activity.questions ? activity.questions.length : 0}
+                    </div>
+                    <div class="preview-info-item">
+                        <i class="fas fa-coins"></i>
+                        <strong>Bytes Reward:</strong> ${activity.totalBytesReward || (activity.questions ? activity.questions.length : 0)}
+                    </div>
+                </div>
+                <h3 style="margin-bottom: 1rem; color: var(--color-brand-primary);">
+                    <i class="fas fa-list"></i> Questions Preview
+                </h3>
+            `;
+
+            if (activity.questions && activity.questions.length > 0) {
+                activity.questions.forEach((q, index) => {
+                    previewHTML += `
+                        <div class="preview-question">
+                            <div class="preview-question-header">
+                                <i class="fas fa-circle-question"></i>
+                                Question ${index + 1}
+                            </div>
+                            <div class="preview-question-text">${q.question}</div>
+                            <ul class="preview-options">
+                                ${q.options ? q.options.map((opt, optIndex) => `
+                                    <li class="preview-option">
+                                        ${String.fromCharCode(65 + optIndex)}. ${opt}
+                                    </li>
+                                `).join('') : '<li class="preview-option">No options available</li>'}
+                            </ul>
+                        </div>
+                    `;
+                });
+            } else {
+                previewHTML += '<p style="text-align: center; color: var(--color-neutral-medium); padding: 2rem;">No questions available for preview.</p>';
+            }
+
+            modalBody.innerHTML = previewHTML;
+            modalStartBtn.onclick = () => {
+                closePreviewModal();
+                startActivity(activityId);
+            };
+
+            modal.classList.add('active');
+        }
+
+        function closePreviewModal() {
+            const modal = document.getElementById('previewModal');
+            modal.classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('previewModal').addEventListener('click', (e) => {
+            if (e.target.id === 'previewModal') {
+                closePreviewModal();
+            }
+        });
     </script>
 </body>
 </html>
