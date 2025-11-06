@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -34,6 +35,25 @@
             --transition-fast: all 0.15s ease;
             --glass: rgba(255, 255, 255, 0.25);
             --glass-border: rgba(255, 255, 255, 0.18);
+        }
+
+        [data-theme="dark"] {
+            --primary: #818cf8;
+            --primary-dark: #6366f1;
+            --primary-light: #a5b4fc;
+            --secondary: #94a3b8;
+            --success: #34d399;
+            --warning: #fbbf24;
+            --danger: #f87171;
+            --light: #1e293b;
+            --dark: #f1f5f9;
+            --gray: #94a3b8;
+            --gray-light: #334155;
+            --white: #0f172a;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            --glass: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(30, 41, 59, 0.5);
         }
 
         body {
@@ -73,7 +93,35 @@
             transition: var(--transition);
         }
 
-        /* Sidebar Styles */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+
+        .toggle-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--dark);
+            font-size: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
         .sidebar {
             width: 320px;
             background-color: var(--glass);
@@ -259,6 +307,7 @@
             transition: var(--transition);
             background: linear-gradient(135deg, var(--primary), var(--primary-light));
             object-fit: cover;
+            font-size: 18px;
         }
 
         .contact:hover .contact-avatar {
@@ -294,7 +343,6 @@
             margin-top: 4px;
         }
 
-        /* Chat Area Styles */
         .chat-area {
             flex: 1;
             display: flex;
@@ -512,7 +560,6 @@
             transform: translateY(0);
         }
 
-        /* Welcome Screen */
         .empty-state {
             flex: 1;
             display: flex;
@@ -559,7 +606,6 @@
             font-size: 1rem;
         }
 
-        /* Scrollbar Styling */
         ::-webkit-scrollbar {
             width: 6px;
         }
@@ -577,7 +623,6 @@
             background: var(--primary);
         }
 
-        /* Responsive Design */
         @media (max-width: 768px) {
             .app-container {
                 height: 100vh;
@@ -631,8 +676,13 @@
     </style>
 </head>
 <body>
+    <div class="theme-toggle">
+        <div class="toggle-btn" id="themeToggle">
+            <i class="fas fa-moon"></i>
+        </div>
+    </div>
+
     <div class="app-container">
-        <!-- Sidebar with contacts -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
@@ -662,7 +712,6 @@
             </div>
         </div>
         
-        <!-- Main chat area -->
         <div class="chat-area">
             <div id="emptyState" class="empty-state">
                 <i class="fas fa-comments"></i>
@@ -713,12 +762,25 @@
         let socket = null;
         let messages = [];
 
+        // Theme toggle
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            document.body.setAttribute('data-theme', 
+                document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
+            );
+            
+            const icon = document.getElementById('themeToggle').querySelector('i');
+            if (document.body.getAttribute('data-theme') === 'dark') {
+                icon.className = 'fas fa-sun';
+            } else {
+                icon.className = 'fas fa-moon';
+            }
+        });
+
         // Mobile menu toggle
         document.getElementById('menuToggle').addEventListener('click', () => {
             document.getElementById('sidebar').classList.toggle('active');
         });
 
-        // Initialize chat using SchoolByte authentication
         async function initByteNexusSession() {
             const contactsList = document.getElementById('contactsList');
             
@@ -749,7 +811,6 @@
                     avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${data.student.studentName}`
                 };
 
-                // Update current user UI
                 const initials = currentUser.username.split(' ').map(n => n[0]).join('').toUpperCase();
                 document.getElementById('currentUserAvatar').textContent = initials;
                 document.getElementById('currentUserName').textContent = currentUser.username;
@@ -764,7 +825,6 @@
             }
         }
 
-        // Initialize Socket.io connection
         function initSocket() {
             socket = io(API_URL, {
                 auth: { token: token }
@@ -878,7 +938,7 @@
                 const initials = contact.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
                 return `
                     <div class="contact" data-contact='${JSON.stringify(contact)}'>
-                        <div class="contact-avatar" style="font-size: 18px;">${initials}</div>
+                        <div class="contact-avatar">${initials}</div>
                         <div class="contact-info">
                             <div class="contact-name">${contact.studentName}</div>
                             <div class="contact-details">${contact.email}</div>
@@ -892,13 +952,11 @@
                 item.addEventListener('click', () => {
                     const contact = JSON.parse(item.dataset.contact);
                     
-                    // Update active state
                     document.querySelectorAll('.contact').forEach(c => c.classList.remove('active'));
                     item.classList.add('active');
                     
                     openChat(contact);
                     
-                    // Close sidebar on mobile
                     if (window.innerWidth <= 768) {
                         document.getElementById('sidebar').classList.remove('active');
                     }
