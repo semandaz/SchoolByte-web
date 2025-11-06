@@ -282,7 +282,117 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-// --- Get Work Files (Notes) by Subject ---
+// Get active chat conversations for ByteNexus
+app.get('/api/messages/personal/conversations', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.student.id;
+
+    // Find all conversations where the student has both sent and received messages
+    const conversations = await PersonalMessage.aggregate([
+      {
+        $match: {
+          $or: [
+            { sender_id: new mongoose.Types.ObjectId(studentId) },
+            { recipient_id: new mongoose.Types.ObjectId(studentId) }
+          ]
+        }
+      },
+      {
+        $sort: { created_at: -1 }
+      },
+      {
+        $group: {
+          _id: {
+            $cond: [
+              { $eq: ['$sender_id', new mongoose.Types.ObjectId(studentId)] },
+              '$recipient_id',
+              '$sender_id'
+            ]
+          },
+          lastMessage: { $first: '$content' },
+          lastMessageTime: { $first: '$created_at' },
+          unreadCount: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ['$recipient_id', new mongoose.Types.ObjectId(studentId)] },
+                    { $eq: ['$read', false] }
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          },
+          messagesSent: {
+            $sum: {
+              $cond: [{ $eq: ['$sender_id', new mongoose.Types.ObjectId(studentId)] }, 1, 0]
+            }
+          },
+          messagesReceived: {
+            $sum: {
+              $cond: [{ $eq: ['$recipient_id', new mongoose.Types.ObjectId(studentId)] }, 1, 0]
+            }
+          }
+        }
+      },
+      {
+        $match: {
+          messagesSent: { $gt: 0 },
+          messagesReceived: { $gt: 0 }
+        }
+      },
+      {
+        $lookup: {
+          from: 'students',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'contactDetails'
+        }
+      },
+      {
+        $unwind: '$contactDetails'
+      },
+      {
+        $project: {
+          contactId: '$_id',
+          contactName: '$contactDetails.studentName',
+          contactEmail: '$contactDetails.email',
+          contactClass: '$contactDetails.class',
+          contactStream: '$contactDetails.stream',
+          lastMessage: 1,
+          lastMessageTime: 1,
+          unreadCount: 1
+        }
+      }
+    ]);
+
+    const formattedConversations = conversations.map(conv => ({
+      contact: {
+        id: conv.contactId.toString(),
+        studentName: conv.contactName,
+        email: conv.contactEmail,
+        class: conv.contactClass,
+        stream: conv.contactStream,
+        avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${conv.contactName}`,
+        category: 'Active Chat'
+      },
+      contactName: conv.contactName,
+      lastMessage: conv.lastMessage.substring(0, 50) + (conv.lastMessage.length > 50 ? '...' : ''),
+      lastMessageTime: conv.lastMessageTime,
+      unreadCount: conv.unreadCount
+    }));
+
+    res.json(formattedConversations);
+
+  } catch (error) {
+    console.error('Error fetching conversations:', error);
+    res.status(500).json({ error: 'Failed to fetch conversations' });
+  }
+});
+
+// Get Work Files (Notes) by Subject ---
 app.get('/api/workfiles/:subject', authenticateToken, async (req, res) => {
     try {
         const { subject } = req.params;
@@ -323,150 +433,6 @@ app.get('/api/workfiles/:subject', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Error fetching work files:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
-    }
-});
-
-// --- Preview Work File (Free, no bytes deduction) ---
-app.get('/api/workfiles/:id/preview', authenticateToken, async (req, res) => {
-    const { id } = req.params;
-    const studentId = req.student.id;
-
-    try {
-        const workFile = await WorkFile.findById(id).populate('uploadedBy.teacherId', 'teacherName');
-        if (!workFile) {
-            return res.status(404).json({ message: 'File not found' });
-        }
-
-        const student = await Student.findById(studentId);
-        if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
-        }
-
-        // Return the Cloudinary URL for inline viewing (no fl_attachment)
-        const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "dq5mdy0yq";
-
-        const urlParts = workFile.fileUrl.split('/upload/');
-        const pathAndVersion = urlParts.length > 1 ? urlParts[1] : '';
-        const publicIdWithExtension = pathAndVersion.replace(/^v\d+\//, '');
-        const publicId = publicIdWithExtension.substring(0, publicIdWithExtension.lastIndexOf('.'));
-
-        if (!publicId) {
-            console.error("Could not extract public_id from URL:", workFile.fileUrl);
-            return res.status(500).json({ message: 'Could not process file URL.' });
-        }
-
-        // Construct preview URL (no download flag, allows inline viewing)
-        const previewUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${publicId}.pdf`;
-
-        console.log(`Preview URL constructed: ${previewUrl}`);
-
-        return res.json({
-            message: 'Preview URL generated successfully.',
-            previewUrl: previewUrl,
-            title: workFile.title,
-            description: workFile.description,
-            teacherName: workFile.uploadedBy?.teacherName || 'Unknown'
-        });
-
-    } catch (error) {
-        console.error('Error in preview handler:', error);
-        return res.status(500).json({
-            message: 'Server error during preview',
-            error: error.message
-        });
-    }
-});
-
-// --- Download Work File ---
-app.post('/api/workfiles/:id/download', authenticateToken, async (req, res) => {
-    const { id } = req.params;
-    const studentId = req.student.id;
-    let bytesDeducted = false;
-    let student = null;
-    let workFile = null;
-
-    try {
-        workFile = await WorkFile.findById(id).populate('uploadedBy.teacherId', 'teacherName');
-        if (!workFile) {
-            return res.status(404).json({ message: 'File not found' });
-        }
-
-        student = await Student.findById(studentId);
-        if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
-        }
-
-        if (student.bytes < workFile.costBytes) {
-            return res.status(400).json({
-                message: 'Insufficient bytes',
-                required: workFile.costBytes,
-                available: student.bytes
-            });
-        }
-
-        const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "dq5mdy0yq";
-        const teacherName = workFile.uploadedBy?.teacherName || 'Teacher';
-
-        // 1. Create a clean, URL-safe base filename (without extension)
-        const cleanTitle = workFile.title.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_');
-        const cleanSubject = workFile.subject.replace(/\s+/g, '_');
-        const cleanTeacher = teacherName.replace(/\s+/g, '_');
-        const customFilenameBase = `${cleanSubject}_${cleanTitle}_by_${cleanTeacher}`;
-
-        // 2. Robustly extract the public_id from the Cloudinary URL
-        const urlParts = workFile.fileUrl.split('/upload/');
-        const pathAndVersion = urlParts.length > 1 ? urlParts[1] : '';
-        const publicIdWithExtension = pathAndVersion.replace(/^v\d+\//, ''); // Remove version if present
-        const publicId = publicIdWithExtension.substring(0, publicIdWithExtension.lastIndexOf('.'));
-
-        if (!publicId) {
-            console.error("Could not extract public_id from URL:", workFile.fileUrl);
-            return res.status(500).json({ message: 'Could not process file URL.' });
-        }
-
-        // 3. Assemble the final URL with the correct transformation syntax
-        const downloadUrl = `https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/fl_attachment:${customFilenameBase}/${publicId}.pdf`;
-
-        console.log(`Download URL constructed: ${downloadUrl}`);
-
-        // Deduct bytes before sending URL
-        student.bytes -= workFile.costBytes;
-        bytesDeducted = true;
-
-        workFile.downloadCount += 1;
-
-        await student.save();
-        await workFile.save();
-
-        console.log(`Bytes deducted: ${workFile.costBytes}. Student now has ${student.bytes} bytes`);
-
-        // Return URL to client for browser-handled download
-        return res.json({
-            message: 'File access granted. Redirecting for download.',
-            downloadUrl: downloadUrl
-        });
-
-    } catch (error) {
-        console.error('Error in download handler:', error);
-
-        // Refund bytes if the process failed after deduction
-        if (bytesDeducted && student && workFile) {
-            try {
-                // Use updateOne to avoid versioning conflicts
-                await Student.updateOne({ _id: studentId }, { $inc: { bytes: workFile.costBytes } });
-                console.log(`Bytes refunded due to handler error: ${workFile.costBytes}`);
-            } catch (refundError) {
-                console.error('CRITICAL: Failed to refund bytes:', refundError);
-            }
-        }
-
-        if (!res.headersSent) {
-            return res.status(500).json({
-                message: 'Server error during download',
-                error: error.message,
-                bytesRefunded: bytesDeducted
-            });
-        }
     }
 });
 
@@ -5225,7 +5191,7 @@ app.post('/api/groups/create', authenticateToken, [
 
     // Create the group ID
     const groupId = new mongoose.Types.ObjectId().toString();
-    
+
     // Generate invitation token
     const invitationToken = Buffer.from(JSON.stringify({
       groupId: groupId,
@@ -5246,11 +5212,11 @@ app.post('/api/groups/create', authenticateToken, [
           const invitationMessage = new PersonalMessage({
             sender_id: creatorId,
             recipient_id: memberId,
-            content: `🎉 You've been invited to join the discussion group "${name}"!\n\n📋 Description: ${description || 'No description provided'}\n\n✅ Click here to join: ${invitationLink}\n\nInvited by: ${creator.studentName}`,
+            content: `🎉 You've been invited to join the discussion group "${name}"!\n\n📋 Description: ${description || 'No description provided'}\n\n✅ Click here tojoin: ${invitationLink}\n\nInvited by: ${creator.studentName}`,
             read: false,
             delivered: false
           });
-          
+
           await invitationMessage.save();
 
           // Send real-time notification if user is online
@@ -5303,7 +5269,7 @@ app.post('/api/groups/create', authenticateToken, [
         }
       }
     }
-    
+
     res.status(201).json({
       success: true,
       group: {
@@ -5328,7 +5294,7 @@ app.post('/api/groups/create', authenticateToken, [
 app.get('/api/search/groups', authenticateToken, async (req, res) => {
   try {
     const { q } = req.query;
-    
+
     // For now, return empty array
     // You can implement MongoDB queries here if you want to store groups
     res.json([]);

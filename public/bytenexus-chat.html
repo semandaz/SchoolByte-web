@@ -956,7 +956,8 @@
             </div>
             
             <div class="tabs">
-                <div class="tab active" data-tab="suggestions">Suggestions</div>
+                <div class="tab active" data-tab="chats">Chats</div>
+                <div class="tab" data-tab="suggestions">Suggestions</div>
                 <div class="tab" data-tab="groups">Groups</div>
                 <div class="tab" data-tab="teams">Teams</div>
                 <div class="tab" data-tab="search">Search</div>
@@ -1072,7 +1073,7 @@
         let token = localStorage.getItem('token');
         let currentUser = null;
         let activeContact = null;
-        let currentTab = 'suggestions';
+        let currentTab = 'chats';
         let socket = null;
         let messages = [];
 
@@ -1236,10 +1237,81 @@
             });
         }
 
+        async function loadChats() {
+            const contactsList = document.getElementById('contactsList');
+            contactsList.innerHTML = '<div class="loading">Loading active chats...</div>';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/messages/personal/conversations`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load chats');
+
+                const conversations = await response.json();
+                
+                if (conversations.length === 0) {
+                    contactsList.innerHTML = '<div class="loading">No active chats yet.<br><br><small style="color: var(--gray);">Start a conversation from Suggestions!</small></div>';
+                    return;
+                }
+
+                // Sort by most recent message
+                conversations.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+
+                contactsList.innerHTML = conversations.map(conv => {
+                    const initials = conv.contactName.split(' ').map(n => n[0]).join('').toUpperCase();
+                    const timeAgo = formatTimeAgo(new Date(conv.lastMessageTime));
+                    const unreadBadge = conv.unreadCount > 0 ? `<span class="category-badge" style="background: linear-gradient(135deg, #ef4444, #dc2626);">${conv.unreadCount} new</span>` : '';
+                    
+                    return `
+                        <div class="contact" data-contact='${JSON.stringify(conv.contact)}'>
+                            <div class="contact-avatar">${initials}</div>
+                            <div class="contact-info">
+                                <div class="contact-name">${conv.contactName}</div>
+                                <div class="contact-details">${conv.lastMessage}</div>
+                                <span class="category-badge" style="background: linear-gradient(135deg, var(--gray), var(--gray-light));">${timeAgo}</span>
+                                ${unreadBadge}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                document.querySelectorAll('.contact').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const contact = JSON.parse(item.dataset.contact);
+                        
+                        document.querySelectorAll('.contact').forEach(c => c.classList.remove('active'));
+                        item.classList.add('active');
+                        
+                        openChat(contact);
+                        
+                        if (window.innerWidth <= 768) {
+                            document.getElementById('sidebar').classList.remove('active');
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading chats:', error);
+                contactsList.innerHTML = '<div class="loading">Failed to load chats. Please refresh.</div>';
+            }
+        }
+
+        function formatTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+            return date.toLocaleDateString();
+        }
+
         async function loadContacts() {
             const contactsList = document.getElementById('contactsList');
             
-            if (currentTab === 'suggestions') {
+            if (currentTab === 'chats') {
+                await loadChats();
+            } else if (currentTab === 'suggestions') {
                 contactsList.innerHTML = '<div class="loading">Loading suggestions...</div>';
                 
                 try {
