@@ -391,30 +391,31 @@
             const rest = leaderboard.slice(3);
 
             const podiumEl = document.getElementById('podium');
-            podiumEl.innerHTML = ''; // Clear previous content
+            podiumEl.innerHTML = '';
             podiumEl.style.display = 'flex';
             
             top3.forEach((player, index) => {
                 const position = index === 0 ? 'first' : index === 1 ? 'second' : 'third';
                 const initials = player.displayName.substring(0, 2).toUpperCase();
                 const currentUserBadge = player.isCurrentUser ? '<span style="color: var(--color-brand-gold); font-size: 0.85rem;"> (You)</span>' : '';
+                const currentUserClass = player.isCurrentUser ? 'current-user' : '';
                 
                 const podiumHTML = `
-                    <div class="podium-place ${position}">
+                    <div class="podium-place ${position} ${currentUserClass}">
                         <div class="podium-avatar">
                             ${index === 0 ? '<i class="fas fa-crown crown-icon"></i>' : ''}
                             ${initials}
                         </div>
                         <div class="podium-name">#${player.rank} ${player.displayName}${currentUserBadge}</div>
-                        <div class="podium-bytes"><i class="fas fa-coins"></i> ${player.bytes}</div>
-                        <div class="podium-tier">Tier ${player.tier}: ${getTierName(player.tier)}</div>
+                        <div class="podium-bytes"><i class="fas fa-coins"></i> ${player.bytes || 0}</div>
+                        <div class="podium-tier">Tier ${player.tier || 1}: ${getTierName(player.tier || 1)}</div>
                     </div>
                 `;
                 podiumEl.innerHTML += podiumHTML;
             });
 
             const listEl = document.getElementById('leaderboardList');
-            listEl.innerHTML = ''; // Clear previous content
+            listEl.innerHTML = '';
             listEl.style.display = 'block';
             
             rest.forEach(player => {
@@ -429,10 +430,10 @@
                             <div class="user-avatar">${initials}</div>
                             <div>
                                 <div class="user-name">${player.displayName}${youBadge}</div>
-                                <span class="user-tier">Tier ${player.tier}: ${getTierName(player.tier)}</span>
+                                <span class="user-tier">Tier ${player.tier || 1}: ${getTierName(player.tier || 1)}</span>
                             </div>
                         </div>
-                        <div class="bytes-count"><i class="fas fa-coins"></i> ${player.bytes}</div>
+                        <div class="bytes-count"><i class="fas fa-coins"></i> ${player.bytes || 0}</div>
                     </li>
                 `;
                 listEl.innerHTML += itemHTML;

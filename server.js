@@ -344,7 +344,7 @@ app.get('/api/workfiles/:id/preview', authenticateToken, async (req, res) => {
 
         // Return the Cloudinary URL for inline viewing (no fl_attachment)
         const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "dq5mdy0yq";
-        
+
         const urlParts = workFile.fileUrl.split('/upload/');
         const pathAndVersion = urlParts.length > 1 ? urlParts[1] : '';
         const publicIdWithExtension = pathAndVersion.replace(/^v\d+\//, '');
@@ -4025,31 +4025,33 @@ app.post('/admin/trigger-yearly-upgrade', authenticateAdminToken, async (req, re
 
 
 // Leaderboard endpoints (existing)
-app.get('/leaderboard', async (req, res) => {
+app.get('/leaderboard', authenticateToken, async (req, res) => {
     try {
+        const currentStudentId = req.student.id;
+
         const students = await Student.find({})
             .sort({ bytes: -1 })
-            .select('firstNameDisplay studentName bytes')
+            .select('preferredName studentName bytes currentTier')
             .lean();
 
-
         const leaderboard = students.map((student, index) => {
-            const displayName = student.firstNameDisplay || student.studentName.split(' ')[0];
-            const bytesStatus = index < 200 ? student.bytes : undefined;
-
+            const rank = index + 1;
+            const isCurrentUser = student._id.toString() === currentStudentId;
+            const displayName = student.preferredName || student.studentName;
 
             return {
-                name: displayName,
-                bytes: bytesStatus
+                rank: rank,
+                displayName: displayName,
+                bytes: rank <= 200 ? student.bytes : undefined,
+                tier: student.currentTier || 1,
+                isCurrentUser: isCurrentUser
             };
         });
 
-
         res.status(200).json({
             message: 'Leaderboard fetched successfully!',
-            leaderboard: leaderboard
+            leaderboard: leaderboard.slice(0, 200)
         });
-
 
     } catch (error) {
         console.error('Error fetching leaderboard:', error);
@@ -5161,7 +5163,7 @@ You are a professional career guidance counselor AI for SchoolByte, an education
 
 Be encouraging, specific, and culturally relevant to Uganda and East Africa. Suggest careers that match their demonstrated skills (e.g., geography knowledge → cartography, tourism, geology; logical thinking from Sudoku → engineering, computer science, data analysis).
 
-Keep responses concise (2-4 paragraphs), friendly, and actionable. Use their performance data to give specific feedback.
+Keep responsesconcise (2-4 paragraphs), friendly, and actionable. Use their performance data to give specific feedback.
 `;
 
         const fullPrompt = chatHistory && chatHistory.length > 0 
