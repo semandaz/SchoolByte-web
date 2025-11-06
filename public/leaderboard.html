@@ -302,11 +302,21 @@
     </div>
 
     <script>
-        const token = localStorage.getItem('token') || localStorage.getItem('studentToken');
+        // Standardize token retrieval with backward compatibility
+        let token = localStorage.getItem('token');
+        if (!token) {
+            token = localStorage.getItem('studentToken');
+            if (token) {
+                localStorage.setItem('token', token);
+                localStorage.removeItem('studentToken');
+            }
+        }
 
         if (!token) {
             window.location.href = 'studentlogin.html';
         }
+
+        let refreshInterval;
 
         async function loadLeaderboard() {
             try {
@@ -317,6 +327,12 @@
                 });
 
                 if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('studentToken');
+                        window.location.href = 'studentlogin.html';
+                        return;
+                    }
                     throw new Error('Failed to fetch leaderboard');
                 }
 
@@ -329,6 +345,19 @@
                 const errorEl = document.getElementById('errorMessage');
                 errorEl.textContent = 'Failed to load leaderboard. Please try again later.';
                 errorEl.style.display = 'block';
+            }
+        }
+
+        // Auto-refresh leaderboard every 30 seconds
+        function startAutoRefresh() {
+            refreshInterval = setInterval(() => {
+                loadLeaderboard();
+            }, 30000);
+        }
+
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
             }
         }
 
@@ -350,6 +379,7 @@
 
         function displayLeaderboard(leaderboard) {
             document.getElementById('loading').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
 
             if (leaderboard.length === 0) {
                 document.getElementById('leaderboardList').innerHTML = '<li style="text-align: center; padding: 2rem;">No data available yet.</li>';
@@ -361,11 +391,13 @@
             const rest = leaderboard.slice(3);
 
             const podiumEl = document.getElementById('podium');
+            podiumEl.innerHTML = ''; // Clear previous content
             podiumEl.style.display = 'flex';
             
             top3.forEach((player, index) => {
                 const position = index === 0 ? 'first' : index === 1 ? 'second' : 'third';
                 const initials = player.displayName.substring(0, 2).toUpperCase();
+                const currentUserBadge = player.isCurrentUser ? '<span style="color: var(--color-brand-gold); font-size: 0.85rem;"> (You)</span>' : '';
                 
                 const podiumHTML = `
                     <div class="podium-place ${position}">
@@ -373,7 +405,7 @@
                             ${index === 0 ? '<i class="fas fa-crown crown-icon"></i>' : ''}
                             ${initials}
                         </div>
-                        <div class="podium-name">#${player.rank} ${player.displayName}</div>
+                        <div class="podium-name">#${player.rank} ${player.displayName}${currentUserBadge}</div>
                         <div class="podium-bytes"><i class="fas fa-coins"></i> ${player.bytes}</div>
                         <div class="podium-tier">Tier ${player.tier}: ${getTierName(player.tier)}</div>
                     </div>
@@ -382,11 +414,13 @@
             });
 
             const listEl = document.getElementById('leaderboardList');
+            listEl.innerHTML = ''; // Clear previous content
             listEl.style.display = 'block';
             
             rest.forEach(player => {
                 const initials = player.displayName.substring(0, 2).toUpperCase();
                 const currentUserClass = player.isCurrentUser ? 'current-user' : '';
+                const youBadge = player.isCurrentUser ? ' <span style="color: var(--color-brand-gold); font-weight: 700;">(You)</span>' : '';
                 
                 const itemHTML = `
                     <li class="leaderboard-item ${currentUserClass}">
@@ -394,7 +428,7 @@
                         <div class="user-info">
                             <div class="user-avatar">${initials}</div>
                             <div>
-                                <div class="user-name">${player.displayName}</div>
+                                <div class="user-name">${player.displayName}${youBadge}</div>
                                 <span class="user-tier">Tier ${player.tier}: ${getTierName(player.tier)}</span>
                             </div>
                         </div>
@@ -405,7 +439,14 @@
             });
         }
 
+        // Initial load
         loadLeaderboard();
+        
+        // Start auto-refresh
+        startAutoRefresh();
+        
+        // Stop auto-refresh when user leaves the page
+        window.addEventListener('beforeunload', stopAutoRefresh);
 
         document.addEventListener('DOMContentLoaded', () => {
             fetch('floating-buttons.html')
