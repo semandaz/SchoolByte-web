@@ -597,53 +597,19 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-award"></i> Class Leaderboard
+                            <i class="fas fa-award"></i> Top 5 Leaderboard
                         </h3>
                     </div>
                     <div class="card-content">
-                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                            <div class="leaderboard-item">
-                                <div class="rank rank-1">1</div>
-                                <div class="student-info">
-                                    <div class="student-name">Joy</div>
-                                </div>
-                                <div class="student-bytes">1.2 kB</div>
-                            </div>
-                            <div class="leaderboard-item">
-                                <div class="rank rank-2">2</div>
-                                <div class="student-info">
-                                    <div class="student-name">Mark</div>
-                                </div>
-                                <div class="student-bytes">850 Bytes</div>
-                            </div>
-                            <div class="leaderboard-item">
-                                <div class="rank rank-3">3</div>
-                                <div class="student-info">
-                                    <div class="student-name">Sarah</div>
-                                </div>
-                                <div class="student-bytes">720 Bytes</div>
-                            </div>
-                            <div class="leaderboard-item">
-                                <div class="rank">4</div>
-                                <div class="student-info">
-                                    <div class="student-name">Alex</div>
-                                </div>
-                                <div class="student-bytes">680 Bytes</div>
-                            </div>
-                            <div class="leaderboard-item">
-                                <div class="rank">5</div>
-                                <div class="student-info">
-                                    <div class="student-name">Emma</div>
-                                </div>
-                                <div class="student-bytes">650 Bytes</div>
-                            </div>
+                        <div id="leaderboardPreview" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <!-- Top 5 students will be loaded here dynamically -->
                         </div>
                         <button class="btn btn-secondary" style="width: 100%; margin-top: 1rem;" id="showMoreBtn">
-                            Show More
+                            <i class="fas fa-trophy"></i> Show Full Leaderboard (Top 200)
                         </button>
                     </div>
                 </div>
-            </div>
+            </div></div>
 
             <!-- Resources Tab -->
             <div id="resources" class="tab-content">
@@ -841,8 +807,54 @@
             }
         }
 
-        // Load student data on page load
+        // Function to fetch and display top 5 leaderboard
+        async function fetchTop5Leaderboard() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+
+                const response = await fetch(`${window.location.origin}/leaderboard`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const top5 = data.leaderboard.slice(0, 5);
+                    
+                    const leaderboardPreview = document.getElementById('leaderboardPreview');
+                    leaderboardPreview.innerHTML = '';
+                    
+                    top5.forEach(student => {
+                        const rankClass = student.rank === 1 ? 'rank-1' : student.rank === 2 ? 'rank-2' : student.rank === 3 ? 'rank-3' : '';
+                        const bytesDisplay = student.bytes >= 1000 ? `${(student.bytes/1000).toFixed(1)} kB` : `${student.bytes} Bytes`;
+                        
+                        const itemHTML = `
+                            <div class="leaderboard-item" style="${student.isCurrentUser ? 'background: linear-gradient(to right, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1)); border: 2px solid var(--color-brand-gold);' : ''}">
+                                <div class="rank ${rankClass}">${student.rank}</div>
+                                <div class="student-info">
+                                    <div class="student-name">${student.displayName}${student.isCurrentUser ? ' (You)' : ''}</div>
+                                </div>
+                                <div class="student-bytes">${bytesDisplay}</div>
+                            </div>
+                        `;
+                        leaderboardPreview.innerHTML += itemHTML;
+                    });
+                } else if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('token');
+                    window.location.href = 'studentlogin.html';
+                }
+            } catch (error) {
+                console.error('Error fetching leaderboard preview:', error);
+            }
+        }
+
+        // Load student data and leaderboard on page load
         fetchStudentData();
+        fetchTop5Leaderboard();
 
         // Tab functionality
         document.querySelectorAll('.tabs-trigger').forEach(tab => {
@@ -965,9 +977,9 @@
             window.location.href = 'studentlogin.html';
         });
 
-        // Show More button for leaderboard
+        // Show More button - redirect to full leaderboard page
         document.getElementById('showMoreBtn').addEventListener('click', function() {
-            alert('Showing more leaderboard entries. (Full implementation would load more data)');
+            window.location.href = 'leaderboard.html';
         });
 
         // Initialize preferred name from localStorage
