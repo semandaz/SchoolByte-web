@@ -320,7 +320,7 @@
 
         async function loadLeaderboard() {
             try {
-                const response = await fetch(`${window.location.origin}/api/leaderboard?limit=200`, {
+                const response = await fetch(`${window.location.origin}/leaderboard`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
