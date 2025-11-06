@@ -370,25 +370,21 @@
                 if (activeContact && 
                     (message.sender_id === activeContact.id || message.recipient_id === activeContact.id)) {
                     
-                    // If this is our own sent message coming back, update the pending one
-                    if (message.sender_id === currentUser.id && message.tempId) {
-                        const pendingIndex = messages.findIndex(m => m.tempId === message.tempId);
-                        if (pendingIndex !== -1) {
-                            messages[pendingIndex] = { ...message, status: 'sent' };
-                        } else {
-                            messages.push({ ...message, status: 'sent' });
-                        }
-                    } else {
-                        // Received message from other person
-                        messages.push(message);
-                        
-                        // Auto-mark as read when viewing the chat
-                        if (message.sender_id === activeContact.id) {
-                            socket.emit('mark_message_read', { messageId: message._id });
+                    // Only process messages from the other person (not our own sent messages)
+                    if (message.sender_id !== currentUser.id) {
+                        // Check if message already exists to prevent duplicates
+                        const existingIndex = messages.findIndex(m => m._id === message._id);
+                        if (existingIndex === -1) {
+                            messages.push(message);
+                            
+                            // Auto-mark as read when viewing the chat
+                            if (message.sender_id === activeContact.id) {
+                                socket.emit('mark_message_read', { messageId: message._id });
+                            }
+                            
+                            displayMessages();
                         }
                     }
-                    
-                    displayMessages();
                 }
             });
 
@@ -409,12 +405,29 @@
 
             // Listen for message sent confirmation
             socket.on('message_sent_confirmation', (data) => {
-                const { tempId, messageId, status } = data;
+                const { tempId, messageId, status, message } = data;
                 const msgIndex = messages.findIndex(m => m.tempId === tempId);
                 if (msgIndex !== -1) {
-                    messages[msgIndex]._id = messageId;
-                    messages[msgIndex].status = status || 'sent';
-                    delete messages[msgIndex].tempId;
+                    // Update the pending message with the confirmed message data
+                    if (message) {
+                        messages[msgIndex] = { ...message, status: status || 'sent' };
+                    } else {
+                        messages[msgIndex]._id = messageId;
+                        messages[msgIndex].status = status || 'sent';
+                        delete messages[msgIndex].tempId;
+                    }
+                    displayMessages();
+                }
+            });
+
+            // Handle message errors (connection issues, server errors)
+            socket.on('message_error', (data) => {
+                console.error('Message error:', data.error);
+                // Find the pending message and mark it as failed
+                const pendingMsg = messages.find(m => m.status === 'pending' || m.tempId);
+                if (pendingMsg) {
+                    pendingMsg.status = 'failed';
+                    pendingMsg.error = data.error || 'Failed to send';
                     displayMessages();
                 }
             });
@@ -559,6 +572,7 @@
                 const isSent = msg.sender_id === currentUser.id;
                 const statusIcon = getMessageStatusIcon(msg);
                 const timestamp = new Date(msg.created_at || msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const retryAttr = msg.status === 'failed' ? `onclick="retryMessage('${msg.tempId}')" style="cursor: pointer;"` : '';
                 
                 return `
                     <div class="message ${isSent ? 'sent' : 'received'}">
@@ -567,7 +581,7 @@
                             ${isSent ? `
                                 <div class="message-meta">
                                     <span class="message-time">${timestamp}</span>
-                                    <span class="message-status">${statusIcon}</span>
+                                    <span class="message-status" ${retryAttr}>${statusIcon}</span>
                                 </div>
                             ` : `
                                 <div class="message-meta">
@@ -584,6 +598,11 @@
         }
 
         function getMessageStatusIcon(msg) {
+            // If message failed to send
+            if (msg.status === 'failed') {
+                return '<i class="fas fa-exclamation-circle" style="color: #e74c3c;" title="Failed to send. Tap to retry"></i>';
+            }
+            
             // If message has no _id, it's pending (not yet sent to server)
             if (!msg._id && msg.status === 'pending') {
                 return '<i class="fas fa-clock" style="color: #999;" title="Sending..."></i>';
@@ -606,6 +625,23 @@
             
             // Default: pending
             return '<i class="fas fa-clock" style="color: #999;" title="Pending"></i>';
+        }
+
+        // Retry failed message
+        function retryMessage(tempId) {
+            const msgIndex = messages.findIndex(m => m.tempId === tempId);
+            if (msgIndex !== -1) {
+                const msg = messages[msgIndex];
+                msg.status = 'pending';
+                delete msg.error;
+                displayMessages();
+
+                socket.emit('send_personal_message', {
+                    recipientId: activeContact.id,
+                    content: msg.content,
+                    tempId: msg.tempId
+                });
+            }
         }
 
         function sendMessage() {

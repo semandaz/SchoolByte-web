@@ -192,15 +192,16 @@ io.on('connection', (socket) => {
 
       const conversationId = [socket.userId, recipientId].sort().join('_');
 
-      // Send confirmation to sender
+      // Send confirmation to sender with the full message
       socket.emit('message_sent_confirmation', {
         tempId: tempId,
         messageId: formattedMessage._id,
-        status: 'sent'
+        status: 'sent',
+        message: formattedMessage
       });
 
-      // Broadcast to conversation room
-      io.to(`personal_${conversationId}`).emit('new_personal_message', formattedMessage);
+      // Broadcast to conversation room (excluding sender to prevent duplication)
+      socket.to(`personal_${conversationId}`).emit('new_personal_message', formattedMessage);
 
       // Check if recipient is online
       const recipientSocket = authenticatedSockets.get(recipientId);
