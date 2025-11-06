@@ -741,7 +741,7 @@
                 
                 <div class="message-input-container">
                     <div class="message-input-wrapper">
-                        <input type="text" class="message-input" id="messageInput" placeholder="Type a message...">
+                        <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1"></textarea>
                     </div>
                     
                     <button class="send-button" id="sendButton">
@@ -1093,7 +1093,16 @@
             const messageInput = document.getElementById('messageInput');
             const content = messageInput.value.trim();
 
-            if (!content || !activeContact) return;
+            if (!content || !activeContact) {
+                console.warn('Cannot send: missing content or active contact');
+                return;
+            }
+
+            if (!socket || !socket.connected) {
+                console.error('Socket not connected. Cannot send message.');
+                alert('Connection lost. Please refresh the page.');
+                return;
+            }
 
             const tempMessage = {
                 sender_id: currentUser.id,
@@ -1101,7 +1110,8 @@
                 content: content,
                 status: 'pending',
                 timestamp: new Date(),
-                tempId: Date.now() + Math.random()
+                created_at: new Date(),
+                tempId: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
             };
 
             messages.push(tempMessage);
@@ -1114,12 +1124,22 @@
             });
 
             messageInput.value = '';
+            messageInput.style.height = 'auto';
         }
 
         document.getElementById('sendButton').addEventListener('click', sendMessage);
 
-        document.getElementById('messageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+        const messageInput = document.getElementById('messageInput');
+        
+        // Auto-resize textarea as user types
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // Handle Enter key (send) and Shift+Enter (new line)
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 sendMessage();
             }
