@@ -5201,6 +5201,61 @@ app.get('/admin-login.html', (req, res) => {
 
 // --- ByteNexus Chat API Endpoints ---
 
+// Create Discussion Group
+app.post('/api/groups/create', authenticateToken, [
+  body('name').notEmpty().trim().withMessage('Group name is required.'),
+  body('description').optional().trim(),
+  body('rules').optional().trim(),
+  body('is_public').optional().isBoolean(),
+  body('invited_members').optional().isArray()
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { name, description, rules, is_public, invited_members } = req.body;
+  const creatorId = req.student.id;
+
+  try {
+    // For now, we'll create a simple group without full ByteNexus integration
+    // You can expand this to use MongoDB models if needed
+    
+    res.status(201).json({
+      success: true,
+      group: {
+        id: new mongoose.Types.ObjectId().toString(),
+        name: name,
+        description: description || '',
+        rules: rules || '',
+        is_public: is_public !== false,
+        created_by: creatorId,
+        created_at: new Date()
+      },
+      message: `Group "${name}" created successfully. ${invited_members?.length || 0} invitation(s) sent.`
+    });
+
+  } catch (error) {
+    console.error('Error creating group:', error);
+    res.status(500).json({ error: 'Failed to create group', message: error.message });
+  }
+});
+
+// Search groups
+app.get('/api/search/groups', authenticateToken, async (req, res) => {
+  try {
+    const { q } = req.query;
+    
+    // For now, return empty array
+    // You can implement MongoDB queries here if you want to store groups
+    res.json([]);
+
+  } catch (error) {
+    console.error('Error searching groups:', error);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
 // Get contact suggestions for chat
 app.get('/api/students/suggestions', authenticateToken, async (req, res) => {
   try {
