@@ -80,12 +80,13 @@
 
         .app-container {
             width: 100%;
-            max-width: 1200px;
+            max-width: 1400px;
             height: 95vh;
             background-color: var(--white);
             border-radius: var(--radius);
             box-shadow: var(--shadow-lg);
             display: flex;
+            flex-direction: row;
             overflow: hidden;
             backdrop-filter: blur(10px);
             background: var(--glass);
@@ -130,6 +131,7 @@
             flex-direction: column;
             transition: var(--transition);
             backdrop-filter: blur(10px);
+            flex-shrink: 0;
         }
 
         .sidebar-header {
@@ -627,6 +629,7 @@
             .app-container {
                 height: 100vh;
                 border-radius: 0;
+                max-width: 100%;
             }
             
             body {
@@ -642,14 +645,30 @@
                 transform: translateX(-100%);
                 width: 85%;
                 max-width: 300px;
+                box-shadow: var(--shadow-lg);
             }
             
             .sidebar.active {
                 transform: translateX(0);
             }
             
+            .chat-area {
+                width: 100%;
+            }
+            
             .message {
                 max-width: 90%;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-menu-btn {
+                display: none !important;
+            }
+            
+            .sidebar {
+                position: relative;
+                transform: translateX(0);
             }
         }
 
