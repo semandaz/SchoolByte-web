@@ -723,6 +723,8 @@
             
             <div class="tabs">
                 <div class="tab active" data-tab="suggestions">Suggestions</div>
+                <div class="tab" data-tab="groups">Groups</div>
+                <div class="tab" data-tab="teams">Teams</div>
                 <div class="tab" data-tab="search">Search</div>
             </div>
             
@@ -854,7 +856,7 @@
             });
 
             socket.on('new_personal_message', (message) => {
-                if (activeContact && 
+                if (activeContact && activeContact.type !== 'group' &&
                     (message.sender_id === activeContact.id || message.recipient_id === activeContact.id)) {
                     
                     if (message.sender_id !== currentUser.id) {
@@ -868,6 +870,16 @@
                             
                             displayMessages();
                         }
+                    }
+                }
+            });
+
+            socket.on('new_group_message', (message) => {
+                if (activeContact && activeContact.type === 'group' && message.group_id === activeContact.id) {
+                    const existingIndex = messages.findIndex(m => m.id === message.id);
+                    if (existingIndex === -1) {
+                        messages.push(message);
+                        displayGroupMessages();
                     }
                 }
             });
@@ -942,6 +954,25 @@
                     console.error('Error loading contacts:', error);
                     contactsList.innerHTML = '<div class="loading">Failed to load contacts. Please refresh.</div>';
                 }
+            } else if (currentTab === 'groups') {
+                contactsList.innerHTML = '<div class="loading">Loading discussion groups...</div>';
+                
+                try {
+                    const response = await fetch(`${API_URL}/api/search/groups?q=`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (!response.ok) throw new Error('Failed to load groups');
+
+                    const groups = await response.json();
+                    displayGroups(groups);
+                } catch (error) {
+                    console.error('Error loading groups:', error);
+                    contactsList.innerHTML = '<div class="loading">Failed to load groups. Please refresh.</div>';
+                }
+            } else if (currentTab === 'teams') {
+                contactsList.innerHTML = '<div class="loading">Loading teams...</div>';
+                contactsList.innerHTML = '<div class="loading" style="padding: 20px; text-align: center;">Teams feature coming soon!<br><br><small style="color: var(--gray);">Create and manage collaborative study teams</small></div>';
             }
         }
 
@@ -983,8 +1014,54 @@
             });
         }
 
+        function displayGroups(groups) {
+            const contactsList = document.getElementById('contactsList');
+            
+            if (groups.length === 0) {
+                contactsList.innerHTML = '<div class="loading">No public groups found<br><br><small style="color: var(--gray);">Groups will appear here once created</small></div>';
+                return;
+            }
+
+            contactsList.innerHTML = groups.map(group => {
+                const initials = group.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                return `
+                    <div class="contact" data-group='${JSON.stringify(group)}'>
+                        <div class="contact-avatar" style="background: linear-gradient(135deg, #f59e0b, #ec4899);">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="contact-info">
+                            <div class="contact-name">${group.name}</div>
+                            <div class="contact-details">${group.description || 'No description'}</div>
+                            <span class="category-badge" style="background: linear-gradient(135deg, #f59e0b, #ec4899);">
+                                ${group.is_public ? 'Public Group' : 'Private Group'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.querySelectorAll('.contact').forEach(item => {
+                item.addEventListener('click', () => {
+                    const groupData = item.dataset.group;
+                    if (groupData) {
+                        const group = JSON.parse(groupData);
+                        
+                        document.querySelectorAll('.contact').forEach(c => c.classList.remove('active'));
+                        item.classList.add('active');
+                        
+                        openGroupChat(group);
+                        
+                        if (window.innerWidth <= 768) {
+                            document.getElementById('sidebar').classList.remove('active');
+                        }
+                    }
+                });
+            });
+        }
+
         async function openChat(contact) {
             activeContact = contact;
+            activeContact.type = 'personal';
             document.getElementById('emptyState').style.display = 'none';
             document.getElementById('chatContainer').style.display = 'flex';
             
@@ -1006,6 +1083,27 @@
             });
         }
 
+        async function openGroupChat(group) {
+            activeContact = {
+                id: group.id,
+                name: group.name,
+                description: group.description,
+                type: 'group'
+            };
+            
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('chatContainer').style.display = 'flex';
+            
+            document.getElementById('chatName').textContent = group.name;
+            document.getElementById('chatDetails').textContent = group.description || 'Discussion Group';
+            document.getElementById('chatAvatar').innerHTML = '<i class="fas fa-users"></i>';
+            document.getElementById('chatAvatar').style.background = 'linear-gradient(135deg, #f59e0b, #ec4899)';
+            
+            socket.emit('join_group_room', { groupId: group.id });
+
+            await loadGroupMessages(group.id);
+        }
+
         async function loadMessages(contactId) {
             const conversationId = [currentUser.id, contactId].sort().join('_');
             
@@ -1025,6 +1123,26 @@
                 console.error('Error loading messages:', error);
                 messages = [];
                 displayMessages();
+            }
+        }
+
+        async function loadGroupMessages(groupId) {
+            try {
+                const response = await fetch(`${API_URL}/api/messages/group/${groupId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    messages = await response.json();
+                    displayGroupMessages();
+                } else {
+                    messages = [];
+                    displayGroupMessages();
+                }
+            } catch (error) {
+                console.error('Error loading group messages:', error);
+                messages = [];
+                displayGroupMessages();
             }
         }
 
@@ -1108,6 +1226,40 @@
             }
         }
 
+        function displayGroupMessages() {
+            const chatMessages = document.getElementById('chatMessages');
+            
+            if (messages.length === 0) {
+                chatMessages.innerHTML = '<div class="loading">No messages yet. Start the conversation!</div>';
+                return;
+            }
+
+            chatMessages.innerHTML = messages.map(msg => {
+                const isSent = msg.sender_id === currentUser.id;
+                const senderName = msg.sender?.username || 'Unknown';
+                const senderInitials = senderName.split(' ').map(n => n[0]).join('').toUpperCase();
+                const timestamp = new Date(msg.created_at || msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                const boostBadge = msg.is_boosted ? `<span style="color: #f59e0b; font-size: 12px; margin-left: 5px;"><i class="fas fa-fire"></i> Boosted (${msg.boost_cost} bytes)</span>` : '';
+                
+                return `
+                    <div class="message ${isSent ? 'sent' : 'received'}">
+                        <div class="message-avatar" style="background: ${isSent ? 'linear-gradient(135deg, var(--primary), var(--primary-light))' : 'linear-gradient(135deg, #17a2b8, var(--primary-light))'}">${senderInitials}</div>
+                        <div class="message-bubble">
+                            ${!isSent ? `<div style="font-size: 12px; font-weight: 600; margin-bottom: 4px; color: var(--primary);">${senderName}</div>` : ''}
+                            <div class="message-content">${msg.content}</div>
+                            <div class="message-meta">
+                                <span class="message-time">${timestamp}</span>
+                                ${boostBadge}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
         function sendMessage() {
             const messageInput = document.getElementById('messageInput');
             const content = messageInput.value.trim();
@@ -1123,24 +1275,52 @@
                 return;
             }
 
-            const tempMessage = {
-                sender_id: currentUser.id,
-                recipient_id: activeContact.id,
-                content: content,
-                status: 'pending',
-                timestamp: new Date(),
-                created_at: new Date(),
-                tempId: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-            };
+            if (activeContact.type === 'group') {
+                const tempMessage = {
+                    group_id: activeContact.id,
+                    sender_id: currentUser.id,
+                    content: content,
+                    status: 'pending',
+                    timestamp: new Date(),
+                    created_at: new Date(),
+                    sender: {
+                        id: currentUser.id,
+                        username: currentUser.username
+                    },
+                    is_boosted: false,
+                    boost_cost: 0
+                };
 
-            messages.push(tempMessage);
-            displayMessages();
+                messages.push(tempMessage);
+                displayGroupMessages();
 
-            socket.emit('send_personal_message', {
-                recipientId: activeContact.id,
-                content: content,
-                tempId: tempMessage.tempId
-            });
+                socket.emit('send_group_message', {
+                    groupId: activeContact.id,
+                    content: content,
+                    hasLatex: false,
+                    isBoosted: false,
+                    byteCost: 0
+                });
+            } else {
+                const tempMessage = {
+                    sender_id: currentUser.id,
+                    recipient_id: activeContact.id,
+                    content: content,
+                    status: 'pending',
+                    timestamp: new Date(),
+                    created_at: new Date(),
+                    tempId: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+                };
+
+                messages.push(tempMessage);
+                displayMessages();
+
+                socket.emit('send_personal_message', {
+                    recipientId: activeContact.id,
+                    content: content,
+                    tempId: tempMessage.tempId
+                });
+            }
 
             messageInput.value = '';
             messageInput.style.height = 'auto';
