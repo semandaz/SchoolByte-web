@@ -770,7 +770,17 @@
         // Function to fetch and display student data
         async function fetchStudentData() {
             try {
-                const token = localStorage.getItem('studentToken');
+                // Check for token with backward compatibility
+                let token = localStorage.getItem('token');
+                if (!token) {
+                    token = localStorage.getItem('studentToken');
+                    if (token) {
+                        // Migrate old token to new key
+                        localStorage.setItem('token', token);
+                        localStorage.removeItem('studentToken');
+                    }
+                }
+                
                 if (!token) {
                     window.location.href = 'studentlogin.html';
                     return;
@@ -820,7 +830,8 @@
                     }
                     
                 } else if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('studentToken');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('studentToken'); // Also remove old token
                     window.location.href = 'studentlogin.html';
                 } else {
                     console.error('Failed to fetch student data');
@@ -851,7 +862,7 @@
         document.getElementById('preferred-name').addEventListener('change', async function() {
             const newPreferredName = this.value;
             try {
-                const token = localStorage.getItem('studentToken');
+                const token = localStorage.getItem('token');
                 const response = await fetch(`${window.location.origin}/student/preferred-name`, {
                     method: 'PUT',
                     headers: {
@@ -879,7 +890,7 @@
         document.getElementById('font-select').addEventListener('change', async function() {
             const selectedFont = this.value;
             try {
-                const token = localStorage.getItem('studentToken');
+                const token = localStorage.getItem('token');
                 
                 // Get current preferences and update font family
                 const currentData = JSON.parse(localStorage.getItem('studentData') || '{}');
@@ -942,7 +953,8 @@
         // Sign Out button
         document.getElementById('signOutBtn').addEventListener('click', function() {
             // Clear all student-related data
-            localStorage.removeItem('studentToken');
+            localStorage.removeItem('token');
+            localStorage.removeItem('studentToken'); // Also remove old token if exists
             localStorage.removeItem('studentData');
             localStorage.removeItem('preferredName');
             localStorage.removeItem('preferredFont');
