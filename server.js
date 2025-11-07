@@ -5817,12 +5817,6 @@ app.post('/api/groups/create', authenticateToken, [
   const studentId = req.student.id;
 
   try {
-    // Verify DiscussionGroup model exists
-    if (!mongoose.models.DiscussionGroup) {
-      console.error('DiscussionGroup model not found in mongoose.models');
-      return res.status(500).json({ error: 'Server configuration error: DiscussionGroup model not available' });
-    }
-
     const creator = await Student.findById(studentId);
     if (!creator) {
       return res.status(404).json({ error: 'Creator not found' });
