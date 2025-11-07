@@ -2401,11 +2401,77 @@ app.get('/student/quizzes/generate', authenticateToken, async (req, res) => {
 
 
         // Generate quiz questions using enhanced algorithm
-        const questions = await generateQuizQuestions(student, req.query.subject);
+        let questions = await generateQuizQuestions(student, req.query.subject);
 
 
+        // Fallback to AI generation if no questions found
         if (questions.length === 0) {
-            return res.status(404).json({ message: 'No suitable questions found. Please try again later.' });
+            console.log('No teacher questions available, attempting AI generation...');
+            
+            if (!genAI) {
+                return res.status(404).json({ 
+                    message: 'No suitable questions found and AI generation is unavailable. Please try again later.' 
+                });
+            }
+
+            try {
+                // Pick a random subject from student's enrolled subjects
+                const randomSubject = student.subjectsEnrolled[Math.floor(Math.random() * student.subjectsEnrolled.length)];
+                
+                const model = genAI.getGenerativeModel({ 
+                    model: MODEL_NAME,
+                    generationConfig: {
+                        responseMimeType: "application/json"
+                    }
+                });
+
+                const prompt = `Generate 10 multiple-choice-single questions for ${randomSubject}, class level ${student.class}.
+Each question must have exactly 4 options with EXACTLY ONE marked as correct.
+
+Output strict JSON format:
+{
+  "questions": [
+    {
+      "questionText": "Question text here",
+      "type": "multiple-choice-single",
+      "options": [
+        {"text": "Option A", "isCorrect": false},
+        {"text": "Option B", "isCorrect": true},
+        {"text": "Option C", "isCorrect": false},
+        {"text": "Option D", "isCorrect": false}
+      ],
+      "correctAnswers": ["Option B"],
+      "hint": "Helpful hint",
+      "explanation": "Detailed explanation",
+      "topic": "Topic name"
+    }
+  ]
+}`;
+
+                const result = await model.generateContent(prompt);
+                const aiResponse = JSON.parse(result.response.text());
+                
+                // Convert AI questions to match QuizQuestion format
+                questions = aiResponse.questions.map(q => ({
+                    _id: new mongoose.Types.ObjectId(),
+                    questionText: q.questionText,
+                    subject: randomSubject,
+                    intendedClass: student.class,
+                    type: q.type,
+                    options: q.options,
+                    hint: q.hint,
+                    explanation: q.explanation,
+                    topic: q.topic,
+                    uploadedBy: { teacherName: 'AI Generated' }
+                }));
+
+                console.log(`Successfully generated ${questions.length} AI questions`);
+            } catch (aiError) {
+                console.error('AI generation failed:', aiError);
+                return res.status(404).json({ 
+                    message: 'No suitable questions found. Please try again later.' 
+                });
+            }
         }
 
 
