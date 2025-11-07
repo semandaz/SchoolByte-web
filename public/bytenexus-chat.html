@@ -230,18 +230,22 @@
             display: flex;
             background-color: var(--glass);
             border-bottom: 1px solid var(--glass-border);
-            padding: 0 15px;
+            padding: 0 5px;
+            overflow-x: auto;
+            scrollbar-width: thin;
         }
 
         .tab {
-            flex: 1;
-            padding: 12px;
+            flex: 0 0 auto;
+            padding: 12px 10px;
             text-align: center;
             cursor: pointer;
             border-bottom: 3px solid transparent;
             transition: var(--transition);
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
+            white-space: nowrap;
+            min-width: fit-content;
         }
 
         .tab:hover {
