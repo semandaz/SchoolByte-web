@@ -89,6 +89,11 @@ const personalMessageSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  replyTo: {
+    id: { type: mongoose.Schema.Types.ObjectId },
+    content: { type: String },
+    sender_id: { type: mongoose.Schema.Types.ObjectId }
+  },
   created_at: {
     type: Date,
     default: Date.now
@@ -233,14 +238,15 @@ io.on('connection', (socket) => {
 
   socket.on('send_personal_message', async (data) => {
     try {
-      const { recipientId, content, tempId } = data;
+      const { recipientId, content, tempId, replyTo } = data;
 
       const newMessage = new PersonalMessage({
         sender_id: socket.userId,
         recipient_id: recipientId,
         content: content,
         read: false,
-        delivered: false
+        delivered: false,
+        replyTo: replyTo || null
       });
 
       await newMessage.save();
@@ -260,6 +266,11 @@ io.on('connection', (socket) => {
         delivered: messageWithSender.delivered,
         created_at: messageWithSender.created_at,
         tempId: tempId,
+        replyTo: messageWithSender.replyTo ? {
+          id: messageWithSender.replyTo.id?.toString(),
+          content: messageWithSender.replyTo.content,
+          sender_id: messageWithSender.replyTo.sender_id?.toString()
+        } : null,
         sender: {
           id: messageWithSender.sender_id._id.toString(),
           username: messageWithSender.sender_id.studentName,
@@ -365,7 +376,7 @@ io.on('connection', (socket) => {
 
   socket.on('send_group_message', async (data) => {
     try {
-      const { groupId, content } = data;
+      const { groupId, content, replyTo } = data;
 
       // Verify membership
       const group = await DiscussionGroup.findById(groupId);
@@ -385,6 +396,11 @@ io.on('connection', (socket) => {
         group_id: { type: mongoose.Schema.Types.ObjectId, ref: 'DiscussionGroup', required: true },
         sender_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
         content: { type: String, required: true, trim: true },
+        replyTo: {
+          id: { type: mongoose.Schema.Types.ObjectId },
+          content: { type: String },
+          sender_id: { type: mongoose.Schema.Types.ObjectId }
+        },
         created_at: { type: Date, default: Date.now }
       }, { timestamps: true });
 
@@ -393,7 +409,8 @@ io.on('connection', (socket) => {
       const newMessage = new GroupMessage({
         group_id: groupId,
         sender_id: socket.userId,
-        content: content
+        content: content,
+        replyTo: replyTo || null
       });
 
       await newMessage.save();
@@ -408,6 +425,11 @@ io.on('connection', (socket) => {
         sender_id: messageWithSender.sender_id._id.toString(),
         content: messageWithSender.content,
         created_at: messageWithSender.created_at,
+        replyTo: messageWithSender.replyTo ? {
+          id: messageWithSender.replyTo.id?.toString(),
+          content: messageWithSender.replyTo.content,
+          sender_id: messageWithSender.replyTo.sender_id?.toString()
+        } : null,
         sender: {
           id: messageWithSender.sender_id._id.toString(),
           username: messageWithSender.sender_id.studentName,

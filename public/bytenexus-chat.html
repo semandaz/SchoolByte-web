@@ -566,12 +566,17 @@
             transition: var(--transition);
             line-height: 1.4;
             background-color: var(--gray-light);
+            color: var(--dark);
         }
 
         .message-input:focus {
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
             background-color: var(--white);
+        }
+
+        [data-theme="dark"] .message-input {
+            color: #cbd5e1;
         }
 
         .send-button {
@@ -964,6 +969,98 @@
             font-size: 12px;
             font-weight: 600;
         }
+
+        .reply-preview {
+            display: none;
+            background-color: var(--gray-light);
+            border-left: 3px solid var(--primary);
+            padding: 10px 15px;
+            margin: 10px 25px 0 25px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .reply-preview.active {
+            display: block;
+        }
+
+        .reply-preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .reply-preview-username {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .reply-preview-close {
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .reply-preview-content {
+            font-size: 13px;
+            color: var(--gray);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .message-reply {
+            background-color: rgba(99, 102, 241, 0.1);
+            border-left: 3px solid var(--primary);
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .message-reply-username {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 3px;
+        }
+
+        .message-reply-text {
+            color: var(--gray);
+            font-style: italic;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .message.swipe-left {
+            transform: translateX(-60px);
+            transition: transform 0.2s ease;
+        }
+
+        .message-reply-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary);
+            font-size: 24px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .message.swipe-left .message-reply-icon {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -1042,6 +1139,16 @@
                     <div class="loading">Loading messages...</div>
                 </div>
 
+                <div class="reply-preview" id="replyPreview">
+                    <div class="reply-preview-header">
+                        <span class="reply-preview-username" id="replyUsername">Replying to:</span>
+                        <button class="reply-preview-close" id="closeReplyPreview">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="reply-preview-content" id="replyContent"></div>
+                </div>
+
                 <div class="message-input-container">
                     <div class="message-input-wrapper">
                         <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1"></textarea>
@@ -1117,7 +1224,12 @@
         let currentTab = 'chats';
         let socket = null;
         let messages = [];
-        let authenticatedSockets = new Map(); // Map to store userId -> socketId for online users
+        let authenticatedSockets = new Map();
+        let replyingToMessage = null;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let doubleTapTimer = null;
+        let lastTapTime = 0; // Map to store userId -> socketId for online users
 
         // Theme toggle
         document.getElementById('themeToggle').addEventListener('click', () => {
@@ -1141,6 +1253,11 @@
         // Mobile menu toggle for empty state
         document.getElementById('menuToggleEmpty').addEventListener('click', () => {
             document.getElementById('sidebar').classList.toggle('active');
+        });
+
+        // Reply preview close button
+        document.getElementById('closeReplyPreview').addEventListener('click', () => {
+            clearReplyPreview();
         });
 
         async function initByteNexusSession() {
@@ -1752,6 +1869,23 @@
             }
         }
 
+        function clearReplyPreview() {
+            replyingToMessage = null;
+            document.getElementById('replyPreview').classList.remove('active');
+        }
+
+        function setReplyPreview(message) {
+            replyingToMessage = message;
+            const replyPreview = document.getElementById('replyPreview');
+            const username = message.sender_id === currentUser.id ? 'You' : (message.sender?.username || activeContact.studentName);
+            
+            document.getElementById('replyUsername').textContent = `Replying to ${username}`;
+            document.getElementById('replyContent').textContent = message.content;
+            replyPreview.classList.add('active');
+            
+            document.getElementById('messageInput').focus();
+        }
+
         function displayMessages() {
             const chatMessages = document.getElementById('chatMessages');
 
@@ -1773,10 +1907,26 @@
                 const sanitizedContent = msg.content.replace(/<a href="([^"]+)"[^>]*>(.*?)<\/a>/g,
                     '<a href="$1" style="color: #6366f1; text-decoration: underline; cursor: pointer;" target="_blank" rel="noopener noreferrer">$2</a>');
 
+                let replyHTML = '';
+                if (msg.replyTo) {
+                    const replyUsername = msg.replyTo.sender_id === currentUser.id ? 'You' : (msg.replyTo.sender?.username || 'Unknown');
+                    replyHTML = `
+                        <div class="message-reply">
+                            <div class="message-reply-username">${replyUsername}</div>
+                            <div class="message-reply-text">${msg.replyTo.content}</div>
+                        </div>
+                    `;
+                }
+
                 return `
-                    <div class="message ${isSent ? 'sent' : 'received'}">
+                    <div class="message ${isSent ? 'sent' : 'received'}" data-message-id="${msg._id || msg.id}" 
+                         ontouchstart="handleTouchStart(event, '${msg._id || msg.id}')"
+                         ontouchmove="handleTouchMove(event, '${msg._id || msg.id}')"
+                         ontouchend="handleTouchEnd(event, '${msg._id || msg.id}')"
+                         ondblclick="handleDoubleTap('${msg._id || msg.id}')">
                         <div class="message-avatar">${isSent ? currentUserInitials : contactInitials}</div>
                         <div class="message-bubble">
+                            ${replyHTML}
                             <div class="message-content">${sanitizedContent}</div>
                             ${isSent ? `
                                 <div class="message-meta">
@@ -1789,6 +1939,7 @@
                                 </div>
                             `}
                         </div>
+                        <i class="fas fa-reply message-reply-icon"></i>
                     </div>
                 `;
             }).join('');
@@ -1836,6 +1987,60 @@
             }
         }
 
+        function handleTouchStart(event, messageId) {
+            const touch = event.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+        }
+
+        function handleTouchMove(event, messageId) {
+            if (!touchStartX || !touchStartY) return;
+            
+            const touch = event.touches[0];
+            const deltaX = touchStartX - touch.clientX;
+            const deltaY = Math.abs(touchStartY - touch.clientY);
+            
+            // Only respond to horizontal swipes (not vertical scrolling)
+            if (deltaY > 30) return;
+            
+            const messageElement = event.currentTarget;
+            
+            if (deltaX > 50) {
+                messageElement.classList.add('swipe-left');
+            } else {
+                messageElement.classList.remove('swipe-left');
+            }
+        }
+
+        function handleTouchEnd(event, messageId) {
+            const messageElement = event.currentTarget;
+            
+            if (messageElement.classList.contains('swipe-left')) {
+                const message = messages.find(m => (m._id || m.id) === messageId);
+                if (message) {
+                    setReplyPreview(message);
+                }
+            }
+            
+            messageElement.classList.remove('swipe-left');
+            touchStartX = 0;
+            touchStartY = 0;
+        }
+
+        function handleDoubleTap(messageId) {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTapTime;
+            
+            if (tapLength < 300 && tapLength > 0) {
+                const message = messages.find(m => (m._id || m.id) === messageId);
+                if (message) {
+                    setReplyPreview(message);
+                }
+            }
+            
+            lastTapTime = currentTime;
+        }
+
         function displayGroupMessages() {
             const chatMessages = document.getElementById('chatMessages');
 
@@ -1845,7 +2050,6 @@
             }
 
             chatMessages.innerHTML = messages.map(msg => {
-                // Check if this message was sent by the current user
                 const isSent = msg.sender_id === currentUser.id;
                 const senderName = msg.sender?.username || 'Unknown';
                 const senderInitials = senderName.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -1853,19 +2057,34 @@
 
                 const boostBadge = msg.is_boosted ? `<span style="color: #f59e0b; font-size: 12px; margin-left: 5px;"><i class="fas fa-fire"></i> Boosted (${msg.boost_cost} bytes)</span>` : '';
 
-                // Sent messages: on the right, no sender name shown
-                // Received messages: on the left, with sender name
+                let replyHTML = '';
+                if (msg.replyTo) {
+                    const replyUsername = msg.replyTo.sender?.username || 'Unknown';
+                    replyHTML = `
+                        <div class="message-reply">
+                            <div class="message-reply-username">${replyUsername}</div>
+                            <div class="message-reply-text">${msg.replyTo.content}</div>
+                        </div>
+                    `;
+                }
+
                 return `
-                    <div class="message ${isSent ? 'sent' : 'received'}">
+                    <div class="message ${isSent ? 'sent' : 'received'}" data-message-id="${msg.id}"
+                         ontouchstart="handleTouchStart(event, '${msg.id}')"
+                         ontouchmove="handleTouchMove(event, '${msg.id}')"
+                         ontouchend="handleTouchEnd(event, '${msg.id}')"
+                         ondblclick="handleDoubleTap('${msg.id}')">
                         <div class="message-avatar" style="background: ${isSent ? 'linear-gradient(135deg, var(--primary), var(--primary-light))' : 'linear-gradient(135deg, #17a2b8, var(--primary-light))'}">${senderInitials}</div>
                         <div class="message-bubble">
                             ${!isSent ? `<div style="font-size: 12px; font-weight: 600; margin-bottom: 4px; color: var(--primary);">${senderName}</div>` : ''}
+                            ${replyHTML}
                             <div class="message-content">${msg.content}</div>
                             <div class="message-meta">
                                 <span class="message-time">${timestamp}</span>
                                 ${boostBadge}
                             </div>
                         </div>
+                        <i class="fas fa-reply message-reply-icon"></i>
                     </div>
                 `;
             }).join('');
@@ -1889,14 +2108,18 @@
             }
 
             if (activeContact.type === 'group') {
-                // For group messages, don't add to messages array yet
-                // Wait for the server confirmation via new_group_message event
                 socket.emit('send_group_message', {
                     groupId: activeContact.id,
                     content: content,
                     hasLatex: false,
                     isBoosted: false,
-                    byteCost: 0
+                    byteCost: 0,
+                    replyTo: replyingToMessage ? {
+                        id: replyingToMessage._id || replyingToMessage.id,
+                        content: replyingToMessage.content,
+                        sender_id: replyingToMessage.sender_id,
+                        sender: replyingToMessage.sender
+                    } : null
                 });
             } else {
                 const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -1908,7 +2131,13 @@
                     timestamp: new Date(),
                     created_at: new Date(),
                     tempId: tempId,
-                    _id: tempId
+                    _id: tempId,
+                    replyTo: replyingToMessage ? {
+                        _id: replyingToMessage._id,
+                        content: replyingToMessage.content,
+                        sender_id: replyingToMessage.sender_id,
+                        sender: replyingToMessage.sender
+                    } : null
                 };
 
                 messages.push(tempMessage);
@@ -1917,10 +2146,16 @@
                 socket.emit('send_personal_message', {
                     recipientId: activeContact.id,
                     content: content,
-                    tempId: tempId
+                    tempId: tempId,
+                    replyTo: replyingToMessage ? {
+                        id: replyingToMessage._id,
+                        content: replyingToMessage.content,
+                        sender_id: replyingToMessage.sender_id
+                    } : null
                 });
             }
 
+            clearReplyPreview();
             messageInput.value = '';
             messageInput.style.height = 'auto';
         }
