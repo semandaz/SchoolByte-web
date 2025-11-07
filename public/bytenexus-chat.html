@@ -1845,6 +1845,7 @@
             }
 
             chatMessages.innerHTML = messages.map(msg => {
+                // Check if this message was sent by the current user
                 const isSent = msg.sender_id === currentUser.id;
                 const senderName = msg.sender?.username || 'Unknown';
                 const senderInitials = senderName.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -1852,6 +1853,8 @@
 
                 const boostBadge = msg.is_boosted ? `<span style="color: #f59e0b; font-size: 12px; margin-left: 5px;"><i class="fas fa-fire"></i> Boosted (${msg.boost_cost} bytes)</span>` : '';
 
+                // Sent messages: on the right, no sender name shown
+                // Received messages: on the left, with sender name
                 return `
                     <div class="message ${isSent ? 'sent' : 'received'}">
                         <div class="message-avatar" style="background: ${isSent ? 'linear-gradient(135deg, var(--primary), var(--primary-light))' : 'linear-gradient(135deg, #17a2b8, var(--primary-light))'}">${senderInitials}</div>

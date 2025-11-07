@@ -338,6 +338,92 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('join_group_room', async (data) => {
+    try {
+      const { groupId } = data;
+
+      // Verify user is a member of this group
+      const group = await DiscussionGroup.findById(groupId);
+      if (!group) {
+        socket.emit('error', { message: 'Group not found' });
+        return;
+      }
+
+      const isMember = group.members.some(memberId => memberId.toString() === socket.userId);
+      if (!isMember) {
+        socket.emit('error', { message: 'Not a member of this group' });
+        return;
+      }
+
+      socket.join(`group_${groupId}`);
+      console.log(`Student ${socket.userId} joined group room: ${groupId}`);
+    } catch (error) {
+      console.error('Error joining group room:', error);
+      socket.emit('error', { message: 'Failed to join group room' });
+    }
+  });
+
+  socket.on('send_group_message', async (data) => {
+    try {
+      const { groupId, content } = data;
+
+      // Verify membership
+      const group = await DiscussionGroup.findById(groupId);
+      if (!group) {
+        socket.emit('message_error', { error: 'Group not found' });
+        return;
+      }
+
+      const isMember = group.members.some(memberId => memberId.toString() === socket.userId);
+      if (!isMember) {
+        socket.emit('message_error', { error: 'Not a member of this group' });
+        return;
+      }
+
+      // Create group message schema if it doesn't exist
+      const GroupMessageSchema = new mongoose.Schema({
+        group_id: { type: mongoose.Schema.Types.ObjectId, ref: 'DiscussionGroup', required: true },
+        sender_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
+        content: { type: String, required: true, trim: true },
+        created_at: { type: Date, default: Date.now }
+      }, { timestamps: true });
+
+      const GroupMessage = mongoose.models.GroupMessage || mongoose.model('GroupMessage', GroupMessageSchema);
+
+      const newMessage = new GroupMessage({
+        group_id: groupId,
+        sender_id: socket.userId,
+        content: content
+      });
+
+      await newMessage.save();
+
+      const messageWithSender = await GroupMessage.findById(newMessage._id)
+        .populate('sender_id', 'studentName email')
+        .lean();
+
+      const formattedMessage = {
+        id: messageWithSender._id.toString(),
+        group_id: messageWithSender.group_id.toString(),
+        sender_id: messageWithSender.sender_id._id.toString(),
+        content: messageWithSender.content,
+        created_at: messageWithSender.created_at,
+        sender: {
+          id: messageWithSender.sender_id._id.toString(),
+          username: messageWithSender.sender_id.studentName,
+          avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${messageWithSender.sender_id.studentName}`
+        }
+      };
+
+      // Broadcast to all members in the group room
+      io.to(`group_${groupId}`).emit('new_group_message', formattedMessage);
+
+    } catch (error) {
+      console.error('Error sending group message:', error);
+      socket.emit('message_error', { error: 'Failed to send message' });
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log(`Student disconnected from chat: ${socket.userId}`);
     authenticatedSockets.delete(socket.userId);
@@ -366,6 +452,59 @@ const authenticateToken = (req, res, next) => {
         next();
     });
 };
+
+// Get group messages
+app.get('/api/messages/group/:groupId', authenticateToken, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const studentId = req.student.id;
+
+    // Verify group exists and user is a member
+    const group = await DiscussionGroup.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    const isMember = group.members.some(memberId => memberId.toString() === studentId);
+    if (!isMember) {
+      return res.status(403).json({ error: 'Not a member of this group' });
+    }
+
+    // Get or create GroupMessage model
+    const GroupMessageSchema = new mongoose.Schema({
+      group_id: { type: mongoose.Schema.Types.ObjectId, ref: 'DiscussionGroup', required: true },
+      sender_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
+      content: { type: String, required: true, trim: true },
+      created_at: { type: Date, default: Date.now }
+    }, { timestamps: true });
+
+    const GroupMessage = mongoose.models.GroupMessage || mongoose.model('GroupMessage', GroupMessageSchema);
+
+    const messages = await GroupMessage.find({ group_id: groupId })
+      .populate('sender_id', 'studentName email')
+      .sort({ created_at: 1 })
+      .lean();
+
+    const formattedMessages = messages.map(msg => ({
+      id: msg._id.toString(),
+      group_id: msg.group_id.toString(),
+      sender_id: msg.sender_id._id.toString(),
+      content: msg.content,
+      created_at: msg.created_at,
+      sender: {
+        id: msg.sender_id._id.toString(),
+        username: msg.sender_id.studentName,
+        avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${msg.sender_id.studentName}`
+      }
+    }));
+
+    res.json(formattedMessages);
+
+  } catch (error) {
+    console.error('Error fetching group messages:', error);
+    res.status(500).json({ error: 'Failed to fetch group messages' });
+  }
+});
 
 // Get active chat conversations for ByteNexus
 app.get('/api/messages/personal/conversations', authenticateToken, async (req, res) => {
