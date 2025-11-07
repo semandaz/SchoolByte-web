@@ -5822,8 +5822,11 @@ app.post('/api/groups/create', authenticateToken, [
       return res.status(404).json({ error: 'Creator not found' });
     }
 
+    // Use mongoose.model to get the DiscussionGroup model
+    const DiscussionGroupModel = mongoose.model('DiscussionGroup');
+
     // Create and save the group to database
-    const newGroup = new DiscussionGroup({
+    const newGroup = new DiscussionGroupModel({
       name: name.trim(),
       description: description ? description.trim() : '',
       rules: rules ? rules.trim() : '',
