@@ -314,7 +314,7 @@ const DiscussionGroup = mongoose.model('DiscussionGroup', discussionGroupSchema)
   socket.on('disconnect', () => {
     console.log(`Student disconnected from chat: ${socket.userId}`);
     authenticatedSockets.delete(socket.userId);
-    
+
     // Broadcast to all users that this user is offline
     io.emit('user_offline', { userId: socket.userId, username: socket.username });
   });
@@ -1105,7 +1105,7 @@ const PreaderGameSessionLogSchema = new mongoose.Schema({
 });
 
 
-const PreaderGameSessionLog = mongoose.model('PreaderGameSessionLog', PreaderGameSessionLogSchema);
+const PreaderGameSessionLog = mongoose.model('PreaderGameSessionLog', PreaderGameSessionSchema);
 
 
 // --- Achievement and XP System Schemas ---
@@ -1431,7 +1431,7 @@ async function generateQuizQuestions(student, requestedSubject = null) {
 
         async function fillQuestionCategory(categoryType, count, allowedClasses) {
             if (count === 0 || !allowedClasses || allowedClasses.length === 0) return;
-            
+
             let filled = 0;
             const subjectsToTry = shuffleArray([...student.subjectsEnrolled]);
 
@@ -2407,7 +2407,7 @@ app.get('/student/quizzes/generate', authenticateToken, async (req, res) => {
         // Fallback to AI generation if no questions found
         if (questions.length === 0) {
             console.log('No teacher questions available, attempting AI generation...');
-            
+
             if (!genAI) {
                 return res.status(404).json({ 
                     message: 'No suitable questions found and AI generation is unavailable. Please try again later.' 
@@ -2417,7 +2417,7 @@ app.get('/student/quizzes/generate', authenticateToken, async (req, res) => {
             try {
                 // Pick a random subject from student's enrolled subjects
                 const randomSubject = student.subjectsEnrolled[Math.floor(Math.random() * student.subjectsEnrolled.length)];
-                
+
                 const model = genAI.getGenerativeModel({ 
                     model: MODEL_NAME,
                     generationConfig: {
@@ -2450,7 +2450,7 @@ Output strict JSON format:
 
                 const result = await model.generateContent(prompt);
                 const aiResponse = JSON.parse(result.response.text());
-                
+
                 // Convert AI questions to match QuizQuestion format
                 questions = aiResponse.questions.map(q => ({
                     _id: new mongoose.Types.ObjectId(),
@@ -2482,13 +2482,12 @@ Output strict JSON format:
             subject: q.subject,
             intendedClass: q.intendedClass,
             type: q.type,
-            options: q.options ? q.options.map(opt => ({ text: opt.text, _id: opt._id })) : undefined,
+            options: q.options ? q.options.map(opt => ({ text: opt.text })) : undefined,
             matchingPairs: q.matchingPairs,
             orderedItems: q.orderedItems,
             instructions: q.instructions,
             hint: q.hint,
             topic: q.topic,
-            subTopic: q.subTopic,
             uploadedBy: { teacherName: q.uploadedBy.teacherName }
         }));
 
@@ -2534,7 +2533,7 @@ app.post('/student/quizzes/generate-ai', authenticateToken, [
     try {
         const studentId = req.student.id;
         const student = await Student.findById(studentId);
-        
+
         if (!student) {
             return res.status(404).json({ message: 'Student not found.' });
         }
@@ -2566,7 +2565,7 @@ app.post('/student/quizzes/generate-ai', authenticateToken, [
 
         let optionsExample = '';
         let answersExample = '';
-        
+
         if (qType === 'multiple-choice-single') {
             optionsExample = `"options": [
         {"text": "Option A text", "isCorrect": false},
@@ -2639,13 +2638,13 @@ Output Format (strict JSON):
                 console.warn('Invalid question: missing or empty questionText');
                 continue;
             }
-            
+
             if (qType === 'multiple-choice-single' || qType === 'multiple-choice-multi') {
                 if (!Array.isArray(aiQuestion.options) || aiQuestion.options.length !== 4) {
                     console.warn(`Invalid multiple-choice question: has ${aiQuestion.options?.length || 0} options, expected exactly 4`);
                     continue;
                 }
-                
+
                 let validOptions = true;
                 const correctOptions = [];
                 for (const opt of aiQuestion.options) {
@@ -2664,19 +2663,19 @@ Output Format (strict JSON):
                     }
                 }
                 if (!validOptions) continue;
-                
+
                 const correctCount = correctOptions.length;
-                
+
                 if (qType === 'multiple-choice-single' && correctCount !== 1) {
                     console.warn(`Invalid multiple-choice-single question: has ${correctCount} correct answers, expected exactly 1`);
                     continue;
                 }
-                
+
                 if (qType === 'multiple-choice-multi' && correctCount < 2) {
                     console.warn(`Invalid multiple-choice-multi question: has ${correctCount} correct answers, expected at least 2`);
                     continue;
                 }
-                
+
                 if (!Array.isArray(aiQuestion.correctAnswers) || aiQuestion.correctAnswers.length !== correctCount) {
                     console.warn('Multiple-choice question: correctAnswers array missing or incorrect length, auto-generating from isCorrect flags');
                     aiQuestion.correctAnswers = correctOptions;
@@ -2685,7 +2684,7 @@ Output Format (strict JSON):
                     const correctSet = new Set(correctOptions);
                     const isMatch = answersSet.size === correctSet.size && 
                                    [...answersSet].every(ans => correctSet.has(ans));
-                    
+
                     if (!isMatch) {
                         console.warn('Multiple-choice question: correctAnswers array does not match isCorrect flags, overwriting with correct values');
                         aiQuestion.correctAnswers = correctOptions;
@@ -2707,7 +2706,7 @@ Output Format (strict JSON):
                     continue;
                 }
             }
-            
+
             validatedQuestions.push(aiQuestion);
         }
 
@@ -3237,7 +3236,7 @@ app.post('/teacher/quiz-questions/generate-ai', authenticateTeacherToken, [
 
         let optionsExample = '';
         let answersExample = '';
-        
+
         if (qType === 'multiple-choice-single') {
             optionsExample = `"options": [
         {"text": "Option A", "isCorrect": false},
@@ -3309,13 +3308,13 @@ Output Format (strict JSON):
                 console.warn('Invalid question: missing or empty questionText');
                 continue;
             }
-            
+
             if (qType === 'multiple-choice-single' || qType === 'multiple-choice-multi') {
                 if (!Array.isArray(aiQuestion.options) || aiQuestion.options.length !== 4) {
                     console.warn(`Invalid multiple-choice question: has ${aiQuestion.options?.length || 0} options, expected exactly 4`);
                     continue;
                 }
-                
+
                 let validOptions = true;
                 const correctOptions = [];
                 for (const opt of aiQuestion.options) {
@@ -3334,19 +3333,19 @@ Output Format (strict JSON):
                     }
                 }
                 if (!validOptions) continue;
-                
+
                 const correctCount = correctOptions.length;
-                
+
                 if (qType === 'multiple-choice-single' && correctCount !== 1) {
                     console.warn(`Invalid multiple-choice-single question: has ${correctCount} correct answers, expected exactly 1`);
                     continue;
                 }
-                
+
                 if (qType === 'multiple-choice-multi' && correctCount < 2) {
                     console.warn(`Invalid multiple-choice-multi question: has ${correctCount} correct answers, expected at least 2`);
                     continue;
                 }
-                
+
                 if (!Array.isArray(aiQuestion.correctAnswers) || aiQuestion.correctAnswers.length !== correctCount) {
                     console.warn('Multiple-choice question: correctAnswers array missing or incorrect length, auto-generating from isCorrect flags');
                     aiQuestion.correctAnswers = correctOptions;
@@ -3355,7 +3354,7 @@ Output Format (strict JSON):
                     const correctSet = new Set(correctOptions);
                     const isMatch = answersSet.size === correctSet.size && 
                                    [...answersSet].every(ans => correctSet.has(ans));
-                    
+
                     if (!isMatch) {
                         console.warn('Multiple-choice question: correctAnswers array does not match isCorrect flags, overwriting with correct values');
                         aiQuestion.correctAnswers = correctOptions;
@@ -3377,7 +3376,7 @@ Output Format (strict JSON):
                     continue;
                 }
             }
-            
+
             validatedQuestions.push(aiQuestion);
         }
 
@@ -4453,31 +4452,6 @@ app.get('/admin/teachers', authenticateAdminToken, async (req, res) => {
 
 
 // Admin dashboard stats endpoint
-app.get('/admin/dashboard', authenticateAdminToken, async (req, res) => {
-    try {
-        const adminData = await Administrator.findById(req.admin.id).select('-password');
-
-
-        if (!adminData) {
-            return res.status(404).json({ message: 'Administrator data not found.' });
-        }
-
-
-        res.status(200).json({
-            message: `Welcome to your admin dashboard, ${adminData.adminName}!`,
-            admin: {
-                adminName: adminData.adminName,
-                email: adminData.email,
-                createdAt: adminData.createdAt
-            }
-        });
-    } catch (error) {
-        console.error('Error accessing admin dashboard:', error);
-        res.status(500).json({ message: 'Server error accessing admin dashboard.', error: error.message });
-    }
-});
-
-
 app.get('/admin/dashboard-stats', authenticateAdminToken, async (req, res) => {
     try {
         const totalStudents = await Student.countDocuments();
@@ -5783,22 +5757,22 @@ app.post('/api/groups/create', authenticateToken, [
   }
 
   const { name, description, rules, is_public, invited_members } = req.body;
-  const creatorId = req.student.id;
+  const studentId = req.student.id;
 
   try {
-    const creator = await Student.findById(creatorId);
+    const creator = await Student.findById(studentId);
     if (!creator) {
       return res.status(404).json({ error: 'Creator not found' });
     }
 
     // Create and save the group to database
     const newGroup = new DiscussionGroup({
-      name: name,
-      description: description || '',
-      rules: rules || '',
+      name: name.trim(),
+      description: description ? description.trim() : '',
+      rules: rules ? rules.trim() : '',
       is_public: is_public !== false,
-      created_by: creatorId,
-      members: [creatorId] // Creator is automatically a member
+      created_by: studentId,
+      members: [studentId] // Creator is automatically a member
     });
 
     await newGroup.save();
@@ -5808,7 +5782,7 @@ app.post('/api/groups/create', authenticateToken, [
     const invitationToken = Buffer.from(JSON.stringify({
       groupId: groupId,
       groupName: name,
-      invitedBy: creatorId,
+      invitedBy: studentId,
       timestamp: Date.now()
     })).toString('base64');
 
@@ -5817,14 +5791,16 @@ app.post('/api/groups/create', authenticateToken, [
 
     // Send invitation messages to each invited member
     if (invited_members && invited_members.length > 0) {
+      const currentStudent = await Student.findById(studentId); // Fetch current student for name
+
       for (const memberId of invited_members) {
         const invitedUser = await Student.findById(memberId);
         if (invitedUser) {
           // Create invitation message with clickable HTML link
           const invitationMessage = new PersonalMessage({
-            sender_id: creatorId,
+            sender_id: studentId,
             recipient_id: memberId,
-            content: `🎉 You've been invited to join "${name}"!\n\n📋 ${description || 'Discussion group'}\n\n<a href="${invitationLink}">Click here to join</a>\n\nInvited by: ${creator.studentName}`,
+            content: `🎉 You've been invited to join "${name}"!\n\n📋 ${description || 'Discussion group'}\n\n<a href="${invitationLink}">Click here to join</a>\n\nInvited by: ${currentStudent.studentName}`,
             read: false,
             delivered: false
           });
@@ -5869,9 +5845,9 @@ app.post('/api/groups/create', authenticateToken, [
             recipientSocket.emit('group_invitation', {
               groupId: groupId,
               groupName: name,
-              invitedBy: creator.studentName,
+              invitedBy: currentStudent.studentName,
               invitationToken: invitationToken,
-              message: `${creator.studentName} has invited you to join "${name}" discussion group.`
+              message: `${currentStudent.studentName} has invited you to join "${name}" discussion group.`
             });
           }
 
@@ -5888,7 +5864,7 @@ app.post('/api/groups/create', authenticateToken, [
         description: description || '',
         rules: rules || '',
         is_public: is_public !== false,
-        created_by: creatorId,
+        created_by: studentId,
         member_count: 1,
         created_at: newGroup.created_at
       },
@@ -5920,7 +5896,7 @@ app.get('/api/search/groups', authenticateToken, async (req, res) => {
       .sort({ created_at: -1 })
       .limit(50)
       .lean();
-      
+
     res.json(groups.map(group => ({
         id: group._id.toString(),
         name: group.name,
@@ -6262,8 +6238,7 @@ app.get('/student/activities', authenticateToken, async (req, res) => {
                 createdAt: activity.createdAt
             }))
         });
-    } catch (error) {
-        console.error('Error fetching activities:', error);
+    } catch (error);
         res.status(500).json({ message: 'Failed to fetch activities.', error: error.message });
     }
 });

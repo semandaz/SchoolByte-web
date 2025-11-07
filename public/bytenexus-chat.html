@@ -499,6 +499,16 @@
         .message-content {
             font-size: 15px;
             line-height: 1.4;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+        }
+
+        .message-content a {
+            word-break: break-all;
+            color: inherit;
+            text-decoration: underline;
         }
 
         .message-meta {
