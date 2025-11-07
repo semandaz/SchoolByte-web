@@ -228,24 +228,25 @@
 
         .tabs {
             display: flex;
+            flex-wrap: wrap;
             background-color: var(--glass);
             border-bottom: 1px solid var(--glass-border);
-            padding: 0 5px;
-            overflow-x: auto;
-            scrollbar-width: thin;
+            padding: 5px;
+            gap: 5px;
         }
 
         .tab {
-            flex: 0 0 auto;
-            padding: 12px 10px;
+            flex: 1 1 auto;
+            min-width: fit-content;
+            padding: 10px 12px;
             text-align: center;
             cursor: pointer;
             border-bottom: 3px solid transparent;
+            border-radius: 8px 8px 0 0;
             transition: var(--transition);
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 500;
             white-space: nowrap;
-            min-width: fit-content;
         }
 
         .tab:hover {
