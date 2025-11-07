@@ -118,6 +118,35 @@
             transform: scale(1.2); /* Make them slightly larger */
             accent-color: #3b82f6; /* Use blue for accent color */
         }
+        .btn-math-symbol {
+            background-color: white;
+            border: 1px solid #d1d5db;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 1.125rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-math-symbol:hover {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .math-preview-box {
+            background-color: #f0f9ff;
+            border: 2px dashed #3b82f6;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 0.5rem;
+            min-height: 50px;
+        }
+        .math-preview-label {
+            font-size: 0.875rem;
+            color: #1e40af;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -162,6 +191,46 @@
             <div class="form-field">
                 <label for="maxBytesReward" class="form-label">Bytes Reward (for this question) <span class="text-red-500">*</span></label>
                 <input type="number" id="maxBytesReward" class="form-input" placeholder="e.g., 1" min="1" required>
+            </div>
+
+            <!-- Math Symbol Toolbar (Hidden by default, shown when needed) -->
+            <div id="mathToolbar" class="border border-gray-200 rounded-lg p-4 bg-blue-50 mb-4" style="display: none;">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-semibold text-gray-700">
+                        <i class="fas fa-calculator"></i> Math Symbols & LaTeX Helper
+                    </h3>
+                    <button type="button" onclick="toggleMathToolbar()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$x^2$')">x²</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$x_1$')">x₁</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\frac{a}{b}$')">a/b</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\sqrt{x}$')">√x</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\alpha$')">α</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\beta$')">β</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\theta$')">θ</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\pi$')">π</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\sum$')">Σ</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\int$')">∫</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\leq$')">≤</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\geq$')">≥</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\text{ kg}$')">kg</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\text{ m}$')">m</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\text{ m/s}^2$')">m/s²</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\degree$')">°</button>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <p class="mb-1"><strong>Quick Guide:</strong></p>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>Use <code>$...$</code> for inline math: <code>$2\text{ kg}$</code></li>
+                        <li>Use <code>$$...$$</code> for display math (centered)</li>
+                        <li>Superscript: <code>x^2</code>, Subscript: <code>x_1</code></li>
+                        <li>Fraction: <code>\frac{numerator}{denominator}</code></li>
+                        <li>Text in math: <code>\text{your text here}</code></li>
+                    </ul>
+                </div>
             </div>
 
             <!-- Instructions Collapsible -->
@@ -292,9 +361,16 @@
             switch (questionType) {
                 case 'multiple-choice-single':
                     html = `
+                        <button type="button" onclick="toggleMathToolbar()" class="add-button mb-3">
+                            <i class="fas fa-calculator"></i> Show Math Symbols
+                        </button>
                         <label for="questionText" class="form-label">Question Text <span class="text-red-500">*</span></label>
-                        <textarea id="questionText" class="form-textarea h-28 mb-6" placeholder="Enter the full question text here..." required></textarea>
-                        <p class="form-label">Options (Mark one as correct):</p>
+                        <textarea id="questionText" class="form-textarea h-28" placeholder="Enter the full question text here..." oninput="updateMathPreview(this)" required></textarea>
+                        <div id="mathPreview" class="math-preview-box" style="display: none;">
+                            <span class="math-preview-label">Preview:</span>
+                            <div id="mathPreviewContent"></div>
+                        </div>
+                        <p class="form-label mt-6">Options (Mark one as correct):</p>
                         <div id="optionsContainer" class="mb-4"></div>
                         <button type="button" class="add-button" onclick="addOption('single')">
                             <i class="fas fa-plus-circle"></i> Add Option
@@ -303,9 +379,16 @@
                     break;
                 case 'multiple-choice-multi':
                     html = `
+                        <button type="button" onclick="toggleMathToolbar()" class="add-button mb-3">
+                            <i class="fas fa-calculator"></i> Show Math Symbols
+                        </button>
                         <label for="questionText" class="form-label">Question Text <span class="text-red-500">*</span></label>
-                        <textarea id="questionText" class="form-textarea h-28 mb-6" placeholder="Enter the full question text here..." required></textarea>
-                        <p class="form-label">Options (Mark one or more as correct):</p>
+                        <textarea id="questionText" class="form-textarea h-28" placeholder="Enter the full question text here..." oninput="updateMathPreview(this)" required></textarea>
+                        <div id="mathPreview" class="math-preview-box" style="display: none;">
+                            <span class="math-preview-label">Preview:</span>
+                            <div id="mathPreviewContent"></div>
+                        </div>
+                        <p class="form-label mt-6">Options (Mark one or more as correct):</p>
                         <div id="optionsContainer" class="mb-4"></div>
                         <button type="button" class="add-button" onclick="addOption('multi')">
                             <i class="fas fa-plus-circle"></i> Add Option
@@ -315,17 +398,31 @@
                 case 'short-answer':
                 case 'problem-solving':
                     html = `
+                        <button type="button" onclick="toggleMathToolbar()" class="add-button mb-3">
+                            <i class="fas fa-calculator"></i> Show Math Symbols
+                        </button>
                         <label for="questionText" class="form-label">Question Text <span class="text-red-500">*</span></label>
-                        <textarea id="questionText" class="form-textarea h-28 mb-6" placeholder="Enter the full question text here..." required></textarea>
-                        <label for="correctAnswers" class="form-label">Correct Answer(s) (Comma-separated for multiple possibilities)</label>
+                        <textarea id="questionText" class="form-textarea h-28" placeholder="Enter the full question text here..." oninput="updateMathPreview(this)" required></textarea>
+                        <div id="mathPreview" class="math-preview-box" style="display: none;">
+                            <span class="math-preview-label">Preview:</span>
+                            <div id="mathPreviewContent"></div>
+                        </div>
+                        <label for="correctAnswers" class="form-label mt-6">Correct Answer(s) (Comma-separated for multiple possibilities)</label>
                         <textarea id="correctAnswers" class="form-textarea" rows="3" placeholder="e.g., Photosynthesis, Cell Respiration"></textarea>
                     `;
                     break;
                 case 'true-false':
                     html = `
+                        <button type="button" onclick="toggleMathToolbar()" class="add-button mb-3">
+                            <i class="fas fa-calculator"></i> Show Math Symbols
+                        </button>
                         <label for="questionText" class="form-label">Question Text <span class="text-red-500">*</span></label>
-                        <textarea id="questionText" class="form-textarea h-28 mb-6" placeholder="Enter the full question text here..." required></textarea>
-                        <p class="form-label">Correct Answer:</p>
+                        <textarea id="questionText" class="form-textarea h-28" placeholder="Enter the full question text here..." oninput="updateMathPreview(this)" required></textarea>
+                        <div id="mathPreview" class="math-preview-box" style="display: none;">
+                            <span class="math-preview-label">Preview:</span>
+                            <div id="mathPreviewContent"></div>
+                        </div>
+                        <p class="form-label mt-6">Correct Answer:</p>
                         <div class="flex items-center gap-4 mt-2">
                             <label class="inline-flex items-center">
                                 <input type="radio" name="trueFalseAnswer" value="true" class="form-radio">
@@ -348,9 +445,16 @@
                     break;
                 case 'matching':
                     html = `
+                        <button type="button" onclick="toggleMathToolbar()" class="add-button mb-3">
+                            <i class="fas fa-calculator"></i> Show Math Symbols
+                        </button>
                         <label for="questionText" class="form-label">Instructions for Matching (e.g., "Match the author to their work.") <span class="text-red-500">*</span></label>
-                        <textarea id="questionText" class="form-textarea h-28 mb-6" placeholder="Enter instructions for the matching task..." required></textarea>
-                        <p class="form-label">Matching Pairs (Item A matches Item B): <span class="text-red-500">*</span></p>
+                        <textarea id="questionText" class="form-textarea h-28" placeholder="Enter instructions for the matching task..." oninput="updateMathPreview(this)" required></textarea>
+                        <div id="mathPreview" class="math-preview-box" style="display: none;">
+                            <span class="math-preview-label">Preview:</span>
+                            <div id="mathPreviewContent"></div>
+                        </div>
+                        <p class="form-label mt-6">Matching Pairs (Item A matches Item B): <span class="text-red-500">*</span></p>
                         <div id="matchingPairsContainer" class="mb-4"></div>
                         <button type="button" class="add-button" onclick="addMatchingPair()">
                             <i class="fas fa-plus-circle"></i> Add Matching Pair
@@ -359,9 +463,16 @@
                     break;
                 case 'ordering':
                     html = `
+                        <button type="button" onclick="toggleMathToolbar()" class="add-button mb-3">
+                            <i class="fas fa-calculator"></i> Show Math Symbols
+                        </button>
                         <label for="questionText" class="form-label">Instructions for Ordering (e.g., "Put these events in chronological order:") <span class="text-red-500">*</span></label>
-                        <textarea id="questionText" class="form-textarea h-28 mb-6" placeholder="Enter instructions for the ordering task..." required></textarea>
-                        <p class="form-label">Items in Correct Order (Add items in the sequence you want them to be ordered): <span class="text-red-500">*</span></p>
+                        <textarea id="questionText" class="form-textarea h-28" placeholder="Enter instructions for the ordering task..." oninput="updateMathPreview(this)" required></textarea>
+                        <div id="mathPreview" class="math-preview-box" style="display: none;">
+                            <span class="math-preview-label">Preview:</span>
+                            <div id="mathPreviewContent"></div>
+                        </div>
+                        <p class="form-label mt-6">Items in Correct Order (Add items in the sequence you want them to be ordered): <span class="text-red-500">*</span></p>
                         <div id="orderingItemsContainer" class="mb-4"></div>
                         <button type="button" class="add-button" onclick="addOrderingItem()">
                             <i class="fas fa-plus-circle"></i> Add Item
@@ -370,9 +481,16 @@
                     break;
                 case 'numeric-entry':
                     html = `
+                        <button type="button" onclick="toggleMathToolbar()" class="add-button mb-3">
+                            <i class="fas fa-calculator"></i> Show Math Symbols
+                        </button>
                         <label for="questionText" class="form-label">Question Text <span class="text-red-500">*</span></label>
-                        <textarea id="questionText" class="form-textarea h-28 mb-6" placeholder="e.g., Solve for x: 2x + 5 = 15" required></textarea>
-                        <label for="numericAnswer" class="form-label">Correct Numeric Answer <span class="text-red-500">*</span></label>
+                        <textarea id="questionText" class="form-textarea h-28" placeholder="e.g., Solve for x: 2x + 5 = 15" oninput="updateMathPreview(this)" required></textarea>
+                        <div id="mathPreview" class="math-preview-box" style="display: none;">
+                            <span class="math-preview-label">Preview:</span>
+                            <div id="mathPreviewContent"></div>
+                        </div>
+                        <label for="numericAnswer" class="form-label mt-6">Correct Numeric Answer <span class="text-red-500">*</span></label>
                         <input type="number" id="numericAnswer" class="form-input" placeholder="e.g., 5" required>
                     `;
                     break;
@@ -462,6 +580,67 @@
             const elementToRemove = document.getElementById(id);
             if (elementToRemove) {
                 elementToRemove.remove();
+            }
+        }
+
+        function toggleMathToolbar() {
+            const toolbar = document.getElementById('mathToolbar');
+            if (toolbar.style.display === 'none') {
+                toolbar.style.display = 'block';
+            } else {
+                toolbar.style.display = 'none';
+            }
+        }
+
+        let currentTextarea = null;
+
+        function insertMath(mathCode) {
+            const questionTextarea = document.getElementById('questionText');
+            if (questionTextarea) {
+                const cursorPos = questionTextarea.selectionStart;
+                const textBefore = questionTextarea.value.substring(0, cursorPos);
+                const textAfter = questionTextarea.value.substring(cursorPos);
+                
+                questionTextarea.value = textBefore + mathCode + textAfter;
+                questionTextarea.focus();
+                
+                // Move cursor to after the inserted math
+                const newCursorPos = cursorPos + mathCode.length;
+                questionTextarea.setSelectionRange(newCursorPos, newCursorPos);
+                
+                // Update preview
+                updateMathPreview(questionTextarea);
+            }
+        }
+
+        function updateMathPreview(textarea) {
+            const previewBox = document.getElementById('mathPreview');
+            const previewContent = document.getElementById('mathPreviewContent');
+            
+            if (!textarea || !previewBox || !previewContent) return;
+            
+            const text = textarea.value.trim();
+            
+            if (text && (text.includes('$') || text.includes('\\['))) {
+                previewBox.style.display = 'block';
+                previewContent.textContent = text;
+                
+                // Render math after a short delay
+                setTimeout(() => {
+                    if (window.renderMathInElement) {
+                        renderMathInElement(previewContent, {
+                            delimiters: [
+                                {left: '$$', right: '$$', display: true},
+                                {left: '$', right: '$', display: false},
+                                {left: '\\[', right: '\\]', display: true},
+                                {left: '\\(', right: '\\)', display: false}
+                            ],
+                            throwOnError: false
+                        });
+                    }
+                }, 150);
+            } else {
+                previewBox.style.display = 'none';
             }
         }
 
