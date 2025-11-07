@@ -102,6 +102,49 @@ personalMessageSchema.index({ recipient_id: 1, read: 1 });
 
 const PersonalMessage = mongoose.model('PersonalMessage', personalMessageSchema);
 
+// --- Discussion Group Schema ---
+const discussionGroupSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  description: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  rules: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  is_public: {
+    type: Boolean,
+    default: true
+  },
+  created_by: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student',
+    required: true
+  },
+  members: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student'
+  }],
+  created_at: {
+    type: Date,
+    default: Date.now
+  }
+}, {
+  timestamps: true
+});
+
+discussionGroupSchema.index({ name: 'text', description: 'text' });
+discussionGroupSchema.index({ is_public: 1 });
+
+const DiscussionGroup = mongoose.model('DiscussionGroup', discussionGroupSchema);
+
 // --- Socket.io Chat Management ---
 const authenticatedSockets = new Map();
 
@@ -5822,11 +5865,8 @@ app.post('/api/groups/create', authenticateToken, [
       return res.status(404).json({ error: 'Creator not found' });
     }
 
-    // Use mongoose.model to get the DiscussionGroup model
-    const DiscussionGroupModel = mongoose.model('DiscussionGroup');
-
     // Create and save the group to database
-    const newGroup = new DiscussionGroupModel({
+    const newGroup = new DiscussionGroup({
       name: name.trim(),
       description: description ? description.trim() : '',
       rules: rules ? rules.trim() : '',
