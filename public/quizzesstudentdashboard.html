@@ -937,6 +937,9 @@
             const question = currentQuestions[currentQuestionIndex];
             const questionsContainer = document.getElementById('quizQuestions');
 
+            // Use 'type' field from backend instead of 'questionType'
+            const questionType = question.type || question.questionType;
+
             let questionHTML = `
                 <div class="question-container ${currentQuestionIndex === 0 ? 'active' : ''}" id="question${currentQuestionIndex + 1}">
                     <div class="question-number">${currentQuestionIndex + 1}</div>
@@ -953,7 +956,7 @@
 
             questionHTML += '<div class="options">';
 
-            switch (question.questionType) {
+            switch (questionType) {
                 case 'multiple-choice-single':
                     question.options.forEach((option, index) => {
                         const isChecked = studentAnswers[currentQuestionIndex] === option._id ? 'checked' : '';
@@ -997,6 +1000,7 @@
                     break;
 
                 case 'short-answer':
+                case 'problem-solving':
                     const shortAnswerValue = studentAnswers[currentQuestionIndex] || '';
                     questionHTML += `
                         <div class="short-answer-container">
@@ -1016,32 +1020,40 @@
 
                 case 'matching':
                     questionHTML += '<div class="matching-container">';
-                    const leftColumn = question.options.filter(opt => opt.type === 'item');
-                    const rightColumn = question.options.filter(opt => opt.type === 'target');
+                    const leftColumn = question.matchingPairs || [];
                     
                     questionHTML += '<div class="matching-column" id="matchingItems">';
-                    leftColumn.forEach(item => {
-                        questionHTML += `<div class="matching-item" data-id="${item._id}">${item.text}</div>`;
+                    leftColumn.forEach((pair, idx) => {
+                        questionHTML += `<div class="matching-item" data-id="${idx}-a">${pair.itemA}</div>`;
                     });
                     questionHTML += '</div>';
 
                     questionHTML += '<div class="matching-column" id="matchingTargets">';
-                    rightColumn.forEach(item => {
-                        questionHTML += `<div class="matching-item" data-id="${item._id}">${item.text}</div>`;
+                    leftColumn.forEach((pair, idx) => {
+                        questionHTML += `<div class="matching-item" data-id="${idx}-b">${pair.itemB}</div>`;
                     });
                     questionHTML += '</div>';
                     questionHTML += '</div>';
                     break;
 
+                case 'ordering':
+                    const orderedItems = question.orderedItems || [];
+                    questionHTML += '<div class="fill-blank-container"><p>Arrange these items in the correct order (drag and drop or type numbers):</p>';
+                    orderedItems.forEach((item, idx) => {
+                        questionHTML += `<div class="matching-item" data-id="${idx}">${item}</div>`;
+                    });
+                    questionHTML += '</div>';
+                    break;
+
                 default:
-                    questionHTML += '<p>Question type not supported in this demo.</p>';
+                    questionHTML += `<p class="text-gray-500">Question type "${questionType}" is not yet supported. Please skip or contact support.</p>`;
             }
 
             questionHTML += '</div></div>';
             questionsContainer.innerHTML = questionHTML;
             
             // Re-setup drag and drop for matching if it's a matching question
-            if (question.questionType === 'matching') {
+            if (questionType === 'matching' || questionType === 'ordering') {
                 setupMatchingQuestion();
             }
         }
@@ -1125,7 +1137,18 @@
         }
 
         async function submitQuiz() {
-            if (!confirm('Are you sure you want to submit your quiz? This action cannot be undone.')) {
+            // Check if at least some questions have been answered
+            const answeredCount = studentAnswers.filter(answer => {
+                if (Array.isArray(answer)) return answer.length > 0;
+                return answer !== null && answer !== undefined && answer !== '';
+            }).length;
+
+            if (answeredCount === 0) {
+                alert('Please answer at least one question before submitting!');
+                return;
+            }
+
+            if (!confirm(`You have answered ${answeredCount} out of ${currentQuestions.length} questions. Are you sure you want to submit?`)) {
                 return;
             }
 
@@ -1133,10 +1156,13 @@
 
             try {
                 const token = localStorage.getItem('token');
-                const quizSubmissions = currentQuestions.map((question, index) => ({
-                    questionId: question._id,
-                    studentAnswer: studentAnswers[index] || (question.questionType === 'multiple-choice-multi' ? [] : '')
-                }));
+                const quizSubmissions = currentQuestions.map((question, index) => {
+                    const questionType = question.type || question.questionType;
+                    return {
+                        questionId: question._id,
+                        studentAnswer: studentAnswers[index] || (questionType === 'multiple-choice-multi' ? [] : '')
+                    };
+                });
 
                 const response = await fetch('/student/quizzes/submit', {
                     method: 'POST',
