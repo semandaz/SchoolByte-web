@@ -2637,9 +2637,19 @@ Output Format (strict JSON):
                     continue;
                 }
                 
-                if (!Array.isArray(aiQuestion.correctAnswers)) {
-                    console.warn('Multiple-choice question: correctAnswers array missing, auto-generating from isCorrect flags');
+                if (!Array.isArray(aiQuestion.correctAnswers) || aiQuestion.correctAnswers.length !== correctCount) {
+                    console.warn('Multiple-choice question: correctAnswers array missing or incorrect length, auto-generating from isCorrect flags');
                     aiQuestion.correctAnswers = correctOptions;
+                } else {
+                    const answersSet = new Set(aiQuestion.correctAnswers);
+                    const correctSet = new Set(correctOptions);
+                    const isMatch = answersSet.size === correctSet.size && 
+                                   [...answersSet].every(ans => correctSet.has(ans));
+                    
+                    if (!isMatch) {
+                        console.warn('Multiple-choice question: correctAnswers array does not match isCorrect flags, overwriting with correct values');
+                        aiQuestion.correctAnswers = correctOptions;
+                    }
                 }
             } else if (qType === 'true-false') {
                 if (!Array.isArray(aiQuestion.correctAnswers) || aiQuestion.correctAnswers.length !== 1) {
@@ -3297,9 +3307,19 @@ Output Format (strict JSON):
                     continue;
                 }
                 
-                if (!Array.isArray(aiQuestion.correctAnswers)) {
-                    console.warn('Multiple-choice question: correctAnswers array missing, auto-generating from isCorrect flags');
+                if (!Array.isArray(aiQuestion.correctAnswers) || aiQuestion.correctAnswers.length !== correctCount) {
+                    console.warn('Multiple-choice question: correctAnswers array missing or incorrect length, auto-generating from isCorrect flags');
                     aiQuestion.correctAnswers = correctOptions;
+                } else {
+                    const answersSet = new Set(aiQuestion.correctAnswers);
+                    const correctSet = new Set(correctOptions);
+                    const isMatch = answersSet.size === correctSet.size && 
+                                   [...answersSet].every(ans => correctSet.has(ans));
+                    
+                    if (!isMatch) {
+                        console.warn('Multiple-choice question: correctAnswers array does not match isCorrect flags, overwriting with correct values');
+                        aiQuestion.correctAnswers = correctOptions;
+                    }
                 }
             } else if (qType === 'true-false') {
                 if (!Array.isArray(aiQuestion.correctAnswers) || aiQuestion.correctAnswers.length !== 1) {

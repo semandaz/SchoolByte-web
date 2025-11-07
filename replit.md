@@ -40,9 +40,18 @@ Preferred communication style: Simple, everyday language.
 - **Dynamic Content Loading**: AJAX requests for real-time data updates without page refreshes
 
 ### AI Integration
-- **Google Generative AI**: Integrated for Preader Games storytelling and educational content generation
+- **Google Generative AI (Gemini)**: Integrated for Preader Games storytelling and AI-powered quiz question generation
+- **Model Used**: gemini-1.5-flash-latest for quiz generation with structured JSON output
 - **Safety Configuration**: Harm category blocking and content filtering for educational appropriateness
 - **Session Management**: Persistent game sessions with progress tracking and ethical scoring
+- **AI Quiz Generation**: Two endpoints for creating quiz questions:
+  - POST `/student/quizzes/generate-ai` - Students generate personalized quiz questions
+  - POST `/teacher/quiz-questions/generate-ai` - Teachers generate and save questions to database
+- **Comprehensive Validation**: Multi-layer validation ensures AI-generated questions meet strict quality standards:
+  - Multiple-choice questions: Exactly 4 options with proper formatting and correctAnswers array synchronization
+  - True-false questions: Exact literal validation ("true" or "false" only, array length = 1)
+  - Keyword-based questions: Minimum 2 keywords for NLP grading
+  - Auto-correction: Automatically fixes or rejects malformed AI responses
 
 ### Authentication & Authorization
 - **Multi-Role System**: Separate authentication flows for students, teachers, and administrators
