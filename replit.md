@@ -6,6 +6,33 @@ SchoolByte is a comprehensive educational platform designed to motivate student 
 
 The platform includes specialized features like Preader Games (AI-powered interactive storytelling for ethical decision-making), subject-specific dashboards, and a sophisticated quiz system with personalized question generation based on student class levels and enrolled subjects.
 
+## Recent Changes
+
+### November 7, 2025 - ByteNexus Chat & Dashboard Improvements
+
+**ByteNexus Chat Enhancements:**
+- Fixed search bar CSS to prevent overflow and visual issues
+- Added mobile menu toggle button to empty state for better initial accessibility
+- Renamed "Groups" tab to "Discussion Groups" for clarity
+- Implemented complete Teams feature with backend and frontend:
+  - Private team creation with unique share tokens
+  - Team listing and management
+  - Share link functionality for inviting members
+  - Team-to-group conversion flow
+- Fixed public groups display by adding `/api/groups/public` endpoint
+- Added `/api/students/suggestions` endpoint for student discovery
+
+**Subject Dashboard Improvements:**
+- Added `/api/workfiles/:workFileId/preview` endpoint for free PDF previews
+- Implemented preview functionality in Biology, Food & Nutrition, and Geography dashboards
+- Preview is free (no byte cost), download still deducts bytes
+- Fixed download/preview button layout with proper flex containers
+- Teacher upload verified working across all subjects
+
+**Known Limitations:**
+- 13 subject dashboards still need complete implementation (missing download/preview infrastructure)
+- Only Biology, Food & Nutrition, and Geography have full preview/download functionality
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
