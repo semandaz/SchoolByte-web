@@ -3526,6 +3526,31 @@ app.get('/student/workfiles', authenticateToken, async (req, res) => {
     }
 });
 
+// Student endpoint to preview a work file (free, no bytes deduction)
+app.get('/api/workfiles/:workFileId/preview', authenticateToken, async (req, res) => {
+    try {
+        const { workFileId } = req.params;
+        
+        const workFile = await WorkFile.findById(workFileId);
+        if (!workFile) {
+            return res.status(404).json({ message: 'Work file not found.' });
+        }
+
+        res.json({
+            success: true,
+            previewUrl: workFile.fileUrl,
+            title: workFile.title,
+            description: workFile.description,
+            subject: workFile.subject,
+            intendedClass: workFile.intendedClass,
+            costBytes: workFile.costBytes
+        });
+    } catch (error) {
+        console.error('Error loading preview:', error);
+        res.status(500).json({ message: 'Failed to load preview.', error: error.message });
+    }
+});
+
 // Student endpoint to download a work file (with bytes deduction)
 app.post('/student/download-workfile/:workFileId', authenticateToken, async (req, res) => {
     const { workFileId } = req.params;

@@ -200,10 +200,13 @@
         .search-container {
             padding: 15px;
             border-bottom: 1px solid var(--glass-border);
+            max-width: 100%;
+            overflow: hidden;
         }
 
         .search-box {
             width: 100%;
+            max-width: 100%;
             padding: 12px 15px 12px 40px;
             border-radius: 20px;
             border: 1px solid var(--glass-border);
@@ -214,6 +217,7 @@
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cpath d='m21 21-4.3-4.3'%3E%3C/path%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: 15px center;
+            box-sizing: border-box;
         }
 
         .search-box:focus {
@@ -987,7 +991,7 @@
             <div class="tabs">
                 <div class="tab active" data-tab="chats">Chats</div>
                 <div class="tab" data-tab="suggestions">Suggestions</div>
-                <div class="tab" data-tab="groups">Groups</div>
+                <div class="tab" data-tab="groups">Discussion Groups</div>
                 <div class="tab" data-tab="teams">Teams</div>
                 <div class="tab" data-tab="search">Search</div>
             </div>
@@ -1005,6 +1009,9 @@
 
         <div class="chat-area">
             <div id="emptyState" class="empty-state">
+                <div class="mobile-menu-btn" id="menuToggleEmpty" style="position: absolute; top: 20px; left: 20px;">
+                    <i class="fas fa-bars"></i>
+                </div>
                 <i class="fas fa-comments"></i>
                 <h3>Welcome to ByteNexus Chat</h3>
                 <p>Select a conversation from the sidebar to start chatting with your classmates.</p>
@@ -1123,6 +1130,11 @@
 
         // Mobile menu toggle
         document.getElementById('menuToggle').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+        
+        // Mobile menu toggle for empty state
+        document.getElementById('menuToggleEmpty').addEventListener('click', () => {
             document.getElementById('sidebar').classList.toggle('active');
         });
 
@@ -1432,7 +1444,20 @@
                 }
             } else if (currentTab === 'teams') {
                 contactsList.innerHTML = '<div class="loading">Loading teams...</div>';
-                contactsList.innerHTML = '<div class="loading" style="padding: 20px; text-align: center;">Teams feature coming soon!<br><br><small style="color: var(--gray);">Create and manage collaborative study teams</small></div>';
+
+                try {
+                    const response = await fetch(`${API_URL}/api/teams/my-teams`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (!response.ok) throw new Error('Failed to load teams');
+
+                    const teams = await response.json();
+                    displayTeams(teams);
+                } catch (error) {
+                    console.error('Error loading teams:', error);
+                    contactsList.innerHTML = '<div class="loading">Failed to load teams. Please refresh.</div>';
+                }
             }
         }
 
@@ -1523,6 +1548,116 @@
                     }
                 });
             });
+        }
+
+        function displayTeams(teams) {
+            const contactsList = document.getElementById('contactsList');
+
+            const createTeamButton = `
+                <div style="padding: 10px 15px;">
+                    <button id="createTeamBtn" class="create-group-btn">
+                        <i class="fas fa-plus-circle"></i> Create Team
+                    </button>
+                </div>
+            `;
+
+            if (teams.length === 0) {
+                contactsList.innerHTML = createTeamButton + '<div class="loading" style="padding: 20px; text-align: center;">No teams yet<br><br><small style="color: var(--gray);">Create a team to share discussion groups with others</small></div>';
+            } else {
+                const teamsHTML = teams.map(team => {
+                    return `
+                        <div class="contact" data-team='${JSON.stringify(team)}'>
+                            <div class="contact-avatar" style="background: linear-gradient(135deg, #10b981, #059669);">
+                                <i class="fas fa-user-friends"></i>
+                            </div>
+                            <div class="contact-info">
+                                <div class="contact-name">${team.name}</div>
+                                <div class="contact-details">Share link: ${team.share_token.substring(0, 12)}...</div>
+                                <button class="category-badge" style="cursor: pointer; border: none;" onclick="copyTeamLink('${team.shareLink}', event)">
+                                    <i class="fas fa-copy"></i> Copy Link
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                contactsList.innerHTML = createTeamButton + teamsHTML;
+            }
+
+            const createTeamBtn = document.getElementById('createTeamBtn');
+            if (createTeamBtn) {
+                createTeamBtn.addEventListener('click', () => {
+                    const teamName = prompt('Enter team name:');
+                    if (teamName && teamName.trim()) {
+                        createTeam(teamName.trim());
+                    }
+                });
+            }
+        }
+
+        async function createTeam(teamName) {
+            try {
+                const response = await fetch(`${API_URL}/api/teams/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name: teamName })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to create team');
+                }
+
+                alert(`Team "${teamName}" created successfully!\n\nShare link:\n${data.shareLink}\n\nClick "Copy Link" to share with others.`);
+                
+                if (currentTab === 'teams') {
+                    loadContacts();
+                }
+            } catch (error) {
+                console.error('Error creating team:', error);
+                alert(error.message || 'Failed to create team. Please try again.');
+            }
+        }
+
+        function copyTeamLink(link, event) {
+            event.stopPropagation();
+            navigator.clipboard.writeText(link).then(() => {
+                alert('Team link copied to clipboard!\n\nShare this link with others so they can see your discussion groups.');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                prompt('Copy this link:', link);
+            });
+        }
+
+        async function handleTeamLink(teamToken) {
+            try {
+                const response = await fetch(`${API_URL}/api/teams/by-token/${teamToken}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to load team');
+                }
+
+                const groupsList = data.groups.map(g => `- ${g.name}`).join('\n');
+                const message = `Team: ${data.team.name}\nCreated by: ${data.team.created_by}\n\nAvailable Discussion Groups:\n${groupsList || 'No groups yet'}\n\nWould you like to browse these groups?`;
+
+                if (confirm(message)) {
+                    currentTab = 'groups';
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelector('[data-tab="groups"]').classList.add('active');
+                    loadContacts();
+                }
+            } catch (error) {
+                console.error('Error loading team:', error);
+                alert(error.message || 'Failed to load team');
+            }
         }
 
         async function openChat(contact) {
@@ -2003,10 +2138,11 @@
             }
         }
 
-        // Check for invitation in URL on page load
+        // Check for invitation or team link in URL on page load
         function checkForInvitation() {
             const urlParams = new URLSearchParams(window.location.search);
             const inviteToken = urlParams.get('invite');
+            const teamToken = urlParams.get('team');
 
             if (inviteToken && token) {
                 // Clear the URL parameter
@@ -2017,6 +2153,14 @@
                     if (confirm('You have been invited to join a discussion group. Would you like to join now?')) {
                         joinGroupByInvitation(inviteToken);
                     }
+                }, 1000);
+            } else if (teamToken && token) {
+                // Clear the URL parameter
+                window.history.replaceState({}, document.title, window.location.pathname);
+
+                // Show team details
+                setTimeout(() => {
+                    handleTeamLink(teamToken);
                 }, 1000);
             }
         }

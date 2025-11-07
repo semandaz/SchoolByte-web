@@ -623,7 +623,22 @@ app.get('/api/search/groups', authenticateRequest, async (req, res) => {
     const { q } = req.query;
 
     if (!q || q.length < 2) {
-      return res.json([]);
+      const allPublicGroups = await DiscussionGroup.find({ is_public: true })
+        .sort({ created_at: -1 })
+        .limit(50)
+        .lean();
+
+      const formattedGroups = allPublicGroups.map(group => ({
+        id: group._id.toString(),
+        name: group.name,
+        description: group.description,
+        rules: group.rules,
+        is_public: group.is_public,
+        created_by: group.created_by.toString(),
+        created_at: group.created_at
+      }));
+
+      return res.json(formattedGroups);
     }
 
     const groups = await DiscussionGroup.find({
@@ -650,6 +665,76 @@ app.get('/api/search/groups', authenticateRequest, async (req, res) => {
   } catch (error) {
     console.error('Group search error:', error);
     res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+app.get('/api/students/suggestions', authenticateRequest, async (req, res) => {
+  try {
+    const currentUser = await User.findById(req.userId).lean();
+    
+    if (!currentUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const allUsers = await User.find({
+      _id: { $ne: req.userId }
+    })
+      .select('username email avatar_url class stream')
+      .lean();
+
+    const sameStreamAndClass = [];
+    const sameStream = [];
+    const sameClass = [];
+    const others = [];
+
+    allUsers.forEach(user => {
+      if (currentUser.stream && currentUser.class) {
+        if (user.stream === currentUser.stream && user.class === currentUser.class) {
+          sameStreamAndClass.push(user);
+        } else if (user.stream === currentUser.stream) {
+          sameStream.push(user);
+        } else if (user.class === currentUser.class) {
+          sameClass.push(user);
+        } else {
+          others.push(user);
+        }
+      } else if (currentUser.stream && user.stream === currentUser.stream) {
+        sameStream.push(user);
+      } else if (currentUser.class && user.class === currentUser.class) {
+        sameClass.push(user);
+      } else {
+        others.push(user);
+      }
+    });
+
+    const formatUser = (user, category) => ({
+      id: user._id.toString(),
+      studentName: user.username,
+      username: user.username,
+      email: user.email,
+      avatar_url: user.avatar_url,
+      class: user.class,
+      stream: user.stream,
+      category: category
+    });
+
+    const suggestions = [
+      ...sameStreamAndClass.map(u => formatUser(u, 'Same Stream & Class')),
+      ...sameStream.map(u => formatUser(u, 'Same Stream')),
+      ...sameClass.map(u => formatUser(u, 'Same Class')),
+      ...others.slice(0, 30).map(u => formatUser(u, 'Other Students'))
+    ];
+
+    res.json({
+      currentUser: {
+        class: currentUser.class,
+        stream: currentUser.stream
+      },
+      suggestions: suggestions
+    });
+  } catch (error) {
+    console.error('Student suggestions error:', error);
+    res.status(500).json({ error: 'Failed to fetch suggestions' });
   }
 });
 
@@ -788,6 +873,101 @@ app.post('/api/groups/join-by-invite', authenticateRequest, async (req, res) => 
   } catch (error) {
     console.error('Error joining group by invitation:', error);
     res.status(500).json({ error: 'Failed to join group' });
+  }
+});
+
+app.post('/api/teams/create', authenticateRequest, async (req, res) => {
+  try {
+    const { name, groupIds } = req.body;
+
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({ error: 'Team name is required' });
+    }
+
+    const newTeam = new Team({
+      name: name.trim(),
+      user_id: req.userId
+    });
+
+    await newTeam.save();
+
+    res.status(201).json({
+      success: true,
+      team: {
+        id: newTeam._id.toString(),
+        name: newTeam.name,
+        share_token: newTeam.share_token,
+        created_at: newTeam.created_at
+      },
+      shareLink: `${process.env.FRONTEND_URL || req.get('origin')}/bytenexus-chat.html?team=${newTeam.share_token}`,
+      message: 'Team created successfully'
+    });
+  } catch (error) {
+    console.error('Error creating team:', error);
+    res.status(500).json({ error: 'Failed to create team' });
+  }
+});
+
+app.get('/api/teams/my-teams', authenticateRequest, async (req, res) => {
+  try {
+    const teams = await Team.find({ user_id: req.userId })
+      .sort({ created_at: -1 })
+      .lean();
+
+    const formattedTeams = teams.map(team => ({
+      id: team._id.toString(),
+      name: team.name,
+      share_token: team.share_token,
+      created_at: team.created_at,
+      shareLink: `${process.env.FRONTEND_URL || req.get('origin')}/bytenexus-chat.html?team=${team.share_token}`
+    }));
+
+    res.json(formattedTeams);
+  } catch (error) {
+    console.error('Error fetching teams:', error);
+    res.status(500).json({ error: 'Failed to fetch teams' });
+  }
+});
+
+app.get('/api/teams/by-token/:shareToken', authenticateRequest, async (req, res) => {
+  try {
+    const { shareToken } = req.params;
+
+    const team = await Team.findOne({ share_token: shareToken }).lean();
+    
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    const creator = await User.findById(team.user_id).select('username').lean();
+
+    const publicGroups = await DiscussionGroup.find({ 
+      is_public: true,
+      created_by: team.user_id 
+    })
+      .sort({ created_at: -1 })
+      .lean();
+
+    const formattedGroups = publicGroups.map(group => ({
+      id: group._id.toString(),
+      name: group.name,
+      description: group.description,
+      rules: group.rules,
+      created_at: group.created_at
+    }));
+
+    res.json({
+      team: {
+        id: team._id.toString(),
+        name: team.name,
+        created_by: creator ? creator.username : 'Unknown',
+        created_at: team.created_at
+      },
+      groups: formattedGroups
+    });
+  } catch (error) {
+    console.error('Error fetching team by token:', error);
+    res.status(500).json({ error: 'Failed to fetch team details' });
   }
 });
 
