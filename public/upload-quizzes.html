@@ -628,18 +628,19 @@
             // Add the determined questionText to the quizData payload
             quizData.questionText = questionTextForPayload;
 
-            console.log('Quiz Question Data Prepared:', quizData);
-            showMessageBox('Success', 'Quiz question data prepared for submission! Check console for payload.', true);
+            // Get teacher token from localStorage
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showMessageBox('Authentication Error', 'You are not logged in. Please log in as a teacher first.', false);
+                return;
+            }
 
-            // --- Simulating Backend Submission ---
-            // In a real application, you would send this 'quizData' object
-            // to your backend endpoint using fetch API, e.g.:
-            /*
-            fetch('/teacher/upload-quiz-question', {
+            // Submit to backend
+            fetch('/teacher/quiz-questions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer YOUR_TEACHER_AUTH_TOKEN` // Replace with actual token
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(quizData)
             })
@@ -650,19 +651,14 @@
                 return response.json();
             })
             .then(data => {
-                if (data.success) { // Assuming your backend sends { success: true, message: "..." }
-                    showMessageBox('Success', 'Quiz question uploaded successfully!', true);
-                    quizUploadForm.reset(); // Clear form after successful upload
-                    renderQuestionTypeFields(); // Re-render dynamic fields to default state
-                } else {
-                    showMessageBox('Upload Failed', data.message || 'Something went wrong during upload.', false);
-                }
+                showMessageBox('Success', 'Quiz question uploaded successfully!', true);
+                quizUploadForm.reset(); // Clear form after successful upload
+                renderQuestionTypeFields(); // Re-render dynamic fields to default state
             })
             .catch(error => {
                 console.error('Error uploading quiz:', error);
-                showMessageBox('Network Error', error.message || 'Could not connect to the server. Please try again.', false);
+                showMessageBox('Upload Failed', error.message || 'Could not connect to the server. Please try again.', false);
             });
-            */
         }
 
         // Custom Message Box Functions
