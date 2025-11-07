@@ -2914,6 +2914,177 @@ app.post('/teacher/quiz-questions', authenticateTeacherToken, [
     } catch (error) {
         await session.abortTransaction();
         console.error('Error creating quiz question:', error);
+        res.status(500).json({ message: 'Failed to create quiz question. Please try again.', error: error.message });
+    } finally {
+        session.endSession();
+    }
+});
+
+app.post('/teacher/quiz-questions/generate-ai', authenticateTeacherToken, [
+    body('subject').notEmpty().withMessage('Subject is required.').trim(),
+    body('intendedClass').notEmpty().withMessage('Intended class is required.').trim().isIn(['S.1', 'S.2', 'S.3', 'S.4', 'S.5', 'S.6']).withMessage('Invalid intended class.'),
+    body('topic').optional().trim(),
+    body('questionType').optional().isIn([
+        'short-answer', 'multiple-choice-single', 'multiple-choice-multi',
+        'true-false', 'fill-in-the-blank', 'problem-solving', 'numeric-entry'
+    ]),
+    body('numberOfQuestions').optional().isInt({ min: 1, max: 10 }).withMessage('Number of questions must be between 1 and 10.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    if (!genAI) {
+        return res.status(503).json({ 
+            message: 'AI service is not available. Please ensure GEMINI_API_KEY is configured.' 
+        });
+    }
+
+    try {
+        const { subject, intendedClass, topic, questionType, numberOfQuestions } = req.body;
+        const teacherId = req.teacher.id;
+        const teacherName = req.teacher.name;
+
+        const numQuestions = numberOfQuestions || 1;
+        const qType = questionType || 'multiple-choice-single';
+
+        const model = genAI.getGenerativeModel({ 
+            model: MODEL_NAME,
+            generationConfig: {
+                responseMimeType: "application/json"
+            }
+        });
+
+        const topicContext = topic ? `Topic: ${topic}` : 'Generate questions covering various topics within the subject.';
+
+        const prompt = `You are an expert teacher creating quiz questions for a Ugandan secondary school.
+
+Generate ${numQuestions} high-quality ${qType} question(s) for:
+- Subject: ${subject}
+- Class Level: ${intendedClass}
+- ${topicContext}
+
+Requirements:
+1. Questions must be educationally appropriate for ${intendedClass} students
+2. Questions should align with the Ugandan curriculum
+3. Use clear, precise language
+4. For multiple-choice questions, provide 4 options with one correct answer
+5. For short-answer/problem-solving questions, provide keywords for grading
+6. Include hints and explanations to aid learning
+
+Output Format (JSON):
+{
+  "questions": [
+    {
+      "questionText": "The question text",
+      "type": "${qType}",
+      ${qType.includes('multiple-choice') ? `"options": [
+        {"text": "Option A", "isCorrect": false},
+        {"text": "Option B", "isCorrect": true},
+        {"text": "Option C", "isCorrect": false},
+        {"text": "Option D", "isCorrect": false}
+      ],` : ''}
+      ${['short-answer', 'problem-solving', 'fill-in-the-blank'].includes(qType) ? `"correctAnswers": ["answer1", "answer2"],
+      "keywordsForGrading": ["keyword1", "keyword2", "keyword3"],` : ''}
+      ${qType === 'true-false' ? `"correctAnswers": ["true"],` : ''}
+      ${qType === 'numeric-entry' ? `"correctAnswers": ["42"],` : ''}
+      "hint": "A helpful hint",
+      "explanation": "Detailed explanation of the answer",
+      "topic": "Specific topic within ${subject}",
+      "skillType": ["Application"]
+    }
+  ]
+}`;
+
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
+        const parsedResponse = JSON.parse(responseText);
+
+        if (!parsedResponse.questions || !Array.isArray(parsedResponse.questions)) {
+            throw new Error('AI response did not match expected format.');
+        }
+
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            const savedQuestions = [];
+            const teacher = await Teacher.findById(teacherId).session(session);
+            await checkAndResetTeacherWeeklyCounters(teacher);
+
+            for (const aiQuestion of parsedResponse.questions) {
+                const normalizedText = aiQuestion.questionText.toLowerCase().trim().replace(/\s+/g, ' ');
+                const questionHash = crypto.createHash('sha256').update(normalizedText).digest('hex');
+
+                const existingQuestion = await QuizQuestion.findOne({ questionHash }).session(session);
+                if (existingQuestion) {
+                    console.log(`Duplicate question detected (AI-generated): "${aiQuestion.questionText.substring(0, 50)}..."`);
+                    continue;
+                }
+
+                const newQuestion = new QuizQuestion({
+                    questionText: aiQuestion.questionText,
+                    subject,
+                    intendedClass,
+                    type: qType,
+                    options: aiQuestion.options || [],
+                    correctAnswers: aiQuestion.correctAnswers || [],
+                    instructions: aiQuestion.instructions || '',
+                    hint: aiQuestion.hint || '',
+                    explanation: aiQuestion.explanation || '',
+                    maxBytesRewardPerQuestion: 1,
+                    keywordsForGrading: aiQuestion.keywordsForGrading || [],
+                    topic: aiQuestion.topic || topic || '',
+                    skillType: aiQuestion.skillType || ['Application'],
+                    uploadedBy: {
+                        teacherId,
+                        teacherName
+                    },
+                    questionHash,
+                    isActive: true
+                });
+
+                await newQuestion.save({ session });
+                savedQuestions.push(newQuestion);
+            }
+
+            teacher.quizzesUploadedThisWeek += savedQuestions.length;
+            await teacher.save({ session });
+
+            await session.commitTransaction();
+
+            res.status(201).json({
+                message: `Successfully generated and saved ${savedQuestions.length} AI-powered quiz question(s)!`,
+                questions: savedQuestions.map(q => ({
+                    id: q._id,
+                    questionText: q.questionText,
+                    subject: q.subject,
+                    intendedClass: q.intendedClass,
+                    type: q.type,
+                    topic: q.topic
+                })),
+                weeklyStats: {
+                    uploaded: teacher.quizzesUploadedThisWeek,
+                    target: 10
+                }
+            });
+
+        } catch (dbError) {
+            await session.abortTransaction();
+            throw dbError;
+        } finally {
+            session.endSession();
+        }
+
+    } catch (error) {
+        console.error('Error generating AI quiz questions:', error);
+        res.status(500).json({ 
+            message: 'Failed to generate quiz questions with AI. Please try again.', 
+            error: error.message 
+        });
+    }
+});
 
 // Student endpoint to fetch work files by subject
 app.get('/student/workfiles', authenticateToken, async (req, res) => {
