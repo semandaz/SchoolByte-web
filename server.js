@@ -6238,7 +6238,8 @@ app.get('/student/activities', authenticateToken, async (req, res) => {
                 createdAt: activity.createdAt
             }))
         });
-    } catch (error);
+    } catch (error) {
+        console.error('Error fetching activities:', error);
         res.status(500).json({ message: 'Failed to fetch activities.', error: error.message });
     }
 });
