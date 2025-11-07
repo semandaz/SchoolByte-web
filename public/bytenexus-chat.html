@@ -1269,7 +1269,11 @@
             socket.on('group_invitation', (data) => {
                 const { groupId, groupName, invitedBy, invitationToken, message } = data;
 
-                if (confirm(`${message}\n\nWould you like to join this group now?`)) {
+                const invitationLink = `${window.location.origin}/bytenexus-chat.html?invite=${invitationToken}`;
+
+                const formattedMessage = `${message}\n\nInvitation Link: ${invitationLink}\n\nWould you like to join this group now?`;
+
+                if (confirm(formattedMessage)) {
                     joinGroupByInvitation(invitationToken);
                 }
             });
@@ -1732,24 +1736,8 @@
             }
 
             if (activeContact.type === 'group') {
-                const tempMessage = {
-                    group_id: activeContact.id,
-                    sender_id: currentUser.id,
-                    content: content,
-                    status: 'pending',
-                    timestamp: new Date(),
-                    created_at: new Date(),
-                    sender: {
-                        id: currentUser.id,
-                        username: currentUser.username
-                    },
-                    is_boosted: false,
-                    boost_cost: 0
-                };
-
-                messages.push(tempMessage);
-                displayGroupMessages();
-
+                // For group messages, don't add to messages array yet
+                // Wait for the server confirmation via new_group_message event
                 socket.emit('send_group_message', {
                     groupId: activeContact.id,
                     content: content,
@@ -1758,6 +1746,7 @@
                     byteCost: 0
                 });
             } else {
+                const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                 const tempMessage = {
                     sender_id: currentUser.id,
                     recipient_id: activeContact.id,
@@ -1765,7 +1754,8 @@
                     status: 'pending',
                     timestamp: new Date(),
                     created_at: new Date(),
-                    tempId: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+                    tempId: tempId,
+                    _id: tempId
                 };
 
                 messages.push(tempMessage);
@@ -1774,7 +1764,7 @@
                 socket.emit('send_personal_message', {
                     recipientId: activeContact.id,
                     content: content,
-                    tempId: tempMessage.tempId
+                    tempId: tempId
                 });
             }
 

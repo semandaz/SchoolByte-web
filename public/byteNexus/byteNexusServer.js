@@ -199,8 +199,8 @@ io.on('connection', (socket) => {
         status: 'sent'
       });
 
-      // Broadcast to conversation room
-      io.to(`personal_${conversationId}`).emit('new_personal_message', formattedMessage);
+      // Broadcast to conversation room (excluding sender to avoid duplication)
+      socket.to(`personal_${conversationId}`).emit('new_personal_message', formattedMessage);
 
       // Check if recipient is online
       const recipientSocket = authenticatedSockets.get(recipientId);
