@@ -10,6 +10,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Google Fonts - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -227,7 +231,49 @@
 
             // Initial render call in case a type is pre-selected (though not in this example)
             renderQuestionTypeFields();
+
+            // Initialize KaTeX auto-render when library loads
+            if (window.renderMathInElement) {
+                initializeMathRendering();
+            } else {
+                document.addEventListener('DOMContentLoaded', initializeMathRendering);
+            }
         });
+
+        function initializeMathRendering() {
+            // Render math in the entire document
+            if (window.renderMathInElement) {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\[', right: '\\]', display: true},
+                        {left: '\\(', right: '\\)', display: false}
+                    ],
+                    throwOnError: false
+                });
+            }
+        }
+
+        // Function to render math in specific elements
+        function renderMathInElements() {
+            setTimeout(() => {
+                if (window.renderMathInElement) {
+                    const dynamicFields = document.getElementById('dynamicQuestionFields');
+                    if (dynamicFields) {
+                        renderMathInElement(dynamicFields, {
+                            delimiters: [
+                                {left: '$$', right: '$$', display: true},
+                                {left: '$', right: '$', display: false},
+                                {left: '\\[', right: '\\]', display: true},
+                                {left: '\\(', right: '\\)', display: false}
+                            ],
+                            throwOnError: false
+                        });
+                    }
+                }
+            }, 100);
+        }
 
         function toggleCollapsible(contentId, arrowId) {
             const content = document.getElementById(contentId);
@@ -344,6 +390,9 @@
             } else if (questionType === 'ordering') {
                 addOrderingItem();
             }
+
+            // Render any math expressions in the newly added fields
+            renderMathInElements();
         }
 
         let optionCounter = 0;
