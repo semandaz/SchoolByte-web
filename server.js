@@ -1369,7 +1369,6 @@ async function generateQuizQuestions(student, requestedSubject = null) {
     const session = await mongoose.startSession();
     session.startTransaction();
 
-
     try {
         // Get or create quiz session
         let quizSession = await QuizSession.findById(student.currentQuizSessionId).session(session);
@@ -1383,11 +1382,9 @@ async function generateQuizQuestions(student, requestedSubject = null) {
             await student.save({ session });
         }
 
-
         // Determine question distribution based on class level
         let ownClassCount, lowerClassCount, higherClassCount;
         const studentClass = student.class;
-
 
         if (['S.1', 'S.2', 'S.3', 'S.4'].includes(studentClass)) {
             // O-Level distribution: 5 own, 2 lower, 3 higher
@@ -1401,20 +1398,13 @@ async function generateQuizQuestions(student, requestedSubject = null) {
             higherClassCount = 3;
         }
 
-
         const selectedQuestions = [];
         const usedQuestionIds = new Set();
-
-
-        // Priority 1: Fill underrepresented subjects
-        const underrepresentedSlots = findUnderrepresentedSlots(quizSession.subjectProgress);
-
 
         // Helper function to get class levels for distribution
         function getClassLevels(targetClass, type) {
             const classOrder = ['S.1', 'S.2', 'S.3', 'S.4', 'S.5', 'S.6'];
             const currentIndex = classOrder.indexOf(targetClass);
-
 
             if (type === 'own') return [targetClass];
             if (type === 'lower') {
@@ -1425,55 +1415,41 @@ async function generateQuizQuestions(student, requestedSubject = null) {
             }
         }
 
+        // Shuffle array helper
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
 
         // Fill questions for each category
-        await fillQuestionCategory('own', ownClassCount, getClassLevels(studentClass, 'own'));
-        await fillQuestionCategory('lower', lowerClassCount, getClassLevels(studentClass, 'lower'));
-        await fillQuestionCategory('higher', higherClassCount, getClassLevels(studentClass, 'higher'));
-
+        await fillQuestionCategory('ownClass', ownClassCount, getClassLevels(studentClass, 'own'));
+        await fillQuestionCategory('lowerClass', lowerClassCount, getClassLevels(studentClass, 'lower'));
+        await fillQuestionCategory('higherClass', higherClassCount, getClassLevels(studentClass, 'higher'));
 
         async function fillQuestionCategory(categoryType, count, allowedClasses) {
+            if (count === 0 || !allowedClasses || allowedClasses.length === 0) return;
+            
             let filled = 0;
+            const subjectsToTry = shuffleArray([...student.subjectsEnrolled]);
 
+            // Round-robin through subjects to ensure variety
+            while (filled < count && subjectsToTry.length > 0) {
+                for (let i = 0; i < subjectsToTry.length && filled < count; i++) {
+                    const subject = subjectsToTry[i];
 
-            // Try to fill from underrepresented subjects first
-            for (const subject in underrepresentedSlots) {
-                if (filled >= count) break;
-                if (underrepresentedSlots[subject][categoryType] > 0) {
+                    // Find questions NOT in recent quiz IDs
                     const questions = await QuizQuestion.find({
                         subject: subject,
                         intendedClass: { $in: allowedClasses },
                         isActive: true,
                         _id: { $nin: [...student.recentQuizIds, ...usedQuestionIds] }
-                    }).limit(Math.min(underrepresentedSlots[subject][categoryType], count - filled))
-                      .session(session);
-
-
-                    for (const q of questions) {
-                        if (filled < count) {
-                            selectedQuestions.push({ question: q, category: categoryType, subject: subject });
-                            usedQuestionIds.add(q._id);
-                            filled++;
-                        }
-                    }
-                }
-            }
-
-
-            // Fill remaining slots with enrolled subjects
-            while (filled < count) {
-                let found = false;
-                for (const subject of student.subjectsEnrolled) {
-                    if (filled >= count) break;
-
-
-                    const questions = await QuizQuestion.find({
-                        subject: subject,
-                        intendedClass: { $in: allowedClasses },
-                        isActive: true,
-                        _id: { $nin: [...student.recentQuizIds, ...usedQuestionIds] }
-                    }).limit(1).session(session);
-
+                    })
+                    .sort({ timesServedOverall: 1, lastServedTimestamp: 1 }) // Prioritize least-served
+                    .limit(1)
+                    .session(session);
 
                     if (questions.length > 0) {
                         selectedQuestions.push({ 
@@ -1483,21 +1459,19 @@ async function generateQuizQuestions(student, requestedSubject = null) {
                         });
                         usedQuestionIds.add(questions[0]._id);
                         filled++;
-                        found = true;
                     }
                 }
 
-
-                if (!found) {
-                    // Fallback: use least-served questions globally
+                // If we couldn't fill from enrolled subjects, try ANY subject
+                if (filled < count) {
                     const questions = await QuizQuestion.find({
                         intendedClass: { $in: allowedClasses },
                         isActive: true,
-                        _id: { $nin: [...usedQuestionIds] }
-                    }).sort({ timesServedOverall: 1, lastServedTimestamp: 1 })
-                      .limit(count - filled)
-                      .session(session);
-
+                        _id: { $nin: [...student.recentQuizIds, ...usedQuestionIds] }
+                    })
+                    .sort({ timesServedOverall: 1, lastServedTimestamp: 1 })
+                    .limit(count - filled)
+                    .session(session);
 
                     for (const q of questions) {
                         selectedQuestions.push({ 
@@ -1513,10 +1487,12 @@ async function generateQuizQuestions(student, requestedSubject = null) {
             }
         }
 
+        // Shuffle final questions to avoid predictable order
+        const shuffledQuestions = shuffleArray(selectedQuestions);
 
-        // Update question stats asynchronously (in background)
+        // Update question stats in background
         setImmediate(async () => {
-            for (const { question } of selectedQuestions) {
+            for (const { question } of shuffledQuestions) {
                 await QuizQuestion.updateOne(
                     { _id: question._id },
                     { 
@@ -1527,10 +1503,8 @@ async function generateQuizQuestions(student, requestedSubject = null) {
             }
         });
 
-
         await session.commitTransaction();
-        return selectedQuestions.map(sq => sq.question);
-
+        return shuffledQuestions.map(sq => sq.question);
 
     } catch (error) {
         await session.abortTransaction();
