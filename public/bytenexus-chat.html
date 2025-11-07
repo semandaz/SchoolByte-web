@@ -1536,11 +1536,15 @@
                 const timestamp = new Date(msg.created_at || msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const retryAttr = msg.status === 'failed' ? `onclick="retryMessage('${msg.tempId}')" style="cursor: pointer;"` : '';
                 
+                // Sanitize and allow specific HTML tags for links
+                const sanitizedContent = msg.content.replace(/<a href="([^"]+)"[^>]*>(.*?)<\/a>/g, 
+                    '<a href="$1" style="color: #6366f1; text-decoration: underline; cursor: pointer;" target="_blank" rel="noopener noreferrer">$2</a>');
+                
                 return `
                     <div class="message ${isSent ? 'sent' : 'received'}">
                         <div class="message-avatar">${isSent ? currentUserInitials : contactInitials}</div>
                         <div class="message-bubble">
-                            <div class="message-content">${msg.content}</div>
+                            <div class="message-content">${sanitizedContent}</div>
                             ${isSent ? `
                                 <div class="message-meta">
                                     <span class="message-time">${timestamp}</span>

@@ -5295,9 +5295,28 @@ app.get('/api/search/groups', authenticateToken, async (req, res) => {
   try {
     const { q } = req.query;
 
-    // For now, return empty array
-    // You can implement MongoDB queries here if you want to store groups
-    res.json([]);
+    let query = { is_public: true };
+
+    // If search query provided, add search conditions
+    if (q && q.trim().length >= 1) {
+      query.$or = [
+        { name: { $regex: q.trim(), $options: 'i' } },
+        { description: { $regex: q.trim(), $options: 'i' } }
+      ];
+    }
+
+    const groups = await DiscussionGroup.find(query)
+      .sort({ created_at: -1 })
+      .limit(50)
+      .lean();
+      
+    res.json(groups.map(group => ({
+        id: group._id.toString(),
+        name: group.name,
+        description: group.description,
+        is_public: group.is_public,
+        member_count: group.members.length || 0 // Assuming 'members' is an array field
+    })));
 
   } catch (error) {
     console.error('Error searching groups:', error);
@@ -5336,6 +5355,8 @@ app.post('/api/groups/join-by-invite', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Student not found' });
     }
 
+    // Note: Actual group joining logic (adding student to group members) would go here.
+    // This currently only validates the token and confirms the action.
     res.json({
       success: true,
       group: {
