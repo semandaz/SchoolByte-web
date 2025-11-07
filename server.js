@@ -2471,6 +2471,233 @@ app.get('/student/quizzes/generate', authenticateToken, async (req, res) => {
     }
 });
 
+app.post('/student/quizzes/generate-ai', authenticateToken, [
+    body('subject').notEmpty().withMessage('Subject is required.').trim(),
+    body('topic').optional().trim(),
+    body('questionType').optional().isIn([
+        'short-answer', 'multiple-choice-single', 'multiple-choice-multi',
+        'true-false', 'fill-in-the-blank', 'problem-solving', 'numeric-entry'
+    ]),
+    body('numberOfQuestions').optional().isInt({ min: 1, max: 5 }).withMessage('Number of questions must be between 1 and 5.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    if (!genAI) {
+        return res.status(503).json({ 
+            message: 'AI quiz generation is currently unavailable. Please use the regular quiz mode.' 
+        });
+    }
+
+    try {
+        const studentId = req.student.id;
+        const student = await Student.findById(studentId);
+        
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        await checkAndResetWeeklyCounters(student);
+        const weeklyLimit = 50;
+
+        if (student.quizzesCompletedThisWeek >= weeklyLimit) {
+            return res.status(429).json({ 
+                message: 'You have reached your weekly quiz limit. Please try again next week!',
+                limit: weeklyLimit,
+                completed: student.quizzesCompletedThisWeek
+            });
+        }
+
+        const { subject, topic, questionType, numberOfQuestions } = req.body;
+        const intendedClass = student.class;
+        const numQuestions = Math.min(numberOfQuestions || 3, 5);
+        const qType = questionType || 'multiple-choice-single';
+
+        const model = genAI.getGenerativeModel({ 
+            model: MODEL_NAME,
+            generationConfig: {
+                responseMimeType: "application/json"
+            }
+        });
+
+        const topicContext = topic ? `Topic: ${topic}` : 'Generate questions covering various relevant topics within the subject.';
+
+        let optionsExample = '';
+        let answersExample = '';
+        
+        if (qType === 'multiple-choice-single') {
+            optionsExample = `"options": [
+        {"text": "Option A text", "isCorrect": false},
+        {"text": "Option B text", "isCorrect": true},
+        {"text": "Option C text", "isCorrect": false},
+        {"text": "Option D text", "isCorrect": false}
+      ],`;
+        } else if (qType === 'multiple-choice-multi') {
+            optionsExample = `"options": [
+        {"text": "Option A text", "isCorrect": true},
+        {"text": "Option B text", "isCorrect": true},
+        {"text": "Option C text", "isCorrect": false},
+        {"text": "Option D text", "isCorrect": true}
+      ],`;
+        } else if (['short-answer', 'problem-solving', 'fill-in-the-blank'].includes(qType)) {
+            answersExample = `"correctAnswers": ["primary answer", "alternative answer"],
+      "keywordsForGrading": ["keyword1", "keyword2", "keyword3"],`;
+        } else if (qType === 'true-false') {
+            answersExample = `"correctAnswers": ["true"],`;
+        } else if (qType === 'numeric-entry') {
+            answersExample = `"correctAnswers": ["42"],`;
+        }
+
+        const prompt = `You are an expert teacher creating engaging quiz questions for a Ugandan secondary school student.
+
+Generate ${numQuestions} high-quality, educational ${qType} question(s) for:
+- Subject: ${subject}
+- Class Level: ${intendedClass}
+- ${topicContext}
+
+Requirements:
+1. Questions must be age-appropriate and aligned with ${intendedClass} curriculum
+2. Questions should be challenging but fair for the student's level
+3. Use clear, precise language
+${qType === 'multiple-choice-single' ? '4. For multiple-choice-single questions, provide exactly 4 options with EXACTLY ONE option marked isCorrect: true' : ''}
+${qType === 'multiple-choice-multi' ? '4. For multiple-choice-multi questions, provide 4 options with MULTIPLE options marked isCorrect: true (at least 2)' : ''}
+${['short-answer', 'problem-solving'].includes(qType) ? '4. For short-answer/problem-solving questions, provide multiple acceptable answer variations and 5-8 keywords for grading' : ''}
+${qType === 'true-false' ? '4. For true-false questions, correctAnswers must be EXACTLY ["true"] or EXACTLY ["false"] - no other format' : ''}
+${qType === 'numeric-entry' ? '4. For numeric-entry questions, provide the numeric answer as a string' : ''}
+5. Include helpful hints and detailed explanations to promote learning
+6. Make questions engaging and relevant to students in Uganda
+
+Output Format (strict JSON):
+{
+  "questions": [
+    {
+      "questionText": "Clear, specific question text",
+      "type": "${qType}",
+      ${optionsExample}
+      ${answersExample}
+      "hint": "Helpful hint that guides without giving away the answer",
+      "explanation": "Detailed explanation of why the answer is correct and the concept behind it",
+      "topic": "Specific topic name",
+      "skillType": ["Skill category like Application, Analysis, etc."]
+    }
+  ]
+}`;
+
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
+        const parsedResponse = JSON.parse(responseText);
+
+        if (!parsedResponse.questions || !Array.isArray(parsedResponse.questions)) {
+            throw new Error('AI response did not match expected format.');
+        }
+
+        const validatedQuestions = [];
+        for (const aiQuestion of parsedResponse.questions) {
+            if (!aiQuestion.questionText || !aiQuestion.questionText.trim()) {
+                console.warn('Invalid question: missing or empty questionText');
+                continue;
+            }
+            
+            if (qType === 'multiple-choice-single' || qType === 'multiple-choice-multi') {
+                if (!Array.isArray(aiQuestion.options) || aiQuestion.options.length !== 4) {
+                    console.warn(`Invalid multiple-choice question: has ${aiQuestion.options?.length || 0} options, expected exactly 4`);
+                    continue;
+                }
+                
+                let validOptions = true;
+                const correctOptions = [];
+                for (const opt of aiQuestion.options) {
+                    if (!opt.text || typeof opt.text !== 'string' || !opt.text.trim()) {
+                        console.warn('Invalid multiple-choice question: option missing text');
+                        validOptions = false;
+                        break;
+                    }
+                    if (typeof opt.isCorrect !== 'boolean') {
+                        console.warn('Invalid multiple-choice question: option missing or invalid isCorrect boolean');
+                        validOptions = false;
+                        break;
+                    }
+                    if (opt.isCorrect === true) {
+                        correctOptions.push(opt.text);
+                    }
+                }
+                if (!validOptions) continue;
+                
+                const correctCount = correctOptions.length;
+                
+                if (qType === 'multiple-choice-single' && correctCount !== 1) {
+                    console.warn(`Invalid multiple-choice-single question: has ${correctCount} correct answers, expected exactly 1`);
+                    continue;
+                }
+                
+                if (qType === 'multiple-choice-multi' && correctCount < 2) {
+                    console.warn(`Invalid multiple-choice-multi question: has ${correctCount} correct answers, expected at least 2`);
+                    continue;
+                }
+                
+                if (!Array.isArray(aiQuestion.correctAnswers)) {
+                    console.warn('Multiple-choice question: correctAnswers array missing, auto-generating from isCorrect flags');
+                    aiQuestion.correctAnswers = correctOptions;
+                }
+            } else if (qType === 'true-false') {
+                if (!Array.isArray(aiQuestion.correctAnswers) || aiQuestion.correctAnswers.length !== 1) {
+                    console.warn(`Invalid true-false question: correctAnswers must be array with exactly 1 element, got ${aiQuestion.correctAnswers?.length || 0}`);
+                    continue;
+                }
+                const answer = aiQuestion.correctAnswers[0];
+                if (answer !== 'true' && answer !== 'false') {
+                    console.warn(`Invalid true-false question: answer is "${answer}", expected exactly "true" or "false"`);
+                    continue;
+                }
+            } else if (['short-answer', 'problem-solving', 'fill-in-the-blank'].includes(qType)) {
+                if (!aiQuestion.keywordsForGrading || aiQuestion.keywordsForGrading.length < 2) {
+                    console.warn(`Invalid ${qType} question: insufficient keywords for grading (has ${aiQuestion.keywordsForGrading?.length || 0}, expected at least 2)`);
+                    continue;
+                }
+            }
+            
+            validatedQuestions.push(aiQuestion);
+        }
+
+        if (validatedQuestions.length === 0) {
+            throw new Error('No valid questions generated by AI. Please try again.');
+        }
+
+        const sanitizedQuestions = validatedQuestions.map(q => ({
+            questionText: q.questionText,
+            subject: subject,
+            intendedClass: intendedClass,
+            type: qType,
+            options: q.options ? q.options.map(opt => ({ text: opt.text })) : undefined,
+            instructions: q.instructions || '',
+            hint: q.hint || '',
+            topic: q.topic || topic || '',
+            aiGenerated: true,
+            rawQuestion: q
+        }));
+
+        res.status(200).json({
+            message: 'AI-powered quiz questions generated successfully!',
+            questions: sanitizedQuestions,
+            totalQuestions: sanitizedQuestions.length,
+            metadata: {
+                studentClass: student.class,
+                questionsThisWeek: student.quizzesCompletedThisWeek,
+                weeklyLimit: weeklyLimit,
+                aiGenerated: true
+            }
+        });
+
+    } catch (error) {
+        console.error('Error generating AI quiz questions for student:', error);
+        res.status(500).json({ 
+            message: 'Failed to generate AI quiz questions. Please try the regular quiz mode.', 
+            error: error.message 
+        });
+    }
+});
 
 // Enhanced Quiz Submission with full grading system
 app.post('/student/quizzes/submit', authenticateToken, [
@@ -2958,6 +3185,32 @@ app.post('/teacher/quiz-questions/generate-ai', authenticateTeacherToken, [
 
         const topicContext = topic ? `Topic: ${topic}` : 'Generate questions covering various topics within the subject.';
 
+        let optionsExample = '';
+        let answersExample = '';
+        
+        if (qType === 'multiple-choice-single') {
+            optionsExample = `"options": [
+        {"text": "Option A", "isCorrect": false},
+        {"text": "Option B", "isCorrect": true},
+        {"text": "Option C", "isCorrect": false},
+        {"text": "Option D", "isCorrect": false}
+      ],`;
+        } else if (qType === 'multiple-choice-multi') {
+            optionsExample = `"options": [
+        {"text": "Option A", "isCorrect": true},
+        {"text": "Option B", "isCorrect": true},
+        {"text": "Option C", "isCorrect": false},
+        {"text": "Option D", "isCorrect": true}
+      ],`;
+        } else if (['short-answer', 'problem-solving', 'fill-in-the-blank'].includes(qType)) {
+            answersExample = `"correctAnswers": ["answer1", "answer2"],
+      "keywordsForGrading": ["keyword1", "keyword2", "keyword3"],`;
+        } else if (qType === 'true-false') {
+            answersExample = `"correctAnswers": ["true"],`;
+        } else if (qType === 'numeric-entry') {
+            answersExample = `"correctAnswers": ["42"],`;
+        }
+
         const prompt = `You are an expert teacher creating quiz questions for a Ugandan secondary school.
 
 Generate ${numQuestions} high-quality ${qType} question(s) for:
@@ -2969,26 +3222,21 @@ Requirements:
 1. Questions must be educationally appropriate for ${intendedClass} students
 2. Questions should align with the Ugandan curriculum
 3. Use clear, precise language
-4. For multiple-choice questions, provide 4 options with one correct answer
-5. For short-answer/problem-solving questions, provide keywords for grading
-6. Include hints and explanations to aid learning
+${qType === 'multiple-choice-single' ? '4. For multiple-choice-single questions, provide exactly 4 options with EXACTLY ONE option marked isCorrect: true' : ''}
+${qType === 'multiple-choice-multi' ? '4. For multiple-choice-multi questions, provide 4 options with MULTIPLE options marked isCorrect: true (at least 2)' : ''}
+${['short-answer', 'problem-solving'].includes(qType) ? '4. For short-answer/problem-solving questions, provide multiple acceptable answer variations and 5-8 keywords for grading' : ''}
+${qType === 'true-false' ? '4. For true-false questions, correctAnswers must be EXACTLY ["true"] or EXACTLY ["false"] - no other format' : ''}
+${qType === 'numeric-entry' ? '4. For numeric-entry questions, provide the numeric answer as a string' : ''}
+5. Include helpful hints and detailed explanations to aid learning
 
-Output Format (JSON):
+Output Format (strict JSON):
 {
   "questions": [
     {
       "questionText": "The question text",
       "type": "${qType}",
-      ${qType.includes('multiple-choice') ? `"options": [
-        {"text": "Option A", "isCorrect": false},
-        {"text": "Option B", "isCorrect": true},
-        {"text": "Option C", "isCorrect": false},
-        {"text": "Option D", "isCorrect": false}
-      ],` : ''}
-      ${['short-answer', 'problem-solving', 'fill-in-the-blank'].includes(qType) ? `"correctAnswers": ["answer1", "answer2"],
-      "keywordsForGrading": ["keyword1", "keyword2", "keyword3"],` : ''}
-      ${qType === 'true-false' ? `"correctAnswers": ["true"],` : ''}
-      ${qType === 'numeric-entry' ? `"correctAnswers": ["42"],` : ''}
+      ${optionsExample}
+      ${answersExample}
       "hint": "A helpful hint",
       "explanation": "Detailed explanation of the answer",
       "topic": "Specific topic within ${subject}",
@@ -3005,6 +3253,78 @@ Output Format (JSON):
             throw new Error('AI response did not match expected format.');
         }
 
+        const validatedQuestions = [];
+        for (const aiQuestion of parsedResponse.questions) {
+            if (!aiQuestion.questionText || !aiQuestion.questionText.trim()) {
+                console.warn('Invalid question: missing or empty questionText');
+                continue;
+            }
+            
+            if (qType === 'multiple-choice-single' || qType === 'multiple-choice-multi') {
+                if (!Array.isArray(aiQuestion.options) || aiQuestion.options.length !== 4) {
+                    console.warn(`Invalid multiple-choice question: has ${aiQuestion.options?.length || 0} options, expected exactly 4`);
+                    continue;
+                }
+                
+                let validOptions = true;
+                const correctOptions = [];
+                for (const opt of aiQuestion.options) {
+                    if (!opt.text || typeof opt.text !== 'string' || !opt.text.trim()) {
+                        console.warn('Invalid multiple-choice question: option missing text');
+                        validOptions = false;
+                        break;
+                    }
+                    if (typeof opt.isCorrect !== 'boolean') {
+                        console.warn('Invalid multiple-choice question: option missing or invalid isCorrect boolean');
+                        validOptions = false;
+                        break;
+                    }
+                    if (opt.isCorrect === true) {
+                        correctOptions.push(opt.text);
+                    }
+                }
+                if (!validOptions) continue;
+                
+                const correctCount = correctOptions.length;
+                
+                if (qType === 'multiple-choice-single' && correctCount !== 1) {
+                    console.warn(`Invalid multiple-choice-single question: has ${correctCount} correct answers, expected exactly 1`);
+                    continue;
+                }
+                
+                if (qType === 'multiple-choice-multi' && correctCount < 2) {
+                    console.warn(`Invalid multiple-choice-multi question: has ${correctCount} correct answers, expected at least 2`);
+                    continue;
+                }
+                
+                if (!Array.isArray(aiQuestion.correctAnswers)) {
+                    console.warn('Multiple-choice question: correctAnswers array missing, auto-generating from isCorrect flags');
+                    aiQuestion.correctAnswers = correctOptions;
+                }
+            } else if (qType === 'true-false') {
+                if (!Array.isArray(aiQuestion.correctAnswers) || aiQuestion.correctAnswers.length !== 1) {
+                    console.warn(`Invalid true-false question: correctAnswers must be array with exactly 1 element, got ${aiQuestion.correctAnswers?.length || 0}`);
+                    continue;
+                }
+                const answer = aiQuestion.correctAnswers[0];
+                if (answer !== 'true' && answer !== 'false') {
+                    console.warn(`Invalid true-false question: answer is "${answer}", expected exactly "true" or "false"`);
+                    continue;
+                }
+            } else if (['short-answer', 'problem-solving', 'fill-in-the-blank'].includes(qType)) {
+                if (!aiQuestion.keywordsForGrading || aiQuestion.keywordsForGrading.length < 2) {
+                    console.warn(`Invalid ${qType} question: insufficient keywords for grading (has ${aiQuestion.keywordsForGrading?.length || 0}, expected at least 2)`);
+                    continue;
+                }
+            }
+            
+            validatedQuestions.push(aiQuestion);
+        }
+
+        if (validatedQuestions.length === 0) {
+            throw new Error('No valid questions generated by AI. Please try again.');
+        }
+
         const session = await mongoose.startSession();
         session.startTransaction();
 
@@ -3013,7 +3333,7 @@ Output Format (JSON):
             const teacher = await Teacher.findById(teacherId).session(session);
             await checkAndResetTeacherWeeklyCounters(teacher);
 
-            for (const aiQuestion of parsedResponse.questions) {
+            for (const aiQuestion of validatedQuestions) {
                 const normalizedText = aiQuestion.questionText.toLowerCase().trim().replace(/\s+/g, ' ');
                 const questionHash = crypto.createHash('sha256').update(normalizedText).digest('hex');
 
@@ -3205,13 +3525,6 @@ app.post('/student/download-workfile/:workFileId', authenticateToken, async (req
         session.endSession();
     }
 });
-
-        res.status(500).json({ message: 'Failed to create quiz question.', error: error.message });
-    } finally {
-        session.endSession();
-    }
-});
-
 
 // Get teacher's quiz questions with enhanced filtering
 app.get('/teacher/quiz-questions', authenticateTeacherToken, async (req, res) => {
