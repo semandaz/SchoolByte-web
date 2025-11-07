@@ -895,7 +895,7 @@
 
         async function generateQuiz() {
             try {
-                const token = localStorage.getItem('studentToken');
+                const token = localStorage.getItem('token');
                 if (!token) {
                     window.location.href = 'studentlogin.html';
                     return;
@@ -1135,7 +1135,7 @@
             clearInterval(timerInterval);
 
             try {
-                const token = localStorage.getItem('studentToken');
+                const token = localStorage.getItem('token');
                 const quizSubmissions = currentQuestions.map((question, index) => ({
                     questionId: question._id,
                     studentAnswer: studentAnswers[index] || (question.questionType === 'multiple-choice-multi' ? [] : '')
