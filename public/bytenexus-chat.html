@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -310,6 +309,26 @@
             background: linear-gradient(135deg, var(--primary), var(--primary-light));
             object-fit: cover;
             font-size: 18px;
+            position: relative;
+        }
+
+        .contact-avatar .status-indicator {
+            position: absolute;
+            bottom: 3px;
+            right: 3px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid var(--glass);
+            transition: var(--transition);
+        }
+
+        .contact-avatar .status-indicator.online {
+            background-color: var(--success);
+        }
+
+        .contact-avatar .status-indicator.offline {
+            background-color: var(--gray);
         }
 
         .contact:hover .contact-avatar {
@@ -631,11 +650,11 @@
                 border-radius: 0;
                 max-width: 100%;
             }
-            
+
             body {
                 padding: 0;
             }
-            
+
             .sidebar {
                 position: absolute;
                 left: 0;
@@ -647,15 +666,15 @@
                 max-width: 300px;
                 box-shadow: var(--shadow-lg);
             }
-            
+
             .sidebar.active {
                 transform: translateX(0);
             }
-            
+
             .chat-area {
                 width: 100%;
             }
-            
+
             .message {
                 max-width: 90%;
             }
@@ -665,7 +684,7 @@
             .mobile-menu-btn {
                 display: none !important;
             }
-            
+
             .sidebar {
                 position: relative;
                 transform: translateX(0);
@@ -946,15 +965,15 @@
                     <div class="avatar" id="currentUserAvatar">...</div>
                     <div class="user-info">
                         <h3 id="currentUserName">Loading...</h3>
-                        <p><i class="fas fa-circle"></i> Online</p>
+                        <p><i class="fas fa-circle" style="color: var(--success);"></i> Online</p>
                     </div>
                 </div>
             </div>
-            
+
             <div class="search-container">
                 <input type="text" class="search-box" id="searchInput" placeholder="Search conversations...">
             </div>
-            
+
             <div class="tabs">
                 <div class="tab active" data-tab="chats">Chats</div>
                 <div class="tab" data-tab="suggestions">Suggestions</div>
@@ -962,25 +981,25 @@
                 <div class="tab" data-tab="teams">Teams</div>
                 <div class="tab" data-tab="search">Search</div>
             </div>
-            
+
             <div style="padding: 10px 15px; border-bottom: 1px solid var(--glass-border);">
                 <button id="createGroupBtn" class="create-group-btn">
                     <i class="fas fa-plus-circle"></i> Create Discussion Group
                 </button>
             </div>
-            
+
             <div class="contacts" id="contactsList">
                 <div class="loading">Loading contacts...</div>
             </div>
         </div>
-        
+
         <div class="chat-area">
             <div id="emptyState" class="empty-state">
                 <i class="fas fa-comments"></i>
                 <h3>Welcome to ByteNexus Chat</h3>
                 <p>Select a conversation from the sidebar to start chatting with your classmates.</p>
             </div>
-            
+
             <div id="chatContainer" style="display: none; flex-direction: column; height: 100%;">
                 <div class="chat-header">
                     <div style="display: flex; align-items: center;">
@@ -996,16 +1015,16 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="messages-container" id="chatMessages">
                     <div class="loading">Loading messages...</div>
                 </div>
-                
+
                 <div class="message-input-container">
                     <div class="message-input-wrapper">
                         <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1"></textarea>
                     </div>
-                    
+
                     <button class="send-button" id="sendButton">
                         <i class="fas fa-paper-plane"></i>
                     </button>
@@ -1023,28 +1042,28 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
+
             <form id="createGroupForm">
                 <div class="form-group">
                     <label for="groupName">Group Name *</label>
                     <input type="text" id="groupName" required placeholder="Enter group name">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="groupDescription">Description</label>
                     <textarea id="groupDescription" placeholder="What is this group about?"></textarea>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="groupRules">Group Rules</label>
                     <textarea id="groupRules" placeholder="Set some ground rules for members"></textarea>
                 </div>
-                
+
                 <div class="checkbox-group">
                     <input type="checkbox" id="isPublic" checked>
                     <label for="isPublic">Make this group public (anyone can join)</label>
                 </div>
-                
+
                 <div class="contacts-selector">
                     <h4>
                         Invite Members 
@@ -1054,7 +1073,7 @@
                         <div class="loading">Loading contacts...</div>
                     </div>
                 </div>
-                
+
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" id="cancelGroupBtn">
                         <i class="fas fa-times"></i> Cancel
@@ -1076,13 +1095,14 @@
         let currentTab = 'chats';
         let socket = null;
         let messages = [];
+        let authenticatedSockets = new Map(); // Map to store userId -> socketId for online users
 
         // Theme toggle
         document.getElementById('themeToggle').addEventListener('click', () => {
-            document.body.setAttribute('data-theme', 
+            document.body.setAttribute('data-theme',
                 document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
             );
-            
+
             const icon = document.getElementById('themeToggle').querySelector('i');
             if (document.body.getAttribute('data-theme') === 'dark') {
                 icon.className = 'fas fa-sun';
@@ -1098,7 +1118,7 @@
 
         async function initByteNexusSession() {
             const contactsList = document.getElementById('contactsList');
-            
+
             if (!token) {
                 contactsList.innerHTML = '<div class="loading" style="color: #ef4444;">❌ Please log in to SchoolByte first<br><br><a href="studentlogin.html" style="color: #6366f1; text-decoration: underline;">Go to Login</a></div>';
                 console.error('No authentication token found');
@@ -1147,21 +1167,43 @@
 
             socket.on('connect', () => {
                 console.log('Connected to ByteNexus chat server');
+                // When connected, emit an event to identify the user and their status
+                socket.emit('user_connected', { userId: currentUser.id, status: 'online' });
+                socket.emit('get_online_users'); // Request the list of currently online users
+            });
+
+            // Listen for online status updates
+            socket.on('user_online', (data) => {
+                updateContactStatus(data.userId, 'online');
+            });
+
+            socket.on('user_offline', (data) => {
+                updateContactStatus(data.userId, 'offline');
+            });
+
+            socket.on('online_users_list', (userIds) => {
+                userIds.forEach(userId => {
+                    authenticatedSockets.set(userId, true); // Mark user as online
+                });
+                // Refresh the contact list to reflect the online statuses
+                if (currentTab === 'suggestions') { // Only refresh if we are on the suggestions tab
+                    loadContacts();
+                }
             });
 
             socket.on('new_personal_message', (message) => {
                 if (activeContact && activeContact.type !== 'group' &&
                     (message.sender_id === activeContact.id || message.recipient_id === activeContact.id)) {
-                    
+
                     if (message.sender_id !== currentUser.id) {
                         const existingIndex = messages.findIndex(m => m._id === message._id);
                         if (existingIndex === -1) {
                             messages.push(message);
-                            
+
                             if (message.sender_id === activeContact.id) {
                                 socket.emit('mark_message_read', { messageId: message._id });
                             }
-                            
+
                             displayMessages();
                         }
                     }
@@ -1226,7 +1268,7 @@
 
             socket.on('group_invitation', (data) => {
                 const { groupId, groupName, invitedBy, invitationToken, message } = data;
-                
+
                 if (confirm(`${message}\n\nWould you like to join this group now?`)) {
                     joinGroupByInvitation(invitationToken);
                 }
@@ -1234,13 +1276,37 @@
 
             socket.on('disconnect', () => {
                 console.log('Disconnected from chat server');
+                // Optionally, update all contacts to offline status or handle reconnections
             });
+        }
+
+        // Function to update a contact's status in the UI
+        function updateContactStatus(userId, status) {
+            const contactElement = document.querySelector(`.contact[data-contact*='"id":"${userId}"']`); // Find contact by ID
+            if (contactElement) {
+                const statusIndicator = contactElement.querySelector('.status-indicator');
+                if (statusIndicator) {
+                    statusIndicator.className = `status-indicator ${status}`;
+                    if (status === 'online') {
+                        authenticatedSockets.set(userId, true); // Add to map
+                    } else {
+                        authenticatedSockets.delete(userId); // Remove from map
+                    }
+                }
+            }
+            // Also update the current user's status if it's them
+            if (userId === currentUser.id) {
+                const currentUserStatusIndicator = document.querySelector('.user-profile .fa-circle');
+                if (currentUserStatusIndicator) {
+                    currentUserStatusIndicator.style.color = status === 'online' ? 'var(--success)' : 'var(--gray)';
+                }
+            }
         }
 
         async function loadChats() {
             const contactsList = document.getElementById('contactsList');
             contactsList.innerHTML = '<div class="loading">Loading active chats...</div>';
-            
+
             try {
                 const response = await fetch(`${API_URL}/api/messages/personal/conversations`, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -1249,7 +1315,7 @@
                 if (!response.ok) throw new Error('Failed to load chats');
 
                 const conversations = await response.json();
-                
+
                 if (conversations.length === 0) {
                     contactsList.innerHTML = '<div class="loading">No active chats yet.<br><br><small style="color: var(--gray);">Start a conversation from Suggestions!</small></div>';
                     return;
@@ -1262,10 +1328,17 @@
                     const initials = conv.contactName.split(' ').map(n => n[0]).join('').toUpperCase();
                     const timeAgo = formatTimeAgo(new Date(conv.lastMessageTime));
                     const unreadBadge = conv.unreadCount > 0 ? `<span class="category-badge" style="background: linear-gradient(135deg, #ef4444, #dc2626);">${conv.unreadCount} new</span>` : '';
-                    
+
+                    // Determine online status for the contact
+                    const isOnline = authenticatedSockets.has(conv.contact.id);
+                    const statusClass = isOnline ? 'online' : 'offline';
+
                     return `
                         <div class="contact" data-contact='${JSON.stringify(conv.contact)}'>
-                            <div class="contact-avatar">${initials}</div>
+                            <div class="contact-avatar">
+                                ${initials}
+                                <div class="status-indicator ${statusClass}"></div>
+                            </div>
                             <div class="contact-info">
                                 <div class="contact-name">${conv.contactName}</div>
                                 <div class="contact-details">${conv.lastMessage}</div>
@@ -1279,12 +1352,12 @@
                 document.querySelectorAll('.contact').forEach(item => {
                     item.addEventListener('click', () => {
                         const contact = JSON.parse(item.dataset.contact);
-                        
+
                         document.querySelectorAll('.contact').forEach(c => c.classList.remove('active'));
                         item.classList.add('active');
-                        
+
                         openChat(contact);
-                        
+
                         if (window.innerWidth <= 768) {
                             document.getElementById('sidebar').classList.remove('active');
                         }
@@ -1298,7 +1371,7 @@
 
         function formatTimeAgo(date) {
             const seconds = Math.floor((new Date() - date) / 1000);
-            
+
             if (seconds < 60) return 'Just now';
             if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
             if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
@@ -1308,12 +1381,12 @@
 
         async function loadContacts() {
             const contactsList = document.getElementById('contactsList');
-            
+
             if (currentTab === 'chats') {
                 await loadChats();
             } else if (currentTab === 'suggestions') {
                 contactsList.innerHTML = '<div class="loading">Loading suggestions...</div>';
-                
+
                 try {
                     const response = await fetch(`${API_URL}/api/students/suggestions`, {
                         headers: { 'Authorization': `Bearer ${token}` }
@@ -1329,7 +1402,7 @@
                 }
             } else if (currentTab === 'groups') {
                 contactsList.innerHTML = '<div class="loading">Loading discussion groups...</div>';
-                
+
                 try {
                     const response = await fetch(`${API_URL}/api/search/groups?q=`, {
                         headers: { 'Authorization': `Bearer ${token}` }
@@ -1351,7 +1424,7 @@
 
         function displayContacts(contacts) {
             const contactsList = document.getElementById('contactsList');
-            
+
             if (contacts.length === 0) {
                 contactsList.innerHTML = '<div class="loading">No contacts found</div>';
                 return;
@@ -1359,9 +1432,15 @@
 
             contactsList.innerHTML = contacts.map(contact => {
                 const initials = contact.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
+                const isOnline = authenticatedSockets.has(contact.id);
+                const statusClass = isOnline ? 'online' : 'offline';
+
                 return `
                     <div class="contact" data-contact='${JSON.stringify(contact)}'>
-                        <div class="contact-avatar">${initials}</div>
+                        <div class="contact-avatar">
+                            ${initials}
+                            <div class="status-indicator ${statusClass}"></div>
+                        </div>
                         <div class="contact-info">
                             <div class="contact-name">${contact.studentName}</div>
                             <div class="contact-details">${contact.email}</div>
@@ -1374,12 +1453,12 @@
             document.querySelectorAll('.contact').forEach(item => {
                 item.addEventListener('click', () => {
                     const contact = JSON.parse(item.dataset.contact);
-                    
+
                     document.querySelectorAll('.contact').forEach(c => c.classList.remove('active'));
                     item.classList.add('active');
-                    
+
                     openChat(contact);
-                    
+
                     if (window.innerWidth <= 768) {
                         document.getElementById('sidebar').classList.remove('active');
                     }
@@ -1389,7 +1468,7 @@
 
         function displayGroups(groups) {
             const contactsList = document.getElementById('contactsList');
-            
+
             if (groups.length === 0) {
                 contactsList.innerHTML = '<div class="loading">No public groups found<br><br><small style="color: var(--gray);">Groups will appear here once created</small></div>';
                 return;
@@ -1418,12 +1497,12 @@
                     const groupData = item.dataset.group;
                     if (groupData) {
                         const group = JSON.parse(groupData);
-                        
+
                         document.querySelectorAll('.contact').forEach(c => c.classList.remove('active'));
                         item.classList.add('active');
-                        
+
                         openGroupChat(group);
-                        
+
                         if (window.innerWidth <= 768) {
                             document.getElementById('sidebar').classList.remove('active');
                         }
@@ -1437,13 +1516,13 @@
             activeContact.type = 'personal';
             document.getElementById('emptyState').style.display = 'none';
             document.getElementById('chatContainer').style.display = 'flex';
-            
+
             const initials = contact.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
             document.getElementById('chatName').textContent = contact.studentName;
             document.getElementById('chatDetails').textContent = `${contact.class} - ${contact.stream}`;
             document.getElementById('chatAvatar').src = contact.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${contact.studentName}`;
             document.getElementById('chatAvatar').alt = initials;
-            
+
             const conversationId = [currentUser.id, contact.id].sort().join('_');
             socket.emit('join_personal_room', { conversationId });
 
@@ -1463,15 +1542,15 @@
                 description: group.description,
                 type: 'group'
             };
-            
+
             document.getElementById('emptyState').style.display = 'none';
             document.getElementById('chatContainer').style.display = 'flex';
-            
+
             document.getElementById('chatName').textContent = group.name;
             document.getElementById('chatDetails').textContent = group.description || 'Discussion Group';
             document.getElementById('chatAvatar').innerHTML = '<i class="fas fa-users"></i>';
             document.getElementById('chatAvatar').style.background = 'linear-gradient(135deg, #f59e0b, #ec4899)';
-            
+
             socket.emit('join_group_room', { groupId: group.id });
 
             await loadGroupMessages(group.id);
@@ -1479,7 +1558,7 @@
 
         async function loadMessages(contactId) {
             const conversationId = [currentUser.id, contactId].sort().join('_');
-            
+
             try {
                 const response = await fetch(`${API_URL}/api/messages/personal/${conversationId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -1521,7 +1600,7 @@
 
         function displayMessages() {
             const chatMessages = document.getElementById('chatMessages');
-            
+
             if (messages.length === 0) {
                 chatMessages.innerHTML = '<div class="loading">No messages yet. Start the conversation!</div>';
                 return;
@@ -1535,11 +1614,11 @@
                 const statusIcon = getMessageStatusIcon(msg);
                 const timestamp = new Date(msg.created_at || msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const retryAttr = msg.status === 'failed' ? `onclick="retryMessage('${msg.tempId}')" style="cursor: pointer;"` : '';
-                
+
                 // Sanitize and allow specific HTML tags for links
-                const sanitizedContent = msg.content.replace(/<a href="([^"]+)"[^>]*>(.*?)<\/a>/g, 
+                const sanitizedContent = msg.content.replace(/<a href="([^"]+)"[^>]*>(.*?)<\/a>/g,
                     '<a href="$1" style="color: #6366f1; text-decoration: underline; cursor: pointer;" target="_blank" rel="noopener noreferrer">$2</a>');
-                
+
                 return `
                     <div class="message ${isSent ? 'sent' : 'received'}">
                         <div class="message-avatar">${isSent ? currentUserInitials : contactInitials}</div>
@@ -1567,23 +1646,23 @@
             if (msg.status === 'failed') {
                 return '<i class="fas fa-exclamation-circle" style="color: #ef4444;" title="Failed to send. Tap to retry"></i>';
             }
-            
+
             if (!msg._id && msg.status === 'pending') {
                 return '<i class="fas fa-clock" style="color: rgba(255,255,255,0.7);" title="Sending..."></i>';
             }
-            
+
             if (msg.read || msg.status === 'read') {
                 return '<i class="fas fa-check-double" style="color: #10b981;" title="Read"></i>';
             }
-            
+
             if (msg.delivered || msg.status === 'delivered') {
                 return '<i class="fas fa-check-double" style="color: rgba(255,255,255,0.7);" title="Delivered"></i>';
             }
-            
+
             if (msg._id || msg.status === 'sent') {
                 return '<i class="fas fa-check" style="color: rgba(255,255,255,0.7);" title="Sent"></i>';
             }
-            
+
             return '<i class="fas fa-clock" style="color: rgba(255,255,255,0.7);" title="Pending"></i>';
         }
 
@@ -1605,7 +1684,7 @@
 
         function displayGroupMessages() {
             const chatMessages = document.getElementById('chatMessages');
-            
+
             if (messages.length === 0) {
                 chatMessages.innerHTML = '<div class="loading">No messages yet. Start the conversation!</div>';
                 return;
@@ -1616,9 +1695,9 @@
                 const senderName = msg.sender?.username || 'Unknown';
                 const senderInitials = senderName.split(' ').map(n => n[0]).join('').toUpperCase();
                 const timestamp = new Date(msg.created_at || msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                
+
                 const boostBadge = msg.is_boosted ? `<span style="color: #f59e0b; font-size: 12px; margin-left: 5px;"><i class="fas fa-fire"></i> Boosted (${msg.boost_cost} bytes)</span>` : '';
-                
+
                 return `
                     <div class="message ${isSent ? 'sent' : 'received'}">
                         <div class="message-avatar" style="background: ${isSent ? 'linear-gradient(135deg, var(--primary), var(--primary-light))' : 'linear-gradient(135deg, #17a2b8, var(--primary-light))'}">${senderInitials}</div>
@@ -1706,7 +1785,7 @@
         document.getElementById('sendButton').addEventListener('click', sendMessage);
 
         const messageInput = document.getElementById('messageInput');
-        
+
         // Auto-resize textarea as user types
         messageInput.addEventListener('input', function() {
             this.style.height = 'auto';
@@ -1798,7 +1877,7 @@
 
         function displayContactsForInvite(contacts) {
             const container = document.getElementById('contactsToInvite');
-            
+
             if (contacts.length === 0) {
                 container.innerHTML = '<div class="loading">No contacts available</div>';
                 return;
@@ -1877,7 +1956,7 @@
                 }
 
                 alert(`Group "${groupName}" created successfully! ${invitedMembers.length > 0 ? 'Invitations sent to selected members.' : ''}`);
-                
+
                 document.getElementById('createGroupModal').style.display = 'none';
                 resetCreateGroupForm();
 
@@ -1912,7 +1991,7 @@
                 }
 
                 alert(data.message || 'Successfully joined the group!');
-                
+
                 // Switch to groups tab and refresh
                 currentTab = 'groups';
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -1928,63 +2007,17 @@
         function checkForInvitation() {
             const urlParams = new URLSearchParams(window.location.search);
             const inviteToken = urlParams.get('invite');
-            
-            if (inviteToken && token) {
-                // Clear the URL parameter
-                window.history.replaceState({}, document.title, window.location.pathname);
-                
-                // Join the group
-                setTimeout(() => {
-                    joinGroupByInvitation(inviteToken);
-                }, 1000);
-            }
-        }
 
-        // Check for invitation in URL on page load
-        function checkForInvitation() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const inviteToken = urlParams.get('invite');
-            
             if (inviteToken && token) {
                 // Clear the URL parameter
                 window.history.replaceState({}, document.title, window.location.pathname);
-                
+
                 // Show confirmation dialog
                 setTimeout(() => {
                     if (confirm('You have been invited to join a discussion group. Would you like to join now?')) {
                         joinGroupByInvitation(inviteToken);
                     }
                 }, 1000);
-            }
-        }
-
-        async function joinGroupByInvitation(invitationToken) {
-            try {
-                const response = await fetch(`${API_URL}/api/groups/join-by-invite`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ invitationToken })
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to join group');
-                }
-
-                alert(data.message || 'Successfully joined the group!');
-                
-                // Switch to groups tab and refresh
-                currentTab = 'groups';
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.querySelector('[data-tab="groups"]').classList.add('active');
-                loadContacts();
-            } catch (error) {
-                console.error('Error joining group:', error);
-                alert(error.message || 'Failed to join group');
             }
         }
 

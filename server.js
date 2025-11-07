@@ -139,6 +139,15 @@ io.on('connection', (socket) => {
   console.log(`Student connected to chat: ${socket.userId} (${socket.username})`);
   authenticatedSockets.set(socket.userId, socket);
 
+  // Broadcast to all users that this user is online
+  io.emit('user_online', { userId: socket.userId, username: socket.username });
+
+  // Send current online users list to newly connected user
+  socket.on('get_online_users', () => {
+    const onlineUsers = Array.from(authenticatedSockets.keys());
+    socket.emit('online_users_list', { users: onlineUsers });
+  });
+
   socket.on('join_personal_room', ({ conversationId }) => {
     const userIds = conversationId.split('_');
     if (!userIds.includes(socket.userId)) {
@@ -150,6 +159,52 @@ io.on('connection', (socket) => {
   });
 
   socket.on('send_personal_message', async (data) => {
+
+
+// --- Discussion Group Schema ---
+const discussionGroupSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  description: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  rules: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  is_public: {
+    type: Boolean,
+    default: true
+  },
+  created_by: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student',
+    required: true
+  },
+  members: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student'
+  }],
+  created_at: {
+    type: Date,
+    default: Date.now
+  }
+}, {
+  timestamps: true
+});
+
+discussionGroupSchema.index({ name: 'text', description: 'text' });
+discussionGroupSchema.index({ is_public: 1 });
+
+const DiscussionGroup = mongoose.model('DiscussionGroup', discussionGroupSchema);
+
+
     try {
       const { recipientId, content, tempId } = data;
 
@@ -259,6 +314,9 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`Student disconnected from chat: ${socket.userId}`);
     authenticatedSockets.delete(socket.userId);
+    
+    // Broadcast to all users that this user is offline
+    io.emit('user_offline', { userId: socket.userId, username: socket.username });
   });
 });
 
@@ -5189,8 +5247,18 @@ app.post('/api/groups/create', authenticateToken, [
       return res.status(404).json({ error: 'Creator not found' });
     }
 
-    // Create the group ID
-    const groupId = new mongoose.Types.ObjectId().toString();
+    // Create and save the group to database
+    const newGroup = new DiscussionGroup({
+      name: name,
+      description: description || '',
+      rules: rules || '',
+      is_public: is_public !== false,
+      created_by: creatorId,
+      members: [creatorId] // Creator is automatically a member
+    });
+
+    await newGroup.save();
+    const groupId = newGroup._id.toString();
 
     // Generate invitation token
     const invitationToken = Buffer.from(JSON.stringify({
@@ -5208,11 +5276,11 @@ app.post('/api/groups/create', authenticateToken, [
       for (const memberId of invited_members) {
         const invitedUser = await Student.findById(memberId);
         if (invitedUser) {
-          // Create invitation message
+          // Create invitation message with clickable HTML link
           const invitationMessage = new PersonalMessage({
             sender_id: creatorId,
             recipient_id: memberId,
-            content: `🎉 You've been invited to join the discussion group "${name}"!\n\n📋 Description: ${description || 'No description provided'}\n\n✅ Click here tojoin: ${invitationLink}\n\nInvited by: ${creator.studentName}`,
+            content: `🎉 You've been invited to join "${name}"!\n\n📋 ${description || 'Discussion group'}\n\n<a href="${invitationLink}">Click here to join</a>\n\nInvited by: ${creator.studentName}`,
             read: false,
             delivered: false
           });
@@ -5248,13 +5316,11 @@ app.post('/api/groups/create', authenticateToken, [
               }
             };
 
-            // Mark as delivered
             await PersonalMessage.updateOne(
               { _id: invitationMessage._id },
               { delivered: true }
             );
 
-            const conversationId = [creatorId, memberId].sort().join('_');
             recipientSocket.emit('new_personal_message', formattedMessage);
             recipientSocket.emit('group_invitation', {
               groupId: groupId,
@@ -5279,7 +5345,8 @@ app.post('/api/groups/create', authenticateToken, [
         rules: rules || '',
         is_public: is_public !== false,
         created_by: creatorId,
-        created_at: new Date()
+        member_count: 1,
+        created_at: newGroup.created_at
       },
       message: `Group "${name}" created successfully. ${invited_members?.length || 0} invitation(s) sent.`
     });
@@ -5355,13 +5422,34 @@ app.post('/api/groups/join-by-invite', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Student not found' });
     }
 
-    // Note: Actual group joining logic (adding student to group members) would go here.
-    // This currently only validates the token and confirms the action.
+    // Find the group and add the student as a member
+    const group = await DiscussionGroup.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    // Check if already a member
+    if (group.members.includes(studentId)) {
+      return res.json({
+        success: true,
+        group: {
+          id: groupId,
+          name: groupName
+        },
+        message: `You are already a member of "${groupName}"`
+      });
+    }
+
+    // Add student to group members
+    group.members.push(studentId);
+    await group.save();
+
     res.json({
       success: true,
       group: {
         id: groupId,
-        name: groupName
+        name: groupName,
+        member_count: group.members.length
       },
       message: `Successfully joined "${groupName}"`
     });
