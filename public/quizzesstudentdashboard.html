@@ -901,9 +901,7 @@
                     return;
                 }
 
-                // Assuming the backend endpoint for generating quizzes is '/student/quizzes/generate-quiz'
-                // Replace with your actual API endpoint
-                const response = await fetch('/api/student/quizzes/generate-quiz', {
+                const response = await fetch('/student/quizzes/generate', {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -914,7 +912,6 @@
                 if (response.ok) {
                     const data = await response.json();
                     currentQuestions = data.questions;
-                    quizSessionId = data.sessionId;
                     studentAnswers = new Array(currentQuestions.length).fill(null);
 
                     document.getElementById('loadingMessage').style.display = 'none';
@@ -1141,17 +1138,14 @@
                     studentAnswer: studentAnswers[index] || (question.questionType === 'multiple-choice-multi' ? [] : '')
                 }));
 
-                // Assuming the backend endpoint for submitting quizzes is '/student/quizzes/submit'
-                // Replace with your actual API endpoint
-                const response = await fetch('/api/student/quizzes/submit', {
+                const response = await fetch('/student/quizzes/submit', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        quizSubmissions,
-                        sessionId: quizSessionId
+                        quizSubmissions
                     })
                 });
 
@@ -1159,9 +1153,9 @@
                     const data = await response.json();
                     // Update results display
                     document.getElementById('resultsScore').textContent = `${data.score}%`;
-                    document.getElementById('correctAnswers').textContent = data.correctAnswers;
-                    document.getElementById('totalQuestionsResult').textContent = data.totalQuestions;
-                    document.getElementById('timeTaken').textContent = getTimeTaken(); // This function needs to be implemented
+                    document.getElementById('correctAnswers').textContent = data.totalCorrectQuestions;
+                    document.getElementById('totalQuestionsResult').textContent = data.totalAttemptedQuestions;
+                    document.getElementById('timeTaken').textContent = getTimeTaken();
                     document.getElementById('percentageScore').textContent = `${data.score}%`;
                     document.getElementById('bytesEarnedResult').textContent = data.bytesEarned;
 
