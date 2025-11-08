@@ -1077,16 +1077,20 @@
             right: -120px;
             top: 50%;
             transform: translateY(-50%);
-            display: none;
+            display: flex;
             flex-direction: column;
             gap: 5px;
             opacity: 0;
-            transition: opacity 0.2s ease;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            pointer-events: none;
         }
 
-        .message:hover .message-actions {
-            display: flex;
+        .message:hover .message-actions,
+        .message-actions:hover {
             opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
         }
 
         .message.sent .message-actions {
