@@ -564,28 +564,11 @@
                             <i class="fas fa-trophy"></i> Recent Achievements
                         </h3>
                     </div>
-                    <div class="card-content">
+                    <div class="card-content" id="achievementsContainer">
                         <div style="display: flex; flex-direction: column; gap: 1rem;">
-                            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background-color: var(--color-neutral-lightest); border-radius: var(--radius-input);">
-                                <span style="font-size: 1.5rem;">🎯</span>
-                                <div>
-                                    <h4 style="font-weight: 600;">Quiz Master</h4>
-                                    <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">Completed 25 quizzes</p>
-                                </div>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background-color: var(--color-neutral-lightest); border-radius: var(--radius-input);">
-                                <span style="font-size: 1.5rem;">🔥</span>
-                                <div>
-                                    <h4 style="font-weight: 600;">Streak Champion</h4>
-                                    <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">7-day study streak</p>
-                                </div>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background-color: var(--color-neutral-lightest); border-radius: var(--radius-input);">
-                                <span style="font-size: 1.5rem;">💰</span>
-                                <div>
-                                    <h4 style="font-weight: 600;">Byte Collector</h4>
-                                    <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">Earned 1000 bytes</p>
-                                </div>
+                            <div style="text-align: center; padding: 2rem; color: var(--color-neutral-dark);">
+                                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                                <p>Loading achievements...</p>
                             </div>
                         </div>
                     </div>
@@ -995,6 +978,64 @@
             document.getElementById('font-select').value = savedFont;
             document.body.style.fontFamily = savedFont;
         }
+
+        // Load achievements
+        async function loadAchievements() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${window.location.origin}/api/achievements/all`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load achievements');
+                }
+
+                const data = await response.json();
+                const container = document.getElementById('achievementsContainer');
+
+                // Update achievements count
+                document.querySelector('.stat-item:nth-child(2) .stat-value').textContent = data.totalAchievements;
+
+                if (data.achievements && data.achievements.length > 0) {
+                    const achievementsHTML = data.achievements.slice(0, 10).map(achievement => `
+                        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background-color: var(--color-neutral-lightest); border-radius: var(--radius-input);">
+                            <span style="font-size: 1.5rem;">${achievement.badgeIcon}</span>
+                            <div style="flex: 1;">
+                                <h4 style="font-weight: 600;">${achievement.name}</h4>
+                                <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">${achievement.description}</p>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--color-neutral-medium);">
+                                ${new Date(achievement.earnedAt).toLocaleDateString()}
+                            </div>
+                        </div>
+                    `).join('');
+
+                    container.innerHTML = `<div style="display: flex; flex-direction: column; gap: 1rem;">${achievementsHTML}</div>`;
+                } else {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: var(--color-neutral-dark);">
+                            <i class="fas fa-trophy" style="font-size: 3rem; margin-bottom: 1rem; color: var(--color-neutral-light);"></i>
+                            <p>No achievements yet. Complete quizzes to earn achievements!</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading achievements:', error);
+                document.getElementById('achievementsContainer').innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--color-error-red);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                        <p>Failed to load achievements. Please try again later.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Load achievements on page load
+        loadAchievements();
     </script>
+
+    <script src="notifications-widget.js"></script>
+    <script src="bytenexus-chat-widget.js"></script>
 </body>
 </html>

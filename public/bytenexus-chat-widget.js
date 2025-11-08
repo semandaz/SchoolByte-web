@@ -33,6 +33,10 @@
           --border-color: #e5e7eb;
           --shadow: 0 0 24px rgba(0, 0, 0, 0.15);
           --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+          --brand-primary: #1a2a6c;
+          --brand-secondary: #b21f1f;
+          --brand-gold: #FFD700;
+          --brand-orange: #FFA500;
         }
 
         [data-theme="dark"] {
@@ -43,6 +47,10 @@
           --border-color: #334155;
           --shadow: 0 0 24px rgba(0, 0, 0, 0.5);
           --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.7);
+          --brand-primary: #1a2a6c;
+          --brand-secondary: #b21f1f;
+          --brand-gold: #FFD700;
+          --brand-orange: #FFA500;
         }
 
         .bytenexus-chat-overlay {
@@ -112,7 +120,7 @@
         }
 
         .bytenexus-chat-header {
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
+          background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
           color: white;
           padding: 16px;
           display: flex;
@@ -200,7 +208,7 @@
         }
 
         .bytenexus-search-input:focus {
-          border-color: #6366f1;
+          border-color: var(--brand-primary);
         }
 
         .bytenexus-contact-item {
@@ -218,14 +226,14 @@
         }
 
         .bytenexus-contact-item.active {
-          background: rgba(99, 102, 241, 0.1);
+          background: rgba(26, 42, 108, 0.1);
         }
 
         .bytenexus-contact-avatar {
           width: 40px;
           height: 40px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
+          background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
           color: white;
           display: flex;
           align-items: center;
@@ -305,7 +313,7 @@
         }
 
         .bytenexus-message.sent .bytenexus-message-bubble {
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
+          background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
           color: white;
           border-bottom-right-radius: 4px;
         }
@@ -338,14 +346,14 @@
         }
 
         .bytenexus-chat-input:focus {
-          border-color: #6366f1;
+          border-color: var(--brand-primary);
         }
 
         .bytenexus-send-btn {
           width: 40px;
           height: 40px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
+          background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
           color: white;
           border: none;
           cursor: pointer;
@@ -366,11 +374,11 @@
           width: 60px;
           height: 60px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
+          background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
           color: white;
           border: none;
           cursor: pointer;
-          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+          box-shadow: 0 4px 12px rgba(26, 42, 108, 0.4);
           z-index: 99998;
           display: flex;
           align-items: center;
@@ -381,7 +389,7 @@
 
         .bytenexus-chat-fab:hover {
           transform: scale(1.1);
-          box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5);
+          box-shadow: 0 6px 16px rgba(26, 42, 108, 0.5);
         }
 
         .bytenexus-chat-fab.hidden {

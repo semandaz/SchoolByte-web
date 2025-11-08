@@ -794,6 +794,42 @@ const studentSchema = new mongoose.Schema({
         perfectGames: { type: Number, default: 0, min: 0 }
     },
 
+    // Achievement System
+    achievements: [{
+        type: { 
+            type: String, 
+            enum: ['quiz_master', 'streak_champion', 'byte_collector', 'early_bird', 'night_owl', 'perfect_score', 'speed_demon'],
+            required: true 
+        },
+        name: { type: String, required: true },
+        description: { type: String, required: true },
+        earnedAt: { type: Date, default: Date.now },
+        badgeIcon: { type: String, default: '' },
+        progress: { type: Number, default: 100 }
+    }],
+
+    // Streak tracking
+    currentStreak: { type: Number, default: 0, min: 0 },
+    longestStreak: { type: Number, default: 0, min: 0 },
+    lastActivityDate: { type: Date, default: Date.now },
+
+    // Total quiz count for all time
+    totalQuizzesCompleted: { type: Number, default: 0, min: 0 },
+
+    // Notifications
+    notifications: [{
+        type: { 
+            type: String, 
+            enum: ['achievement', 'message', 'system', 'team', 'quiz'],
+            required: true 
+        },
+        title: { type: String, required: true },
+        message: { type: String, required: true },
+        isRead: { type: Boolean, default: false },
+        createdAt: { type: Date, default: Date.now },
+        data: { type: Object, default: {} }
+    }],
+
 
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
@@ -3169,14 +3205,21 @@ app.post('/student/quizzes/submit', authenticateToken, [
         // Update student data
         student.bytes += finalBytesEarned;
         student.quizzesCompletedThisWeek += 1;
+        student.totalQuizzesCompleted = (student.totalQuizzesCompleted || 0) + 1;
 
+        // Update streak
+        await updateStudentStreak(studentId);
+
+        // Check and award achievements (reload student after streak update)
+        const updatedStudent = await Student.findById(studentId).session(session);
+        await checkAndAwardAchievements(updatedStudent);
 
         // Update recent quiz IDs (sliding window)
         const newQuizIds = quizSubmissions.map(sub => new mongoose.Types.ObjectId(sub.questionId));
-        student.recentQuizIds = [...newQuizIds, ...student.recentQuizIds].slice(0, 200);
+        updatedStudent.recentQuizIds = [...newQuizIds, ...updatedStudent.recentQuizIds].slice(0, 200);
 
 
-        await student.save({ session });
+        await updatedStudent.save({ session });
 
 
         // Update quiz session
@@ -6363,6 +6406,457 @@ app.get('/api/messages/personal/:conversationId', authenticateToken, async (req,
     res.status(500).json({ error: 'Failed to load messages' });
   }
 });
+
+// ============= ACHIEVEMENTS & NOTIFICATIONS SYSTEM =============
+
+// Helper function to check and award achievements
+async function checkAndAwardAchievements(student) {
+  const newAchievements = [];
+  const now = new Date();
+  
+  // Quiz Master - Complete 25 quizzes
+  if (student.totalQuizzesCompleted >= 25 && !student.achievements.some(a => a.type === 'quiz_master')) {
+    const achievement = {
+      type: 'quiz_master',
+      name: 'Quiz Master',
+      description: 'Completed 25 quizzes',
+      earnedAt: now,
+      badgeIcon: '🎯',
+      progress: 100
+    };
+    student.achievements.push(achievement);
+    newAchievements.push(achievement);
+  }
+
+  // Streak Champion - 7 day study streak
+  if (student.currentStreak >= 7 && !student.achievements.some(a => a.type === 'streak_champion')) {
+    const achievement = {
+      type: 'streak_champion',
+      name: 'Streak Champion',
+      description: '7-day study streak',
+      earnedAt: now,
+      badgeIcon: '🔥',
+      progress: 100
+    };
+    student.achievements.push(achievement);
+    newAchievements.push(achievement);
+  }
+
+  // Byte Collector - Earned 1000 bytes
+  if (student.bytes >= 1000 && !student.achievements.some(a => a.type === 'byte_collector')) {
+    const achievement = {
+      type: 'byte_collector',
+      name: 'Byte Collector',
+      description: 'Earned 1000 bytes',
+      earnedAt: now,
+      badgeIcon: '💰',
+      progress: 100
+    };
+    student.achievements.push(achievement);
+    newAchievements.push(achievement);
+  }
+
+  // Add notifications for new achievements
+  for (const achievement of newAchievements) {
+    student.notifications.push({
+      type: 'achievement',
+      title: `Achievement Unlocked: ${achievement.name}`,
+      message: achievement.description,
+      isRead: false,
+      createdAt: now,
+      data: { achievementType: achievement.type, badgeIcon: achievement.badgeIcon }
+    });
+  }
+
+  // Clean up old achievements (remove ones older than 7 days from recent view)
+  // Keep all achievements in the array, but we'll filter in the API
+
+  return newAchievements;
+}
+
+// Helper function to update streak
+async function updateStudentStreak(studentId) {
+  const student = await Student.findById(studentId);
+  if (!student) return;
+
+  const now = new Date();
+  const lastActivity = new Date(student.lastActivityDate);
+  const hoursSinceLastActivity = (now - lastActivity) / (1000 * 60 * 60);
+
+  if (hoursSinceLastActivity <= 24) {
+    // Same day activity, don't increment
+    const daysSame = Math.floor(hoursSinceLastActivity / 24);
+    if (daysSame === 0) {
+      // Update last activity but don't change streak
+      student.lastActivityDate = now;
+    }
+  } else if (hoursSinceLastActivity <= 48) {
+    // Next day activity, increment streak
+    student.currentStreak += 1;
+    if (student.currentStreak > student.longestStreak) {
+      student.longestStreak = student.currentStreak;
+    }
+    student.lastActivityDate = now;
+  } else {
+    // Streak broken, reset
+    student.currentStreak = 1;
+    student.lastActivityDate = now;
+  }
+
+  await checkAndAwardAchievements(student);
+  await student.save();
+}
+
+// Get student achievements (only recent ones from past week)
+app.get('/api/achievements', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.student.id;
+    const student = await Student.findById(studentId);
+    
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    // Filter achievements from the past week
+    const recentAchievements = student.achievements.filter(achievement => 
+      new Date(achievement.earnedAt) >= oneWeekAgo
+    ).sort((a, b) => new Date(b.earnedAt) - new Date(a.earnedAt));
+
+    res.json({
+      recentAchievements,
+      totalAchievements: student.achievements.length,
+      currentStreak: student.currentStreak,
+      longestStreak: student.longestStreak,
+      totalQuizzes: student.totalQuizzesCompleted,
+      bytes: student.bytes
+    });
+  } catch (error) {
+    console.error('Error fetching achievements:', error);
+    res.status(500).json({ error: 'Failed to fetch achievements' });
+  }
+});
+
+// Get all achievements (for profile page)
+app.get('/api/achievements/all', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.student.id;
+    const student = await Student.findById(studentId);
+    
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    res.json({
+      achievements: student.achievements.sort((a, b) => new Date(b.earnedAt) - new Date(a.earnedAt)),
+      totalAchievements: student.achievements.length,
+      currentStreak: student.currentStreak,
+      longestStreak: student.longestStreak,
+      totalQuizzes: student.totalQuizzesCompleted,
+      bytes: student.bytes
+    });
+  } catch (error) {
+    console.error('Error fetching all achievements:', error);
+    res.status(500).json({ error: 'Failed to fetch achievements' });
+  }
+});
+
+// Get notifications
+app.get('/api/notifications', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.student.id;
+    const student = await Student.findById(studentId);
+    
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    // Sort notifications by most recent first
+    const sortedNotifications = student.notifications.sort((a, b) => 
+      new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    const unreadCount = student.notifications.filter(n => !n.isRead).length;
+
+    res.json({
+      notifications: sortedNotifications.slice(0, 50),
+      unreadCount
+    });
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+// Mark notification as read
+app.patch('/api/notifications/:notificationId/read', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.student.id;
+    const { notificationId } = req.params;
+    
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    const notification = student.notifications.id(notificationId);
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    notification.isRead = true;
+    await student.save();
+
+    res.json({ message: 'Notification marked as read' });
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    res.status(500).json({ error: 'Failed to update notification' });
+  }
+});
+
+// Mark all notifications as read
+app.post('/api/notifications/mark-all-read', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.student.id;
+    const student = await Student.findById(studentId);
+    
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    student.notifications.forEach(notification => {
+      notification.isRead = true;
+    });
+
+    await student.save();
+
+    res.json({ message: 'All notifications marked as read' });
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    res.status(500).json({ error: 'Failed to update notifications' });
+  }
+});
+
+// Get unread notification count
+app.get('/api/notifications/unread-count', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.student.id;
+    const student = await Student.findById(studentId);
+    
+    if (!student) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    const unreadCount = student.notifications.filter(n => !n.isRead).length;
+
+    res.json({ unreadCount });
+  } catch (error) {
+    console.error('Error fetching unread count:', error);
+    res.status(500).json({ error: 'Failed to fetch unread count' });
+  }
+});
+
+// ============= TEAMS SYSTEM =============
+
+// Create a team
+app.post('/api/teams/create', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.student.id;
+    const { name, description } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Team name is required' });
+    }
+
+    const team = new Team({
+      name: name.trim(),
+      user_id: studentId,
+      description: description || '',
+      members: [studentId],
+      created_by: studentId
+    });
+
+    await team.save();
+
+    res.json({
+      message: 'Team created successfully',
+      team: {
+        id: team._id,
+        name: team.name,
+        description: team.description,
+        share_token: team.share_token,
+        created_at: team.created_at
+      }
+    });
+  } catch (error) {
+    console.error('Error creating team:', error);
+    res.status(500).json({ error: 'Failed to create team' });
+  }
+});
+
+// Join a team using share token
+app.post('/api/teams/join', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.student.id;
+    const { share_token } = req.body;
+
+    if (!share_token) {
+      return res.status(400).json({ error: 'Share token is required' });
+    }
+
+    const team = await Team.findOne({ share_token });
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    if (team.members && team.members.includes(studentId)) {
+      return res.status(400).json({ error: 'You are already a member of this team' });
+    }
+
+    if (!team.members) {
+      team.members = [];
+    }
+    team.members.push(studentId);
+    await team.save();
+
+    res.json({
+      message: 'Successfully joined team',
+      team: {
+        id: team._id,
+        name: team.name,
+        description: team.description,
+        created_at: team.created_at
+      }
+    });
+  } catch (error) {
+    console.error('Error joining team:', error);
+    res.status(500).json({ error: 'Failed to join team' });
+  }
+});
+
+// Get user's teams
+app.get('/api/teams/my-teams', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.student.id;
+
+    const teams = await Team.find({ members: studentId })
+      .populate('created_by', 'studentName email')
+      .populate('members', 'studentName email')
+      .sort({ created_at: -1 });
+
+    const formattedTeams = teams.map(team => ({
+      id: team._id.toString(),
+      name: team.name,
+      description: team.description || '',
+      share_token: team.share_token,
+      created_at: team.created_at,
+      created_by: team.created_by ? {
+        id: team.created_by._id.toString(),
+        name: team.created_by.studentName,
+        email: team.created_by.email
+      } : null,
+      members: team.members ? team.members.map(member => ({
+        id: member._id.toString(),
+        name: member.studentName,
+        email: member.email,
+        avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${member.studentName}`
+      })) : [],
+      memberCount: team.members ? team.members.length : 0
+    }));
+
+    res.json({ teams: formattedTeams });
+  } catch (error) {
+    console.error('Error fetching teams:', error);
+    res.status(500).json({ error: 'Failed to fetch teams' });
+  }
+});
+
+// Get team details
+app.get('/api/teams/:teamId', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.student.id;
+    const { teamId } = req.params;
+
+    const team = await Team.findById(teamId)
+      .populate('created_by', 'studentName email')
+      .populate('members', 'studentName email');
+
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    if (!team.members || !team.members.some(m => m._id.toString() === studentId)) {
+      return res.status(403).json({ error: 'You are not a member of this team' });
+    }
+
+    res.json({
+      team: {
+        id: team._id.toString(),
+        name: team.name,
+        description: team.description || '',
+        share_token: team.share_token,
+        created_at: team.created_at,
+        created_by: team.created_by ? {
+          id: team.created_by._id.toString(),
+          name: team.created_by.studentName,
+          email: team.created_by.email
+        } : null,
+        members: team.members ? team.members.map(member => ({
+          id: member._id.toString(),
+          name: member.studentName,
+          email: member.email,
+          avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${member.studentName}`
+        })) : []
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching team details:', error);
+    res.status(500).json({ error: 'Failed to fetch team details' });
+  }
+});
+
+// Leave a team
+app.post('/api/teams/:teamId/leave', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.student.id;
+    const { teamId } = req.params;
+
+    const team = await Team.findById(teamId);
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    if (!team.members || !team.members.includes(studentId)) {
+      return res.status(400).json({ error: 'You are not a member of this team' });
+    }
+
+    team.members = team.members.filter(memberId => memberId.toString() !== studentId);
+    
+    // If no members left, delete the team
+    if (team.members.length === 0) {
+      await Team.findByIdAndDelete(teamId);
+      return res.json({ message: 'Team deleted as last member left' });
+    }
+
+    await team.save();
+    res.json({ message: 'Successfully left team' });
+  } catch (error) {
+    console.error('Error leaving team:', error);
+    res.status(500).json({ error: 'Failed to leave team' });
+  }
+});
+
+// Update the Team schema to include members and description
+const teamSchemaUpdate = Team.schema;
+if (!teamSchemaUpdate.path('members')) {
+  teamSchemaUpdate.add({
+    members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Student' }],
+    description: { type: String, default: '' },
+    created_by: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' }
+  });
+}
 
 // Start the server
 const PORT = process.env.PORT || 5000;
