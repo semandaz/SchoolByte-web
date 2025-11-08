@@ -123,9 +123,11 @@
   document.body.appendChild(container);
 
   // Add event listeners
-  document.getElementById('bytenexusIcon').addEventListener('click', function() {
-    window.location.href = 'bytenexus-chat.html';
-  });
+  // ByteNexus chat is now handled by the widget
+  const bytenexusIcon = document.getElementById('bytenexusIcon');
+  if (bytenexusIcon) {
+    bytenexusIcon.remove(); // Remove since widget provides its own FAB
+  }
 
   document.getElementById('aiBuddyIcon').addEventListener('click', function() {
     alert('AI Buddy feature coming soon! This will be your personal study assistant.');

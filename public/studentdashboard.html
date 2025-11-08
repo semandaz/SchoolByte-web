@@ -636,6 +636,165 @@
             right: 20px;
         }
 
+        /* NEW: Chat Widget Styles */
+        .chat-widget-container {
+            position: fixed;
+            bottom: 80px; /* Adjust based on bytes counter */
+            right: 20px;
+            width: 350px;
+            height: 450px;
+            background-color: var(--color-neutral-white);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 80; /* Below other floating icons */
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .chat-widget-container.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .chat-widget-header {
+            background: var(--gradient-background-primary);
+            color: var(--color-neutral-white);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+        }
+
+        .chat-widget-header .avatar {
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+            background: var(--color-neutral-white);
+            color: var(--color-brand-primary);
+        }
+
+        .chat-widget-header span {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .chat-widget-header .close-btn {
+            background: none;
+            border: none;
+            color: var(--color-neutral-white);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .chat-widget-body {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .chat-message {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            max-width: 80%;
+        }
+
+        .chat-message.sent {
+            flex-direction: row-reverse;
+            margin-left: auto;
+        }
+
+        .chat-message .avatar {
+            width: 35px;
+            height: 35px;
+            font-size: 1rem;
+            background: var(--color-brand-gold);
+            color: var(--color-brand-primary);
+        }
+
+        .chat-message .message-content {
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .chat-message.received .message-content {
+            background-color: var(--color-neutral-lightest);
+            color: var(--color-neutral-darkest);
+            border-bottom-left-radius: 5px; /* Tail for received */
+        }
+
+        .chat-message.sent .message-content {
+            background: var(--gradient-background-primary);
+            color: var(--color-neutral-white);
+            border-bottom-right-radius: 5px; /* Tail for sent */
+        }
+
+        .chat-message-time {
+            font-size: 0.7rem;
+            color: var(--color-neutral-medium);
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .chat-message.received .chat-message-time {
+            margin-left: auto; /* Align time to the right for received */
+        }
+
+        .chat-widget-footer {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: var(--color-neutral-lightest);
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            gap: 10px;
+        }
+
+        .chat-widget-footer input[type="text"] {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--color-neutral-light);
+            border-radius: 25px;
+            font-size: 0.9rem;
+        }
+
+        .chat-widget-footer input[type="text"]:focus {
+            outline: none;
+            border-color: var(--color-brand-primary);
+            box-shadow: 0 0 0 2px rgba(26, 42, 108, 0.2);
+        }
+
+        .chat-widget-footer .send-btn {
+            background: var(--gradient-background-primary);
+            color: var(--color-neutral-white);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .chat-widget-footer .send-btn:hover {
+            transform: scale(1.1);
+            background: var(--color-brand-secondary);
+        }
+
         /* Reduced Motion Styles */
         @media (prefers-reduced-motion: reduce) {
             * {
@@ -665,6 +824,13 @@
             .floating-icon:hover,
             .toggle-feed:hover {
                 transform: none !important;
+            }
+
+            .chat-widget-container {
+                transition: none !important;
+                transform: none !important;
+                opacity: 1 !important;
+                visibility: visible !important;
             }
         }
 
@@ -752,6 +918,15 @@
                 top: 90px;
                 right: 10px;
             }
+
+            /* Responsive Chat Widget */
+            .chat-widget-container {
+                bottom: 70px; /* Adjust for smaller screens */
+                right: 10px;
+                width: 90%;
+                max-width: 320px;
+                height: 400px;
+            }
         }
     </style>
 </head>
@@ -801,6 +976,24 @@
     <div class="floating-icon counselling" id="counsellingBtn">
         <i class="fas fa-hands-helping"></i>
         <span class="tooltip">Counselling & Career (Coming Soon)</span>
+    </div>
+
+    <!-- NEW: Chat Widget -->
+    <div class="chat-widget-container" id="chatWidgetContainer">
+        <div class="chat-widget-header">
+            <div class="avatar"><i class="fas fa-user-graduate"></i></div>
+            <span>Bytenexus Support</span>
+            <button class="close-btn" id="closeChatBtn">&times;</button>
+        </div>
+        <div class="chat-widget-body" id="chatWidgetBody">
+            <!-- Chat messages will be appended here -->
+        </div>
+        <div class="chat-widget-footer">
+            <input type="text" id="chatInput" placeholder="Type your message...">
+            <button class="send-btn" id="sendChatBtn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
     </div>
 
     <div class="container">
@@ -861,6 +1054,8 @@
         <span id="bytesCount">0</span> Bytes
     </div>
 
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="bytenexus-chat-widget.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize elements
@@ -878,11 +1073,21 @@
             const feedItems = document.getElementById('feedItems');
             const floatingParticles = document.getElementById('floatingParticles');
             const subjectsContainer = document.getElementById('subjectsContainer');
-            
+
             // NEW: Floating icon elements
             const bytenexusBtn = document.getElementById('bytenexusBtn');
             const aiBuddyBtn = document.getElementById('aiBuddyBtn');
             const counsellingBtn = document.getElementById('counsellingBtn');
+
+            // NEW: Chat Widget Elements
+            const chatWidgetContainer = document.getElementById('chatWidgetContainer');
+            const closeChatBtn = document.getElementById('closeChatBtn');
+            const chatInput = document.getElementById('chatInput');
+            const sendChatBtn = document.getElementById('sendChatBtn');
+            const chatWidgetBody = document.getElementById('chatWidgetBody');
+
+            // Initialize Socket.IO client for chat
+            const socket = io('http://localhost:3000'); // Replace with your server address if needed
 
             let bytesCount = 0; // Initialize bytes count
 
@@ -957,7 +1162,7 @@
 
                     } else if (response.status === 401 || response.status === 403) {
                         // Token is invalid or expired
-                        localStorage.removeItem('studentToken');
+                        localStorage.removeItem('token');
                         localStorage.removeItem('studentData');
                         window.location.href = 'studentlogin.html';
                     } else {
@@ -1125,7 +1330,7 @@
                 feedItems.querySelectorAll('.activity-item').forEach(item => {
                     notifications.push({
                         text: item.querySelector('.activity-text').textContent,
-                        iconType: item.querySelector('i').className.includes('coins') ? 'coin' : 
+                        iconType: item.querySelector('i').className.includes('coins') ? 'coin' :
                                   item.querySelector('i').className.includes('question') ? 'quiz' : 'game',
                         time: item.querySelector('.activity-time').textContent
                     });
@@ -1167,7 +1372,7 @@
                 });
 
                 feedItems.insertBefore(activityItem, feedItems.firstChild);
-                
+
                 if (isNew) {
                     notificationCount++;
                     updateNotificationCount();
@@ -1187,7 +1392,7 @@
             function updateNotificationCount() {
                 const count = feedItems.querySelectorAll('.activity-item').length;
                 notificationCount = count;
-                
+
                 if (count > 0) {
                     notificationBadge.textContent = count;
                     notificationBadge.style.display = 'block';
@@ -1227,9 +1432,84 @@
                 }, 300);
             });
 
-            // NEW: Bytenexus button click
+            // NEW: Bytenexus button click handler
             bytenexusBtn.addEventListener('click', function() {
-                window.location.href = 'bytenexus-chat.html';
+                chatWidgetContainer.classList.add('active');
+            });
+
+            // NEW: Close chat widget button
+            closeChatBtn.addEventListener('click', function() {
+                chatWidgetContainer.classList.remove('active');
+            });
+
+            // NEW: Send chat message
+            sendChatBtn.addEventListener('click', sendMessage);
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            function sendMessage() {
+                const message = chatInput.value.trim();
+                if (message) {
+                    // Display message immediately
+                    displayMessage(message, 'sent');
+                    chatInput.value = '';
+
+                    // Send message to server
+                    socket.emit('chatMessage', {
+                        text: message,
+                        sender: 'student', // Or use student ID from fetched data
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            }
+
+            // NEW: Display a message in the chat widget
+            function displayMessage(message, type, timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('chat-message', type);
+
+                // Basic avatar for sender/receiver. In a real app, this would be dynamic.
+                const avatarIcon = type === 'sent' ? '<i class="fas fa-user-graduate"></i>' : '<i class="fas fa-question"></i>';
+
+                messageElement.innerHTML = `
+                    <div class="avatar">${avatarIcon}</div>
+                    <div class="message-content">${message}</div>
+                `;
+                // Add timestamp if it's not the first message or if it's a bot response
+                if (type === 'sent') {
+                    const timeElement = document.createElement('div');
+                    timeElement.classList.add('chat-message-time');
+                    timeElement.textContent = timestamp;
+                    messageElement.appendChild(timeElement);
+                }
+
+
+                chatWidgetBody.appendChild(messageElement);
+                chatWidgetBody.scrollTop = chatWidgetBody.scrollHeight; // Auto-scroll to bottom
+            }
+
+            // NEW: Handle incoming chat messages
+            socket.on('chatMessage', (msg) => {
+                console.log('Message from server:', msg);
+                // Assume messages from server are from 'support'
+                displayMessage(msg.text, 'received', new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+            });
+
+            // NEW: Handle connection errors
+            socket.on('connect_error', (err) => {
+                console.error('Chat connection error:', err);
+                displayMessage('Cannot connect to chat service. Please try again later.', 'received');
+            });
+
+            // NEW: Handle successful connection
+            socket.on('connect', () => {
+                console.log('Connected to chat server');
+                // Optionally send initial user info to server
+                socket.emit('identifyUser', { userId: localStorage.getItem('token') }); // Example
+                displayMessage('Welcome to Bytenexus Support! How can we help you today?', 'received');
             });
 
             // NEW: AI Buddy button click
@@ -1274,6 +1554,8 @@
                 localStorage.removeItem('studentName');
                 localStorage.removeItem('preferredFont');
                 localStorage.removeItem('preferredName');
+                // Disconnect socket when signing out
+                socket.disconnect();
                 window.location.href = 'studentlogin.html';
             });
 
