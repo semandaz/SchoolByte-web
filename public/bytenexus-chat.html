@@ -1056,10 +1056,20 @@
             font-size: 24px;
             opacity: 0;
             transition: opacity 0.2s ease;
+            pointer-events: none;
         }
 
         .message.swipe-left .message-reply-icon {
             opacity: 1;
+        }
+
+        .message {
+            position: relative;
+            transition: transform 0.2s ease;
+        }
+
+        .message:active {
+            cursor: pointer;
         }
     </style>
 </head>
@@ -1228,8 +1238,12 @@
         let replyingToMessage = null;
         let touchStartX = 0;
         let touchStartY = 0;
+        let mouseStartX = 0;
+        let mouseStartY = 0;
+        let isMouseDown = false;
         let doubleTapTimer = null;
-        let lastTapTime = 0; // Map to store userId -> socketId for online users
+        let lastTapTime = 0;
+        let lastClickTime = 0;
 
         // Theme toggle
         document.getElementById('themeToggle').addEventListener('click', () => {
@@ -1919,11 +1933,17 @@
                 }
 
                 return `
-                    <div class="message ${isSent ? 'sent' : 'received'}" data-message-id="${msg._id || msg.id}" 
+                    <div class="message ${isSent ? 'sent' : 'received'}" 
+                         data-message-id="${msg._id || msg.id}"
+                         data-message-content="${msg.content.replace(/"/g, '&quot;')}"
+                         data-sender-id="${msg.sender_id}"
                          ontouchstart="handleTouchStart(event, '${msg._id || msg.id}')"
                          ontouchmove="handleTouchMove(event, '${msg._id || msg.id}')"
                          ontouchend="handleTouchEnd(event, '${msg._id || msg.id}')"
-                         ondblclick="handleDoubleTap('${msg._id || msg.id}')">
+                         ondblclick="handleDoubleClick('${msg._id || msg.id}')"
+                         onmousedown="handleMouseDown(event, '${msg._id || msg.id}')"
+                         onmousemove="handleMouseMove(event, '${msg._id || msg.id}')"
+                         onmouseup="handleMouseUp(event, '${msg._id || msg.id}')">
                         <div class="message-avatar">${isSent ? currentUserInitials : contactInitials}</div>
                         <div class="message-bubble">
                             ${replyHTML}
@@ -1987,6 +2007,7 @@
             }
         }
 
+        // Touch handlers for mobile
         function handleTouchStart(event, messageId) {
             const touch = event.touches[0];
             touchStartX = touch.clientX;
@@ -2007,6 +2028,7 @@
             
             if (deltaX > 50) {
                 messageElement.classList.add('swipe-left');
+                event.preventDefault();
             } else {
                 messageElement.classList.remove('swipe-left');
             }
@@ -2025,9 +2047,8 @@
             messageElement.classList.remove('swipe-left');
             touchStartX = 0;
             touchStartY = 0;
-        }
 
-        function handleDoubleTap(messageId) {
+            // Also handle double tap
             const currentTime = new Date().getTime();
             const tapLength = currentTime - lastTapTime;
             
@@ -2039,6 +2060,60 @@
             }
             
             lastTapTime = currentTime;
+        }
+
+        // Mouse handlers for desktop
+        function handleMouseDown(event, messageId) {
+            // Ignore if clicking on links or buttons
+            if (event.target.tagName === 'A' || event.target.tagName === 'BUTTON' || event.target.closest('.message-status')) {
+                return;
+            }
+
+            mouseStartX = event.clientX;
+            mouseStartY = event.clientY;
+            isMouseDown = true;
+        }
+
+        function handleMouseMove(event, messageId) {
+            if (!isMouseDown || !mouseStartX) return;
+            
+            const deltaX = mouseStartX - event.clientX;
+            const deltaY = Math.abs(mouseStartY - event.clientY);
+            
+            // Only respond to horizontal swipes
+            if (deltaY > 30) return;
+            
+            const messageElement = event.currentTarget;
+            
+            if (deltaX > 50) {
+                messageElement.classList.add('swipe-left');
+            } else {
+                messageElement.classList.remove('swipe-left');
+            }
+        }
+
+        function handleMouseUp(event, messageId) {
+            const messageElement = event.currentTarget;
+            
+            if (messageElement.classList.contains('swipe-left')) {
+                const message = messages.find(m => (m._id || m.id) === messageId);
+                if (message) {
+                    setReplyPreview(message);
+                }
+            }
+            
+            messageElement.classList.remove('swipe-left');
+            isMouseDown = false;
+            mouseStartX = 0;
+            mouseStartY = 0;
+        }
+
+        // Double click handler for desktop
+        function handleDoubleClick(messageId) {
+            const message = messages.find(m => (m._id || m.id) === messageId);
+            if (message) {
+                setReplyPreview(message);
+            }
         }
 
         function displayGroupMessages() {
