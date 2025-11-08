@@ -25,15 +25,35 @@
 
     const widgetHTML = `
       <style>
+        :root {
+          --bg-primary: #ffffff;
+          --bg-secondary: #f9fafb;
+          --text-primary: #1f2937;
+          --text-secondary: #6b7280;
+          --border-color: #e5e7eb;
+          --shadow: 0 0 24px rgba(0, 0, 0, 0.15);
+          --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        [data-theme="dark"] {
+          --bg-primary: #1e293b;
+          --bg-secondary: #0f172a;
+          --text-primary: #f1f5f9;
+          --text-secondary: #94a3b8;
+          --border-color: #334155;
+          --shadow: 0 0 24px rgba(0, 0, 0, 0.5);
+          --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.7);
+        }
+
         .bytenexus-chat-overlay {
           position: fixed;
           bottom: 0;
           right: 20px;
           width: 400px;
           height: 600px;
-          background: white;
+          background: var(--bg-primary);
           border-radius: 16px 16px 0 0;
-          box-shadow: 0 0 24px rgba(0, 0, 0, 0.15);
+          box-shadow: var(--shadow);
           z-index: 99999;
           display: flex;
           flex-direction: column;
@@ -55,7 +75,28 @@
           bottom: 20px;
           right: 20px;
           border-radius: 16px;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+          box-shadow: var(--shadow-lg);
+        }
+
+        .bytenexus-chat-overlay.pip-mode.maximized-pip {
+          width: 500px;
+          height: 650px;
+        }
+
+        .bytenexus-chat-overlay.pip-mode.minimized-pip {
+          width: 250px;
+          height: 300px;
+        }
+
+        .bytenexus-chat-overlay.fullscreen-mode {
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          width: 100%;
+          height: 100%;
+          border-radius: 0;
+          z-index: 999999;
         }
 
         .bytenexus-chat-overlay.pip-mode .bytenexus-contacts-sidebar {
@@ -66,6 +107,10 @@
           display: flex !important;
         }
 
+        .bytenexus-chat-overlay.fullscreen-mode .bytenexus-contacts-sidebar {
+          display: flex;
+        }
+
         .bytenexus-chat-header {
           background: linear-gradient(135deg, #6366f1, #8b5cf6);
           color: white;
@@ -73,7 +118,6 @@
           display: flex;
           align-items: center;
           justify-content: space-between;
-          cursor: pointer;
           user-select: none;
         }
 
@@ -127,8 +171,8 @@
 
         .bytenexus-contacts-sidebar {
           width: 100%;
-          border-right: 1px solid #e5e7eb;
-          background: #f9fafb;
+          border-right: 1px solid var(--border-color);
+          background: var(--bg-secondary);
           overflow-y: auto;
           display: flex;
           flex-direction: column;
@@ -140,14 +184,16 @@
 
         .bytenexus-search-box {
           padding: 12px;
-          background: white;
-          border-bottom: 1px solid #e5e7eb;
+          background: var(--bg-primary);
+          border-bottom: 1px solid var(--border-color);
         }
 
         .bytenexus-search-input {
           width: 100%;
           padding: 8px 12px;
-          border: 1px solid #d1d5db;
+          border: 1px solid var(--border-color);
+          background: var(--bg-secondary);
+          color: var(--text-primary);
           border-radius: 20px;
           outline: none;
           font-size: 14px;
@@ -164,15 +210,15 @@
           gap: 12px;
           cursor: pointer;
           transition: background 0.2s;
-          border-bottom: 1px solid #e5e7eb;
+          border-bottom: 1px solid var(--border-color);
         }
 
         .bytenexus-contact-item:hover {
-          background: white;
+          background: var(--bg-primary);
         }
 
         .bytenexus-contact-item.active {
-          background: #eef2ff;
+          background: rgba(99, 102, 241, 0.1);
         }
 
         .bytenexus-contact-avatar {
@@ -196,7 +242,7 @@
         .bytenexus-contact-name {
           font-weight: 600;
           font-size: 14px;
-          color: #1f2937;
+          color: var(--text-primary);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -204,7 +250,7 @@
 
         .bytenexus-contact-preview {
           font-size: 12px;
-          color: #6b7280;
+          color: var(--text-secondary);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -214,7 +260,7 @@
           flex: 1;
           display: none;
           flex-direction: column;
-          background: white;
+          background: var(--bg-primary);
         }
 
         .bytenexus-chat-area.active {
@@ -225,7 +271,7 @@
           flex: 1;
           overflow-y: auto;
           padding: 16px;
-          background: #f9fafb;
+          background: var(--bg-secondary);
         }
 
         .bytenexus-message {
@@ -252,9 +298,10 @@
         }
 
         .bytenexus-message.received .bytenexus-message-bubble {
-          background: #e5e7eb;
-          color: #1f2937;
+          background: var(--bg-secondary);
+          color: var(--text-primary);
           border-bottom-left-radius: 4px;
+          border: 1px solid var(--border-color);
         }
 
         .bytenexus-message.sent .bytenexus-message-bubble {
@@ -271,8 +318,8 @@
 
         .bytenexus-chat-input-container {
           padding: 12px;
-          background: white;
-          border-top: 1px solid #e5e7eb;
+          background: var(--bg-primary);
+          border-top: 1px solid var(--border-color);
           display: flex;
           gap: 8px;
         }
@@ -280,7 +327,9 @@
         .bytenexus-chat-input {
           flex: 1;
           padding: 10px 14px;
-          border: 1px solid #d1d5db;
+          border: 1px solid var(--border-color);
+          background: var(--bg-secondary);
+          color: var(--text-primary);
           border-radius: 20px;
           outline: none;
           font-size: 14px;
@@ -359,7 +408,7 @@
           align-items: center;
           justify-content: center;
           height: 100%;
-          color: #6b7280;
+          color: var(--text-secondary);
           padding: 20px;
           text-align: center;
         }
@@ -367,7 +416,7 @@
         .bytenexus-empty-state i {
           font-size: 48px;
           margin-bottom: 16px;
-          color: #9ca3af;
+          color: var(--text-secondary);
         }
 
         @media (max-width: 768px) {
@@ -406,11 +455,23 @@
             </div>
           </div>
           <div class="bytenexus-chat-actions">
+            <button class="bytenexus-chat-action-btn" id="bytenexusThemeBtn" title="Toggle Dark Mode">
+              <i class="fas fa-moon"></i>
+            </button>
             <button class="bytenexus-chat-action-btn" id="bytenexusPipBtn" title="Picture-in-Picture Mode">
               <i class="fas fa-external-link-alt"></i>
             </button>
-            <button class="bytenexus-chat-action-btn" id="bytenexusMinimizeBtn">
+            <button class="bytenexus-chat-action-btn" id="bytenexusPipMinusBtn" title="Minimize PiP" style="display: none;">
               <i class="fas fa-minus"></i>
+            </button>
+            <button class="bytenexus-chat-action-btn" id="bytenexusPipPlusBtn" title="Maximize PiP" style="display: none;">
+              <i class="fas fa-plus"></i>
+            </button>
+            <button class="bytenexus-chat-action-btn" id="bytenexusFullscreenBtn" title="Open Full Page" style="display: none;">
+              <i class="fas fa-expand"></i>
+            </button>
+            <button class="bytenexus-chat-action-btn" id="bytenexusMinimizeBtn">
+              <i class="fas fa-window-minimize"></i>
             </button>
             <button class="bytenexus-chat-action-btn" id="bytenexusCloseBtn">
               <i class="fas fa-times"></i>
@@ -456,13 +517,22 @@
   function initializeEventListeners() {
     const fab = document.getElementById('bytenexusChatFab');
     const overlay = document.getElementById('bytenexusChatOverlay');
+    const themeBtn = document.getElementById('bytenexusThemeBtn');
     const pipBtn = document.getElementById('bytenexusPipBtn');
+    const pipMinusBtn = document.getElementById('bytenexusPipMinusBtn');
+    const pipPlusBtn = document.getElementById('bytenexusPipPlusBtn');
+    const fullscreenBtn = document.getElementById('bytenexusFullscreenBtn');
     const minimizeBtn = document.getElementById('bytenexusMinimizeBtn');
     const closeBtn = document.getElementById('bytenexusCloseBtn');
     const header = document.getElementById('bytenexusChatHeader');
     const backBtn = document.getElementById('bytenexusBackBtn');
     const sendBtn = document.getElementById('bytenexusSendBtn');
     const chatInput = document.getElementById('bytenexusChatInput');
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('chatTheme') || 'light';
+    document.body.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
 
     fab.addEventListener('click', () => {
       overlay.classList.remove('closed');
@@ -472,11 +542,26 @@
       localStorage.setItem('chatMinimized', 'false');
     });
 
+    // Theme toggle
+    themeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const currentTheme = document.body.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.body.setAttribute('data-theme', newTheme);
+      localStorage.setItem('chatTheme', newTheme);
+      updateThemeIcon(newTheme);
+    });
+
+    // PiP mode toggle
     pipBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       overlay.classList.toggle('pip-mode');
+      overlay.classList.remove('fullscreen-mode');
       isPipMode = overlay.classList.contains('pip-mode');
       localStorage.setItem('chatPipMode', isPipMode);
+      
+      // Show/hide PiP controls
+      updatePipControls(isPipMode);
       
       // If entering PiP mode and no active contact, show first contact
       if (isPipMode && !activeContact) {
@@ -485,18 +570,29 @@
           firstContact.click();
         }
       }
-      
-      // Update icon
-      const icon = pipBtn.querySelector('i');
-      if (isPipMode) {
-        icon.className = 'fas fa-compress-alt';
-        pipBtn.title = 'Exit Picture-in-Picture';
-      } else {
-        icon.className = 'fas fa-external-link-alt';
-        pipBtn.title = 'Picture-in-Picture Mode';
-      }
     });
 
+    // PiP minimize (make smaller)
+    pipMinusBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      overlay.classList.toggle('minimized-pip');
+      overlay.classList.remove('maximized-pip');
+    });
+
+    // PiP maximize (make larger)
+    pipPlusBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      overlay.classList.toggle('maximized-pip');
+      overlay.classList.remove('minimized-pip');
+    });
+
+    // Fullscreen mode
+    fullscreenBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.location.href = '/bytenexus-chat.html';
+    });
+
+    // Regular minimize
     minimizeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       overlay.classList.toggle('minimized');
@@ -504,11 +600,19 @@
       localStorage.setItem('chatMinimized', isMin);
     });
 
+    // Close button
     closeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       overlay.classList.add('closed');
+      overlay.classList.remove('pip-mode');
+      overlay.classList.remove('fullscreen-mode');
+      overlay.classList.remove('minimized-pip');
+      overlay.classList.remove('maximized-pip');
       fab.classList.remove('hidden');
       localStorage.setItem('chatOpen', 'false');
+      localStorage.setItem('chatPipMode', 'false');
+      isPipMode = false;
+      updatePipControls(false);
     });
 
     header.addEventListener('click', () => {
@@ -519,8 +623,8 @@
     });
 
     backBtn.addEventListener('click', () => {
-      // Don't allow going back in PiP mode
-      if (isPipMode) return;
+      // Don't allow going back in PiP mode unless fullscreen
+      if (isPipMode && !overlay.classList.contains('fullscreen-mode')) return;
       
       document.getElementById('bytenexusChatArea').classList.remove('active');
       document.getElementById('bytenexusContactsSidebar').classList.remove('with-chat');
@@ -542,6 +646,36 @@
       this.style.height = 'auto';
       this.style.height = Math.min(this.scrollHeight, 100) + 'px';
     });
+  }
+
+  function updateThemeIcon(theme) {
+    const icon = document.getElementById('bytenexusThemeBtn').querySelector('i');
+    if (theme === 'dark') {
+      icon.className = 'fas fa-sun';
+    } else {
+      icon.className = 'fas fa-moon';
+    }
+  }
+
+  function updatePipControls(isPipMode) {
+    const pipMinusBtn = document.getElementById('bytenexusPipMinusBtn');
+    const pipPlusBtn = document.getElementById('bytenexusPipPlusBtn');
+    const fullscreenBtn = document.getElementById('bytenexusFullscreenBtn');
+    const pipBtn = document.getElementById('bytenexusPipBtn');
+
+    if (isPipMode) {
+      pipMinusBtn.style.display = 'block';
+      pipPlusBtn.style.display = 'block';
+      fullscreenBtn.style.display = 'block';
+      pipBtn.querySelector('i').className = 'fas fa-compress-alt';
+      pipBtn.title = 'Exit Picture-in-Picture';
+    } else {
+      pipMinusBtn.style.display = 'none';
+      pipPlusBtn.style.display = 'none';
+      fullscreenBtn.style.display = 'none';
+      pipBtn.querySelector('i').className = 'fas fa-external-link-alt';
+      pipBtn.title = 'Picture-in-Picture Mode';
+    }
   }
 
   async function initializeChat() {
