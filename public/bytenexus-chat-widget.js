@@ -11,6 +11,7 @@
   let messages = [];
   let isMinimized = localStorage.getItem('chatMinimized') === 'true';
   let isOpen = localStorage.getItem('chatOpen') === 'true';
+  let isPipMode = localStorage.getItem('chatPipMode') === 'true';
 
   // Check authentication
   if (!token) {
@@ -46,6 +47,23 @@
 
         .bytenexus-chat-overlay.closed {
           display: none;
+        }
+
+        .bytenexus-chat-overlay.pip-mode {
+          width: 300px;
+          height: 400px;
+          bottom: 20px;
+          right: 20px;
+          border-radius: 16px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .bytenexus-chat-overlay.pip-mode .bytenexus-contacts-sidebar {
+          display: none;
+        }
+
+        .bytenexus-chat-overlay.pip-mode .bytenexus-chat-area {
+          display: flex !important;
         }
 
         .bytenexus-chat-header {
@@ -374,7 +392,7 @@
         <i class="fas fa-comment-dots"></i>
       </button>
 
-      <div class="bytenexus-chat-overlay ${isMinimized ? 'minimized' : ''} ${!isOpen ? 'closed' : ''}" id="bytenexusChatOverlay">
+      <div class="bytenexus-chat-overlay ${isMinimized ? 'minimized' : ''} ${!isOpen ? 'closed' : ''} ${isPipMode ? 'pip-mode' : ''}" id="bytenexusChatOverlay">
         <div class="bytenexus-chat-header" id="bytenexusChatHeader">
           <div class="bytenexus-chat-header-left">
             <button class="bytenexus-back-btn" id="bytenexusBackBtn">
@@ -388,6 +406,9 @@
             </div>
           </div>
           <div class="bytenexus-chat-actions">
+            <button class="bytenexus-chat-action-btn" id="bytenexusPipBtn" title="Picture-in-Picture Mode">
+              <i class="fas fa-external-link-alt"></i>
+            </button>
             <button class="bytenexus-chat-action-btn" id="bytenexusMinimizeBtn">
               <i class="fas fa-minus"></i>
             </button>
@@ -435,6 +456,7 @@
   function initializeEventListeners() {
     const fab = document.getElementById('bytenexusChatFab');
     const overlay = document.getElementById('bytenexusChatOverlay');
+    const pipBtn = document.getElementById('bytenexusPipBtn');
     const minimizeBtn = document.getElementById('bytenexusMinimizeBtn');
     const closeBtn = document.getElementById('bytenexusCloseBtn');
     const header = document.getElementById('bytenexusChatHeader');
@@ -448,6 +470,31 @@
       fab.classList.add('hidden');
       localStorage.setItem('chatOpen', 'true');
       localStorage.setItem('chatMinimized', 'false');
+    });
+
+    pipBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      overlay.classList.toggle('pip-mode');
+      isPipMode = overlay.classList.contains('pip-mode');
+      localStorage.setItem('chatPipMode', isPipMode);
+      
+      // If entering PiP mode and no active contact, show first contact
+      if (isPipMode && !activeContact) {
+        const firstContact = document.querySelector('.bytenexus-contact-item');
+        if (firstContact) {
+          firstContact.click();
+        }
+      }
+      
+      // Update icon
+      const icon = pipBtn.querySelector('i');
+      if (isPipMode) {
+        icon.className = 'fas fa-compress-alt';
+        pipBtn.title = 'Exit Picture-in-Picture';
+      } else {
+        icon.className = 'fas fa-external-link-alt';
+        pipBtn.title = 'Picture-in-Picture Mode';
+      }
     });
 
     minimizeBtn.addEventListener('click', (e) => {
@@ -472,6 +519,9 @@
     });
 
     backBtn.addEventListener('click', () => {
+      // Don't allow going back in PiP mode
+      if (isPipMode) return;
+      
       document.getElementById('bytenexusChatArea').classList.remove('active');
       document.getElementById('bytenexusContactsSidebar').classList.remove('with-chat');
       backBtn.classList.remove('visible');
