@@ -8,6 +8,55 @@ The platform includes specialized features like Preader Games (AI-powered intera
 
 ## Recent Changes
 
+### November 9, 2025 - Complete Migration to TinyLlama AI (Ollama)
+
+**AI Infrastructure Overhaul:**
+- **Removed all Google Gemini AI dependencies** and migrated to locally-run TinyLlama model via Ollama
+- **Installed and configured Ollama service** as a background workflow running TinyLlama model (637MB)
+- **Created robust AI service wrapper** (`callOllamaAI`) with:
+  - Retry logic with exponential backoff (configurable retries)
+  - Timeout handling (60-90 second timeouts per request)
+  - Proper parameter validation (only passes valid Ollama options, not wrapper metadata)
+  - Response structure validation
+  - Error recovery and fallback mechanisms
+- **Created JSON extraction helper** (`extractJSON`) for robust parsing since TinyLlama is less reliable than Gemini at formatting
+
+**Complete AI Feature Migration:**
+- ✅ **Preader Games**: Story generation now uses TinyLlama for ethical decision-making narratives
+- ✅ **Student Quiz Generation**: Both fallback and AI endpoint migrated to TinyLlama
+- ✅ **Teacher Quiz Generation**: AI-powered quiz creation now uses TinyLlama
+- ✅ **Career Guidance**: Personalized career counseling powered by TinyLlama with student profile integration
+
+**New AI-Powered Features:**
+- **AI Buddy** - PIP-only chat widget for general study assistance
+  - Helps with homework and explains difficult concepts
+  - Provides study tips and learning strategies
+  - Answers questions about all subjects
+  - Purple gradient branding (#667eea to #764ba2)
+  - Created: `/api/ai-buddy/chat` endpoint
+  - Widget: `ai-buddy-widget.js` with auto-injection and PIP controls
+  
+- **ByteNexus Support Team** - PIP-only chat widget for SchoolByte platform help
+  - Answers questions about SchoolByte features
+  - Helps navigate platform (quizzes, games, career guidance, chat)
+  - Explains XP system, Bytes currency, tier progression
+  - SchoolByte gradient branding (#1a2a6c to #b21f1f to #fdbb2d)
+  - Created: `/api/bytenexus-support/chat` endpoint
+  - Widget: `bytenexus-support-widget.js` with auto-injection and PIP controls
+
+**Chat System Improvements:**
+- Updated `floating-icons.js` to support AI Buddy and ByteNexus Support icons
+- Added Font Awesome headset icon for Support widget
+- Both new widgets integrated into `studentdashboard.html` and `studentprofile.html`
+- All widgets use the same robust Ollama service wrapper for consistency
+
+**Technical Implementation:**
+- Ollama client properly instantiated: `new Ollama({ host: 'http://localhost:11434' })`
+- Connection test on server startup with graceful warning if unavailable
+- No Gemini imports or API keys required anymore
+- All AI responses use centralized error handling and retry logic
+- Chat history maintained for context-aware responses
+
 ### November 8, 2025 - Achievement System, Notifications, and ByteNexus Branding Update
 
 **Achievement System:**
@@ -126,13 +175,22 @@ Preferred communication style: Simple, everyday language.
   - Both widgets inject themselves into pages automatically when included via script tags
 
 ### AI Integration
-- **Google Generative AI (Gemini)**: Integrated for Preader Games storytelling and AI-powered quiz question generation
-- **Model Used**: gemini-1.5-flash-latest for quiz generation with structured JSON output
-- **Safety Configuration**: Harm category blocking and content filtering for educational appropriateness
-- **Session Management**: Persistent game sessions with progress tracking and ethical scoring
-- **AI Quiz Generation**: Two endpoints for creating quiz questions:
+- **TinyLlama via Ollama**: All AI features now powered by locally-run TinyLlama model (no cloud dependencies)
+- **Ollama Service**: Background workflow running on port 11434 with TinyLlama model loaded
+- **AI Wrapper Service**: Centralized `callOllamaAI` function with retry logic, timeout handling, and parameter validation
+- **JSON Extraction Helper**: `extractJSON` function for robust parsing of AI responses
+- **AI Features**:
+  - **Preader Games**: Interactive storytelling with ethical decision-making powered by TinyLlama
+  - **Quiz Generation**: AI-powered quiz creation for both students and teachers
+  - **Career Guidance**: Personalized career counseling based on student performance
+  - **AI Buddy**: General study assistance chat (homework help, concept explanations, study tips)
+  - **ByteNexus Support**: Platform-specific help (features, navigation, XP system, troubleshooting)
+- **AI Endpoints**:
   - POST `/student/quizzes/generate-ai` - Students generate personalized quiz questions
   - POST `/teacher/quiz-questions/generate-ai` - Teachers generate and save questions to database
+  - POST `/api/career-guidance/chat` - Career counseling chat with context
+  - POST `/api/ai-buddy/chat` - General study assistance chat
+  - POST `/api/bytenexus-support/chat` - SchoolByte platform help chat
 - **Comprehensive Validation**: Multi-layer validation ensures AI-generated questions meet strict quality standards:
   - Multiple-choice questions: Exactly 4 options with proper formatting and correctAnswers array synchronization
   - True-false questions: Exact literal validation ("true" or "false" only, array length = 1)
@@ -166,7 +224,8 @@ Preferred communication style: Simple, everyday language.
 - **File Processing**: multer for file uploads, body-parser for request parsing
 - **Validation**: express-validator for input sanitization and validation
 - **Email**: nodemailer for transactional emails and notifications
-- **AI Integration**: @google/generative-ai and @google/genai for AI-powered features
+- **AI Integration**: ollama npm package for local TinyLlama model integration
+- **Real-time Communication**: socket.io for chat and live updates
 
 ### Development Tools
 - **Build System**: Vite for modern frontend development and hot module replacement

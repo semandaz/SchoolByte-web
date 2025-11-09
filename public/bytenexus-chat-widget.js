@@ -12,6 +12,7 @@
   let isMinimized = localStorage.getItem('chatMinimized') === 'true';
   let isOpen = localStorage.getItem('chatOpen') === 'true';
   let isPipMode = localStorage.getItem('chatPipMode') === 'true';
+  let quotedMessage = null;
 
   // Check authentication
   if (!token) {
@@ -78,8 +79,8 @@
         }
 
         .bytenexus-chat-overlay.pip-mode {
-          width: 300px;
-          height: 400px;
+          width: 350px;
+          height: 500px;
           bottom: 20px;
           right: 20px;
           border-radius: 16px;
@@ -87,13 +88,17 @@
         }
 
         .bytenexus-chat-overlay.pip-mode.maximized-pip {
-          width: 500px;
-          height: 650px;
+          width: 550px;
+          height: 700px;
         }
 
         .bytenexus-chat-overlay.pip-mode.minimized-pip {
-          width: 250px;
-          height: 300px;
+          width: 280px;
+          height: 350px;
+        }
+        
+        .bytenexus-chat-overlay.pip-mode .bytenexus-back-btn {
+          display: none;
         }
 
         .bytenexus-chat-overlay.fullscreen-mode {
@@ -324,6 +329,116 @@
           opacity: 0.7;
         }
 
+        .bytenexus-message-wrapper {
+          position: relative;
+          margin-bottom: 12px;
+        }
+
+        .bytenexus-message-wrapper:hover .bytenexus-message-actions {
+          opacity: 1;
+          visibility: visible;
+        }
+
+        .bytenexus-message-actions {
+          position: absolute;
+          top: -10px;
+          right: 10px;
+          background: var(--bg-primary);
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          padding: 4px;
+          display: flex;
+          gap: 4px;
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.2s;
+          box-shadow: var(--shadow);
+          z-index: 10;
+        }
+
+        .bytenexus-message.received .bytenexus-message-actions {
+          right: auto;
+          left: 10px;
+        }
+
+        .bytenexus-action-btn {
+          background: none;
+          border: none;
+          color: var(--text-secondary);
+          cursor: pointer;
+          padding: 6px 8px;
+          border-radius: 6px;
+          font-size: 12px;
+          transition: all 0.2s;
+        }
+
+        .bytenexus-action-btn:hover {
+          background: var(--bg-secondary);
+          color: var(--brand-primary);
+        }
+
+        .bytenexus-quoted-message {
+          background: rgba(26, 42, 108, 0.1);
+          border-left: 3px solid var(--brand-primary);
+          padding: 8px 12px;
+          margin-bottom: 8px;
+          border-radius: 8px;
+          font-size: 12px;
+          color: var(--text-secondary);
+        }
+
+        .bytenexus-quoted-message-header {
+          font-weight: 600;
+          color: var(--brand-primary);
+          margin-bottom: 4px;
+          font-size: 11px;
+        }
+
+        .bytenexus-quoted-message-content {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .bytenexus-quote-preview {
+          background: var(--bg-secondary);
+          border-left: 3px solid var(--brand-primary);
+          padding: 8px 12px;
+          margin: 8px 12px;
+          border-radius: 8px;
+          display: none;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .bytenexus-quote-preview.active {
+          display: flex;
+        }
+
+        .bytenexus-quote-preview-content {
+          flex: 1;
+          font-size: 12px;
+          color: var(--text-secondary);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .bytenexus-quote-cancel {
+          background: none;
+          border: none;
+          color: var(--text-secondary);
+          cursor: pointer;
+          padding: 4px 8px;
+          border-radius: 6px;
+          transition: all 0.2s;
+        }
+
+        .bytenexus-quote-cancel:hover {
+          background: var(--bg-primary);
+          color: var(--brand-primary);
+        }
+
         .bytenexus-chat-input-container {
           padding: 12px;
           background: var(--bg-primary);
@@ -502,6 +617,12 @@
                 <p>Select a conversation to start chatting</p>
               </div>
             </div>
+            <div class="bytenexus-quote-preview" id="bytenexusQuotePreview">
+              <div class="bytenexus-quote-preview-content" id="bytenexusQuoteContent"></div>
+              <button class="bytenexus-quote-cancel" id="bytenexusQuoteCancel">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
             <div class="bytenexus-chat-input-container">
               <textarea class="bytenexus-chat-input" id="bytenexusChatInput" placeholder="Type a message..." rows="1"></textarea>
               <button class="bytenexus-send-btn" id="bytenexusSendBtn">
@@ -536,6 +657,7 @@
     const backBtn = document.getElementById('bytenexusBackBtn');
     const sendBtn = document.getElementById('bytenexusSendBtn');
     const chatInput = document.getElementById('bytenexusChatInput');
+    const quoteCancel = document.getElementById('bytenexusQuoteCancel');
 
     // Load saved theme
     const savedTheme = localStorage.getItem('chatTheme') || 'light';
@@ -654,6 +776,9 @@
       this.style.height = 'auto';
       this.style.height = Math.min(this.scrollHeight, 100) + 'px';
     });
+
+    // Quote cancel button
+    quoteCancel.addEventListener('click', cancelQuote);
   }
 
   function updateThemeIcon(theme) {
@@ -818,15 +943,34 @@
       return;
     }
 
-    container.innerHTML = messages.map(msg => {
+    container.innerHTML = messages.map((msg, index) => {
       const isSent = msg.sender_id === currentUser.id;
       const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       
+      let quotedHTML = '';
+      if (msg.replyTo && msg.replyTo.content) {
+        const quotedSenderName = msg.replyTo.sender_id === currentUser.id ? 'You' : activeContact.studentName;
+        quotedHTML = `
+          <div class="bytenexus-quoted-message">
+            <div class="bytenexus-quoted-message-header">${quotedSenderName}</div>
+            <div class="bytenexus-quoted-message-content">${msg.replyTo.content}</div>
+          </div>
+        `;
+      }
+      
       return `
-        <div class="bytenexus-message ${isSent ? 'sent' : 'received'}">
-          <div class="bytenexus-message-bubble">
-            <div>${msg.content}</div>
-            <div class="bytenexus-message-time">${time}</div>
+        <div class="bytenexus-message-wrapper" data-message-id="${msg._id || msg.tempId}">
+          <div class="bytenexus-message-actions">
+            <button class="bytenexus-action-btn" onclick="window.quoteMessage('${msg._id || msg.tempId}', ${index})" title="Quote">
+              <i class="fas fa-reply"></i>
+            </button>
+          </div>
+          <div class="bytenexus-message ${isSent ? 'sent' : 'received'}">
+            <div class="bytenexus-message-bubble">
+              ${quotedHTML}
+              <div>${msg.content}</div>
+              <div class="bytenexus-message-time">${time}</div>
+            </div>
           </div>
         </div>
       `;
@@ -847,7 +991,8 @@
       recipient_id: activeContact.id,
       content: content,
       created_at: new Date(),
-      tempId: tempId
+      tempId: tempId,
+      replyTo: quotedMessage
     };
 
     messages.push(tempMessage);
@@ -856,11 +1001,43 @@
     socket.emit('send_personal_message', {
       recipientId: activeContact.id,
       content: content,
-      tempId: tempId
+      tempId: tempId,
+      replyTo: quotedMessage
     });
 
     input.value = '';
     input.style.height = 'auto';
+    
+    // Clear quoted message
+    quotedMessage = null;
+    document.getElementById('bytenexusQuotePreview').classList.remove('active');
+  }
+
+  // Quote message handler
+  window.quoteMessage = function(messageId, index) {
+    const message = messages[index];
+    if (!message) return;
+
+    quotedMessage = {
+      id: message._id,
+      content: message.content,
+      sender_id: message.sender_id
+    };
+
+    const quotePreview = document.getElementById('bytenexusQuotePreview');
+    const quoteContent = document.getElementById('bytenexusQuoteContent');
+    
+    const senderName = message.sender_id === currentUser.id ? 'You' : activeContact.studentName;
+    quoteContent.textContent = `Replying to ${senderName}: ${message.content}`;
+    quotePreview.classList.add('active');
+    
+    document.getElementById('bytenexusChatInput').focus();
+  };
+
+  // Cancel quote
+  function cancelQuote() {
+    quotedMessage = null;
+    document.getElementById('bytenexusQuotePreview').classList.remove('active');
   }
 
   // Initialize on DOM ready

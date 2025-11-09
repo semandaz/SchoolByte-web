@@ -111,7 +111,12 @@
 
     <div class="floating-icon ai-buddy" id="aiBuddyIcon">
       <i class="fas fa-robot"></i>
-      <span class="tooltip">AI Buddy (Coming Soon)</span>
+      <span class="tooltip">AI Buddy</span>
+    </div>
+
+    <div class="floating-icon support" id="supportIcon">
+      <i class="fas fa-headset"></i>
+      <span class="tooltip">ByteNexus Support</span>
     </div>
 
     <div class="floating-icon counselling" id="counsellingIcon">
@@ -130,7 +135,15 @@
   }
 
   document.getElementById('aiBuddyIcon').addEventListener('click', function() {
-    alert('AI Buddy feature coming soon! This will be your personal study assistant.');
+    if (window.openAIBuddy) {
+      window.openAIBuddy();
+    }
+  });
+
+  document.getElementById('supportIcon').addEventListener('click', function() {
+    if (window.openByteNexusSupport) {
+      window.openByteNexusSupport();
+    }
   });
 
   document.getElementById('counsellingIcon').addEventListener('click', function() {

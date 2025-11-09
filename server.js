@@ -14,7 +14,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
-const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai');
+// Removed Gemini AI - now using TinyLlama via Ollama for all AI features
+const { Ollama } = require('ollama');
 const crypto = require('crypto');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -1851,25 +1852,111 @@ const authenticateAdminToken = (req, res, next) => {
 
 
 // --- AI Service Configuration ---
-const MODEL_NAME = "gemini-1.5-flash";
-const API_KEY = process.env.GEMINI_API_KEY;
+// Using TinyLlama via Ollama for all AI features
+const OLLAMA_MODEL = "tinyllama";
+const OLLAMA_HOST = process.env.OLLAMA_HOST || "http://localhost:11434";
 
+// Initialize Ollama client
+const ollama = new Ollama({ host: OLLAMA_HOST });
 
-let genAI;
-if (!API_KEY) {
-    console.error("GEMINI_API_KEY environment variable is not set. Preader Games AI features will not work.");
-} else {
-    genAI = new GoogleGenerativeAI(API_KEY);
+// Test Ollama connection on startup
+(async () => {
+    try {
+        await ollama.list();
+        console.log(`✓ Ollama service connected successfully at ${OLLAMA_HOST}`);
+    } catch (error) {
+        console.warn(`⚠ Ollama service not available at ${OLLAMA_HOST}. AI features may not work:`, error.message);
+    }
+})();
+
+// Helper function to extract JSON from AI response
+function extractJSON(text) {
+    try {
+        // Remove markdown code fences if present
+        let cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        
+        // Find JSON object boundaries
+        const jsonStart = cleaned.indexOf('{');
+        const jsonEnd = cleaned.lastIndexOf('}');
+        
+        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+            cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+        }
+        
+        return JSON.parse(cleaned);
+    } catch (error) {
+        throw new Error(`Failed to extract valid JSON from AI response: ${error.message}`);
+    }
 }
+
+// Ollama service wrapper for AI interactions with retry and error handling
+async function callOllamaAI(prompt, systemPrompt = "", options = {}) {
+    // Extract wrapper-specific options (not passed to Ollama)
+    const maxRetries = options.retries || 2;
+    const timeout = options.timeout || 60000; // 60 seconds default
+    const maxTokens = options.maxTokens || options.num_predict || 1024;
+    
+    // Build valid Ollama options (only pass supported parameters)
+    const ollamaOptions = {
+        temperature: options.temperature !== undefined ? options.temperature : 0.7,
+        num_predict: maxTokens
+    };
+    
+    // Optionally include other valid Ollama options if provided
+    if (options.top_p !== undefined) ollamaOptions.top_p = options.top_p;
+    if (options.top_k !== undefined) ollamaOptions.top_k = options.top_k;
+    if (options.seed !== undefined) ollamaOptions.seed = options.seed;
+    if (options.stop !== undefined) ollamaOptions.stop = options.stop;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            const messages = [];
+            
+            if (systemPrompt) {
+                messages.push({ role: 'system', content: systemPrompt });
+            }
+            
+            messages.push({ role: 'user', content: prompt });
+
+            const responsePromise = ollama.chat({
+                model: OLLAMA_MODEL,
+                messages: messages,
+                stream: false,
+                options: ollamaOptions
+            });
+
+            // Add timeout
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('AI request timeout')), timeout)
+            );
+
+            const response = await Promise.race([responsePromise, timeoutPromise]);
+
+            // Validate response structure
+            if (!response || !response.message || typeof response.message.content !== 'string') {
+                throw new Error('Invalid response structure from Ollama');
+            }
+
+            return response.message.content;
+        } catch (error) {
+            const isLastAttempt = attempt === maxRetries;
+            console.error(`Ollama AI Error (attempt ${attempt + 1}/${maxRetries + 1}):`, error.message);
+            
+            if (isLastAttempt) {
+                throw new Error(`AI service error after ${maxRetries + 1} attempts: ${error.message}`);
+            }
+            
+            // Wait before retry (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
+    }
+}
+
+// All AI features now powered by TinyLlama via Ollama (Gemini fully removed)
 
 
 async function generateStoryNode(basePrompt, currentGameState, studentClass, previousScene = null, chosenOptionText = null) {
-    if (!genAI) {
-        throw new Error("AI service not configured: GEMINI_API_KEY is missing or invalid.");
-    }
-
-
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+    // Using TinyLlama via Ollama instead of Gemini
 
 
     let contentSafetyInstruction = "";
@@ -1955,34 +2042,15 @@ async function generateStoryNode(basePrompt, currentGameState, studentClass, pre
 
 
     try {
-        const result = await model.generateContent({
-            contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
-            generationConfig: {
-                responseMimeType: "application/json"
-            },
-            safetySettings: [
-                {
-                    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                },
-                {
-                    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                },
-                {
-                    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                },
-                {
-                    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                },
-            ]
-        });
+        // Call TinyLlama via Ollama
+        const responseText = await callOllamaAI(
+            fullPrompt + "\n\nIMPORTANT: Respond ONLY with valid JSON. Start with { and end with }. Do not include any explanation before or after the JSON.",
+            "You are a creative storytelling AI that generates interactive story scenes and choices in valid JSON format.",
+            { temperature: 0.8, num_predict: 1500, timeout: 90000, retries: 2 }
+        );
 
-
-        const responseText = result.candidates[0].content.parts[0].text;
-        const parsedResponse = JSON.parse(responseText);
+        // Extract and parse JSON using robust helper
+        const parsedResponse = extractJSON(responseText);
 
 
         if (!parsedResponse.sceneDescription || !Array.isArray(parsedResponse.choices)) {
@@ -1998,7 +2066,7 @@ async function generateStoryNode(basePrompt, currentGameState, studentClass, pre
 
         return parsedResponse;
     } catch (error) {
-        console.error("Error calling Gemini API:", error.message);
+        console.error("Error calling TinyLlama AI:", error.message);
         throw new Error(`Failed to generate story content: ${error.message}`);
     }
 }
@@ -2630,24 +2698,11 @@ app.get('/student/quizzes/generate', authenticateToken, async (req, res) => {
 
         // Fallback to AI generation if no questions found
         if (questions.length === 0) {
-            console.log('No teacher questions available, attempting AI generation...');
-
-            if (!genAI) {
-                return res.status(404).json({ 
-                    message: 'No suitable questions found and AI generation is unavailable. Please try again later.' 
-                });
-            }
+            console.log('No teacher questions available, attempting AI generation with TinyLlama...');
 
             try {
                 // Pick a random subject from student's enrolled subjects
                 const randomSubject = student.subjectsEnrolled[Math.floor(Math.random() * student.subjectsEnrolled.length)];
-
-                const model = genAI.getGenerativeModel({ 
-                    model: MODEL_NAME,
-                    generationConfig: {
-                        responseMimeType: "application/json"
-                    }
-                });
 
                 const prompt = `Generate 10 multiple-choice-single questions for ${randomSubject}, class level ${student.class}.
 Each question must have exactly 4 options with EXACTLY ONE marked as correct.
@@ -2670,10 +2725,18 @@ Output strict JSON format:
       "topic": "Topic name"
     }
   ]
-}`;
+}
 
-                const result = await model.generateContent(prompt);
-                const aiResponse = JSON.parse(result.response.text());
+IMPORTANT: Respond ONLY with valid JSON. Start with { and end with }. Do not include any explanation.`;
+
+                const responseText = await callOllamaAI(
+                    prompt,
+                    "You are an educational quiz question generator AI. Generate questions in valid JSON format only.",
+                    { temperature: 0.7, num_predict: 2000, timeout: 90000, retries: 2 }
+                );
+
+                // Extract and parse JSON using robust helper
+                const aiResponse = extractJSON(responseText);
 
                 // Convert AI questions to match QuizQuestion format
                 questions = aiResponse.questions.map(q => ({
@@ -2778,13 +2841,6 @@ app.post('/student/quizzes/generate-ai', authenticateToken, [
         const numQuestions = Math.min(numberOfQuestions || 3, 5);
         const qType = questionType || 'multiple-choice-single';
 
-        const model = genAI.getGenerativeModel({ 
-            model: MODEL_NAME,
-            generationConfig: {
-                responseMimeType: "application/json"
-            }
-        });
-
         const topicContext = topic ? `Topic: ${topic}` : 'Generate questions covering various relevant topics within the subject.';
 
         let optionsExample = '';
@@ -2848,9 +2904,14 @@ Output Format (strict JSON):
   ]
 }`;
 
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
-        const parsedResponse = JSON.parse(responseText);
+        // Call TinyLlama via Ollama with robust error handling
+        const responseText = await callOllamaAI(
+            prompt + "\n\nIMPORTANT: Respond ONLY with valid JSON. Start with { and end with }.",
+            "You are an educational quiz question generator AI. Generate questions in valid JSON format only.",
+            { temperature: 0.7, num_predict: 2500, timeout: 90000, retries: 2 }
+        );
+
+        const parsedResponse = extractJSON(responseText);
 
         if (!parsedResponse.questions || !Array.isArray(parsedResponse.questions)) {
             throw new Error('AI response did not match expected format.');
@@ -3442,12 +3503,6 @@ app.post('/teacher/quiz-questions/generate-ai', authenticateTeacherToken, [
         return res.status(400).json({ errors: errors.array() });
     }
 
-    if (!genAI) {
-        return res.status(503).json({ 
-            message: 'AI service is not available. Please ensure GEMINI_API_KEY is configured.' 
-        });
-    }
-
     try {
         const { subject, intendedClass, topic, questionType, numberOfQuestions } = req.body;
         const teacherId = req.teacher.id;
@@ -3455,13 +3510,6 @@ app.post('/teacher/quiz-questions/generate-ai', authenticateTeacherToken, [
 
         const numQuestions = numberOfQuestions || 1;
         const qType = questionType || 'multiple-choice-single';
-
-        const model = genAI.getGenerativeModel({ 
-            model: MODEL_NAME,
-            generationConfig: {
-                responseMimeType: "application/json"
-            }
-        });
 
         const topicContext = topic ? `Topic: ${topic}` : 'Generate questions covering various topics within the subject.';
 
@@ -3525,9 +3573,14 @@ Output Format (strict JSON):
   ]
 }`;
 
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
-        const parsedResponse = JSON.parse(responseText);
+        // Call TinyLlama via Ollama with robust error handling
+        const responseText = await callOllamaAI(
+            prompt + "\n\nIMPORTANT: Respond ONLY with valid JSON. Start with { and end with }.",
+            "You are an educational quiz question generator AI. Generate questions in valid JSON format only.",
+            { temperature: 0.7, num_predict: 2500, timeout: 90000, retries: 2 }
+        );
+
+        const parsedResponse = extractJSON(responseText);
 
         if (!parsedResponse.questions || !Array.isArray(parsedResponse.questions)) {
             throw new Error('AI response did not match expected format.');
@@ -5916,7 +5969,7 @@ app.post('/api/games/sudoku/submit-result', authenticateToken, async (req, res) 
     }
 });
 
-// Career Guidance AI Endpoint using Gemini
+// Career Guidance AI Endpoint using TinyLlama
 app.post('/api/career-guidance/chat', authenticateToken, async (req, res) => {
     try {
         const studentId = req.student.id;
@@ -5930,21 +5983,6 @@ app.post('/api/career-guidance/chat', authenticateToken, async (req, res) => {
         if (!student) {
             return res.status(404).json({ message: 'Student not found.' });
         }
-
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ 
-            model: 'gemini-1.5-flash',
-            safetySettings: [
-                {
-                    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                },
-                {
-                    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                },
-            ],
-        });
 
         const studentContext = `
 Student Profile:
@@ -5961,16 +5999,19 @@ You are a professional career guidance counselor AI for SchoolByte, an education
 
 Be encouraging, specific, and culturally relevant to Uganda and East Africa. Suggest careers that match their demonstrated skills (e.g., geography knowledge → cartography, tourism, geology; logical thinking from Sudoku → engineering, computer science, data analysis).
 
-Keep responsesconcise (2-4 paragraphs), friendly, and actionable. Use their performance data to give specific feedback.
+Keep responses concise (2-4 paragraphs), friendly, and actionable. Use their performance data to give specific feedback.
 `;
 
         const fullPrompt = chatHistory && chatHistory.length > 0 
             ? `${studentContext}\n\nConversation history:\n${chatHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n')}\n\nStudent: ${message}\n\nCareer Counselor:`
             : `${studentContext}\n\nStudent: ${message}\n\nCareer Counselor:`;
 
-        const result = await model.generateContent(fullPrompt);
-        const response = result.response;
-        const aiReply = response.text();
+        // Call TinyLlama via Ollama with robust error handling
+        const aiReply = await callOllamaAI(
+            fullPrompt,
+            "You are a professional career guidance counselor AI. Provide personalized, culturally relevant career advice for students in Uganda.",
+            { temperature: 0.8, num_predict: 800, timeout: 60000, retries: 2 }
+        );
 
         res.status(200).json({
             message: 'Career guidance response generated successfully.',
@@ -5986,6 +6027,120 @@ Keep responsesconcise (2-4 paragraphs), friendly, and actionable. Use their perf
         console.error('Error in career guidance chat:', error);
         res.status(500).json({ 
             message: 'Failed to generate career guidance response.', 
+            error: error.message 
+        });
+    }
+});
+
+// AI Buddy Endpoint - General study assistance using TinyLlama
+app.post('/api/ai-buddy/chat', authenticateToken, async (req, res) => {
+    try {
+        const studentId = req.student.id;
+        const { message, chatHistory } = req.body;
+
+        if (!message) {
+            return res.status(400).json({ message: 'Message is required.' });
+        }
+
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        const studentContext = `
+Student Profile:
+- Name: ${student.preferredName || student.studentName}
+- Current Level: ${student.currentTier}/10
+- XP: ${student.xp}
+
+You are AI Buddy, a friendly and knowledgeable study assistant for SchoolByte students in Uganda. Your role is to:
+- Help with homework and explain difficult concepts
+- Provide study tips and learning strategies
+- Answer questions about various subjects (Math, Science, English, History, etc.)
+- Motivate and encourage students in their learning journey
+- Break down complex topics into simple, understandable explanations
+
+Be friendly, patient, and culturally relevant to Uganda. Use examples that students can relate to. Keep responses clear and concise (2-3 paragraphs).`;
+
+        const fullPrompt = chatHistory && chatHistory.length > 0 
+            ? `${studentContext}\n\nConversation history:\n${chatHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n')}\n\nStudent: ${message}\n\nAI Buddy:`
+            : `${studentContext}\n\nStudent: ${message}\n\nAI Buddy:`;
+
+        // Call TinyLlama via Ollama
+        const aiReply = await callOllamaAI(
+            fullPrompt,
+            "You are AI Buddy, a friendly study assistant AI. Help students understand concepts, provide study tips, and motivate them in their learning.",
+            { temperature: 0.7, num_predict: 600, timeout: 60000, retries: 2 }
+        );
+
+        res.status(200).json({
+            message: 'AI Buddy response generated successfully.',
+            reply: aiReply
+        });
+
+    } catch (error) {
+        console.error('Error in AI Buddy chat:', error);
+        res.status(500).json({ 
+            message: 'Failed to generate AI Buddy response.', 
+            error: error.message 
+        });
+    }
+});
+
+// ByteNexus Support Team Endpoint - SchoolByte platform help using TinyLlama
+app.post('/api/bytenexus-support/chat', authenticateToken, async (req, res) => {
+    try {
+        const studentId = req.student.id;
+        const { message, chatHistory } = req.body;
+
+        if (!message) {
+            return res.status(400).json({ message: 'Message is required.' });
+        }
+
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        const platformContext = `
+You are ByteNexus Support Team, the official technical support AI for SchoolByte educational platform. Your role is to:
+- Answer questions about SchoolByte features and how to use them
+- Help students navigate the platform (quizzes, Preader Games, career guidance, chat, etc.)
+- Explain the XP system, Bytes currency, tier progression, and rewards
+- Troubleshoot common issues students face on the platform
+- Provide tips for getting the most out of SchoolByte features
+
+SchoolByte Features:
+- Preader Games: Interactive story-based learning with ethical choices
+- Quiz System: Subject-based quizzes with multiple question types
+- Career Guidance: AI-powered career counseling and advice
+- AI Buddy: General study assistance (that's a different AI, not you)
+- Chat System: Personal messaging and discussion groups with teachers/students
+- XP & Tiers: Students earn XP by completing quizzes and games, advancing through 10 tiers
+- Bytes: Virtual currency earned through activities, can be used for rewards
+
+Be professional, helpful, and specific. Reference actual SchoolByte features accurately. Keep responses concise (2-3 paragraphs).`;
+
+        const fullPrompt = chatHistory && chatHistory.length > 0 
+            ? `${platformContext}\n\nConversation history:\n${chatHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n')}\n\nStudent (${student.preferredName || student.studentName}): ${message}\n\nByteNexus Support:`
+            : `${platformContext}\n\nStudent (${student.preferredName || student.studentName}): ${message}\n\nByteNexus Support:`;
+
+        // Call TinyLlama via Ollama
+        const aiReply = await callOllamaAI(
+            fullPrompt,
+            "You are ByteNexus Support Team, the official technical support AI for SchoolByte. Help students understand and use platform features effectively.",
+            { temperature: 0.6, num_predict: 600, timeout: 60000, retries: 2 }
+        );
+
+        res.status(200).json({
+            message: 'ByteNexus Support response generated successfully.',
+            reply: aiReply
+        });
+
+    } catch (error) {
+        console.error('Error in ByteNexus Support chat:', error);
+        res.status(500).json({ 
+            message: 'Failed to generate ByteNexus Support response.', 
             error: error.message 
         });
     }
