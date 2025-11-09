@@ -1,4 +1,3 @@
-
 // ByteNexus Chat Widget - Instagram-style floating chat
 (function() {
   'use strict';
@@ -96,7 +95,7 @@
           width: 280px;
           height: 350px;
         }
-        
+
         .bytenexus-chat-overlay.pip-mode .bytenexus-back-btn {
           display: none;
         }
@@ -290,7 +289,10 @@
         .bytenexus-message {
           display: flex;
           margin-bottom: 12px;
+          max-width: 85%;
           animation: slideIn 0.3s ease;
+          position: relative;
+          width: fit-content;
         }
 
         @keyframes slideIn {
@@ -298,16 +300,23 @@
           to { opacity: 1; transform: translateY(0); }
         }
 
+        .bytenexus-message.received {
+          justify-content: flex-start; /* Align received messages to the left */
+        }
+
         .bytenexus-message.sent {
-          justify-content: flex-end;
+          justify-content: flex-end; /* Align sent messages to the right */
+          margin-left: auto; /* Push sent messages to the right */
         }
 
         .bytenexus-message-bubble {
-          max-width: 70%;
-          padding: 10px 14px;
-          border-radius: 18px;
-          font-size: 14px;
-          word-wrap: break-word;
+            max-width: 100%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            font-size: 14px;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         .bytenexus-message.received .bytenexus-message-bubble {
@@ -332,6 +341,14 @@
         .bytenexus-message-wrapper {
           position: relative;
           margin-bottom: 12px;
+          max-width: 100%; /* Ensure wrapper doesn't exceed parent width */
+          display: flex; /* Use flex to help align actions */
+          flex-direction: column; /* Stack actions above message bubble */
+          align-items: flex-end; /* Default to right alignment for sent messages */
+        }
+
+        .bytenexus-message.received .bytenexus-message-wrapper {
+          align-items: flex-start; /* Align received message wrapper to the left */
         }
 
         .bytenexus-message-wrapper:hover .bytenexus-message-actions {
@@ -689,10 +706,10 @@
       overlay.classList.remove('fullscreen-mode');
       isPipMode = overlay.classList.contains('pip-mode');
       localStorage.setItem('chatPipMode', isPipMode);
-      
+
       // Show/hide PiP controls
       updatePipControls(isPipMode);
-      
+
       // If entering PiP mode and no active contact, show first contact
       if (isPipMode && !activeContact) {
         const firstContact = document.querySelector('.bytenexus-contact-item');
@@ -755,7 +772,7 @@
     backBtn.addEventListener('click', () => {
       // Don't allow going back in PiP mode unless fullscreen
       if (isPipMode && !overlay.classList.contains('fullscreen-mode')) return;
-      
+
       document.getElementById('bytenexusChatArea').classList.remove('active');
       document.getElementById('bytenexusContactsSidebar').classList.remove('with-chat');
       backBtn.classList.remove('visible');
@@ -875,7 +892,7 @@
 
   function displayConversations(conversations) {
     const container = document.getElementById('bytenexusContactsList');
-    
+
     if (conversations.length === 0) {
       container.innerHTML = '<div class="bytenexus-empty-state"><p>No conversations yet</p></div>';
       return;
@@ -904,11 +921,11 @@
 
   async function openChat(contact) {
     activeContact = contact;
-    
+
     document.getElementById('bytenexusChatArea').classList.add('active');
     document.getElementById('bytenexusContactsSidebar').classList.add('with-chat');
     document.getElementById('bytenexusBackBtn').classList.add('visible');
-    
+
     const initials = contact.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
     document.getElementById('bytenexusChatName').textContent = contact.studentName;
     document.getElementById('bytenexusChatAvatar').textContent = initials;
@@ -937,7 +954,7 @@
 
   function displayMessages() {
     const container = document.getElementById('bytenexusChatMessages');
-    
+
     if (messages.length === 0) {
       container.innerHTML = '<div class="bytenexus-empty-state"><p>No messages yet</p></div>';
       return;
@@ -946,7 +963,7 @@
     container.innerHTML = messages.map((msg, index) => {
       const isSent = msg.sender_id === currentUser.id;
       const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      
+
       let quotedHTML = '';
       if (msg.replyTo && msg.replyTo.content) {
         const quotedSenderName = msg.replyTo.sender_id === currentUser.id ? 'You' : activeContact.studentName;
@@ -957,7 +974,7 @@
           </div>
         `;
       }
-      
+
       return `
         <div class="bytenexus-message-wrapper" data-message-id="${msg._id || msg.tempId}">
           <div class="bytenexus-message-actions">
@@ -968,7 +985,7 @@
           <div class="bytenexus-message ${isSent ? 'sent' : 'received'}">
             <div class="bytenexus-message-bubble">
               ${quotedHTML}
-              <div>${msg.content}</div>
+              <div class="bytenexus-message-content">${msg.content}</div>
               <div class="bytenexus-message-time">${time}</div>
             </div>
           </div>
@@ -1007,7 +1024,7 @@
 
     input.value = '';
     input.style.height = 'auto';
-    
+
     // Clear quoted message
     quotedMessage = null;
     document.getElementById('bytenexusQuotePreview').classList.remove('active');
@@ -1015,22 +1032,22 @@
 
   // Quote message handler
   window.quoteMessage = function(messageId, index) {
-    const message = messages[index];
+    const message = messages.find(m => m._id === messageId || m.tempId === messageId);
     if (!message) return;
 
     quotedMessage = {
-      id: message._id,
+      id: message._id || message.tempId,
       content: message.content,
       sender_id: message.sender_id
     };
 
     const quotePreview = document.getElementById('bytenexusQuotePreview');
     const quoteContent = document.getElementById('bytenexusQuoteContent');
-    
+
     const senderName = message.sender_id === currentUser.id ? 'You' : activeContact.studentName;
     quoteContent.textContent = `Replying to ${senderName}: ${message.content}`;
     quotePreview.classList.add('active');
-    
+
     document.getElementById('bytenexusChatInput').focus();
   };
 
