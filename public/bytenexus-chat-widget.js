@@ -301,11 +301,11 @@
         }
 
         .bytenexus-message.received {
-          justify-content: flex-start; /* Align received messages to the left */
+          align-self: flex-start; /* Align received messages to the left */
         }
 
         .bytenexus-message.sent {
-          justify-content: flex-end; /* Align sent messages to the right */
+          align-self: flex-end; /* Align sent messages to the right */
           margin-left: auto; /* Push sent messages to the right */
         }
 

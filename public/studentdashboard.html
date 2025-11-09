@@ -636,164 +636,7 @@
             right: 20px;
         }
 
-        /* NEW: Chat Widget Styles */
-        .chat-widget-container {
-            position: fixed;
-            bottom: 80px; /* Adjust based on bytes counter */
-            right: 20px;
-            width: 350px;
-            height: 450px;
-            background-color: var(--color-neutral-white);
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            z-index: 80; /* Below other floating icons */
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(20px);
-            transition: opacity 0.3s ease, transform 0.3s ease;
-        }
-
-        .chat-widget-container.active {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .chat-widget-header {
-            background: var(--gradient-background-primary);
-            color: var(--color-neutral-white);
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top-left-radius: 15px;
-            border-top-right-radius: 15px;
-        }
-
-        .chat-widget-header .avatar {
-            width: 40px;
-            height: 40px;
-            font-size: 1.2rem;
-            background: var(--color-neutral-white);
-            color: var(--color-brand-primary);
-        }
-
-        .chat-widget-header span {
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-
-        .chat-widget-header .close-btn {
-            background: none;
-            border: none;
-            color: var(--color-neutral-white);
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .chat-widget-body {
-            flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .chat-message {
-            display: flex;
-            align-items: flex-end;
-            gap: 10px;
-            max-width: 80%;
-        }
-
-        .chat-message.sent {
-            flex-direction: row-reverse;
-            margin-left: auto;
-        }
-
-        .chat-message .avatar {
-            width: 35px;
-            height: 35px;
-            font-size: 1rem;
-            background: var(--color-brand-gold);
-            color: var(--color-brand-primary);
-        }
-
-        .chat-message .message-content {
-            padding: 10px 15px;
-            border-radius: 20px;
-            font-size: 0.95rem;
-            line-height: 1.4;
-        }
-
-        .chat-message.received .message-content {
-            background-color: var(--color-neutral-lightest);
-            color: var(--color-neutral-darkest);
-            border-bottom-left-radius: 5px; /* Tail for received */
-        }
-
-        .chat-message.sent .message-content {
-            background: var(--gradient-background-primary);
-            color: var(--color-neutral-white);
-            border-bottom-right-radius: 5px; /* Tail for sent */
-        }
-
-        .chat-message-time {
-            font-size: 0.7rem;
-            color: var(--color-neutral-medium);
-            margin-top: 5px;
-            text-align: right;
-        }
-
-        .chat-message.received .chat-message-time {
-            margin-left: auto; /* Align time to the right for received */
-        }
-
-        .chat-widget-footer {
-            display: flex;
-            align-items: center;
-            padding: 15px 20px;
-            background-color: var(--color-neutral-lightest);
-            border-bottom-left-radius: 15px;
-            border-bottom-right-radius: 15px;
-            gap: 10px;
-        }
-
-        .chat-widget-footer input[type="text"] {
-            flex-grow: 1;
-            padding: 10px 15px;
-            border: 1px solid var(--color-neutral-light);
-            border-radius: 25px;
-            font-size: 0.9rem;
-        }
-
-        .chat-widget-footer input[type="text"]:focus {
-            outline: none;
-            border-color: var(--color-brand-primary);
-            box-shadow: 0 0 0 2px rgba(26, 42, 108, 0.2);
-        }
-
-        .chat-widget-footer .send-btn {
-            background: var(--gradient-background-primary);
-            color: var(--color-neutral-white);
-            border: none;
-            padding: 10px 15px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-        }
-
-        .chat-widget-footer .send-btn:hover {
-            transform: scale(1.1);
-            background: var(--color-brand-secondary);
-        }
+        
 
         /* Reduced Motion Styles */
         @media (prefers-reduced-motion: reduce) {
@@ -964,8 +807,8 @@
         </p>
     </div>
 
-    <!-- NEW FLOATING ICONS -->
-    <div class="floating-icon bytenexus" id="bytenexusBtn">
+    <!-- ByteNexus chat widget provides its own FAB, so this is hidden -->
+    <div class="floating-icon bytenexus" id="bytenexusBtn" style="display: none;">
         <i class="fas fa-comments"></i>
         <span class="tooltip">Bytenexus Chat</span>
     </div>
@@ -978,23 +821,7 @@
         <span class="tooltip">Counselling & Career (Coming Soon)</span>
     </div>
 
-    <!-- NEW: Chat Widget -->
-    <div class="chat-widget-container" id="chatWidgetContainer">
-        <div class="chat-widget-header">
-            <div class="avatar"><i class="fas fa-user-graduate"></i></div>
-            <span>Bytenexus Support</span>
-            <button class="close-btn" id="closeChatBtn">&times;</button>
-        </div>
-        <div class="chat-widget-body" id="chatWidgetBody">
-            <!-- Chat messages will be appended here -->
-        </div>
-        <div class="chat-widget-footer">
-            <input type="text" id="chatInput" placeholder="Type your message...">
-            <button class="send-btn" id="sendChatBtn">
-                <i class="fas fa-paper-plane"></i>
-            </button>
-        </div>
-    </div>
+    
 
     <div class="container">
         <div class="message-container" id="loadingMessage">
@@ -1082,15 +909,7 @@
             const aiBuddyBtn = document.getElementById('aiBuddyBtn');
             const counsellingBtn = document.getElementById('counsellingBtn');
 
-            // NEW: Chat Widget Elements
-            const chatWidgetContainer = document.getElementById('chatWidgetContainer');
-            const closeChatBtn = document.getElementById('closeChatBtn');
-            const chatInput = document.getElementById('chatInput');
-            const sendChatBtn = document.getElementById('sendChatBtn');
-            const chatWidgetBody = document.getElementById('chatWidgetBody');
-
-            // Initialize Socket.IO client for chat
-            const socket = io('http://localhost:3000'); // Replace with your server address if needed
+            
 
             let bytesCount = 0; // Initialize bytes count
 
@@ -1435,98 +1254,29 @@
                 }, 300);
             });
 
-            // NEW: Bytenexus button click handler
+            // Wire up floating icons to trigger existing widgets
             bytenexusBtn.addEventListener('click', function() {
-                chatWidgetContainer.classList.add('active');
+                // ByteNexus chat is handled by the widget itself - it has its own FAB
+                // This button should be hidden since the widget provides its own button
+                console.log('ByteNexus chat handled by widget');
             });
 
-            // NEW: Close chat widget button
-            closeChatBtn.addEventListener('click', function() {
-                chatWidgetContainer.classList.remove('active');
-            });
-
-            // NEW: Send chat message
-            sendChatBtn.addEventListener('click', sendMessage);
-            chatInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    sendMessage();
-                }
-            });
-
-            function sendMessage() {
-                const message = chatInput.value.trim();
-                if (message) {
-                    // Display message immediately
-                    displayMessage(message, 'sent');
-                    chatInput.value = '';
-
-                    // Send message to server
-                    socket.emit('chatMessage', {
-                        text: message,
-                        sender: 'student', // Or use student ID from fetched data
-                        timestamp: new Date().toISOString()
-                    });
-                }
-            }
-
-            // NEW: Display a message in the chat widget
-            function displayMessage(message, type, timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) {
-                const messageElement = document.createElement('div');
-                messageElement.classList.add('chat-message', type);
-
-                // Basic avatar for sender/receiver. In a real app, this would be dynamic.
-                const avatarIcon = type === 'sent' ? '<i class="fas fa-user-graduate"></i>' : '<i class="fas fa-question"></i>';
-
-                messageElement.innerHTML = `
-                    <div class="avatar">${avatarIcon}</div>
-                    <div class="message-content">${message}</div>
-                `;
-                // Add timestamp if it's not the first message or if it's a bot response
-                if (type === 'sent') {
-                    const timeElement = document.createElement('div');
-                    timeElement.classList.add('chat-message-time');
-                    timeElement.textContent = timestamp;
-                    messageElement.appendChild(timeElement);
-                }
-
-
-                chatWidgetBody.appendChild(messageElement);
-                chatWidgetBody.scrollTop = chatWidgetBody.scrollHeight; // Auto-scroll to bottom
-            }
-
-            // NEW: Handle incoming chat messages
-            socket.on('chatMessage', (msg) => {
-                console.log('Message from server:', msg);
-                // Assume messages from server are from 'support'
-                displayMessage(msg.text, 'received', new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-            });
-
-            // NEW: Handle connection errors
-            socket.on('connect_error', (err) => {
-                console.error('Chat connection error:', err);
-                displayMessage('Cannot connect to chat service. Please try again later.', 'received');
-            });
-
-            // NEW: Handle successful connection
-            socket.on('connect', () => {
-                console.log('Connected to chat server');
-                // Optionally send initial user info to server
-                socket.emit('identifyUser', { userId: localStorage.getItem('token') }); // Example
-                displayMessage('Welcome to Bytenexus Support! How can we help you today?', 'received');
-            });
-
-            // NEW: AI Buddy button click
+            // AI Buddy button click - opens the AI Buddy widget
             aiBuddyBtn.addEventListener('click', function() {
-                // Placeholder for future AI integration
-                addActivity('AI Buddy feature coming soon', 'coin');
-                showNotification();
+                if (window.openAIBuddy) {
+                    window.openAIBuddy();
+                } else {
+                    console.error('AI Buddy widget not loaded');
+                }
             });
 
-            // NEW: Counselling button click
+            // Counselling button click - opens Career Guidance widget
             counsellingBtn.addEventListener('click', function() {
-                // Placeholder for future AI integration
-                addActivity('Counselling & Career Guidance coming soon', 'coin');
-                showNotification();
+                if (window.openCareerGuidance) {
+                    window.openCareerGuidance();
+                } else {
+                    console.error('Career Guidance widget not loaded');
+                }
             });
 
             // Quiz button click
