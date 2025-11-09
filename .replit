@@ -7,6 +7,7 @@ requiredFiles = [".replit", "replit.nix", "package.json", "package-lock.json"]
 
 [nix]
 channel = "stable-24_11"
+packages = ["ollama", "psmisc"]
 
 [deployment]
 run = ["sh", "-c", "node server.js"]
@@ -20,10 +21,6 @@ externalPort = 3000
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 45033
-externalPort = 3001
 
 [workflows]
 runButton = "Project"
