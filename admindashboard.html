@@ -184,29 +184,34 @@
         document.addEventListener('DOMContentLoaded', async function() {
             // Check if user is authenticated
             const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = 'teacherlogin.html';
+            const adminName = localStorage.getItem('adminName');
+            const adminEmail = localStorage.getItem('adminEmail');
+            
+            if (!token || !adminName) {
+                window.location.href = 'adminlogin.html';
                 return;
             }
 
-            // Load admin data
+            // Display admin name from localStorage
+            document.getElementById('adminName').textContent = adminName;
+
+            // Optionally verify token is still valid
             try {
-                const response = await fetch('/admin/dashboard', {
+                const response = await fetch('/admin/dashboard-stats', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    document.getElementById('adminName').textContent = data.admin.adminName;
-                } else {
-                    throw new Error('Failed to load admin data');
+                if (!response.ok) {
+                    throw new Error('Token expired or invalid');
                 }
             } catch (error) {
-                console.error('Error loading admin data:', error);
-                // If there's an error, redirect to login
-                window.location.href = 'teacherlogin.html';
+                console.error('Authentication error:', error);
+                localStorage.removeItem('token');
+                localStorage.removeItem('adminName');
+                localStorage.removeItem('adminEmail');
+                window.location.href = 'adminlogin.html';
             }
         });
 

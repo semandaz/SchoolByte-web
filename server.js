@@ -6070,7 +6070,7 @@ Be friendly, patient, and culturally relevant to Uganda. Use examples that stude
         const aiReply = await callOllamaAI(
             fullPrompt,
             "You are AI Buddy, a friendly study assistant AI. Help students understand concepts, provide study tips, and motivate them in their learning.",
-            { temperature: 0.7, num_predict: 300, timeout: 120000, retries: 1 }
+            { temperature: 0.7, num_predict: 200, timeout: 180000, retries: 1 }
         );
 
         res.status(200).json({

@@ -336,7 +336,7 @@
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 150000); // 2.5 min timeout
+      const timeoutId = setTimeout(() => controller.abort(), 200000); // 3.3 min timeout
 
       const response = await fetch(`${API_URL}/api/ai-buddy/chat`, {
         method: 'POST',
@@ -369,16 +369,24 @@
       displayMessages();
     } catch (error) {
       console.error('AI Buddy error:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      
       messages = messages.filter(m => !m.loading);
       
-      let errorMessage = "Sorry, I'm having trouble responding right now. ";
+      let errorMessage = "I apologize for the inconvenience. ";
       
       if (error.name === 'AbortError') {
-        errorMessage += "The request took too long. Try asking a simpler question.";
-      } else if (error.message.includes('timeout')) {
-        errorMessage += "The AI is taking longer than expected. Please try again.";
+        errorMessage += "The request timed out after 3 minutes. TinyLlama may be processing slowly. Try asking a shorter, more specific question.";
+      } else if (error.message.includes('timeout') || error.message.includes('AI service error')) {
+        errorMessage += "The AI model is taking longer than expected. This can happen when the model is starting up or under heavy load. Please wait 30 seconds and try again.";
+      } else if (error.message.includes('Failed to fetch')) {
+        errorMessage += "Cannot connect to the AI service. Please check your internet connection and try again.";
       } else {
-        errorMessage += "Please try again in a moment.";
+        errorMessage += `Unexpected error: ${error.message}. Please try again in a moment.`;
       }
       
       messages.push({ role: 'ai', content: errorMessage });
