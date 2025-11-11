@@ -245,10 +245,11 @@
                     // Store admin token and data
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('userData', JSON.stringify(data.admin));
-                    localStorage.removeItem('adminEmail'); // Clean up
-
+                    localStorage.setItem('adminName', data.admin.adminName);
+                    localStorage.setItem('adminEmail', data.admin.email);
+                    
                     // Redirect to admin dashboard
-                    window.location.href = 'admin.html';
+                    window.location.href = 'admindashboard.html';
 
                 } catch (error) {
                     console.error('2FA verification error:', error);
