@@ -596,24 +596,37 @@
                 return;
             }
 
+            // Check if we have admin credentials stored
+            const adminName = localStorage.getItem('adminName');
+            const adminEmail = localStorage.getItem('adminEmail');
+            
+            if (adminName && adminEmail) {
+                document.getElementById('adminNameDisplay').textContent = adminName;
+                document.getElementById('welcomeAdminName').textContent = adminName;
+                return;
+            }
+
+            // If no stored credentials, verify token and fetch admin data
             try {
-                const response = await fetch('/admin/dashboard', {
+                const response = await fetch('/admin/dashboard-stats', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
 
                 if (response.ok) {
-                    const data = await response.json();
-                    document.getElementById('adminNameDisplay').textContent = data.admin.adminName;
-                    document.getElementById('welcomeAdminName').textContent = data.admin.adminName;
-                    localStorage.setItem('adminName', data.admin.adminName);
-                    localStorage.setItem('adminEmail', data.admin.email);
-                } else {
-                    throw new Error('Failed to load admin data');
+                    // Token is valid, use stored credentials or fetch from token
+                    const storedName = localStorage.getItem('adminName') || 'Administrator';
+                    document.getElementById('adminNameDisplay').textContent = storedName;
+                    document.getElementById('welcomeAdminName').textContent = storedName;
+                } else if (response.status === 401 || response.status === 403) {
+                    throw new Error('Invalid token');
                 }
             } catch (error) {
                 console.error('Error loading admin data:', error);
+                localStorage.removeItem('token');
+                localStorage.removeItem('adminName');
+                localStorage.removeItem('adminEmail');
                 window.location.href = 'adminlogin.html';
             }
         }

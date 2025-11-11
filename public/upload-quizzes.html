@@ -880,8 +880,10 @@
             })
             .then(data => {
                 showMessageBox('Success', 'Quiz question uploaded successfully!', true);
-                quizUploadForm.reset(); // Clear form after successful upload
-                renderQuestionTypeFields(); // Re-render dynamic fields to default state
+                setTimeout(() => {
+                    quizUploadForm.reset(); // Clear form after successful upload
+                    renderQuestionTypeFields(); // Re-render dynamic fields to default state
+                }, 1500);
             })
             .catch(error => {
                 console.error('Error uploading quiz:', error);
