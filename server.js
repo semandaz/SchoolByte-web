@@ -6047,35 +6047,32 @@ app.post('/api/ai-buddy/chat', authenticateToken, async (req, res) => {
             return res.status(404).json({ message: 'Student not found.' });
         }
 
-        const studentContext = `
-Student Profile:
-- Name: ${student.preferredName || student.studentName}
-- Current Level: ${student.currentTier}/10
-- XP: ${student.xp}
+        // Simplified, focused system prompt
+        const systemPrompt = `You are AI Buddy, a helpful study assistant for students in Uganda. Answer questions clearly and accurately. Focus on the specific question asked. Keep responses under 100 words unless explaining a complex concept. Be factual and educational.`;
 
-You are AI Buddy, a friendly and knowledgeable study assistant for SchoolByte students in Uganda. Your role is to:
-- Help with homework and explain difficult concepts
-- Provide study tips and learning strategies
-- Answer questions about various subjects (Math, Science, English, History, etc.)
-- Motivate and encourage students in their learning journey
-- Break down complex topics into simple, understandable explanations
+        // Build conversation context (limit to recent messages)
+        let conversationContext = '';
+        if (chatHistory && chatHistory.length > 0) {
+            const recentHistory = chatHistory.slice(-4); // Last 2 exchanges
+            conversationContext = recentHistory.map(msg => {
+                const role = msg.role === 'user' ? 'Student' : 'AI Buddy';
+                return `${role}: ${msg.content}`;
+            }).join('\n');
+            conversationContext += '\n\n';
+        }
 
-Be friendly, patient, and culturally relevant to Uganda. Use examples that students can relate to. Keep responses clear and concise (2-3 paragraphs).`;
+        const fullPrompt = `${conversationContext}Student: ${message}\n\nAI Buddy:`;
 
-        const fullPrompt = chatHistory && chatHistory.length > 0 
-            ? `${studentContext}\n\nConversation history:\n${chatHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n')}\n\nStudent: ${message}\n\nAI Buddy:`
-            : `${studentContext}\n\nStudent: ${message}\n\nAI Buddy:`;
-
-        // Call TinyLlama via Ollama with optimized settings for chat
+        // Call TinyLlama with optimized settings
         const aiReply = await callOllamaAI(
             fullPrompt,
-            "You are AI Buddy, a friendly study assistant AI. Help students understand concepts, provide study tips, and motivate them in their learning.",
-            { temperature: 0.7, num_predict: 200, timeout: 180000, retries: 1 }
+            systemPrompt,
+            { temperature: 0.5, num_predict: 350, timeout: 40000, retries: 1 }
         );
 
         res.status(200).json({
             message: 'AI Buddy response generated successfully.',
-            reply: aiReply
+            reply: aiReply.trim()
         });
 
     } catch (error) {

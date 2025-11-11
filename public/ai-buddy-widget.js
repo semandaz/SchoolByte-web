@@ -336,7 +336,7 @@
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 200000); // 3.3 min timeout
+      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
 
       const response = await fetch(`${API_URL}/api/ai-buddy/chat`, {
         method: 'POST',
@@ -346,7 +346,7 @@
         },
         body: JSON.stringify({
           message: messageText,
-          chatHistory: chatHistory
+          chatHistory: chatHistory.slice(-6) // Only send last 3 exchanges for context
         }),
         signal: controller.signal
       });
@@ -369,24 +369,17 @@
       displayMessages();
     } catch (error) {
       console.error('AI Buddy error:', error);
-      console.error('Error details:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      });
       
       messages = messages.filter(m => !m.loading);
       
-      let errorMessage = "I apologize for the inconvenience. ";
+      let errorMessage = "Sorry, I'm having trouble responding. ";
       
       if (error.name === 'AbortError') {
-        errorMessage += "The request timed out after 3 minutes. TinyLlama may be processing slowly. Try asking a shorter, more specific question.";
-      } else if (error.message.includes('timeout') || error.message.includes('AI service error')) {
-        errorMessage += "The AI model is taking longer than expected. This can happen when the model is starting up or under heavy load. Please wait 30 seconds and try again.";
+        errorMessage += "The request timed out. Please try a simpler question or try again.";
       } else if (error.message.includes('Failed to fetch')) {
-        errorMessage += "Cannot connect to the AI service. Please check your internet connection and try again.";
+        errorMessage += "Connection issue. Please check your internet and try again.";
       } else {
-        errorMessage += `Unexpected error: ${error.message}. Please try again in a moment.`;
+        errorMessage += "Please try again in a moment.";
       }
       
       messages.push({ role: 'ai', content: errorMessage });
