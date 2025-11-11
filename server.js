@@ -6066,11 +6066,11 @@ Be friendly, patient, and culturally relevant to Uganda. Use examples that stude
             ? `${studentContext}\n\nConversation history:\n${chatHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n')}\n\nStudent: ${message}\n\nAI Buddy:`
             : `${studentContext}\n\nStudent: ${message}\n\nAI Buddy:`;
 
-        // Call TinyLlama via Ollama
+        // Call TinyLlama via Ollama with optimized settings for chat
         const aiReply = await callOllamaAI(
             fullPrompt,
             "You are AI Buddy, a friendly study assistant AI. Help students understand concepts, provide study tips, and motivate them in their learning.",
-            { temperature: 0.7, num_predict: 600, timeout: 60000, retries: 2 }
+            { temperature: 0.7, num_predict: 300, timeout: 120000, retries: 1 }
         );
 
         res.status(200).json({

@@ -335,6 +335,9 @@
     displayMessages();
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 150000); // 2.5 min timeout
+
       const response = await fetch(`${API_URL}/api/ai-buddy/chat`, {
         method: 'POST',
         headers: {
@@ -344,10 +347,16 @@
         body: JSON.stringify({
           message: messageText,
           chatHistory: chatHistory
-        })
+        }),
+        signal: controller.signal
       });
 
-      if (!response.ok) throw new Error('Failed to get AI response');
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(errorData.message || 'Failed to get AI response');
+      }
 
       const data = await response.json();
       
@@ -361,7 +370,18 @@
     } catch (error) {
       console.error('AI Buddy error:', error);
       messages = messages.filter(m => !m.loading);
-      messages.push({ role: 'ai', content: "Sorry, I'm having trouble responding right now. Please try again in a moment." });
+      
+      let errorMessage = "Sorry, I'm having trouble responding right now. ";
+      
+      if (error.name === 'AbortError') {
+        errorMessage += "The request took too long. Try asking a simpler question.";
+      } else if (error.message.includes('timeout')) {
+        errorMessage += "The AI is taking longer than expected. Please try again.";
+      } else {
+        errorMessage += "Please try again in a moment.";
+      }
+      
+      messages.push({ role: 'ai', content: errorMessage });
       displayMessages();
     } finally {
       sendBtn.disabled = false;
