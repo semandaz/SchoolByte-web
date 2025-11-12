@@ -346,37 +346,85 @@
                 addQuestion();
             });
 
-            uploadForm.addEventListener('submit', async (e) => {
+            // Handle Form Submission
+            document.getElementById('uploadForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
 
-                // First validate all questions have enough keywords
-                const invalidQuestions = validateAllQuestions();
-
-                if (invalidQuestions.length > 0) {
-                    // Show message about which questions need more keywords
-                    const questionNumbers = invalidQuestions.map(q => `Question ${q}`).join(' and ');
-                    validationMessage.textContent = `${questionNumbers} - please make sure the keywords of each question are at least 5.`;
-                    keywordValidationDialog.classList.remove('hidden');
-
-                    // Highlight the invalid questions after a short delay
-                    setTimeout(() => {
-                        invalidQuestions.forEach(num => {
-                            const questions = document.querySelectorAll('.question-item');
-                            if (questions[num-1]) {
-                                highlightQuestion(questions[num-1]);
-                            }
-                        });
-                    }, 100);
-
+                // Validate questions before submission
+                if (!validateQuestions()) {
                     return;
                 }
 
-                // If validation passes, proceed with upload
+                // Check connectivity before upload
+                const connectivityStatus = await performConnectivityCheck();
+
+                if (!connectivityStatus.reachable) {
+                    const proceed = confirm(
+                        `⚠️ WARNING: Upload System Issue\n\n` +
+                        `Reason: ${connectivityStatus.reason}\n\n` +
+                        `Your notes may not be uploaded successfully. Do you want to try anyway?\n\n` +
+                        `Recommendation: Fix the connection issue first, then try uploading.`
+                    );
+
+                    if (!proceed) {
+                        return;
+                    }
+                }
+
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
+
+                // Show upload progress
+                const messageBox = document.getElementById('messageBox');
+                messageBox.className = 'p-4 mb-4 text-sm text-center rounded-lg bg-blue-100 text-blue-800';
+                messageBox.textContent = '📤 Uploading your content to the cloud... Please wait.';
+                messageBox.classList.remove('hidden');
+
+                const formData = new FormData();
+
+
                 await uploadContent();
             });
 
             validateForm();
         });
+
+        // --- Connectivity Check Function ---
+        async function performConnectivityCheck() {
+            const CLOUDINARY_TEST_URL = 'https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/resources/image'; // Replace YOUR_CLOUD_NAME
+            const CLOUDINARY_UPLOAD_URL = 'https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload'; // Replace YOUR_CLOUD_NAME
+
+            try {
+                // Use a HEAD request to check if the upload endpoint is reachable without uploading anything
+                const startTime = new Date().getTime();
+                const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+                    method: 'POST', // Cloudinary upload endpoint expects POST
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest', // Standard header for Cloudinary SDK/API requests
+                    },
+                    body: JSON.stringify({ file: null }), // Minimal body to trigger a response
+                    mode: 'no-cors' // Use no-cors mode to avoid CORS issues for a simple reachability check
+                });
+                const endTime = new Date().getTime();
+
+                // If we get a response (even in no-cors mode, we get a status 0), it means the server is reachable.
+                // The actual success of the upload would require a proper authentication and request.
+                // For connectivity, reaching the endpoint is enough.
+                if (endTime - startTime < 5000) { // Consider it reachable if response is within 5 seconds
+                    return { reachable: true, reason: null };
+                } else {
+                    return { reachable: false, reason: 'Cloudinary server is slow to respond.' };
+                }
+
+            } catch (error) {
+                console.error('Connectivity check failed:', error);
+                if (error.message.includes('Failed to fetch')) {
+                    return { reachable: false, reason: 'Network is unreachable or Cloudinary is down.' };
+                }
+                return { reachable: false, reason: `An unexpected network error occurred: ${error.message}` };
+            }
+        }
 
         // --- Core Functions ---
         function handleFileSelection(file) {
