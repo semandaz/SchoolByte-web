@@ -313,26 +313,6 @@
             transform: scale(1.2) rotate(10deg);
         }
 
-        /* Unique hover animations for each subject */
-        .subject-card:nth-child(1):hover .subject-icon { animation: bounce 0.5s; }
-        .subject-card:nth-child(2):hover .subject-icon { animation: spin 0.5s; }
-        .subject-card:nth-child(3):hover .subject-icon { animation: pulse 0.5s; }
-        .subject-card:nth-child(4):hover .subject-icon { animation: shake 0.5s; }
-        .subject-card:nth-child(5):hover .subject-icon { animation: flip 0.5s; }
-        .subject-card:nth-child(6):hover .subject-icon { animation: rubberBand 0.5s; }
-        .subject-card:nth-child(7):hover .subject-icon { animation: swing 0.5s; }
-        .subject-card:nth-child(8):hover .subject-icon { animation: tada 0.5s; }
-        .subject-card:nth-child(9):hover .subject-icon { animation: wobble 0.5s; }
-        .subject-card:nth-child(10):hover .subject-icon { animation: jello 0.5s; }
-        .subject-card:nth-child(11):hover .subject-icon { animation: heartBeat 0.5s; }
-        .subject-card:nth-child(12):hover .subject-icon { animation: bounceIn 0.5s; }
-        .subject-card:nth-child(13):hover .subject-icon { animation: flash 0.5s; }
-        .subject-card:nth-child(14):hover .subject-icon { animation: zoomIn 0.5s; }
-        .subject-card:nth-child(15):hover .subject-icon { animation: fadeIn 0.5s; }
-        .subject-card:nth-child(16):hover .subject-icon { animation: slideInUp 0.5s; }
-        .subject-card:nth-child(17):hover .subject-icon { animation: slideInDown 0.5s; }
-        .subject-card:nth-child(18):hover .subject-icon { animation: slideInLeft 0.5s; }
-
         /* Animation keyframes */
         @keyframes bounce {
             0%, 100% { transform: translateY(0); }
@@ -447,7 +427,7 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            z-index: 100;
+            z-index: 10000; /* High z-index to stay on top */
         }
 
         .bytes-icon {
@@ -475,205 +455,6 @@
             100% {
                 transform: translate(var(--target-x), var(--target-y)) scale(0.5);
                 opacity: 0;
-            }
-        }
-
-        /* Live Activity Feed */
-        .activity-feed {
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            width: 300px;
-            max-height: 70vh;
-            overflow-y: auto;
-            background-color: var(--color-neutral-white);
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            padding: 15px;
-            z-index: 90;
-            transform: translateX(120%);
-            transition: transform 0.3s ease;
-        }
-
-        .activity-feed.active {
-            transform: translateX(0);
-        }
-
-        .activity-item {
-            padding: 10px;
-            margin-bottom: 10px;
-            background-color: var(--color-neutral-lightest);
-            border-radius: 8px;
-            border-left: 4px solid var(--color-brand-primary);
-            animation: slideInRight 0.3s ease-out;
-            position: relative;
-            padding-right: 35px;
-        }
-
-        .activity-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .activity-text {
-            font-size: 0.9rem;
-            color: var(--color-neutral-dark);
-        }
-
-        .activity-time {
-            font-size: 0.7rem;
-            color: var(--color-neutral-medium);
-            margin-top: 5px;
-        }
-
-        .dismiss-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            color: var(--color-neutral-medium);
-            cursor: pointer;
-            font-size: 1rem;
-            padding: 0;
-            transition: color 0.2s;
-        }
-
-        .dismiss-btn:hover {
-            color: var(--color-error-red);
-        }
-
-        .toggle-feed {
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            width: 40px;
-            height: 40px;
-            background-color: var(--color-brand-primary);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 95;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
-        }
-
-        .toggle-feed:hover {
-            transform: scale(1.1);
-            background-color: var(--color-brand-secondary);
-        }
-
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background-color: var(--color-error-red);
-            color: white;
-            font-size: 0.7rem;
-            font-weight: bold;
-            padding: 2px 6px;
-            border-radius: 10px;
-            min-width: 18px;
-            text-align: center;
-        }
-
-        /* NEW FLOATING ICONS */
-        .floating-icon {
-            position: fixed;
-            width: 40px;
-            height: 40px;
-            background-color: var(--color-brand-primary);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 95;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
-        }
-
-        .floating-icon:hover {
-            transform: scale(1.1);
-            background-color: var(--color-brand-secondary);
-        }
-
-        .floating-icon .tooltip {
-            position: absolute;
-            right: 50px;
-            background-color: var(--color-neutral-darkest);
-            color: var(--color-neutral-white);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s;
-            z-index: 100;
-        }
-
-        .floating-icon:hover .tooltip {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .floating-icon.bytenexus {
-            top: 160px;
-            right: 20px;
-        }
-
-        .floating-icon.ai-buddy {
-            top: 220px;
-            right: 20px;
-        }
-
-        .floating-icon.counselling {
-            top: 280px;
-            right: 20px;
-        }
-
-        
-
-        /* Reduced Motion Styles */
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-                scroll-behavior: auto !important;
-            }
-
-            .activity-card:hover {
-                transform: none !important;
-            }
-
-            .subject-card:hover .subject-icon {
-                transform: none !important;
-                animation: none !important;
-            }
-
-            .byte-coin {
-                display: none !important;
-            }
-
-            .particle {
-                display: none !important;
-            }
-
-            .floating-icon:hover,
-            .toggle-feed:hover {
-                transform: none !important;
-            }
-
-            .chat-widget-container {
-                transition: none !important;
-                transform: none !important;
-                opacity: 1 !important;
-                visibility: visible !important;
             }
         }
 
@@ -731,46 +512,9 @@
                 padding: 0.6rem 1rem;
                 font-size: 0.9rem;
             }
-
-            .activity-feed {
-                width: 250px;
-                right: 10px;
-            }
-
-            .floating-icon {
-                width: 35px;
-                height: 35px;
-            }
-
-            .floating-icon.bytenexus {
-                top: 140px;
-                right: 10px;
-            }
-
-            .floating-icon.ai-buddy {
-                top: 190px;
-                right: 10px;
-            }
-
-            .floating-icon.counselling {
-                top: 240px;
-                right: 10px;
-            }
-
-            .toggle-feed {
-                top: 90px;
-                right: 10px;
-            }
-
-            /* Responsive Chat Widget */
-            .chat-widget-container {
-                bottom: 70px; /* Adjust for smaller screens */
-                right: 10px;
-                width: 90%;
-                max-width: 320px;
-                height: 400px;
-            }
         }
+
+        /* REMOVED: All old fixed floating icons styles, notifications, and activity feed styles */
     </style>
 </head>
 <body>
@@ -789,39 +533,7 @@
         </div>
     </header>
 
-    <!-- Live Activity Feed -->
-    <div class="toggle-feed" id="toggleFeed">
-        <i class="fas fa-bell"></i>
-        <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
-    </div>
-    <div class="activity-feed" id="activityFeed">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3 style="color: var(--color-brand-primary); margin: 0;">Notifications</h3>
-            <button id="clearAllBtn" style="background: none; border: none; color: var(--color-error-red); cursor: pointer; font-size: 0.9rem; padding: 0.3rem 0.6rem;">
-                <i class="fas fa-trash"></i> Clear All
-            </button>
-        </div>
-        <div id="feedItems"></div>
-        <p id="noNotifications" style="display: none; text-align: center; color: var(--color-neutral-medium); padding: 20px; font-style: italic;">
-            No notifications yet
-        </p>
-    </div>
-
-    <!-- ByteNexus chat widget provides its own FAB, so this is hidden -->
-    <div class="floating-icon bytenexus" id="bytenexusBtn" style="display: none;">
-        <i class="fas fa-comments"></i>
-        <span class="tooltip">Bytenexus Chat</span>
-    </div>
-    <div class="floating-icon ai-buddy" id="aiBuddyBtn">
-        <i class="fas fa-robot"></i>
-        <span class="tooltip">AI Buddy (Coming Soon)</span>
-    </div>
-    <div class="floating-icon counselling" id="counsellingBtn">
-        <i class="fas fa-hands-helping"></i>
-        <span class="tooltip">Counselling & Career (Coming Soon)</span>
-    </div>
-
-    
+    <!-- REMOVED: All old fixed floating icons and notifications -->
 
     <div class="container">
         <div class="message-container" id="loadingMessage">
@@ -885,7 +597,11 @@
     <script src="bytenexus-chat-widget.js"></script>
     <script src="ai-buddy-widget.js"></script>
     <script src="career-guidance-widget.js"></script>
-    <script src="bytenexus-support-widget.js"></script>pt>
+    <script src="bytenexus-support-widget.js"></script>
+    
+    <!-- NEW: Enhanced floating icons with drag functionality -->
+    <script src="floating-icons.js"></script>
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize elements
@@ -898,20 +614,10 @@
             const signOutBtn = document.getElementById('signOutBtn');
             const quizBtn = document.getElementById('quizBtn');
             const gameBtn = document.getElementById('gameBtn');
-            const toggleFeed = document.getElementById('toggleFeed');
-            const activityFeed = document.getElementById('activityFeed');
-            const feedItems = document.getElementById('feedItems');
             const floatingParticles = document.getElementById('floatingParticles');
             const subjectsContainer = document.getElementById('subjectsContainer');
 
-            // NEW: Floating icon elements
-            const bytenexusBtn = document.getElementById('bytenexusBtn');
-            const aiBuddyBtn = document.getElementById('aiBuddyBtn');
-            const counsellingBtn = document.getElementById('counsellingBtn');
-
-            
-
-            let bytesCount = 0; // Initialize bytes count
+            let bytesCount = 0;
 
             // Subject cards data with redirect URLs
             const subjectCards = [
@@ -965,7 +671,7 @@
                         studentNameDisplay.textContent = displayName;
                         welcomeMessage.textContent = `Hello ${displayName}, what do you want to dive into today?`;
                         bytesCountElement.textContent = student.bytes || 0;
-                        bytesCount = student.bytes || 0; // Update global bytesCount
+                        bytesCount = student.bytes || 0;
 
                         // Apply saved font preference
                         if (student.preferences && student.preferences.fontFamily) {
@@ -999,7 +705,7 @@
                     errorMessage.querySelector('.error-message').textContent = errorMessageText;
                     loadingMessage.classList.add('hidden');
                     errorMessage.classList.remove('hidden');
-                    mainContent.classList.add('hidden'); // Hide main content on error
+                    mainContent.classList.add('hidden');
                 }
             }
 
@@ -1007,19 +713,15 @@
             function createSubjectCard(card, studentData) {
                 const cardElement = document.createElement('div');
                 cardElement.classList.add('subject-card');
-                cardElement.style.cursor = 'pointer'; // Ensure cursor is pointer
-                cardElement.setAttribute('data-subject-name', card.name); // Store subject name
+                cardElement.style.cursor = 'pointer';
+                cardElement.setAttribute('data-subject-name', card.name);
 
-                // Add onclick to redirect to the subject's dashboard
                 cardElement.onclick = function() {
-                    // Check if the subject is enrolled before redirecting
                     const enrolledSubjects = studentData.student.subjectsEnrolled || [];
                     if (enrolledSubjects.includes(card.name)) {
                         window.location.href = card.url;
                     } else {
-                        // Optionally provide feedback if the subject is not enrolled
                         console.warn(`Subject "${card.name}" is not enrolled.`);
-                        // Maybe show a small notification or alert
                     }
                 };
 
@@ -1034,7 +736,7 @@
 
             // Function to render subject cards based on student's enrollment
             function renderSubjectCards(data) {
-                subjectsContainer.innerHTML = ''; // Clear existing content
+                subjectsContainer.innerHTML = '';
 
                 const student = data.student;
                 const enrolledSubjects = student.subjectsEnrolled || [];
@@ -1044,18 +746,16 @@
                     return;
                 }
 
-                // Filter and render only the enrolled subjects
                 enrolledSubjects.forEach(subjectName => {
                     const cardData = subjectCards.find(card => card.name === subjectName);
                     if (cardData) {
                         const cardElement = createSubjectCard(cardData, data);
                         subjectsContainer.appendChild(cardElement);
                     } else {
-                        // Handle cases where an enrolled subject might not be in our predefined list
                         const fallbackCard = {
                             name: subjectName,
-                            icon: 'fa-book', // Default icon
-                            url: '#' // Default URL
+                            icon: 'fa-book',
+                            url: '#'
                         };
                         const cardElement = createSubjectCard(fallbackCard, data);
                         subjectsContainer.appendChild(cardElement);
@@ -1070,7 +770,7 @@
                     particle.classList.add('particle');
 
                     const posX = Math.random() * 100;
-                    const posY = Math.random() * 100 + 100; // Start below viewport
+                    const posY = Math.random() * 100 + 100;
 
                     const size = Math.random() * 5 + 5;
                     const duration = Math.random() * 10 + 10;
@@ -1090,7 +790,7 @@
             // Create byte coin animation
             function animateByteCoin(fromElement) {
                 if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                    return; // Skip animation if reduced motion is preferred
+                    return;
                 }
 
                 const fromRect = fromElement.getBoundingClientRect();
@@ -1126,164 +826,20 @@
                         animateByteCoin(sourceElement);
                     }, i * 100);
                 }
-                addActivity(`Earned ${amount} bytes`, 'coin');
-            }
-
-            const notificationBadge = document.getElementById('notificationBadge');
-            const clearAllBtn = document.getElementById('clearAllBtn');
-            const noNotifications = document.getElementById('noNotifications');
-            let notificationCount = 0;
-
-            // Load saved notifications from localStorage
-            function loadNotifications() {
-                const saved = localStorage.getItem('notifications');
-                if (saved) {
-                    const notifications = JSON.parse(saved);
-                    notifications.forEach(notif => {
-                        createNotificationElement(notif.text, notif.iconType, notif.time, false);
-                    });
-                    updateNotificationCount();
+                
+                // Notify floating icons about the new activity
+                if (window.floatingIcons) {
+                    window.floatingIcons.addActivity(`Earned ${amount} bytes`, 'coin');
                 }
             }
-
-            // Save notifications to localStorage
-            function saveNotifications() {
-                const notifications = [];
-                feedItems.querySelectorAll('.activity-item').forEach(item => {
-                    notifications.push({
-                        text: item.querySelector('.activity-text').textContent,
-                        iconType: item.querySelector('i').className.includes('coins') ? 'coin' :
-                                  item.querySelector('i').className.includes('question') ? 'quiz' : 'game',
-                        time: item.querySelector('.activity-time').textContent
-                    });
-                });
-                localStorage.setItem('notifications', JSON.stringify(notifications));
-            }
-
-            // Create notification element
-            function createNotificationElement(text, iconType, timeString, isNew = true) {
-                const icons = {
-                    'coin': 'fas fa-coins',
-                    'quiz': 'fas fa-question-circle',
-                    'game': 'fas fa-gamepad'
-                };
-
-                const iconClass = icons[iconType] || 'fas fa-bell';
-
-                const activityItem = document.createElement('div');
-                activityItem.classList.add('activity-item');
-                activityItem.innerHTML = `
-                    <i class="${iconClass}" style="margin-right: 8px; color: var(--color-brand-primary);"></i>
-                    <span class="activity-text">${text}</span>
-                    <div class="activity-time">${timeString}</div>
-                    <button class="dismiss-btn" title="Dismiss">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
-
-                // Add dismiss functionality
-                const dismissBtn = activityItem.querySelector('.dismiss-btn');
-                dismissBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    activityItem.style.animation = 'slideOutRight 0.3s ease-out';
-                    setTimeout(() => {
-                        activityItem.remove();
-                        updateNotificationCount();
-                        saveNotifications();
-                    }, 300);
-                });
-
-                feedItems.insertBefore(activityItem, feedItems.firstChild);
-
-                if (isNew) {
-                    notificationCount++;
-                    updateNotificationCount();
-                    showNotification();
-                    saveNotifications();
-                }
-            }
-
-            // Add activity to feed
-            function addActivity(text, iconType) {
-                const now = new Date();
-                const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                createNotificationElement(text, iconType, timeString, true);
-            }
-
-            // Update notification count and badge
-            function updateNotificationCount() {
-                const count = feedItems.querySelectorAll('.activity-item').length;
-                notificationCount = count;
-
-                if (count > 0) {
-                    notificationBadge.textContent = count;
-                    notificationBadge.style.display = 'block';
-                    noNotifications.style.display = 'none';
-                } else {
-                    notificationBadge.style.display = 'none';
-                    noNotifications.style.display = 'block';
-                }
-            }
-
-            // Show notification animation
-            function showNotification() {
-                toggleFeed.style.backgroundColor = 'var(--color-brand-secondary)';
-                setTimeout(() => {
-                    toggleFeed.style.backgroundColor = 'var(--color-brand-primary)';
-                }, 500);
-            }
-
-            // Toggle activity feed
-            toggleFeed.addEventListener('click', function() {
-                activityFeed.classList.toggle('active');
-                // Reset badge when opened
-                if (activityFeed.classList.contains('active')) {
-                    notificationBadge.style.display = 'none';
-                }
-            });
-
-            // Clear all notifications
-            clearAllBtn.addEventListener('click', function() {
-                feedItems.querySelectorAll('.activity-item').forEach(item => {
-                    item.style.animation = 'slideOutRight 0.3s ease-out';
-                });
-                setTimeout(() => {
-                    feedItems.innerHTML = '';
-                    updateNotificationCount();
-                    localStorage.removeItem('notifications');
-                }, 300);
-            });
-
-            // Wire up floating icons to trigger existing widgets
-            bytenexusBtn.addEventListener('click', function() {
-                // ByteNexus chat is handled by the widget itself - it has its own FAB
-                // This button should be hidden since the widget provides its own button
-                console.log('ByteNexus chat handled by widget');
-            });
-
-            // AI Buddy button click - opens the AI Buddy widget
-            aiBuddyBtn.addEventListener('click', function() {
-                if (window.openAIBuddy) {
-                    window.openAIBuddy();
-                } else {
-                    console.error('AI Buddy widget not loaded');
-                }
-            });
-
-            // Counselling button click - opens Career Guidance widget
-            counsellingBtn.addEventListener('click', function() {
-                if (window.openCareerGuidance) {
-                    window.openCareerGuidance();
-                } else {
-                    console.error('Career Guidance widget not loaded');
-                }
-            });
 
             // Quiz button click
             quizBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 addBytes(3, this);
-                addActivity('Completed a quiz', 'quiz');
+                if (window.floatingIcons) {
+                    window.floatingIcons.addActivity('Completed a quiz', 'quiz');
+                }
                 setTimeout(() => {
                     window.location.href = 'quizzesstudentdashboard.html';
                 }, 800);
@@ -1293,7 +849,9 @@
             gameBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 addBytes(5, this);
-                addActivity('Played a game', 'game');
+                if (window.floatingIcons) {
+                    window.floatingIcons.addActivity('Played a game', 'game');
+                }
                 setTimeout(() => {
                     window.location.href = 'gamesstudentdashboard.html';
                 }, 800);
@@ -1307,8 +865,8 @@
                 localStorage.removeItem('studentName');
                 localStorage.removeItem('preferredFont');
                 localStorage.removeItem('preferredName');
-                // Disconnect socket when signing out
-                socket.disconnect();
+                localStorage.removeItem('floatingIconsPositions');
+                localStorage.removeItem('floatingIconsActivities');
                 window.location.href = 'studentlogin.html';
             });
 
@@ -1327,18 +885,7 @@
 
             // Fetch student data on page load
             fetchStudentData();
-
-            // Create particles on load
             createParticles();
-
-            // Load saved notifications
-            loadNotifications();
-
-            // Add initial activities only if no saved notifications
-            if (notificationCount === 0) {
-                addActivity('Welcome to SchoolByte!', 'coin');
-                addActivity('Dashboard loaded', 'coin');
-            }
         });
     </script>
 </body>
