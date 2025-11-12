@@ -639,40 +639,40 @@
                     icon: 'fas fa-bell', 
                     tooltip: 'Notifications', 
                     className: 'notifications', 
-                    defaultX: 30, 
-                    defaultY: 150 
+                    defaultLeft: 20, 
+                    defaultTop: 120 
                 },
                 { 
                     id: 'aiBuddyIcon', 
                     icon: 'fas fa-robot', 
                     tooltip: 'AI Study Buddy', 
                     className: 'ai-buddy', 
-                    defaultX: 30, 
-                    defaultY: 230 
+                    defaultLeft: 20, 
+                    defaultTop: 200 
                 },
                 { 
                     id: 'counsellingIcon', 
                     icon: 'fas fa-heart', 
                     tooltip: 'Counselling', 
                     className: 'counselling', 
-                    defaultX: 30, 
-                    defaultY: 310 
+                    defaultLeft: 20, 
+                    defaultTop: 280 
                 },
                 { 
                     id: 'careerIcon', 
                     icon: 'fas fa-briefcase', 
                     tooltip: 'Career Guidance', 
                     className: 'career', 
-                    defaultX: 30, 
-                    defaultY: 390 
+                    defaultLeft: 20, 
+                    defaultTop: 360 
                 },
                 { 
                     id: 'byteNexusChatIcon', 
                     icon: 'fas fa-comments', 
                     tooltip: 'ByteNexus Chat', 
                     className: 'bytenexus', 
-                    defaultX: 30, 
-                    defaultY: 470 
+                    defaultLeft: 20, 
+                    defaultTop: 440 
                 }
             ];
 
@@ -698,8 +698,8 @@
                 icon.style.left = `${savedPosition.x}px`;
                 icon.style.top = `${savedPosition.y}px`;
             } else {
-                icon.style.right = `${config.defaultX}px`;
-                icon.style.top = `${config.defaultY}px`;
+                icon.style.left = `${config.defaultLeft}px`;
+                icon.style.top = `${config.defaultTop}px`;
             }
 
             this.addClickHandler(icon, config.id);
@@ -1015,34 +1015,42 @@
         makeDraggable(element) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
             let isDragging = false;
+            let dragStartTime = 0;
+            const self = this;
 
-            element.onmousedown = dragMouseDown;
-            element.ontouchstart = dragTouchStart;
+            element.addEventListener('mousedown', dragMouseDown);
+            element.addEventListener('touchstart', dragTouchStart, { passive: false });
 
             function dragMouseDown(e) {
                 if (e.button !== 0) return;
 
                 e.preventDefault();
+                e.stopPropagation();
                 isDragging = false;
+                dragStartTime = Date.now();
                 pos3 = e.clientX;
                 pos4 = e.clientY;
-                document.onmouseup = closeDragElement;
-                document.onmousemove = elementDrag;
+                
+                document.addEventListener('mouseup', closeDragElement);
+                document.addEventListener('mousemove', elementDrag);
                 element.classList.add('dragging');
 
-                setTimeout(() => { isDragging = true; }, 100);
+                setTimeout(() => { isDragging = true; }, 150);
             }
 
             function dragTouchStart(e) {
+                e.preventDefault();
                 const touch = e.touches[0];
                 isDragging = false;
+                dragStartTime = Date.now();
                 pos3 = touch.clientX;
                 pos4 = touch.clientY;
-                document.ontouchend = closeDragElement;
-                document.ontouchmove = elementDragTouch;
+                
+                document.addEventListener('touchend', closeDragElement);
+                document.addEventListener('touchmove', elementDragTouch, { passive: false });
                 element.classList.add('dragging');
 
-                setTimeout(() => { isDragging = true; }, 100);
+                setTimeout(() => { isDragging = true; }, 150);
             }
 
             function elementDrag(e) {
@@ -1067,6 +1075,7 @@
             function elementDragTouch(e) {
                 if (!isDragging) return;
 
+                e.preventDefault();
                 const touch = e.touches[0];
                 pos1 = pos3 - touch.clientX;
                 pos2 = pos4 - touch.clientY;
@@ -1083,19 +1092,23 @@
                 }
             }
 
-            function closeDragElement() {
-                document.onmouseup = null;
-                document.onmousemove = null;
-                document.ontouchend = null;
-                document.ontouchmove = null;
+            function closeDragElement(e) {
+                document.removeEventListener('mouseup', closeDragElement);
+                document.removeEventListener('mousemove', elementDrag);
+                document.removeEventListener('touchend', closeDragElement);
+                document.removeEventListener('touchmove', elementDragTouch);
                 element.classList.remove('dragging');
 
-                if (isDragging) {
+                const dragDuration = Date.now() - dragStartTime;
+
+                if (isDragging && dragDuration > 200) {
                     const rect = element.getBoundingClientRect();
-                    window.floatingIcons.savePosition(element.id, {
+                    self.savePosition(element.id, {
                         x: rect.left,
                         y: rect.top
                     });
+                    e.preventDefault();
+                    e.stopPropagation();
                 }
 
                 isDragging = false;

@@ -220,6 +220,21 @@
         if (!token) {
             alert('Please log in to access the upload page.');
             window.location.href = 'teacherlogin.html';
+            throw new Error('No token found');
+        }
+
+        // Validate token format
+        try {
+            const tokenParts = token.split('.');
+            if (tokenParts.length !== 3) {
+                throw new Error('Invalid token format');
+            }
+        } catch (error) {
+            console.error('Invalid token:', error);
+            localStorage.removeItem('token');
+            alert('Your session is invalid. Please log in again.');
+            window.location.href = 'teacherlogin.html';
+            throw error;
         }
 
         // Current User Info will be fetched from backend
@@ -231,6 +246,12 @@
 
         // Fetch teacher data
         async function fetchTeacherData() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'teacherlogin.html';
+                return;
+            }
+
             try {
                 const response = await fetch('/teacher/dashboard', {
                     headers: {
@@ -241,25 +262,32 @@
 
                 if (!response.ok) {
                     if (response.status === 401 || response.status === 403) {
-                        alert('Session expired. Please log in again.');
+                        console.error('Authentication failed:', response.status);
                         localStorage.removeItem('token');
+                        alert('Session expired. Please log in again.');
                         window.location.href = 'teacherlogin.html';
                         return;
                     }
-                    throw new Error('Failed to fetch teacher data');
+                    throw new Error(`Failed to fetch teacher data: ${response.status}`);
                 }
 
                 const data = await response.json();
-                currentUser.name = data.teacher.teacherName;
+                
+                if (data.teacher && data.teacher.teacherName) {
+                    currentUser.name = data.teacher.teacherName;
 
-                // Update any displayed teacher name elements if they exist
-                const teacherNameElements = document.querySelectorAll('[data-teacher-name]');
-                teacherNameElements.forEach(element => {
-                    element.textContent = data.teacher.teacherName;
-                });
+                    // Update any displayed teacher name elements if they exist
+                    const teacherNameElements = document.querySelectorAll('[data-teacher-name]');
+                    teacherNameElements.forEach(element => {
+                        element.textContent = data.teacher.teacherName;
+                    });
+                }
 
             } catch (error) {
                 console.error('Error fetching teacher data:', error);
+                if (error.message.includes('Failed to fetch')) {
+                    showMessage('Connection error. Please check your internet and try again.', 'error');
+                }
             }
         }
 
@@ -757,11 +785,17 @@
                     applyWatermark: document.getElementById('applyDownloadWatermark').checked
                 });
 
+                // Get fresh token
+                const currentToken = localStorage.getItem('token');
+                if (!currentToken) {
+                    throw new Error('No authentication token found. Please log in again.');
+                }
+
                 // Upload to server
                 const response = await fetch('/teacher/upload-content', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${currentToken}`
                     },
                     body: formData
                 });
@@ -777,7 +811,9 @@
                     // Handle specific error cases
                     if (response.status === 401 || response.status === 403) {
                         localStorage.removeItem('token');
-                        throw new Error('Authentication failed. Please log in again.');
+                        alert('Your session has expired. Please log in again.');
+                        window.location.href = 'teacherlogin.html';
+                        throw new Error('Authentication failed. Redirecting to login...');
                     } else if (response.status === 400) {
                         const errorMsg = result.errors ? result.errors.map(e => e.msg).join(', ') : result.message;
                         throw new Error(errorMsg || 'Invalid form data. Please check your inputs.');

@@ -2797,6 +2797,187 @@ IMPORTANT: Respond ONLY with valid JSON. Start with { and end with }. Do not inc
     }
 });
 
+
+
+// AI Buddy Chat Endpoint
+app.post('/api/ai-buddy/chat', authenticateToken, async (req, res) => {
+    try {
+        const { message, chatHistory } = req.body;
+
+        if (!message || message.trim() === '') {
+            return res.status(400).json({ message: 'Message is required' });
+        }
+
+        // Build context from chat history
+        let context = "You are AI Buddy, a friendly and helpful study assistant for students. You help with homework, explain concepts, provide study tips, and answer questions about any subject. Be encouraging, patient, and clear in your explanations.\n\n";
+        
+        if (chatHistory && chatHistory.length > 0) {
+            context += "Previous conversation:\n";
+            chatHistory.slice(-6).forEach(msg => {
+                context += `${msg.role === 'user' ? 'Student' : 'AI Buddy'}: ${msg.content}\n`;
+            });
+        }
+
+        context += `\nStudent: ${message}\nAI Buddy:`;
+
+        // Call Ollama API
+        const ollamaResponse = await fetch('http://127.0.0.1:11434/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'deepseek-r1:1.5b',
+                prompt: context,
+                stream: false,
+                options: {
+                    temperature: 0.7,
+                    top_p: 0.9,
+                    max_tokens: 500
+                }
+            })
+        });
+
+        if (!ollamaResponse.ok) {
+            throw new Error('Ollama API request failed');
+        }
+
+        const data = await ollamaResponse.json();
+        let reply = data.response || "I'm here to help! Could you rephrase your question?";
+
+        // Clean up response
+        reply = reply.trim();
+
+        res.json({ reply });
+
+    } catch (error) {
+        console.error('AI Buddy chat error:', error);
+        res.status(500).json({ 
+            message: 'Failed to generate response',
+            reply: "I'm having trouble right now. Please try asking your question again in a moment!"
+        });
+    }
+});
+
+// Career Guidance Chat Endpoint
+app.post('/api/career-guidance/chat', authenticateToken, async (req, res) => {
+    try {
+        const { message, chatHistory } = req.body;
+
+        if (!message || message.trim() === '') {
+            return res.status(400).json({ message: 'Message is required' });
+        }
+
+        // Get student data for personalized guidance
+        const student = await Student.findById(req.user.userId);
+        let studentContext = '';
+        
+        if (student) {
+            studentContext = `Student info: Currently in ${student.class || 'unknown class'}. `;
+            if (student.performanceData && student.performanceData.length > 0) {
+                const recentPerformance = student.performanceData.slice(-3);
+                const subjects = recentPerformance.map(p => p.subject).join(', ');
+                studentContext += `Strong subjects: ${subjects}. `;
+            }
+        }
+
+        let context = `You are an AI Career Counselor helping students explore career paths and make informed decisions about their future. ${studentContext}Provide personalized, encouraging guidance based on their academic performance, interests, and goals. Be supportive and practical.\n\n`;
+        
+        if (chatHistory && chatHistory.length > 0) {
+            context += "Previous conversation:\n";
+            chatHistory.slice(-6).forEach(msg => {
+                context += `${msg.role === 'student' ? 'Student' : 'Counselor'}: ${msg.content}\n`;
+            });
+        }
+
+        context += `\nStudent: ${message}\nCounselor:`;
+
+        const ollamaResponse = await fetch('http://127.0.0.1:11434/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'deepseek-r1:1.5b',
+                prompt: context,
+                stream: false,
+                options: {
+                    temperature: 0.7,
+                    top_p: 0.9,
+                    max_tokens: 500
+                }
+            })
+        });
+
+        if (!ollamaResponse.ok) {
+            throw new Error('Ollama API request failed');
+        }
+
+        const data = await ollamaResponse.json();
+        let reply = data.response || "I'm here to help guide your career journey! Could you tell me more about your interests?";
+        reply = reply.trim();
+
+        res.json({ reply });
+
+    } catch (error) {
+        console.error('Career guidance chat error:', error);
+        res.status(500).json({ 
+            message: 'Failed to generate response',
+            reply: "I'm having trouble connecting right now. Please try again in a moment!"
+        });
+    }
+});
+
+// ByteNexus Support Chat Endpoint
+app.post('/api/bytenexus-support/chat', authenticateToken, async (req, res) => {
+    try {
+        const { message, chatHistory } = req.body;
+
+        if (!message || message.trim() === '') {
+            return res.status(400).json({ message: 'Message is required' });
+        }
+
+        let context = "You are ByteNexus Support, a helpful assistant for the SchoolByte platform. You help users navigate features like quizzes, Preader Games, the XP/Bytes system, notes, activities, and all other platform features. Be friendly, concise, and helpful.\n\n";
+        
+        if (chatHistory && chatHistory.length > 0) {
+            context += "Previous conversation:\n";
+            chatHistory.slice(-6).forEach(msg => {
+                context += `${msg.role === 'user' ? 'User' : 'Support'}: ${msg.content}\n`;
+            });
+        }
+
+        context += `\nUser: ${message}\nSupport:`;
+
+        const ollamaResponse = await fetch('http://127.0.0.1:11434/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'deepseek-r1:1.5b',
+                prompt: context,
+                stream: false,
+                options: {
+                    temperature: 0.6,
+                    top_p: 0.9,
+                    max_tokens: 400
+                }
+            })
+        });
+
+        if (!ollamaResponse.ok) {
+            throw new Error('Ollama API request failed');
+        }
+
+        const data = await ollamaResponse.json();
+        let reply = data.response || "I'm here to help! What would you like to know about SchoolByte?";
+        reply = reply.trim();
+
+        res.json({ reply });
+
+    } catch (error) {
+        console.error('ByteNexus support chat error:', error);
+        res.status(500).json({ 
+            message: 'Failed to generate response',
+            reply: "I'm having trouble responding. Please try again shortly!"
+        });
+    }
+});
+
 app.post('/student/quizzes/generate-ai', authenticateToken, [
     body('subject').notEmpty().withMessage('Subject is required.').trim(),
     body('topic').optional().trim(),

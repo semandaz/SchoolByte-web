@@ -13,10 +13,40 @@
   }
 
   function injectSupportWidget() {
-    if (document.getElementById('support-widget')) return;
+    if (document.getElementById('supportOverlay')) return;
 
     const widgetHTML = `
       <style>
+        .support-fab {
+          position: fixed;
+          bottom: 20px;
+          right: 260px;
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 50%, #fdbb2d 100%);
+          color: white;
+          border: none;
+          cursor: pointer;
+          box-shadow: 0 4px 12px rgba(26, 42, 108, 0.4);
+          z-index: 99996;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+          transition: all 0.3s;
+        }
+
+        .support-fab:hover {
+          transform: scale(1.1);
+          box-shadow: 0 6px 16px rgba(26, 42, 108, 0.5);
+        }
+
+        .support-fab.hidden {
+          display: none;
+        }
+
+        <style>
         .support-overlay {
           position: fixed;
           bottom: 20px;
@@ -206,6 +236,10 @@
         }
       </style>
 
+      <button class="support-fab" id="supportFab" style="display: none;">
+        <i class="fas fa-headset"></i>
+      </button>
+
       <div id="supportOverlay" class="support-overlay">
         <div class="support-header">
           <div class="support-title">
@@ -243,14 +277,22 @@
 
   function initEventListeners() {
     const overlay = document.getElementById('supportOverlay');
+    const fab = document.getElementById('supportFab');
     const closeBtn = document.getElementById('supportCloseBtn');
     const sendBtn = document.getElementById('supportSendBtn');
     const input = document.getElementById('supportInput');
     const pipMinusBtn = document.getElementById('supportPipMinusBtn');
     const pipPlusBtn = document.getElementById('supportPipPlusBtn');
 
+    fab.addEventListener('click', () => {
+      overlay.classList.add('open');
+      fab.classList.add('hidden');
+      input.focus();
+    });
+
     closeBtn.addEventListener('click', () => {
       overlay.classList.remove('open');
+      fab.classList.remove('hidden');
     });
 
     pipMinusBtn.addEventListener('click', () => {
@@ -373,4 +415,10 @@
 
   // Initialize widget
   injectSupportWidget();
+  
+  // Show FAB after initialization
+  setTimeout(() => {
+    const fab = document.getElementById('supportFab');
+    if (fab) fab.style.display = 'flex';
+  }, 1000);
 })();
