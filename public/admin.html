@@ -446,11 +446,6 @@
                         <h3 id="totalWorkFiles">...</h3>
                         <p>Total WorkFiles</p>
                     </div>
-                    <div class="stats-card">
-                        <i class="fas fa-book-open"></i>
-                        <h3 id="totalPreaderGames">...</h3>
-                        <p>Total Preader Games</p>
-                    </div>
                 </div>
             </div>
 
@@ -483,12 +478,6 @@
                         <h3>Student Promotion</h3>
                         <p>Automate yearly student class promotions.</p>
                         <button class="btn-submit" onclick="triggerYearlyUpgrade()">Promote Students</button>
-                    </div>
-                    <div class="stats-card">
-                        <i class="fas fa-gamepad"></i>
-                        <h3>Preader Game</h3>
-                        <p>Generate a new AI-powered Preader Game.</p>
-                        <button class="btn-submit" onclick="openCreatePreaderGameModal()">Generate Game</button>
                     </div>
                 </div>
             </div>
@@ -544,36 +533,6 @@
         </div>
     </div>
 
-    <!-- Create Preader Game Modal -->
-    <div id="createPreaderGameModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeCreatePreaderGameModal()">&times;</span>
-            <h2>Generate New Preader Game</h2>
-            <form id="createPreaderGameForm">
-                <div class="form-group">
-                    <label for="gameTitle">Game Title:</label>
-                    <input type="text" id="gameTitle" name="title" required>
-                </div>
-                <div class="form-group">
-                    <label for="gameGenre">Genre:</label>
-                    <input type="text" id="gameGenre" name="genre" required>
-                </div>
-                <div class="form-group">
-                    <label for="gameDescription">Description:</label>
-                    <textarea id="gameDescription" name="description" rows="3" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="gamePrompt">Initial AI Prompt:</label>
-                    <textarea id="gamePrompt" name="initialAiPrompt" rows="5" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="ugandanContext">Ugandan School Context:</label>
-                    <textarea id="ugandanContext" name="ugandanSchoolContext" rows="3" required></textarea>
-                </div>
-                <button type="submit" class="btn-submit">Generate Game</button>
-            </form>
-        </div>
-    </div>
 
 
     <script>
@@ -698,11 +657,6 @@
                         <h3 id="totalWorkFiles">${data.stats.totalWorkFiles}</h3>
                         <p>Total WorkFiles</p>
                     </div>
-                    <div class="stats-card">
-                        <i class="fas fa-book-open"></i>
-                        <h3 id="totalPreaderGames">${data.stats.totalPreaderGames}</h3>
-                        <p>Total Preader Games</p>
-                    </div>
                 `;
                 statsContainer.innerHTML = statsHTML;
 
@@ -780,7 +734,6 @@
 
         // Modal functions
         const createTeacherModal = document.getElementById('createTeacherModal');
-        const createPreaderGameModal = document.getElementById('createPreaderGameModal');
 
         function openCreateTeacherModal() {
             createTeacherModal.style.display = 'block';
@@ -788,14 +741,6 @@
 
         function closeCreateTeacherModal() {
             createTeacherModal.style.display = 'none';
-        }
-
-        function openCreatePreaderGameModal() {
-            createPreaderGameModal.style.display = 'block';
-        }
-
-        function closeCreatePreaderGameModal() {
-            createPreaderGameModal.style.display = 'none';
         }
 
         // Form submissions
@@ -825,33 +770,6 @@
                 loadTeachers();
             } catch (error) {
                 console.error('Error creating teacher:', error);
-                showError(error.message);
-            }
-        });
-
-        document.getElementById('createPreaderGameForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const token = localStorage.getItem('token');
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-
-            try {
-                const response = await fetch('/admin/preader-games', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(data)
-                });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Failed to generate Preader Game.');
-                }
-                showSuccess('Preader Game generation initiated successfully!');
-                closeCreatePreaderGameModal();
-            } catch (error) {
-                console.error('Error generating Preader Game:', error);
                 showError(error.message);
             }
         });
@@ -925,12 +843,8 @@
         // Close modal when clicking outside
         window.onclick = function(event) {
             const createTeacherModal = document.getElementById('createTeacherModal');
-            const createPreaderGameModal = document.getElementById('createPreaderGameModal');
             if (event.target === createTeacherModal) {
                 closeCreateTeacherModal();
-            }
-            if (event.target === createPreaderGameModal) {
-                closeCreatePreaderGameModal();
             }
         };
     </script>

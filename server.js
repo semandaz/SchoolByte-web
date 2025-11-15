@@ -766,8 +766,6 @@ const studentSchema = new mongoose.Schema({
     },
 
 
-    // Preader Games tracking
-    totalPreaderGameTimeMinutes: { type: Number, default: 0 },
 
 
     // Achievement and XP System
@@ -1207,130 +1205,6 @@ const adminSchema = new mongoose.Schema({
 const Administrator = mongoose.model('Administrator', adminSchema);
 
 
-// Preader Game Schemas (existing)
-const PreaderGameSessionSchema = new mongoose.Schema({
-    student: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Student',
-        required: true
-    },
-    initialTitle: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    startTime: {
-        type: Date,
-        default: Date.now
-    },
-    playerStats: {
-        life: { type: Number, default: 20, min: 0 },
-        mana: { type: Number, default: 20, min: 0 },
-        morale: { type: Number, default: 20 },
-        reputation: { type: Number, default: 0 },
-        discipline: { type: Number, default: 50, min: 0, max: 100 },
-        knowledge: { type: Number, default: 0, min: 0 },
-        stress: { type: Number, default: 0, min: 0 },
-        luck: { type: Number, default: 10, min: 0 }
-    },
-    currentEthicalScore: { type: Number, default: 0 },
-    totalBytesEarnedInSession: { type: Number, default: 0 },
-    currentSceneContent: { type: String, required: true, maxlength: 5000 },
-    currentChoices: [{
-        choiceText: { type: String, required: true, maxlength: 500 },
-        ethicalImpact: {
-            scoreChange: { type: Number, default: 0 },
-            ethicalPrinciple: { type: String }
-        },
-        statChanges: {
-            life: { type: Number, default: 0 },
-            mana: { type: Number, default: 0 },
-            morale: { type: Number, default: 0 },
-            reputation: { type: Number, default: 0 },
-            discipline: { type: Number, default: 0 },
-            knowledge: { type: Number, default: 0 },
-            stress: { type: Number, default: 0 },
-            luck: { type: Number, default: 0 }
-        },
-        requiredStats: {
-            life: { type: Number, min: 0 },
-            mana: { type: Number, min: 0 },
-            morale: { type: Number, min: 0 },
-            reputation: { type: Number },
-            discipline: { type: Number },
-            knowledge: { type: Number, min: 0 },
-            stress: { type: Number },
-            luck: { type: Number }
-        },
-        unavailableReason: { type: String, maxlength: 200 },
-        bytesAwarded: { type: Number, default: 1 }
-    }],
-    pathTaken: [{
-        sceneContent: { type: String },
-        choiceTextMade: { type: String },
-        bytesEarnedThisTurn: { type: Number, default: 0 },
-        playerStatsSnapshot: {
-            life: Number,
-            mana: Number,
-            morale: Number,
-            reputation: Number,
-            discipline: Number,
-            knowledge: Number,
-            stress: Number,
-            luck: Number
-        },
-        ethicalScoreSnapshot: Number,
-        timestamp: { type: Date, default: Date.now }
-    }],
-    rewindsUsed: { type: Number, default: 0 }
-});
-
-
-const PreaderGameSession = mongoose.model('PreaderGameSession', PreaderGameSessionSchema);
-
-
-const PreaderGameSessionLogSchema = new mongoose.Schema({
-    student: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Student',
-        required: true
-    },
-    initialTitle: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    startTime: {
-        type: Date,
-        required: true
-    },
-    endTime: {
-        type: Date,
-        required: true
-    },
-    durationMinutes: {
-        type: Number,
-        required: true,
-        min: 0
-    },
-    bytesEarned: {
-        type: Number,
-        required: true,
-        default: 0
-    },
-    finalEthicalScore: {
-        type: Number,
-        required: true,
-        default: 0
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
-});
-
-
-const PreaderGameSessionLog = mongoose.model('PreaderGameSessionLog', PreaderGameSessionSchema);
 
 
 // --- Achievement and XP System Schemas ---
@@ -1498,26 +1372,6 @@ const Notification = mongoose.model('Notification', notificationSchema);
 
 
 // --- Utility Functions ---
-
-
-// Helper to apply stat changes with boundaries
-function applyStatChanges(currentStats, changes) {
-    const newStats = { ...currentStats };
-    for (const stat in changes) {
-        if (newStats.hasOwnProperty(stat) && typeof changes[stat] === 'number') {
-            newStats[stat] = newStats[stat] + changes[stat];
-
-
-            if (stat === 'life' || stat === 'mana' || stat === 'knowledge' || stat === 'luck') {
-                newStats[stat] = Math.max(0, newStats[stat]);
-            }
-            if (stat === 'discipline') {
-                newStats[stat] = Math.min(100, Math.max(0, newStats[stat]));
-            }
-        }
-    }
-    return newStats;
-}
 
 
 // Enhanced NLP grading function
@@ -1953,123 +1807,6 @@ async function callOllamaAI(prompt, systemPrompt = "", options = {}) {
 }
 
 // All AI features now powered by TinyLlama via Ollama (Gemini fully removed)
-
-
-async function generateStoryNode(basePrompt, currentGameState, studentClass, previousScene = null, chosenOptionText = null) {
-    // Using TinyLlama via Ollama instead of Gemini
-
-
-    let contentSafetyInstruction = "";
-    const classNumber = parseInt(studentClass.replace('S.', ""));
-
-
-    if (classNumber <= 4) {
-        contentSafetyInstruction = 'The story MUST be entirely clean, appropriate for all ages, ' +
-            'and contain NO sexual content, suggestive themes, or explicit language whatsoever. ' +
-            'Focus on adventure, mystery, and school-appropriate dilemmas.';
-    } else {
-        contentSafetyInstruction = 'The story should be engaging and can explore more ' +
-            'complex themes suitable for older secondary students, but it MUST remain clean and ' +
-            'appropriate for a school environment. Absolutely NO sexually explicit or suggestive content ' +
-            'is allowed. Focus on mature themes like complex ethical dilemmas, advanced ' +
-            'problem-solving, and character development, while maintaining a non-explicit narrative.';
-    }
-
-
-    let ethicalImpactPrompt = "";
-    if (currentGameState && typeof currentGameState.currentEthicalScore === 'number') {
-        if (currentGameState.currentEthicalScore < -20) {
-            ethicalImpactPrompt = "Introduce significant and harsh unexpected twists, difficult consequences, and morally ambiguous situations.";
-        } else if (currentGameState.currentEthicalScore < 0) {
-            ethicalImpactPrompt = "Introduce some unexpected twists and challenging dilemmas as a consequence of past choices.";
-        } else if (currentGameState.currentEthicalScore > 20) {
-            ethicalImpactPrompt = "Introduce opportunities for positive outcomes and rewarding challenges, but still include unexpected twists to keep it thrilling.";
-        } else {
-            ethicalImpactPrompt = "Ensure the story has unexpected twists and hard decisions.";
-        }
-    } else {
-        ethicalImpactPrompt = "Ensure the story has unexpected twists and hard decisions.";
-    }
-
-
-    let continuationContext = "";
-    if (previousScene && chosenOptionText) {
-        continuationContext = `
-            **Previous Scene:**
-            ${previousScene}
-
-
-            **Player's Choice:**
-            "${chosenOptionText}"
-            Based on this choice, continue the narrative.
-        `;
-    }
-
-
-    const fullPrompt = `
-        You are generating a scene for an interactive story game set in a typical, vibrant Ugandan secondary school.
-        Focus on details relevant to this setting. Use common Ugandan names for characters. Incorporate elements like
-        school uniforms, assembly grounds, dormitories (if boarding), specific classroom environments, common school
-        activities (e.g., morning assembly, prep time, sports day), and interactions with 'mwalimu' (teacher) or 'prefects').
-
-
-        **Your Task:** Generate the next scene of the interactive story.
-        The narrative must be rich, descriptive, and novel-like.
-        ${ethicalImpactPrompt}
-        ${contentSafetyInstruction}
-
-
-        ${continuationContext}
-
-
-        **Current Player State (for context, do not explicitly reference in narrative unless relevant):**
-        ${JSON.stringify(currentGameState, null, 2)}
-
-
-        **Output Format:**
-        Respond ONLY with a JSON object.
-        The JSON must have two top-level keys: \`sceneDescription\` (string) and \`choices\` (array of objects).
-        Each choice object must have:
-        - \`choiceText\` (string)
-        - \`ethicalImpact\` (object: \`scoreChange\` (number), \`ethicalPrinciple\` (string, e.g., "compassion", "integrity", "deception"))
-        - \`statChanges\` (object: \`life\`, \`mana\`, \`morale\`, \`reputation\`, \`discipline\`, \`knowledge\`, \`stress\`, \`luck\` - all numbers, default to 0 if no change)
-        - \`requiredStats\` (optional object: \`life\`, \`mana\`, \`morale\`, etc. - numbers, if this choice has prerequisites)
-        - \`unavailableReason\` (optional string, if \`requiredStats\` are not met, e.g., "Not enough mana to cast this spell").
-        - \`bytesAwarded\` (number, default to 1, for this specific choice).
-        Ensure all numerical values for stat changes are provided, even if 0.
-        Ensure \`ethicalImpact\` and \`bytesAwarded\` are always present for each choice.
-    `;
-
-
-    try {
-        // Call TinyLlama via Ollama
-        const responseText = await callOllamaAI(
-            fullPrompt + "\n\nIMPORTANT: Respond ONLY with valid JSON. Start with { and end with }. Do not include any explanation before or after the JSON.",
-            "You are a creative storytelling AI that generates interactive story scenes and choices in valid JSON format.",
-            { temperature: 0.8, num_predict: 1500, timeout: 90000, retries: 2 }
-        );
-
-        // Extract and parse JSON using robust helper
-        const parsedResponse = extractJSON(responseText);
-
-
-        if (!parsedResponse.sceneDescription || !Array.isArray(parsedResponse.choices)) {
-            throw new Error("AI response did not match expected JSON structure.");
-        }
-
-
-        parsedResponse.choices = parsedResponse.choices.map(choice => ({
-            ...choice,
-            bytesAwarded: typeof choice.bytesAwarded === 'number' ? choice.bytesAwarded : 1
-        }));
-
-
-        return parsedResponse;
-    } catch (error) {
-        console.error("Error calling TinyLlama AI:", error.message);
-        throw new Error(`Failed to generate story content: ${error.message}`);
-    }
-}
 
 
 // --- API Endpoints ---
@@ -2653,7 +2390,6 @@ app.get('/student/dashboard', authenticateToken, async (req, res) => {
                 firstNameDisplay: studentData.firstNameDisplay,
                 preferredName: studentData.preferredName,
                 preferences: studentData.preferences,
-                totalPreaderGameTimeMinutes: studentData.totalPreaderGameTimeMinutes || 0,
                 quizzesCompletedThisWeek: studentData.quizzesCompletedThisWeek,
                 quizSession: studentData.currentQuizSessionId,
                 createdAt: studentData.createdAt
@@ -2933,7 +2669,7 @@ app.post('/api/bytenexus-support/chat', authenticateToken, async (req, res) => {
             return res.status(400).json({ message: 'Message is required' });
         }
 
-        let context = "You are ByteNexus Support, a helpful assistant for the SchoolByte platform. You help users navigate features like quizzes, Preader Games, the XP/Bytes system, notes, activities, and all other platform features. Be friendly, concise, and helpful.\n\n";
+        let context = "You are ByteNexus Support, a helpful assistant for the SchoolByte platform. You help users navigate features like quizzes, the XP/Bytes system, notes, activities, and all other platform features. Be friendly, concise, and helpful.\n\n";
         
         if (chatHistory && chatHistory.length > 0) {
             context += "Previous conversation:\n";
@@ -4496,6 +4232,52 @@ app.post(
     }
 );
 
+// Health check endpoint for upload readiness
+app.get('/teacher/upload-health-check', authenticateTeacherToken, async (req, res) => {
+    try {
+        const healthChecks = {
+            database: 'unknown',
+            cloudinary: 'unknown',
+            server: 'ok'
+        };
+
+        try {
+            await mongoose.connection.db.admin().ping();
+            healthChecks.database = 'ok';
+        } catch (dbError) {
+            console.error('Database health check failed:', dbError);
+            healthChecks.database = 'error';
+        }
+
+        try {
+            if (cloudinary && cloudinary.config().cloud_name) {
+                healthChecks.cloudinary = 'ok';
+            } else {
+                healthChecks.cloudinary = 'error';
+            }
+        } catch (cloudinaryError) {
+            console.error('Cloudinary health check failed:', cloudinaryError);
+            healthChecks.cloudinary = 'error';
+        }
+
+        const allHealthy = Object.values(healthChecks).every(status => status === 'ok');
+
+        res.status(allHealthy ? 200 : 503).json({
+            healthy: allHealthy,
+            checks: healthChecks,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('Health check error:', error);
+        res.status(500).json({
+            healthy: false,
+            error: 'Health check failed',
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
 // Teacher login and dashboard endpoints (existing)
 app.post('/login-teacher', [
     body('teacherName').notEmpty().withMessage('Teacher name is required.'),
@@ -5005,7 +4787,6 @@ app.get('/admin/dashboard-stats', authenticateAdminToken, async (req, res) => {
         const totalTeachers = await Teacher.countDocuments();
         const totalQuizQuestions = await QuizQuestion.countDocuments();
         const totalWorkFiles = await WorkFile.countDocuments();
-        const totalPreaderGames = await PreaderGameSessionLog.countDocuments();
 
 
         res.status(200).json({
@@ -5014,8 +4795,7 @@ app.get('/admin/dashboard-stats', authenticateAdminToken, async (req, res) => {
                 totalStudents,
                 totalTeachers,
                 totalQuizQuestions,
-                totalWorkFiles,
-                totalPreaderGames
+                totalWorkFiles
             }
         });
     } catch (error) {
@@ -5175,288 +4955,6 @@ app.get('/teacher/leaderboard', async (req, res) => {
     }
 });
 
-
-// Preader Game Endpoints (Student-Facing)
-app.post('/student/preader-games/start', authenticateToken, [
-    body('gameTitle').notEmpty().withMessage('Game title is required.').trim().isLength({ min: 3, max: 200 }),
-], async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-
-
-    const { gameTitle } = req.body;
-    const studentId = req.student.id;
-
-
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-
-    try {
-        const student = await Student.findById(studentId).session(session);
-        if (!student) {
-            await session.abortTransaction();
-            return res.status(404).json({ message: 'Student not found.' });
-        }
-        const studentClass = student.class;
-
-
-        const initialGameState = {
-            playerStats: {
-                life: 20, mana: 20, morale: 20, reputation: 0,
-                discipline: 50, knowledge: 0, stress: 0, luck: 10
-            },
-            currentEthicalScore: 0,
-            pathTaken: []
-        };
-
-
-        const initialPromptContent = `Start an interactive story based on the title: "${gameTitle}".`;
-        const aiGeneratedContent = await generateStoryNode(
-            initialPromptContent,
-            initialGameState,
-            studentClass,
-            null, 
-            null
-        );
-
-
-        const newSession = new PreaderGameSession({
-            student: studentId,
-            initialTitle: gameTitle,
-            startTime: Date.now(),
-            playerStats: initialGameState.playerStats,
-            currentEthicalScore: initialGameState.currentEthicalScore,
-            currentSceneContent: aiGeneratedContent.sceneDescription,
-            currentChoices: aiGeneratedContent.choices,
-            pathTaken: [{
-                sceneContent: aiGeneratedContent.sceneDescription,
-                choiceTextMade: null,
-                bytesEarnedThisTurn: 0,
-                playerStatsSnapshot: initialGameState.playerStats,
-                ethicalScoreSnapshot: initialGameState.currentEthicalScore,
-                timestamp: Date.now()
-            }]
-        });
-        await newSession.save({ session });
-
-
-        await session.commitTransaction();
-
-
-        res.status(201).json({
-            message: 'Preader Game session started!',
-            sessionId: newSession._id,
-            scene: newSession.currentSceneContent,
-            choices: newSession.currentChoices,
-            playerStats: newSession.playerStats,
-            currentEthicalScore: newSession.currentEthicalScore
-        });
-
-
-    } catch (error) {
-        await session.abortTransaction();
-        console.error('Error starting Preader Game session:', error);
-        res.status(500).json({ message: 'Failed to start Preader Game session. Please try again.', error: error.message });
-    } finally {
-        session.endSession();
-    }
-});
-
-
-app.post('/student/preader-games/:sessionId/make-choice', authenticateToken, [
-    body('choiceIndex').isInt({ min: 0 }).withMessage('Choice index must be a non-negative integer.'),
-], async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-
-
-    const { sessionId } = req.params;
-    const { choiceIndex } = req.body;
-    const studentId = req.student.id;
-
-
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-
-    try {
-        const gameSession = await PreaderGameSession.findOne({ _id: sessionId, student: studentId }).session(session);
-        if (!gameSession) {
-            await session.abortTransaction();
-            return res.status(404).json({ message: 'Preader Game session not found or does not belong to you.' });
-        }
-
-
-        const student = await Student.findById(studentId).session(session);
-        if (!student) {
-            await session.abortTransaction();
-            return res.status(404).json({ message: 'Student not found.' });
-        }
-        const studentClass = student.class;
-
-
-        if (choiceIndex < 0 || choiceIndex >= gameSession.currentChoices.length) {
-            await session.abortTransaction();
-            return res.status(400).json({ message: 'Invalid choice index.' });
-        }
-
-
-        const chosenOption = gameSession.currentChoices[choiceIndex];
-
-
-        const newPlayerStats = applyStatChanges(gameSession.playerStats, chosenOption.statChanges);
-        const newEthicalScore = gameSession.currentEthicalScore + chosenOption.ethicalImpact.scoreChange;
-        const bytesEarnedThisTurn = chosenOption.bytesAwarded || 1;
-
-
-        gameSession.playerStats = newPlayerStats;
-        gameSession.currentEthicalScore = newEthicalScore;
-        gameSession.totalBytesEarnedInSession += bytesEarnedThisTurn;
-
-
-        gameSession.pathTaken.push({
-            sceneContent: gameSession.currentSceneContent,
-            choiceTextMade: chosenOption.choiceText,
-            bytesEarnedThisTurn: bytesEarnedThisTurn,
-            playerStatsSnapshot: newPlayerStats,
-            ethicalScoreSnapshot: newEthicalScore,
-            timestamp: Date.now()
-        });
-
-
-        const nextScenePromptContent = `The player chose "${chosenOption.choiceText}". Continue the story from the previous scene: "${gameSession.currentSceneContent}".`;
-        const aiGeneratedContent = await generateStoryNode(
-            nextScenePromptContent,
-            { playerStats: newPlayerStats, currentEthicalScore: newEthicalScore, pathTaken: gameSession.pathTaken },
-            studentClass,
-            gameSession.currentSceneContent,
-            chosenOption.choiceText
-        );
-
-
-        gameSession.currentSceneContent = aiGeneratedContent.sceneDescription;
-        gameSession.currentChoices = aiGeneratedContent.choices;
-
-
-        await gameSession.save({ session });
-        await session.commitTransaction();
-
-
-        res.status(200).json({
-            message: 'Choice made and story advanced!',
-            scene: gameSession.currentSceneContent,
-            choices: gameSession.currentChoices,
-            playerStats: gameSession.playerStats,
-            currentEthicalScore: gameSession.currentEthicalScore,
-            bytesEarnedThisTurn: bytesEarnedThisTurn,
-            totalBytesEarnedInSession: gameSession.totalBytesEarnedInSession
-        });
-
-
-    } catch (error) {
-        await session.abortTransaction();
-        console.error('Error making choice in Preader Game session:', error);
-        res.status(500).json({ message: 'Failed to make choice. Please try again.', error: error.message });
-    } finally {
-        session.endSession();
-    }
-});
-
-
-app.post('/student/preader-games/:sessionId/end', authenticateToken, async (req, res) => {
-    const { sessionId } = req.params;
-    const studentId = req.student.id;
-
-
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-
-    try {
-        const gameSession = await PreaderGameSession.findOne({ _id: sessionId, student: studentId }).session(session);
-        if (!gameSession) {
-            await session.abortTransaction();
-            return res.status(404).json({ message: 'Preader Game session not found or does not belong to you.' });
-        }
-
-
-        const student = await Student.findById(studentId).session(session);
-        if (!student) {
-            await session.abortTransaction();
-            return res.status(404).json({ message: 'Student not found.' });
-        }
-
-
-        const endTime = Date.now();
-        const durationMinutes = Math.round((endTime - gameSession.startTime.getTime()) / (1000 * 60));
-        const totalBytesEarned = gameSession.totalBytesEarnedInSession;
-
-
-        student.bytes += totalBytesEarned;
-        student.totalPreaderGameTimeMinutes += durationMinutes;
-        await student.save({ session });
-
-
-        const sessionLog = new PreaderGameSessionLog({
-            student: studentId,
-            initialTitle: gameSession.initialTitle,
-            startTime: gameSession.startTime,
-            endTime: new Date(endTime),
-            durationMinutes: durationMinutes,
-            bytesEarned: totalBytesEarned,
-            finalEthicalScore: gameSession.currentEthicalScore
-        });
-        await sessionLog.save({ session });
-
-
-        await PreaderGameSession.deleteOne({ _id: sessionId }).session(session);
-
-
-        await session.commitTransaction();
-
-
-        res.status(200).json({
-            message: 'Preader Game session ended successfully!',
-            totalBytesEarned: totalBytesEarned,
-            sessionDurationMinutes: durationMinutes,
-            finalEthicalScore: gameSession.currentEthicalScore,
-            studentCurrentBytes: student.bytes,
-            studentTotalPreaderGameTime: student.totalPreaderGameTimeMinutes
-        });
-
-
-    } catch (error) {
-        await session.abortTransaction();
-        console.error('Error ending Preader Game session:', error);
-        res.status(500).json({ message: 'Failed to end Preader Game session. Please try again.', error: error.message });
-    } finally {
-        session.endSession();
-    }
-});
-
-
-app.get('/student/preader-games/history', authenticateToken, async (req, res) => {
-    try {
-        const studentId = req.student.id;
-        const history = await PreaderGameSessionLog.find({ student: studentId })
-                                                    .sort({ createdAt: -1 })
-                                                    .select('-student -_id -__v');
-
-
-        res.status(200).json({
-            message: 'Preader Game session history fetched successfully!',
-            history: history
-        });
-    } catch (error) {
-        console.error('Error fetching Preader Game history:', error);
-        res.status(500).json({ message: 'Failed to fetch Preader Game history.', error: error.message });
-    }
-});
 
 
 // Route for the teacher's initial password setup page
@@ -6340,19 +5838,19 @@ app.post('/api/bytenexus-support/chat', authenticateToken, async (req, res) => {
         const platformContext = `
 You are ByteNexus Support Team, the official technical support AI for SchoolByte educational platform. Your role is to:
 - Answer questions about SchoolByte features and how to use them
-- Help students navigate the platform (quizzes, Preader Games, career guidance, chat, etc.)
+- Help students navigate the platform (quizzes, career guidance, chat, notes, activities, etc.)
 - Explain the XP system, Bytes currency, tier progression, and rewards
 - Troubleshoot common issues students face on the platform
 - Provide tips for getting the most out of SchoolByte features
 
 SchoolByte Features:
-- Preader Games: Interactive story-based learning with ethical choices
 - Quiz System: Subject-based quizzes with multiple question types
+- Notes & Activities: Educational content upload/download with byte-based costs
 - Career Guidance: AI-powered career counseling and advice
 - AI Buddy: General study assistance (that's a different AI, not you)
 - Chat System: Personal messaging and discussion groups with teachers/students
-- XP & Tiers: Students earn XP by completing quizzes and games, advancing through 10 tiers
-- Bytes: Virtual currency earned through activities, can be used for rewards
+- XP & Tiers: Students earn XP by completing quizzes and activities, advancing through 10 tiers
+- Bytes: Virtual currency earned through activities, used to download notes and access content
 
 Be professional, helpful, and specific. Reference actual SchoolByte features accurately. Keep responses concise (2-3 paragraphs).`;
 

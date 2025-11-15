@@ -420,37 +420,47 @@
 
         // --- Connectivity Check Function ---
         async function performConnectivityCheck() {
-            const CLOUDINARY_TEST_URL = 'https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/resources/image'; // Replace YOUR_CLOUD_NAME
-            const CLOUDINARY_UPLOAD_URL = 'https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload'; // Replace YOUR_CLOUD_NAME
-
             try {
-                // Use a HEAD request to check if the upload endpoint is reachable without uploading anything
-                const startTime = new Date().getTime();
-                const response = await fetch(CLOUDINARY_UPLOAD_URL, {
-                    method: 'POST', // Cloudinary upload endpoint expects POST
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest', // Standard header for Cloudinary SDK/API requests
-                    },
-                    body: JSON.stringify({ file: null }), // Minimal body to trigger a response
-                    mode: 'no-cors' // Use no-cors mode to avoid CORS issues for a simple reachability check
-                });
-                const endTime = new Date().getTime();
-
-                // If we get a response (even in no-cors mode, we get a status 0), it means the server is reachable.
-                // The actual success of the upload would require a proper authentication and request.
-                // For connectivity, reaching the endpoint is enough.
-                if (endTime - startTime < 5000) { // Consider it reachable if response is within 5 seconds
-                    return { reachable: true, reason: null };
-                } else {
-                    return { reachable: false, reason: 'Cloudinary server is slow to respond.' };
+                const token = localStorage.getItem('teacherToken');
+                if (!token) {
+                    return { 
+                        reachable: false, 
+                        reason: 'Not authenticated. Please log in again.' 
+                    };
                 }
+
+                const response = await fetch('/teacher/upload-health-check', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || !result.healthy) {
+                    const issues = [];
+                    if (result.checks) {
+                        if (result.checks.database !== 'ok') issues.push('Database');
+                        if (result.checks.cloudinary !== 'ok') issues.push('Cloudinary');
+                        if (result.checks.server !== 'ok') issues.push('Server');
+                    }
+                    
+                    const reason = issues.length > 0 
+                        ? `${issues.join(', ')} connection failed` 
+                        : 'Upload system is not ready';
+                    
+                    return { reachable: false, reason };
+                }
+
+                return { reachable: true, reason: null };
 
             } catch (error) {
-                console.error('Connectivity check failed:', error);
-                if (error.message.includes('Failed to fetch')) {
-                    return { reachable: false, reason: 'Network is unreachable or Cloudinary is down.' };
-                }
-                return { reachable: false, reason: `An unexpected network error occurred: ${error.message}` };
+                console.error('Health check failed:', error);
+                return { 
+                    reachable: false, 
+                    reason: `Unable to verify upload system status: ${error.message}` 
+                };
             }
         }
 
