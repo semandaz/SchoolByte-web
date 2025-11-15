@@ -2535,185 +2535,6 @@ IMPORTANT: Respond ONLY with valid JSON. Start with { and end with }. Do not inc
 
 
 
-// AI Buddy Chat Endpoint
-app.post('/api/ai-buddy/chat', authenticateToken, async (req, res) => {
-    try {
-        const { message, chatHistory } = req.body;
-
-        if (!message || message.trim() === '') {
-            return res.status(400).json({ message: 'Message is required' });
-        }
-
-        // Build context from chat history
-        let context = "You are AI Buddy, a friendly and helpful study assistant for students. You help with homework, explain concepts, provide study tips, and answer questions about any subject. Be encouraging, patient, and clear in your explanations.\n\n";
-        
-        if (chatHistory && chatHistory.length > 0) {
-            context += "Previous conversation:\n";
-            chatHistory.slice(-6).forEach(msg => {
-                context += `${msg.role === 'user' ? 'Student' : 'AI Buddy'}: ${msg.content}\n`;
-            });
-        }
-
-        context += `\nStudent: ${message}\nAI Buddy:`;
-
-        // Call Ollama API
-        const ollamaResponse = await fetch('http://127.0.0.1:11434/api/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: 'deepseek-r1:1.5b',
-                prompt: context,
-                stream: false,
-                options: {
-                    temperature: 0.7,
-                    top_p: 0.9,
-                    max_tokens: 500
-                }
-            })
-        });
-
-        if (!ollamaResponse.ok) {
-            throw new Error('Ollama API request failed');
-        }
-
-        const data = await ollamaResponse.json();
-        let reply = data.response || "I'm here to help! Could you rephrase your question?";
-
-        // Clean up response
-        reply = reply.trim();
-
-        res.json({ reply });
-
-    } catch (error) {
-        console.error('AI Buddy chat error:', error);
-        res.status(500).json({ 
-            message: 'Failed to generate response',
-            reply: "I'm having trouble right now. Please try asking your question again in a moment!"
-        });
-    }
-});
-
-// Career Guidance Chat Endpoint
-app.post('/api/career-guidance/chat', authenticateToken, async (req, res) => {
-    try {
-        const { message, chatHistory } = req.body;
-
-        if (!message || message.trim() === '') {
-            return res.status(400).json({ message: 'Message is required' });
-        }
-
-        // Get student data for personalized guidance
-        const student = await Student.findById(req.user.userId);
-        let studentContext = '';
-        
-        if (student) {
-            studentContext = `Student info: Currently in ${student.class || 'unknown class'}. `;
-            if (student.performanceData && student.performanceData.length > 0) {
-                const recentPerformance = student.performanceData.slice(-3);
-                const subjects = recentPerformance.map(p => p.subject).join(', ');
-                studentContext += `Strong subjects: ${subjects}. `;
-            }
-        }
-
-        let context = `You are an AI Career Counselor helping students explore career paths and make informed decisions about their future. ${studentContext}Provide personalized, encouraging guidance based on their academic performance, interests, and goals. Be supportive and practical.\n\n`;
-        
-        if (chatHistory && chatHistory.length > 0) {
-            context += "Previous conversation:\n";
-            chatHistory.slice(-6).forEach(msg => {
-                context += `${msg.role === 'student' ? 'Student' : 'Counselor'}: ${msg.content}\n`;
-            });
-        }
-
-        context += `\nStudent: ${message}\nCounselor:`;
-
-        const ollamaResponse = await fetch('http://127.0.0.1:11434/api/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: 'deepseek-r1:1.5b',
-                prompt: context,
-                stream: false,
-                options: {
-                    temperature: 0.7,
-                    top_p: 0.9,
-                    max_tokens: 500
-                }
-            })
-        });
-
-        if (!ollamaResponse.ok) {
-            throw new Error('Ollama API request failed');
-        }
-
-        const data = await ollamaResponse.json();
-        let reply = data.response || "I'm here to help guide your career journey! Could you tell me more about your interests?";
-        reply = reply.trim();
-
-        res.json({ reply });
-
-    } catch (error) {
-        console.error('Career guidance chat error:', error);
-        res.status(500).json({ 
-            message: 'Failed to generate response',
-            reply: "I'm having trouble connecting right now. Please try again in a moment!"
-        });
-    }
-});
-
-// ByteNexus Support Chat Endpoint
-app.post('/api/bytenexus-support/chat', authenticateToken, async (req, res) => {
-    try {
-        const { message, chatHistory } = req.body;
-
-        if (!message || message.trim() === '') {
-            return res.status(400).json({ message: 'Message is required' });
-        }
-
-        let context = "You are ByteNexus Support, a helpful assistant for the SchoolByte platform. You help users navigate features like quizzes, the XP/Bytes system, notes, activities, and all other platform features. Be friendly, concise, and helpful.\n\n";
-        
-        if (chatHistory && chatHistory.length > 0) {
-            context += "Previous conversation:\n";
-            chatHistory.slice(-6).forEach(msg => {
-                context += `${msg.role === 'user' ? 'User' : 'Support'}: ${msg.content}\n`;
-            });
-        }
-
-        context += `\nUser: ${message}\nSupport:`;
-
-        const ollamaResponse = await fetch('http://127.0.0.1:11434/api/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: 'deepseek-r1:1.5b',
-                prompt: context,
-                stream: false,
-                options: {
-                    temperature: 0.6,
-                    top_p: 0.9,
-                    max_tokens: 400
-                }
-            })
-        });
-
-        if (!ollamaResponse.ok) {
-            throw new Error('Ollama API request failed');
-        }
-
-        const data = await ollamaResponse.json();
-        let reply = data.response || "I'm here to help! What would you like to know about SchoolByte?";
-        reply = reply.trim();
-
-        res.json({ reply });
-
-    } catch (error) {
-        console.error('ByteNexus support chat error:', error);
-        res.status(500).json({ 
-            message: 'Failed to generate response',
-            reply: "I'm having trouble responding. Please try again shortly!"
-        });
-    }
-});
-
 app.post('/student/quizzes/generate-ai', authenticateToken, [
     body('subject').notEmpty().withMessage('Subject is required.').trim(),
     body('topic').optional().trim(),
@@ -5874,6 +5695,63 @@ Be professional, helpful, and specific. Reference actual SchoolByte features acc
         console.error('Error in ByteNexus Support chat:', error);
         res.status(500).json({ 
             message: 'Failed to generate ByteNexus Support response.', 
+            error: error.message 
+        });
+    }
+});
+
+// Counselling and Guidance Endpoint - Emotional and academic support using TinyLlama
+app.post('/api/counselling/chat', authenticateToken, async (req, res) => {
+    try {
+        const studentId = req.student.id;
+        const { message, chatHistory, counsellingType } = req.body;
+
+        if (!message) {
+            return res.status(400).json({ message: 'Message is required.' });
+        }
+
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        const typeContexts = {
+            academic: 'You are providing academic counselling, helping with study stress, time management, exam anxiety, and academic challenges. Be supportive and provide practical study strategies.',
+            emotional: 'You are providing emotional support counselling, helping students navigate feelings, relationships, peer pressure, and personal challenges. Be empathetic, non-judgmental, and encouraging.',
+            crisis: 'You are providing crisis support counselling for urgent situations. Be calm, compassionate, and direct. Encourage professional help when needed. Focus on immediate coping strategies and safety.'
+        };
+
+        const counsellingContext = typeContexts[counsellingType] || typeContexts.academic;
+
+        const systemPrompt = `You are a professional school counsellor in Uganda providing supportive guidance to students. ${counsellingContext} Keep responses caring, culturally sensitive, and under 120 words unless explaining important coping strategies. Be warm and encouraging.`;
+
+        let conversationContext = '';
+        if (chatHistory && chatHistory.length > 0) {
+            const recentHistory = chatHistory.slice(-4);
+            conversationContext = recentHistory.map(msg => {
+                const role = msg.role === 'user' ? 'Student' : 'Counsellor';
+                return `${role}: ${msg.content}`;
+            }).join('\n');
+            conversationContext += '\n\n';
+        }
+
+        const fullPrompt = `${conversationContext}Student: ${message}\n\nCounsellor:`;
+
+        const aiReply = await callOllamaAI(
+            fullPrompt,
+            systemPrompt,
+            { temperature: 0.7, num_predict: 500, timeout: 50000, retries: 2 }
+        );
+
+        res.status(200).json({
+            message: 'Counselling response generated successfully.',
+            reply: aiReply.trim()
+        });
+
+    } catch (error) {
+        console.error('Error in counselling chat:', error);
+        res.status(500).json({ 
+            message: 'Failed to generate counselling response.', 
             error: error.message 
         });
     }

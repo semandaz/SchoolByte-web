@@ -979,7 +979,10 @@
                 crisis: "Crisis Support Team"
             };
             this.addActivity(`Connected to ${types[type]}`, 'info');
-            alert(`In a real implementation, this would connect you with a ${types[type]} for immediate support and guidance.`);
+            this.closeCurrentWidget();
+            if (window.openCounselling) {
+                window.openCounselling(type);
+            }
         }
 
         handleChatMessage() {
