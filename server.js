@@ -4075,6 +4075,63 @@ app.post('/student/download-workfile/:workFileId', authenticateToken, async (req
     }
 });
 
+// Alternative endpoint for frontend compatibility
+app.post('/api/workfiles/:workFileId/download', authenticateToken, async (req, res) => {
+    const { workFileId } = req.params;
+    const studentId = req.student.id;
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const student = await Student.findById(studentId).session(session);
+        if (!student) {
+            await session.abortTransaction();
+            return res.status(404).json({ message: 'Student not found.' });
+        }
+
+        const workFile = await WorkFile.findById(workFileId).session(session);
+        if (!workFile) {
+            await session.abortTransaction();
+            return res.status(404).json({ message: 'Work file not found.' });
+        }
+
+        if (student.bytes < workFile.costBytes) {
+            await session.abortTransaction();
+            return res.status(400).json({ 
+                message: `Insufficient bytes. You need ${workFile.costBytes} bytes but only have ${student.bytes} bytes.`,
+                requiredBytes: workFile.costBytes,
+                currentBytes: student.bytes
+            });
+        }
+
+        student.bytes -= workFile.costBytes;
+        await student.save({ session });
+
+        await WorkFile.updateOne(
+            { _id: workFileId },
+            { $inc: { downloadCount: 1 } }
+        ).session(session);
+
+        await session.commitTransaction();
+
+        res.status(200).json({
+            success: true,
+            message: 'Download authorized successfully.',
+            downloadUrl: workFile.fileUrl,
+            bytesDeducted: workFile.costBytes,
+            remainingBytes: student.bytes
+        });
+
+    } catch (error) {
+        await session.abortTransaction();
+        console.error('Error processing download:', error);
+        res.status(500).json({ message: 'Failed to process download.', error: error.message });
+    } finally {
+        session.endSession();
+    }
+});
+
 // Get teacher's quiz questions with enhanced filtering
 app.get('/teacher/quiz-questions', authenticateTeacherToken, async (req, res) => {
     const teacherId = req.teacher.id;
