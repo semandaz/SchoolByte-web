@@ -665,14 +665,6 @@
                     className: 'career', 
                     defaultLeft: 20, 
                     defaultTop: 360 
-                },
-                { 
-                    id: 'byteNexusChatIcon', 
-                    icon: 'fas fa-comments', 
-                    tooltip: 'ByteNexus Chat', 
-                    className: 'bytenexus', 
-                    defaultLeft: 20, 
-                    defaultTop: 440 
                 }
             ];
 
@@ -723,9 +715,6 @@
                     case 'careerIcon':
                         this.openCareerGuidance();
                         break;
-                    case 'byteNexusChatIcon':
-                        this.openByteNexusChat();
-                        break;
                 }
             });
         }
@@ -748,12 +737,6 @@
             this.addActivity('Opened Counselling Support', 'info');
         }
 
-        // ByteNexus Chat Functionality
-        openByteNexusChat() {
-            this.showWidget('chatModal', 'ByteNexus Chat', 'fas fa-comments');
-            this.addActivity('Opened ByteNexus Chat', 'info');
-        }
-
         createWidgets() {
             // Create overlay
             this.overlay = document.createElement('div');
@@ -769,9 +752,6 @@
 
             // Counselling Modal
             this.createCounsellingModal();
-
-            // ByteNexus Chat Modal
-            this.createChatModal();
         }
 
         createAIBuddyModal() {
@@ -896,38 +876,6 @@
             });
         }
 
-        createChatModal() {
-            const modal = document.createElement('div');
-            modal.className = 'widget-modal';
-            modal.id = 'chatModal';
-            modal.innerHTML = `
-                <div class="widget-header">
-                    <h3><i class="fas fa-comments"></i> ByteNexus Chat</h3>
-                    <button class="close-widget">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="widget-content">
-                    <div class="chat-messages" id="chatMessages">
-                        <div class="message bot">
-                            Hello! Welcome to ByteNexus Chat. How can I help you today?
-                        </div>
-                    </div>
-                    <div class="chat-input-group">
-                        <input type="text" class="chat-input" placeholder="Type your message..." id="chatInput">
-                        <button class="chat-send-btn" id="chatSend">Send</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-
-            modal.querySelector('.close-widget').addEventListener('click', () => this.closeCurrentWidget());
-            modal.querySelector('#chatSend').addEventListener('click', () => this.handleChatMessage());
-            modal.querySelector('#chatInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') this.handleChatMessage();
-            });
-        }
-
         showWidget(widgetId, title, icon) {
             this.closeCurrentWidget();
             this.currentWidget = document.getElementById(widgetId);
@@ -985,30 +933,6 @@
             }
         }
 
-        handleChatMessage() {
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-            if (message) {
-                this.addChatMessage('user', message);
-                this.addActivity(`Sent chat message`, 'info');
-                // Simulate response
-                setTimeout(() => {
-                    this.addChatMessage('bot', "Thanks for your message! In a real implementation, this would connect you with other students or school staff.");
-                }, 1000);
-                input.value = '';
-            }
-        }
-
-        addChatMessage(sender, text) {
-            const messages = document.getElementById('chatMessages');
-            const message = document.createElement('div');
-            message.className = `message ${sender}`;
-            message.textContent = text;
-            messages.appendChild(message);
-            messages.scrollTop = messages.scrollHeight;
-        }
-
-        // ... (rest of the methods for draggable functionality, activity feed, etc. remain the same)
         makeIconsDraggable() {
             this.icons.forEach(icon => {
                 this.makeDraggable(icon);

@@ -20,7 +20,7 @@
         .support-fab {
           position: fixed;
           bottom: 20px;
-          right: 260px;
+          right: 20px;
           width: 60px;
           height: 60px;
           border-radius: 50%;
