@@ -782,7 +782,7 @@
                             </div>
                         </div>
                         <p>Test your knowledge and earn bytes!</p>
-                        <a href="#" class="activity-btn" id="quizBtn"
+                        <a href="quizzesstudentdashboard.html" class="activity-btn" id="quizBtn"
                             >Start Quiz</a
                         >
                     </div>
@@ -800,7 +800,7 @@
                         </div>
                         <p>Learn through fun educational games!</p>
                         <a
-                            href="public/gamesstudentdashboard.html"
+                            href="gamesstudentdashboard.html"
                             class="activity-btn"
                             id="gameBtn"
                             >Play Games</a
@@ -1197,35 +1197,7 @@
                     }
                 }
 
-                // Quiz button click
-                quizBtn.addEventListener("click", function (e) {
-                    e.preventDefault();
-                    addBytes(3, this);
-                    if (window.floatingIcons) {
-                        window.floatingIcons.addActivity(
-                            "Completed a quiz",
-                            "quiz",
-                        );
-                    }
-                    setTimeout(() => {
-                        window.location.href = "quizzesstudentdashboard.html";
-                    }, 800);
-                });
-
-                // Game button click
-                gameBtn.addEventListener("click", function (e) {
-                    e.preventDefault();
-                    addBytes(5, this);
-                    if (window.floatingIcons) {
-                        window.floatingIcons.addActivity(
-                            "Played a game",
-                            "game",
-                        );
-                    }
-                    setTimeout(() => {
-                        window.location.href = "gamesstudentdashboard.html";
-                    }, 800);
-                });
+                // Quiz and game buttons now use direct href links
 
                 // Sign out function
                 signOutBtn.addEventListener("click", function () {

@@ -891,22 +891,85 @@
             this.currentWidget = null;
         }
 
-        handleAIChat() {
+        async handleAIChat() {
             const input = document.querySelector('#aiBuddyModal .ai-input');
             const question = input.value.trim();
-            if (question) {
-                this.addActivity(`Asked AI: ${question}`, 'info');
-                // Simulate AI response
-                setTimeout(() => {
-                    this.showAIChatResponse("I'm your AI Study Buddy! In a real implementation, this would connect to an AI service to provide detailed answers to your questions.");
-                }, 1000);
+            
+            if (!question) return;
+
+            const sendBtn = document.querySelector('#aiBuddyModal .ai-send-btn');
+            const originalBtnText = sendBtn.innerHTML;
+            
+            // Show loading state
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            input.disabled = true;
+
+            this.addActivity(`Asked AI: ${question}`, 'info');
+
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('Not authenticated');
+                }
+
+                const response = await fetch(`${window.location.origin}/api/ai-buddy/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: question })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to get AI response');
+                }
+
+                const data = await response.json();
+                this.showAIChatResponse(data.response || data.fallback);
                 input.value = '';
+
+            } catch (error) {
+                console.error('AI chat error:', error);
+                this.showAIChatResponse(`Sorry, I encountered an error: ${error.message}. Please try again!`);
+            } finally {
+                // Restore button state
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = originalBtnText;
+                input.disabled = false;
+                input.focus();
             }
         }
 
         showAIChatResponse(response) {
-            // In a real implementation, this would display the AI response
-            alert(`AI Response: ${response}`);
+            const modal = document.getElementById('aiBuddyModal');
+            const content = modal.querySelector('.ai-buddy-content');
+            
+            // Create or update chat history container
+            let chatHistory = content.querySelector('.ai-chat-history');
+            if (!chatHistory) {
+                chatHistory = document.createElement('div');
+                chatHistory.className = 'ai-chat-history';
+                chatHistory.style.cssText = 'max-height: 300px; overflow-y: auto; margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px;';
+                
+                const inputGroup = content.querySelector('.ai-input-group');
+                content.insertBefore(chatHistory, inputGroup);
+            }
+
+            // Add AI response to chat
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = 'margin-bottom: 15px; padding: 12px; background: rgba(102, 126, 234, 0.1); border-left: 3px solid #667eea; border-radius: 8px;';
+            messageDiv.innerHTML = `
+                <div style="font-weight: 600; color: #667eea; margin-bottom: 8px; font-size: 0.9rem;">
+                    <i class="fas fa-robot"></i> AI Study Buddy
+                </div>
+                <div style="line-height: 1.6; white-space: pre-wrap;">${response}</div>
+            `;
+            
+            chatHistory.appendChild(messageDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
         }
 
         showCareerDetails(career) {

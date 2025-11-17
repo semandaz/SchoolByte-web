@@ -1811,6 +1811,49 @@ async function callOllamaAI(prompt, systemPrompt = "", options = {}) {
 
 // --- API Endpoints ---
 
+// AI Study Buddy Chat Endpoint
+app.post('/api/ai-buddy/chat', authenticateToken, async (req, res) => {
+    const { message } = req.body;
+
+    if (!message || typeof message !== 'string' || !message.trim()) {
+        return res.status(400).json({ error: 'Message is required' });
+    }
+
+    try {
+        const studentId = req.student.id;
+        const student = await Student.findById(studentId);
+
+        if (!student) {
+            return res.status(404).json({ error: 'Student not found' });
+        }
+
+        const prompt = `You are a friendly AI Study Buddy helping a student named ${student.studentName}. 
+The student is in class ${student.class} and studies these subjects: ${student.subjectsEnrolled.join(', ')}.
+
+Provide helpful, clear, and encouraging responses to their questions. Keep your answers concise but informative.
+
+Student's question: ${message.trim()}`;
+
+        const aiResponse = await callOllamaAI(
+            prompt,
+            "You are a helpful AI Study Buddy for students. Be encouraging, clear, and educational.",
+            { temperature: 0.7, num_predict: 500, timeout: 30000, retries: 1 }
+        );
+
+        res.json({
+            response: aiResponse,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('AI Study Buddy error:', error);
+        res.status(500).json({ 
+            error: 'Failed to get AI response. Please try again.',
+            fallback: "I'm having trouble connecting right now. Please try asking your question again in a moment!"
+        });
+    }
+});
+
 
 // Initialize admin account on startup
 async function initializeAdmin() {
