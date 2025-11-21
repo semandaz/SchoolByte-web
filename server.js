@@ -2834,25 +2834,30 @@ app.post('/student/quizzes/submit', authenticateToken, [
     body('quizSubmissions.*.studentAnswer').notEmpty().withMessage('Student answer is required for each question.')
 ], async (req, res) => {
     const { quizSubmissions } = req.body;
-    // Use req.student.id from the authenticateToken middleware
-    const studentId = req.student.id; 
+    const studentId = req.student.id;
 
+    // Retry logic for write conflicts
+    const maxRetries = 3;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+        const session = await mongoose.startSession();
+        session.startTransaction();
 
-    const session = await mongoose.startSession();
-    session.startTransaction();
+        try {
+            const student = await Student.findById(studentId).session(session);
+            if (!student) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(404).json({ message: 'Student not found.' });
+            }
 
-
-    try {
-        const student = await Student.findById(studentId).session(session);
-        if (!student) {
-            return res.status(404).json({ message: 'Student not found.' });
-        }
-
-
-        const quizSession = await QuizSession.findById(student.currentQuizSessionId).session(session);
-        if (!quizSession) {
-            return res.status(404).json({ message: 'Quiz session not found.' });
-        }
+            const quizSession = await QuizSession.findById(student.currentQuizSessionId).session(session);
+            if (!quizSession) {
+                await session.abortTransaction();
+                session.endSession();
+                return res.status(404).json({ message: 'Quiz session not found.' });
+            }
 
 
         let totalBytesEarned = 0;
@@ -3108,31 +3113,42 @@ app.post('/student/quizzes/submit', authenticateToken, [
 
 
         await session.commitTransaction();
+            session.endSession();
 
+            return res.status(200).json({
+                message: 'Quiz submitted and graded successfully!',
+                totalCorrectQuestions: gradedAnswers.filter(a => a.isCorrect).length,
+                totalAttemptedQuestions: gradedAnswers.length,
+                score: Math.round((gradedAnswers.filter(a => a.isCorrect).length / gradedAnswers.length) * 100),
+                bytesEarned: finalBytesEarned,
+                studentCurrentBytes: student.bytes,
+                gradedAnswers: gradedAnswers,
+                cycleProgress: {
+                    questionsCompleted: quizSession.questionsCompletedCount,
+                    totalCycleQuestions: 180,
+                    cycleComplete: quizSession.completedAt ? true : false
+                }
+            });
 
-        res.status(200).json({
-            message: 'Quiz submitted and graded successfully!',
-            totalCorrectQuestions: gradedAnswers.filter(a => a.isCorrect).length,
-            totalAttemptedQuestions: gradedAnswers.length,
-            score: Math.round((gradedAnswers.filter(a => a.isCorrect).length / gradedAnswers.length) * 100),
-            bytesEarned: finalBytesEarned,
-            studentCurrentBytes: student.bytes,
-            gradedAnswers: gradedAnswers,
-            cycleProgress: {
-                questionsCompleted: quizSession.questionsCompletedCount,
-                totalCycleQuestions: 180,
-                cycleComplete: quizSession.completedAt ? true : false
+        } catch (error) {
+            await session.abortTransaction();
+            session.endSession();
+
+            // Check if it's a write conflict and retry
+            if (error.code === 112 && attempt < maxRetries - 1) {
+                attempt++;
+                console.log(`Write conflict detected, retrying... (attempt ${attempt + 1}/${maxRetries})`);
+                await new Promise(resolve => setTimeout(resolve, 100 * attempt)); // Exponential backoff
+                continue;
             }
-        });
 
-
-    } catch (error) {
-        await session.abortTransaction();
-        console.error('Error submitting quiz:', error);
-        res.status(500).json({ message: 'Failed to submit quiz. Please try again.', error: error.message });
-    } finally {
-        session.endSession();
+            console.error('Error submitting quiz:', error);
+            return res.status(500).json({ message: 'Failed to submit quiz. Please try again.', error: error.message });
+        }
     }
+
+    // If we get here, all retries failed
+    return res.status(500).json({ message: 'Failed to submit quiz after multiple attempts. Please try again.' });
 });
 
 

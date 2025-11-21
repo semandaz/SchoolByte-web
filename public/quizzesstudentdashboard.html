@@ -941,7 +941,7 @@
             const questionType = question.type || question.questionType;
 
             let questionHTML = `
-                <div class="question-container ${currentQuestionIndex === 0 ? 'active' : ''}" id="question${currentQuestionIndex + 1}">
+                <div class="question-container active" id="question${currentQuestionIndex + 1}">
                     <div class="question-number">${currentQuestionIndex + 1}</div>
                     <h3 class="question-text">${question.questionText}</h3>
             `;
@@ -960,8 +960,9 @@
                 case 'multiple-choice-single':
                     question.options.forEach((option, index) => {
                         const isChecked = studentAnswers[currentQuestionIndex] === option._id ? 'checked' : '';
+                        const selectedClass = isChecked ? 'selected' : '';
                         questionHTML += `
-                            <label class="option">
+                            <label class="option ${selectedClass}" onclick="selectSingleOption(this)">
                                 <input type="radio" name="answer" value="${option._id}" ${isChecked} onchange="saveAnswer('${option._id}')">
                                 <span class="option-label">${option.text}</span>
                             </label>
@@ -972,8 +973,9 @@
                 case 'multiple-choice-multi':
                     question.options.forEach((option, index) => {
                         const isChecked = studentAnswers[currentQuestionIndex] && studentAnswers[currentQuestionIndex].includes(option._id) ? 'checked' : '';
+                        const selectedClass = isChecked ? 'selected' : '';
                         questionHTML += `
-                            <label class="option">
+                            <label class="option ${selectedClass}" onclick="toggleMultiOption(this)">
                                 <input type="checkbox" name="answer-${currentQuestionIndex}" value="${option._id}" ${isChecked} onchange="saveMultiAnswer('${option._id}')">
                                 <span class="option-label">${option.text}</span>
                             </label>
@@ -982,11 +984,13 @@
                     break;
 
                 case 'true-false':
-                    const trueChecked = studentAnswers[currentQuestionIndex] === 'true' ? 'checked' : '';
-                    const falseChecked = studentAnswers[currentQuestionIndex] === 'false' ? 'checked' : '';
+                    const trueChecked = studentAnswers[currentQuestionIndex] === 'true';
+                    const falseChecked = studentAnswers[currentQuestionIndex] === 'false';
                     questionHTML += `
-                        <button type="button" class="true-false-btn ${trueChecked ? 'selected' : ''}" onclick="saveAnswer('true')">True</button>
-                        <button type="button" class="true-false-btn ${falseChecked ? 'selected' : ''}" onclick="saveAnswer('false')">False</button>
+                        <div class="true-false-container">
+                            <button type="button" class="true-false-btn ${trueChecked ? 'selected' : ''}" onclick="saveTrueFalse('true', this)">True</button>
+                            <button type="button" class="true-false-btn ${falseChecked ? 'selected' : ''}" onclick="saveTrueFalse('false', this)">False</button>
+                        </div>
                     `;
                     break;
 
@@ -1056,6 +1060,24 @@
             if (questionType === 'matching' || questionType === 'ordering') {
                 setupMatchingQuestion();
             }
+        }
+
+        function selectSingleOption(label) {
+            const allOptions = label.parentElement.querySelectorAll('.option');
+            allOptions.forEach(opt => opt.classList.remove('selected'));
+            label.classList.add('selected');
+        }
+
+        function toggleMultiOption(label) {
+            label.classList.toggle('selected');
+        }
+
+        function saveTrueFalse(value, button) {
+            const container = button.parentElement;
+            const allButtons = container.querySelectorAll('.true-false-btn');
+            allButtons.forEach(btn => btn.classList.remove('selected'));
+            button.classList.add('selected');
+            saveAnswer(value);
         }
 
         function saveAnswer(value) {
