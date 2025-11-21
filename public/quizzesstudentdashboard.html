@@ -6,6 +6,10 @@
     <title>SchoolByte - Quizzes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
     <style>
         /* SchoolByte Brand Colors */
         :root {
@@ -943,7 +947,7 @@
             let questionHTML = `
                 <div class="question-container active" id="question${currentQuestionIndex + 1}">
                     <div class="question-number">${currentQuestionIndex + 1}</div>
-                    <h3 class="question-text">${question.questionText}</h3>
+                    <h3 class="question-text" id="questionText${currentQuestionIndex}">${question.questionText}</h3>
             `;
 
             if (question.instructions) {
@@ -1055,6 +1059,35 @@
 
             questionHTML += '</div></div>';
             questionsContainer.innerHTML = questionHTML;
+            
+            // Render LaTeX in question text and options
+            setTimeout(() => {
+                if (window.renderMathInElement) {
+                    renderMathInElement(document.getElementById(`questionText${currentQuestionIndex}`), {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\[', right: '\\]', display: true},
+                            {left: '\\(', right: '\\)', display: false}
+                        ],
+                        throwOnError: false
+                    });
+                    
+                    // Render in options if they exist
+                    const optionsElements = questionsContainer.querySelectorAll('.option-label');
+                    optionsElements.forEach(elem => {
+                        renderMathInElement(elem, {
+                            delimiters: [
+                                {left: '$$', right: '$$', display: true},
+                                {left: '$', right: '$', display: false},
+                                {left: '\\[', right: '\\]', display: true},
+                                {left: '\\(', right: '\\)', display: false}
+                            ],
+                            throwOnError: false
+                        });
+                    });
+                }
+            }, 100);
             
             // Re-setup drag and drop for matching if it's a matching question
             if (questionType === 'matching' || questionType === 'ordering') {
@@ -1218,13 +1251,28 @@
                     document.getElementById('quizResults').style.display = 'block';
                 } else {
                     const errorData = await response.json();
-                    alert(errorData.message || 'Failed to submit quiz');
-                    window.location.href = 'studentdashboard.html'; // Redirect if submission fails critically
+                    
+                    // If retry is possible, allow user to try again without losing progress
+                    if (errorData.retry) {
+                        const retry = confirm(errorData.message + '\n\nWould you like to try submitting again?');
+                        if (retry) {
+                            submitQuiz(); // Retry submission
+                        } else {
+                            window.location.href = 'studentdashboard.html';
+                        }
+                    } else {
+                        alert(errorData.message || 'Failed to submit quiz');
+                        window.location.href = 'studentdashboard.html';
+                    }
                 }
             } catch (error) {
                 console.error('Error submitting quiz:', error);
-                alert('Network error while submitting quiz. Please try again.');
-                window.location.href = 'studentdashboard.html'; // Redirect on network error
+                const retry = confirm('Network error while submitting quiz.\n\nWould you like to try submitting again?');
+                if (retry) {
+                    submitQuiz(); // Retry submission
+                } else {
+                    window.location.href = 'studentdashboard.html';
+                }
             }
         }
         

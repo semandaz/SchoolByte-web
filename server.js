@@ -3112,7 +3112,8 @@ app.post('/student/quizzes/submit', authenticateToken, [
         await CompletedQuizAttempt.insertMany(completedAttempts, { session });
 
 
-        await session.commitTransaction();
+        // Success - commit transaction
+            await session.commitTransaction();
             session.endSession();
 
             return res.status(200).json({
@@ -3121,7 +3122,7 @@ app.post('/student/quizzes/submit', authenticateToken, [
                 totalAttemptedQuestions: gradedAnswers.length,
                 score: Math.round((gradedAnswers.filter(a => a.isCorrect).length / gradedAnswers.length) * 100),
                 bytesEarned: finalBytesEarned,
-                studentCurrentBytes: student.bytes,
+                studentCurrentBytes: updatedStudent.bytes,
                 gradedAnswers: gradedAnswers,
                 cycleProgress: {
                     questionsCompleted: quizSession.questionsCompletedCount,
@@ -3138,18 +3139,26 @@ app.post('/student/quizzes/submit', authenticateToken, [
             if (error.code === 112 && attempt < maxRetries - 1) {
                 attempt++;
                 console.log(`Write conflict detected, retrying... (attempt ${attempt + 1}/${maxRetries})`);
-                await new Promise(resolve => setTimeout(resolve, 100 * attempt)); // Exponential backoff
+                await new Promise(resolve => setTimeout(resolve, 100 * Math.pow(2, attempt))); // Exponential backoff
                 continue;
             }
 
+            // On failure, DO NOT update student counters or recent quiz IDs
+            // This ensures failed submissions don't count and questions return to pool
             console.error('Error submitting quiz:', error);
-            return res.status(500).json({ message: 'Failed to submit quiz. Please try again.', error: error.message });
+            return res.status(500).json({ 
+                message: 'Failed to submit quiz. Your progress has not been counted. Please try again.', 
+                error: error.message,
+                retry: true 
+            });
         }
     }
 
-    // If we get here, all retries failed
-    return res.status(500).json({ message: 'Failed to submit quiz after multiple attempts. Please try again.' });
-});
+    // If we get here, all retries failed - questions not marked as completed
+    return res.status(500).json({ 
+        message: 'Failed to submit quiz after multiple attempts. Your answers were not saved. Please try again.', 
+        retry: true 
+    });
 
 
 // Helper function to determine question category
