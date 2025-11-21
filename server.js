@@ -27,7 +27,8 @@ const io = new Server(httpServer, {
   cors: {
     origin: '*',
     methods: ['GET', 'POST']
-  }
+  },
+  transports: ['websocket', 'polling']
 });
 
 
@@ -6738,17 +6739,18 @@ if (!teamSchemaUpdate.path('members')) {
 // Start the server
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log(`SchoolByte server running on port ${PORT}`);
-  console.log(`Socket.io chat server ready`);
-  console.log('All quiz system features implemented:');
-  console.log('✓ Enhanced database schemas');
-  console.log('✓ "Fats and Beef" quiz balancing mechanism');
-  console.log('✓ Advanced NLP grading system');
-  console.log('✓ Duplicate detection with hashing');
-  console.log('✓ Weekly tracking for students and teachers');
-  console.log('✓ Comprehensive analytics');
-  console.log('✓ Multiple question types support');
-  console.log('✓ Subject-based curriculum management');
+  console.log(`🚀 SchoolByte server running on port ${PORT}`);
+  console.log(`🌐 Server accessible at: http://0.0.0.0:${PORT}`);
+  console.log(`📡 Socket.io chat server ready`);
+  console.log('✅ All quiz system features implemented:');
+  console.log('  ✓ Enhanced database schemas');
+  console.log('  ✓ "Fats and Beef" quiz balancing mechanism');
+  console.log('  ✓ Advanced NLP grading system');
+  console.log('  ✓ Duplicate detection with hashing');
+  console.log('  ✓ Weekly tracking for students and teachers');
+  console.log('  ✓ Comprehensive analytics');
+  console.log('  ✓ Multiple question types support');
+  console.log('  ✓ Subject-based curriculum management');
 });
 
 
