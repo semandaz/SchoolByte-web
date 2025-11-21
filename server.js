@@ -2114,6 +2114,19 @@ app.post('/register-student', [
         newStudent.currentQuizSessionId = initialQuizSession._id;
         await newStudent.save();
 
+        // Create welcome notification
+        const welcomeNotification = new Notification({
+            student: newStudent._id,
+            type: 'system',
+            title: 'Welcome to SchoolByte! 🎉',
+            message: 'Your learning journey starts here. Explore quizzes, download notes, and earn bytes!',
+            read: false,
+            data: {
+                isWelcome: true
+            }
+        });
+        await welcomeNotification.save();
+
 
         res.status(201).json({
             message: 'Student registered successfully! Please verify your email to log in.',

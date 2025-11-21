@@ -634,37 +634,37 @@
 
         createIcons() {
             const iconsConfig = [
-                { 
-                    id: 'notificationsIcon', 
-                    icon: 'fas fa-bell', 
-                    tooltip: 'Notifications', 
-                    className: 'notifications', 
-                    defaultLeft: 20, 
-                    defaultTop: 120 
+                {
+                    id: 'notificationsIcon',
+                    icon: 'fas fa-bell',
+                    tooltip: 'Notifications',
+                    className: 'notifications',
+                    defaultLeft: 20,
+                    defaultTop: 120
                 },
-                { 
-                    id: 'aiBuddyIcon', 
-                    icon: 'fas fa-robot', 
-                    tooltip: 'AI Study Buddy', 
-                    className: 'ai-buddy', 
-                    defaultLeft: 20, 
-                    defaultTop: 200 
+                {
+                    id: 'aiBuddyIcon',
+                    icon: 'fas fa-robot',
+                    tooltip: 'AI Study Buddy',
+                    className: 'ai-buddy',
+                    defaultLeft: 20,
+                    defaultTop: 200
                 },
-                { 
-                    id: 'counsellingIcon', 
-                    icon: 'fas fa-heart', 
-                    tooltip: 'Counselling', 
-                    className: 'counselling', 
-                    defaultLeft: 20, 
-                    defaultTop: 280 
+                {
+                    id: 'counsellingIcon',
+                    icon: 'fas fa-heart',
+                    tooltip: 'Counselling',
+                    className: 'counselling',
+                    defaultLeft: 20,
+                    defaultTop: 280
                 },
-                { 
-                    id: 'careerIcon', 
-                    icon: 'fas fa-briefcase', 
-                    tooltip: 'Career Guidance', 
-                    className: 'career', 
-                    defaultLeft: 20, 
-                    defaultTop: 360 
+                {
+                    id: 'careerIcon',
+                    icon: 'fas fa-briefcase',
+                    tooltip: 'Career Guidance',
+                    className: 'career',
+                    defaultLeft: 20,
+                    defaultTop: 360
                 }
             ];
 
@@ -894,12 +894,12 @@
         async handleAIChat() {
             const input = document.querySelector('#aiBuddyModal .ai-input');
             const question = input.value.trim();
-            
+
             if (!question) return;
 
             const sendBtn = document.querySelector('#aiBuddyModal .ai-send-btn');
             const originalBtnText = sendBtn.innerHTML;
-            
+
             // Show loading state
             sendBtn.disabled = true;
             sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -946,14 +946,14 @@
         showAIChatResponse(response) {
             const modal = document.getElementById('aiBuddyModal');
             const content = modal.querySelector('.ai-buddy-content');
-            
+
             // Create or update chat history container
             let chatHistory = content.querySelector('.ai-chat-history');
             if (!chatHistory) {
                 chatHistory = document.createElement('div');
                 chatHistory.className = 'ai-chat-history';
                 chatHistory.style.cssText = 'max-height: 300px; overflow-y: auto; margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px;';
-                
+
                 const inputGroup = content.querySelector('.ai-input-group');
                 content.insertBefore(chatHistory, inputGroup);
             }
@@ -967,7 +967,7 @@
                 </div>
                 <div style="line-height: 1.6; white-space: pre-wrap;">${response}</div>
             `;
-            
+
             chatHistory.appendChild(messageDiv);
             chatHistory.scrollTop = chatHistory.scrollHeight;
         }
@@ -975,7 +975,7 @@
         showCareerDetails(career) {
             const careerTitles = {
                 stem: "Science, Technology, Engineering & Mathematics",
-                arts: "Arts & Creative Careers", 
+                arts: "Arts & Creative Careers",
                 business: "Business & Entrepreneurship",
                 health: "Healthcare & Medicine"
             };
@@ -986,7 +986,7 @@
         connectToCounsellor(type) {
             const types = {
                 academic: "Academic Counsellor",
-                emotional: "Emotional Support Specialist", 
+                emotional: "Emotional Support Specialist",
                 crisis: "Crisis Support Team"
             };
             this.addActivity(`Connected to ${types[type]}`, 'info');
@@ -1020,7 +1020,7 @@
                 dragStartTime = Date.now();
                 pos3 = e.clientX;
                 pos4 = e.clientY;
-                
+
                 document.addEventListener('mouseup', closeDragElement);
                 document.addEventListener('mousemove', elementDrag);
                 element.classList.add('dragging');
@@ -1035,7 +1035,7 @@
                 dragStartTime = Date.now();
                 pos3 = touch.clientX;
                 pos4 = touch.clientY;
-                
+
                 document.addEventListener('touchend', closeDragElement);
                 document.addEventListener('touchmove', elementDragTouch, { passive: false });
                 element.classList.add('dragging');
@@ -1121,14 +1121,14 @@
                     bytesCounterRect.bottom += safeZonePadding;
                 }
 
-                const isInViewport = x >= 0 && 
-                                   x <= viewportWidth - elementSize && 
-                                   y >= 0 && 
+                const isInViewport = x >= 0 &&
+                                   x <= viewportWidth - elementSize &&
+                                   y >= 0 &&
                                    y <= viewportHeight - elementSize;
 
-                const isInBytesCounterZone = x >= bytesCounterRect.left && 
-                                          x <= bytesCounterRect.right && 
-                                          y >= bytesCounterRect.top && 
+                const isInBytesCounterZone = x >= bytesCounterRect.left &&
+                                          x <= bytesCounterRect.right &&
+                                          y >= bytesCounterRect.top &&
                                           y <= bytesCounterRect.bottom;
 
                 return isInViewport && !isInBytesCounterZone;
@@ -1171,28 +1171,61 @@
 
             if (this.feed.classList.contains('active')) {
                 this.resetNotificationBadge();
+                this.fetchNotifications(); // Fetch notifications when feed is opened
             }
         }
 
-        addActivity(text, type = 'info') {
-            const now = new Date();
+        async fetchNotifications() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${window.location.origin}/api/notifications`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) throw new Error('Failed to fetch notifications');
+                const data = await response.json();
+                this.activities = data.notifications.map(n => ({
+                    text: n.message,
+                    type: n.type || 'info', // Default to 'info' if type is missing
+                    icon: this.getIconForType(n.type),
+                    time: new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    timestamp: new Date(n.createdAt).getTime(),
+                    id: n._id // Store the notification ID
+                }));
+                this.renderActivities();
+                this.updateNotificationBadge();
+            } catch (error) {
+                console.error('Error fetching notifications:', error);
+                // Optionally display an error message to the user
+            }
+        }
+
+        getIconForType(type) {
             const icons = {
                 'coin': 'fas fa-coins',
                 'quiz': 'fas fa-question-circle',
                 'game': 'fas fa-gamepad',
-                'info': 'fas fa-info-circle'
+                'info': 'fas fa-info-circle',
+                'welcome': 'fas fa-handshake',
+                'activity': 'fas fa-running'
             };
+            return icons[type] || 'fas fa-bell';
+        }
 
+
+        addActivity(text, type = 'info') {
+            const now = new Date();
             const activity = {
                 text,
                 type,
-                icon: icons[type] || 'fas fa-bell',
+                icon: this.getIconForType(type),
                 time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 timestamp: now.getTime()
             };
 
             this.activities.unshift(activity);
-            this.saveActivities();
+            this.saveActivities(); // This will now be a no-op or do nothing related to local storage
             this.renderActivities();
             this.updateNotificationBadge();
         }
@@ -1203,17 +1236,18 @@
 
             if (this.activities.length === 0) {
                 noNotifications.style.display = 'block';
+                feedItems.innerHTML = ''; // Clear existing items if any
                 return;
             }
 
             noNotifications.style.display = 'none';
 
             feedItems.innerHTML = this.activities.map(activity => `
-                <div class="activity-item">
+                <div class="activity-item" data-id="${activity.id || activity.timestamp}">
                     <i class="${activity.icon} activity-icon"></i>
                     <div class="activity-text">${activity.text}</div>
                     <div class="activity-time">${activity.time}</div>
-                    <button class="dismiss-btn" data-timestamp="${activity.timestamp}">
+                    <button class="dismiss-btn" data-timestamp="${activity.timestamp}" data-id="${activity.id || activity.timestamp}">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -1222,24 +1256,51 @@
             feedItems.querySelectorAll('.dismiss-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    this.removeActivity(parseInt(btn.dataset.timestamp));
+                    const notificationId = btn.dataset.id;
+                    this.removeActivity(notificationId);
                 });
             });
         }
 
-        removeActivity(timestamp) {
-            this.activities = this.activities.filter(activity => activity.timestamp !== timestamp);
-            this.saveActivities();
-            this.renderActivities();
-            this.updateNotificationBadge();
+        async removeActivity(id) {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${window.location.origin}/api/notifications/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) throw new Error('Failed to dismiss notification');
+
+                this.activities = this.activities.filter(activity => activity.id !== id);
+                this.saveActivities(); // No-op
+                this.renderActivities();
+                this.updateNotificationBadge();
+            } catch (error) {
+                console.error('Error removing notification:', error);
+                // Optionally display an error message
+            }
         }
 
         clearAllActivities() {
-            this.activities = [];
-            this.saveActivities();
-            this.renderActivities();
-            this.updateNotificationBadge();
-            this.toggleActivityFeed();
+            // Implement backend call to clear all notifications
+            fetch(`${window.location.origin}/api/notifications/clear-all`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to clear all notifications');
+                this.activities = [];
+                this.saveActivities(); // No-op
+                this.renderActivities();
+                this.updateNotificationBadge();
+                this.toggleActivityFeed();
+            })
+            .catch(error => {
+                console.error('Error clearing all notifications:', error);
+                // Optionally display an error message
+            });
         }
 
         updateNotificationBadge() {
@@ -1262,17 +1323,48 @@
         }
 
         saveActivities() {
-            localStorage.setItem('floatingIconsActivities', JSON.stringify(this.activities));
+            // Notifications now come from backend, no need to save locally
         }
 
-        loadActivities() {
-            const saved = localStorage.getItem('floatingIconsActivities');
-            if (saved) {
-                this.activities = JSON.parse(saved);
+        async loadActivities() {
+            // Fetch notifications from the backend API
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${window.location.origin}/api/notifications`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    // Handle specific error codes if necessary, e.g., 401 for unauthorized
+                    if (response.status === 401) {
+                        console.error('Authentication error fetching notifications.');
+                        return;
+                    }
+                    throw new Error('Failed to fetch notifications');
+                }
+                const data = await response.json();
+
+                this.activities = data.notifications.map(n => ({
+                    text: n.message,
+                    type: n.type || 'info',
+                    icon: this.getIconForType(n.type),
+                    time: new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    timestamp: new Date(n.createdAt).getTime(),
+                    id: n._id // Ensure we have the unique ID from the backend
+                }));
+
                 this.renderActivities();
                 this.updateNotificationBadge();
+
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+                // Display a user-friendly error message if needed
+                const feedItems = this.feed.querySelector('#floatingFeedItems');
+                feedItems.innerHTML = '<div class="no-notifications">Could not load notifications. Please try again later.</div>';
             }
         }
+
 
         savePosition(iconId, position) {
             this.positions[iconId] = position;
@@ -1297,9 +1389,11 @@
     // Add welcome activities after initialization
     setTimeout(() => {
         if (window.floatingIcons && window.floatingIcons.activities.length === 0) {
-            window.floatingIcons.addActivity('Welcome to SchoolByte! 🎉', 'info');
-            window.floatingIcons.addActivity('Drag icons to move them around', 'info');
-            window.floatingIcons.addActivity('Click icons to access features', 'info');
+            // These will be added locally if no backend notifications exist on first load
+            // The backend should ideally handle initial welcome notifications.
+            // window.floatingIcons.addActivity('Welcome to SchoolByte! 🎉', 'info');
+            // window.floatingIcons.addActivity('Drag icons to move them around', 'info');
+            // window.floatingIcons.addActivity('Click icons to access features', 'info');
         }
     }, 2000);
 
