@@ -3,29 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ByteNexus Chat - SchoolByte</title>
+    <title>SchoolByte Chat - ByteNexus</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
 
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --primary-light: #8b5cf6;
-            --secondary: #94a3b8;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --light: #f8fafc;
-            --dark: #1e293b;
-            --gray: #64748b;
-            --gray-light: #f1f5f9;
-            --white: #ffffff;
+            /* SchoolByte Brand Colors */
+            --color-brand-primary: #1a2a6c;
+            --color-brand-secondary: #b21f1f;
+            --color-brand-gold: #ffd700;
+            --color-brand-orange: #ffa500;
+
+            /* Neutral Palette */
+            --color-neutral-white: #ffffff;
+            --color-neutral-lightest: #f0f4f8;
+            --color-neutral-light: #d1d5db;
+            --color-neutral-medium: #9ca3af;
+            --color-neutral-dark: #4b5563;
+            --color-neutral-darkest: #333333;
+
+            /* Semantic Colors */
+            --color-error-red: #e74c3c;
+            --color-error-red-dark: #c0392b;
+            --color-success-green: #2ecc71;
+            --color-info-blue: #3498db;
+
+            /* Background Gradients */
+            --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            --gradient-background-secondary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
+
+            /* Text Gradients */
+            --gradient-text-gold: linear-gradient(to right, var(--color-brand-gold), var(--color-neutral-white));
+
+            /* Button Gradients */
+            --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
+            --gradient-button-active-hover: linear-gradient(to right, #ffc800, #ff8c00);
+
+            /* Transparent Overlays */
+            --overlay-light: rgba(255, 255, 255, 0.1);
+            --overlay-medium: rgba(0, 0, 0, 0.2);
+            --overlay-dark: rgba(30, 30, 60, 0.95);
+
+            /* Chat-specific variables */
+            --primary: var(--color-brand-primary);
+            --primary-dark: #0d1a4d;
+            --primary-light: #2a3a8c;
+            --secondary: var(--color-neutral-medium);
+            --success: var(--color-success-green);
+            --warning: var(--color-brand-orange);
+            --danger: var(--color-error-red);
+            --light: var(--color-neutral-lightest);
+            --dark: var(--color-neutral-darkest);
+            --gray: var(--color-neutral-medium);
+            --gray-light: var(--color-neutral-lightest);
+            --white: var(--color-neutral-white);
             --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             --radius: 16px;
@@ -38,15 +76,15 @@
 
         [data-theme="dark"] {
             --primary: #818cf8;
-            --primary-dark: #6366f1;
+            --primary-dark: var(--color-brand-primary);
             --primary-light: #a5b4fc;
-            --secondary: #94a3b8;
-            --success: #34d399;
-            --warning: #fbbf24;
-            --danger: #f87171;
+            --secondary: var(--color-neutral-medium);
+            --success: var(--color-success-green);
+            --warning: var(--color-brand-orange);
+            --danger: var(--color-error-red);
             --light: #1e293b;
             --dark: #f1f5f9;
-            --gray: #94a3b8;
+            --gray: var(--color-neutral-medium);
             --gray-light: #334155;
             --white: #0f172a;
             --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
@@ -56,7 +94,7 @@
         }
 
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--gradient-background-secondary);
             color: var(--dark);
             height: 100vh;
             display: flex;
@@ -64,6 +102,7 @@
             align-items: center;
             padding: 20px;
             transition: var(--transition);
+            font-family: 'Inter', sans-serif;
         }
 
         body::before {
@@ -73,7 +112,7 @@
             left: 0;
             right: 0;
             height: 100%;
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            background: linear-gradient(135deg, rgba(26, 42, 108, 0.1) 0%, rgba(178, 31, 31, 0.1) 100%);
             z-index: -1;
         }
 
@@ -144,9 +183,12 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            font-weight: 700;
+            font-weight: 900;
             font-size: 22px;
-            color: var(--primary);
+            background: var(--gradient-background-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
             transition: var(--transition);
             margin-bottom: 15px;
         }
@@ -173,7 +215,7 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            background: var(--gradient-background-primary);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -187,6 +229,7 @@
         .user-info h3 {
             font-size: 16px;
             margin-bottom: 2px;
+            font-weight: 600;
         }
 
         .user-info p {
@@ -223,7 +266,7 @@
         .search-box:focus {
             border-color: var(--primary);
             background-color: var(--white);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
         }
 
         .tabs {
@@ -284,7 +327,7 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+            background: linear-gradient(90deg, transparent, rgba(26, 42, 108, 0.1), transparent);
             transition: var(--transition);
         }
 
@@ -299,7 +342,7 @@
         }
 
         .contact.active {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            background: linear-gradient(135deg, rgba(26, 42, 108, 0.1), rgba(178, 31, 31, 0.1));
             border-left: 3px solid var(--primary);
         }
 
@@ -315,7 +358,7 @@
             margin-right: 12px;
             box-shadow: var(--shadow);
             transition: var(--transition);
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            background: var(--gradient-background-primary);
             object-fit: cover;
             font-size: 18px;
             position: relative;
@@ -368,9 +411,10 @@
             padding: 2px 8px;
             border-radius: 10px;
             font-size: 11px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
             margin-top: 4px;
+            font-weight: 600;
         }
 
         .chat-area {
@@ -402,7 +446,7 @@
             width: 45px;
             height: 45px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            background: var(--gradient-background-primary);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -481,7 +525,7 @@
 
         .message.sent .message-avatar {
             margin-left: 12px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            background: var(--gradient-background-primary);
         }
 
         .message-bubble {
@@ -500,9 +544,10 @@
         }
 
         .message.sent .message-bubble {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
             border-top-right-radius: 4px;
+            font-weight: 600;
         }
 
         .message-content {
@@ -571,7 +616,7 @@
 
         .message-input:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
             background-color: var(--white);
         }
 
@@ -580,8 +625,8 @@
         }
 
         .send-button {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
             border: none;
             width: 50px;
             height: 50px;
@@ -594,11 +639,13 @@
             transition: var(--transition);
             box-shadow: var(--shadow);
             margin-bottom: 5px;
+            font-weight: 600;
         }
 
         .send-button:hover {
             transform: translateY(-2px);
             box-shadow: var(--shadow-lg);
+            background: var(--gradient-button-active-hover);
         }
 
         .send-button:active {
@@ -619,12 +666,10 @@
 
         .empty-state i {
             font-size: 80px;
-            color: var(--primary);
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            background: var(--gradient-background-primary);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 5px 15px rgba(99, 102, 241, 0.3));
+            filter: drop-shadow(0 5px 15px rgba(26, 42, 108, 0.3));
         }
 
         .empty-state h3 {
@@ -632,7 +677,7 @@
             font-weight: 700;
             margin-bottom: 15px;
             color: var(--dark);
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            background: var(--gradient-background-primary);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -739,8 +784,8 @@
         .create-group-btn {
             width: 100%;
             padding: 12px 20px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
             border: none;
             border-radius: 20px;
             font-size: 14px;
@@ -757,6 +802,7 @@
         .create-group-btn:hover {
             transform: translateY(-2px);
             box-shadow: var(--shadow-lg);
+            background: var(--gradient-button-active-hover);
         }
 
         .modal-overlay {
@@ -804,7 +850,7 @@
         .modal-header h2 {
             font-size: 24px;
             font-weight: 700;
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            background: var(--gradient-background-primary);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -852,7 +898,7 @@
         .form-group textarea:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
             background: var(--white);
         }
 
@@ -939,14 +985,15 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
             box-shadow: var(--shadow);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: var(--shadow-lg);
+            background: var(--gradient-button-active-hover);
         }
 
         .btn-secondary {
@@ -963,8 +1010,8 @@
             display: inline-block;
             margin-left: 10px;
             padding: 4px 12px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
             border-radius: 12px;
             font-size: 12px;
             font-weight: 600;
@@ -1020,7 +1067,7 @@
         }
 
         .message-reply {
-            background-color: rgba(99, 102, 241, 0.1);
+            background-color: rgba(26, 42, 108, 0.1);
             border-left: 3px solid var(--primary);
             padding: 8px 12px;
             margin-bottom: 8px;
@@ -1139,19 +1186,53 @@
         }
 
         .action-btn.copy-btn {
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
         }
 
         .action-btn.edit-btn {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
         }
 
         .action-btn.reply-btn {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            background: var(--gradient-background-primary);
+            color: white;
+        }
+
+        /* Floating Particles */
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--color-brand-gold);
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: float-up linear infinite;
+            filter: drop-shadow(0 0 5px var(--color-brand-gold));
+        }
+
+        @keyframes float-up {
+            to {
+                transform: translateY(-100vh);
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Floating Particles -->
+    <div class="floating-particles" id="floatingParticles"></div>
+
     <div class="theme-toggle">
         <div class="toggle-btn" id="themeToggle">
             <i class="fas fa-moon"></i>
@@ -1163,7 +1244,7 @@
             <div class="sidebar-header">
                 <div class="logo">
                     <i class="fas fa-comments"></i>
-                    <span>ByteNexus</span>
+                    <span>SchoolByte Chat</span>
                 </div>
                 <div class="user-profile" id="currentUserProfile">
                     <div class="avatar" id="currentUserAvatar">...</div>
@@ -1203,7 +1284,7 @@
                     <i class="fas fa-bars"></i>
                 </div>
                 <i class="fas fa-comments"></i>
-                <h3>Welcome to ByteNexus Chat</h3>
+                <h3>Welcome to SchoolByte Chat</h3>
                 <p>Select a conversation from the sidebar to start chatting with your classmates.</p>
             </div>
 
@@ -1305,6 +1386,41 @@
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script>
+        // Create floating particles
+        function createParticles() {
+            const floatingParticles = document.getElementById('floatingParticles');
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+
+                const posX = Math.random() * 100;
+                const posY = Math.random() * 100 + 100;
+
+                const size = Math.random() * 5 + 5;
+                const duration = Math.random() * 10 + 10;
+                const delay = Math.random() * 5;
+
+                particle.style.left = `${posX}vw`;
+                particle.style.top = `${posY}vh`;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.animationDuration = `${duration}s`;
+                particle.style.animationDelay = `${delay}s`;
+
+                floatingParticles.appendChild(particle);
+            }
+        }
+
+        // Initialize particles on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+        });
+
+        // Rest of the JavaScript code remains exactly the same as in the original file
+        // ... (all the JavaScript code from the original file goes here)
+        // Since the JavaScript is very long, I'm including a placeholder comment
+        // In practice, you would copy the entire JavaScript section from the original file here
+
         const API_URL = window.location.origin;
         let token = localStorage.getItem('token');
         let currentUser = null;
@@ -1356,7 +1472,7 @@
             const contactsList = document.getElementById('contactsList');
 
             if (!token) {
-                contactsList.innerHTML = '<div class="loading" style="color: #ef4444;">❌ Please log in to SchoolByte first<br><br><a href="studentlogin.html" style="color: #6366f1; text-decoration: underline;">Go to Login</a></div>';
+                contactsList.innerHTML = '<div class="loading" style="color: var(--danger);">❌ Please log in to SchoolByte first<br><br><a href="studentlogin.html" style="color: var(--primary); text-decoration: underline;">Go to Login</a></div>';
                 console.error('No authentication token found');
                 return;
             }
@@ -1368,7 +1484,7 @@
                 });
 
                 if (!response.ok) {
-                    contactsList.innerHTML = '<div class="loading" style="color: #ef4444;">❌ Authentication failed<br><br><a href="studentlogin.html" style="color: #6366f1; text-decoration: underline;">Please log in again</a></div>';
+                    contactsList.innerHTML = '<div class="loading" style="color: var(--danger);">❌ Authentication failed<br><br><a href="studentlogin.html" style="color: var(--primary); text-decoration: underline;">Please log in again</a></div>';
                     return;
                 }
 
@@ -1392,7 +1508,7 @@
                 loadContacts();
             } catch (error) {
                 console.error('ByteNexus initialization error:', error);
-                contactsList.innerHTML = '<div class="loading" style="color: #ef4444;">❌ Failed to initialize chat<br><br><a href="studentlogin.html" style="color: #6366f1; text-decoration: underline;">Back to Login</a></div>';
+                contactsList.innerHTML = '<div class="loading" style="color: var(--danger);">❌ Failed to initialize chat<br><br><a href="studentlogin.html" style="color: var(--primary); text-decoration: underline;">Back to Login</a></div>';
             }
         }
 
@@ -1567,7 +1683,7 @@
                 contactsList.innerHTML = conversations.map(conv => {
                     const initials = conv.contactName.split(' ').map(n => n[0]).join('').toUpperCase();
                     const timeAgo = formatTimeAgo(new Date(conv.lastMessageTime));
-                    const unreadBadge = conv.unreadCount > 0 ? `<span class="category-badge" style="background: linear-gradient(135deg, #ef4444, #dc2626);">${conv.unreadCount} new</span>` : '';
+                    const unreadBadge = conv.unreadCount > 0 ? `<span class="category-badge" style="background: linear-gradient(135deg, var(--danger), var(--color-error-red-dark));">${conv.unreadCount} new</span>` : '';
 
                     // Determine online status for the contact
                     const isOnline = authenticatedSockets.has(conv.contact.id);
@@ -1731,13 +1847,13 @@
                 const initials = group.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
                 return `
                     <div class="contact" data-group='${JSON.stringify(group)}'>
-                        <div class="contact-avatar" style="background: linear-gradient(135deg, #f59e0b, #ec4899);">
+                        <div class="contact-avatar" style="background: var(--gradient-button-active);">
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="contact-info">
                             <div class="contact-name">${group.name}</div>
                             <div class="contact-details">${group.description || 'No description'}</div>
-                            <span class="category-badge" style="background: linear-gradient(135deg, #f59e0b, #ec4899);">
+                            <span class="category-badge" style="background: var(--gradient-button-active);">
                                 ${group.is_public ? 'Public Group' : 'Private Group'}
                             </span>
                         </div>
@@ -1781,7 +1897,7 @@
                 const teamsHTML = teams.map(team => {
                     return `
                         <div class="contact" data-team='${JSON.stringify(team)}'>
-                            <div class="contact-avatar" style="background: linear-gradient(135deg, #10b981, #059669);">
+                            <div class="contact-avatar" style="background: var(--gradient-background-primary);">
                                 <i class="fas fa-user-friends"></i>
                             </div>
                             <div class="contact-info">
@@ -1912,7 +2028,7 @@
             document.getElementById('chatName').textContent = group.name;
             document.getElementById('chatDetails').textContent = group.description || 'Discussion Group';
             document.getElementById('chatAvatar').innerHTML = '<i class="fas fa-users"></i>';
-            document.getElementById('chatAvatar').style.background = 'linear-gradient(135deg, #f59e0b, #ec4899)';
+            document.getElementById('chatAvatar').style.background = 'var(--gradient-button-active)';
 
             socket.emit('join_group_room', { groupId: group.id });
 
@@ -1997,7 +2113,7 @@
 
                 // Sanitize and allow specific HTML tags for links
                 const sanitizedContent = msg.content.replace(/<a href="([^"]+)"[^>]*>(.*?)<\/a>/g,
-                    '<a href="$1" style="color: #6366f1; text-decoration: underline; cursor: pointer;" target="_blank" rel="noopener noreferrer">$2</a>');
+                    '<a href="$1" style="color: var(--primary); text-decoration: underline; cursor: pointer;" target="_blank" rel="noopener noreferrer">$2</a>');
 
                 let replyHTML = '';
                 if (msg.replyTo) {
@@ -2060,7 +2176,7 @@
 
         function getMessageStatusIcon(msg) {
             if (msg.status === 'failed') {
-                return '<i class="fas fa-exclamation-circle" style="color: #ef4444;" title="Failed to send. Tap to retry"></i>';
+                return '<i class="fas fa-exclamation-circle" style="color: var(--danger);" title="Failed to send. Tap to retry"></i>';
             }
 
             if (!msg._id && msg.status === 'pending') {
@@ -2068,7 +2184,7 @@
             }
 
             if (msg.read || msg.status === 'read') {
-                return '<i class="fas fa-check-double" style="color: #10b981;" title="Read"></i>';
+                return '<i class="fas fa-check-double" style="color: var(--success);" title="Read"></i>';
             }
 
             if (msg.delivered || msg.status === 'delivered') {
@@ -2261,7 +2377,7 @@
                 const senderInitials = senderName.split(' ').map(n => n[0]).join('').toUpperCase();
                 const timestamp = new Date(msg.created_at || msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-                const boostBadge = msg.is_boosted ? `<span style="color: #f59e0b; font-size: 12px; margin-left: 5px;"><i class="fas fa-fire"></i> Boosted (${msg.boost_cost} bytes)</span>` : '';
+                const boostBadge = msg.is_boosted ? `<span style="color: var(--warning); font-size: 12px; margin-left: 5px;"><i class="fas fa-fire"></i> Boosted (${msg.boost_cost} bytes)</span>` : '';
 
                 let replyHTML = '';
                 if (msg.replyTo) {
@@ -2280,7 +2396,7 @@
                          ontouchmove="handleTouchMove(event, '${msg.id}')"
                          ontouchend="handleTouchEnd(event, '${msg.id}')"
                          ondblclick="handleDoubleTap('${msg.id}')">
-                        <div class="message-avatar" style="background: ${isSent ? 'linear-gradient(135deg, var(--primary), var(--primary-light))' : 'linear-gradient(135deg, #17a2b8, var(--primary-light))'}">${senderInitials}</div>
+                        <div class="message-avatar" style="background: ${isSent ? 'var(--gradient-background-primary)' : 'linear-gradient(135deg, #17a2b8, var(--primary-light))'}">${senderInitials}</div>
                         <div class="message-bubble">
                             ${!isSent ? `<div style="font-size: 12px; font-weight: 600; margin-bottom: 4px; color: var(--primary);">${senderName}</div>` : ''}
                             ${replyHTML}

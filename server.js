@@ -3658,10 +3658,19 @@ app.post('/student/download-workfile/:workFileId', authenticateToken, async (req
         ).session(session);
 
         await session.commitTransaction();
+        let finalUrl = workFile.fileUrl;
+        const doublePathRegex = /(schoolbyte\/workfiles\/[^\/]+\/)schoolbyte\/workfiles\/[^\/]+\//;
+        if (doublePathRegex.test(finalUrl)) {
+            finalUrl = finalUrl.replace(doublePathRegex, '$1');
+        }
+        if (finalUrl.includes('/upload/') && !finalUrl.includes('/fl_attachment/')) {
+            finalUrl = finalUrl.replace('/upload/', '/upload/fl_attachment/');
+        }
 
         res.status(200).json({
+            success: true,
             message: 'Download authorized successfully.',
-            downloadUrl: workFile.fileUrl,
+            downloadUrl: finalUrl, // Use the fixed URL
             bytesDeducted: workFile.costBytes,
             remainingBytes: student.bytes
         });
@@ -3679,6 +3688,7 @@ app.post('/student/download-workfile/:workFileId', authenticateToken, async (req
 app.post('/api/workfiles/:workFileId/download', authenticateToken, async (req, res) => {
     const { workFileId } = req.params;
     const studentId = req.student.id;
+    const CLOUD_NAME = "dq5mdy0yq";
 
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -3705,9 +3715,20 @@ app.post('/api/workfiles/:workFileId/download', authenticateToken, async (req, r
             });
         }
 
+        // Custom Filename Generation
+        const teacherID = workFile.uploadedBy; 
+        const teacherName = `Teacher_${teacherID.toString().substring(0, 4)}`; 
+        const downloadDate = new Date().toISOString().split('T')[0];
+        const baseName = `${workFile.subject}_${workFile.title}_${teacherName}_${downloadDate}`;
+        const sanitizedFilename = baseName.replace(/[^a-zA-Z0-9_\-]/g, '_'); 
+        const finalFilename = `${sanitizedFilename}.pdf`;
+        const encodedFilename = encodeURIComponent(finalFilename);
+
+        // Deduct bytes
         student.bytes -= workFile.costBytes;
         await student.save({ session });
 
+        // Increment download count
         await WorkFile.updateOne(
             { _id: workFileId },
             { $inc: { downloadCount: 1 } }
@@ -3715,10 +3736,21 @@ app.post('/api/workfiles/:workFileId/download', authenticateToken, async (req, r
 
         await session.commitTransaction();
 
+        // Final URL Construction (Custom Filename Fix)
+        let publicIdPath = workFile.fileUrl.split('/upload/')[1]; 
+        const publicIdWithoutVersion = publicIdPath.replace(/^v\d+\//, ''); 
+        const publicIdWithExtension = publicIdWithoutVersion; 
+
+        // We use fl_attachment:filename and the Public ID that still contains the .pdf extension.
+        const downloadUrl = `https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/fl_attachment:${encodedFilename}/${publicIdWithExtension}`;
+
+        console.log(`Final Custom Download URL: ${downloadUrl}`);
+
+        // Send the URL back to the frontend
         res.status(200).json({
             success: true,
-            message: 'Download authorized successfully.',
-            downloadUrl: workFile.fileUrl,
+            message: 'File access granted. Redirecting for download.',
+            downloadUrl: downloadUrl,
             bytesDeducted: workFile.costBytes,
             remainingBytes: student.bytes
         });
@@ -3731,7 +3763,6 @@ app.post('/api/workfiles/:workFileId/download', authenticateToken, async (req, r
         session.endSession();
     }
 });
-
 // Get teacher's quiz questions with enhanced filtering
 app.get('/teacher/quiz-questions', authenticateTeacherToken, async (req, res) => {
     const teacherId = req.teacher.id;
@@ -4007,7 +4038,6 @@ app.post(
                     {
                         resource_type: 'raw',
                         public_id: workFilePublicId,
-                        folder: `schoolbyte/workfiles/${teacherId}`,
                         format: 'pdf',
                     },
                     (error, result) => {
