@@ -16,15 +16,14 @@ ignorePorts = false
 
 [[ports]]
 localPort = 3000
-externalPort = 3000
 
 [[ports]]
 localPort = 5000
-externalPort = 80
 
 [[ports]]
-localPort = 34219
+localPort = 11434
 externalPort = 3002
+exposeLocalhost = true
 
 [workflows]
 runButton = "Project"
