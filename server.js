@@ -6977,3 +6977,5 @@ app.post('/student/activities/submit', authenticateToken, [
         session.endSession();
     }
 });
+});
+

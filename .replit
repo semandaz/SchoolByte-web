@@ -24,6 +24,8 @@ externalPort = 80
 
 [[ports]]
 localPort = 11434
+externalPort = 3001
+exposeLocalhost = true
 
 [[ports]]
 localPort = 34219
