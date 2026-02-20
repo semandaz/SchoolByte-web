@@ -1,4 +1,4 @@
-﻿SchoolByte Quiz System: Comprehensive Design, Logic, and Feature Report
+SchoolByte Quiz System: Comprehensive Design, Logic, and Feature Report
 This document provides an exhaustive and granular breakdown of the SchoolByte quiz system, detailing its proposed database schemas, intricate backend logic, dynamic frontend interactions, and crucial operational considerations. The design principles are centered on delivering a fair, engaging, highly personalized, and challenging learning environment that ensures broad curriculum exposure, prevents content manipulation, fosters continuous content growth, and is built for future scalability.
 I. Core Database Schemas: Detailed Breakdown & Enhancements
 The foundation of the quiz system relies on a meticulously structured set of MongoDB/NoSQL collections, each serving a distinct purpose in storing and managing student, subject, quiz, and session data. We will also introduce enhancements for efficiency and expanded functionality.
