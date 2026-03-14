@@ -29,15 +29,6 @@ exposeLocalhost = true
 runButton = "Project"
 
 [[workflows.workflow]]
-name = "Run Server"
-author = 44223939
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "node server.js"
-
-[[workflows.workflow]]
 name = "Project"
 mode = "parallel"
 author = "agent"
@@ -60,7 +51,6 @@ outputType = "webview"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node server.js"
-waitForPort = 5000
 
 [[workflows.workflow]]
 name = "Ollama Service"

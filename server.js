@@ -38,9 +38,17 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(helmet());
 app.use(morgan('dev'));
+
+// Start listening immediately so Replit detects the port before routes finish loading
+const PORT = process.env.PORT || 5000;
+httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 SchoolByte server running on port ${PORT}`);
+  console.log(`🌐 Server accessible at: http://0.0.0.0:${PORT}`);
+  console.log('📡 Socket.io chat server ready');
+});
 
 
 // --- MongoDB Connection ---
@@ -6433,21 +6441,3 @@ app.post('/student/activities/submit', authenticateToken, [
         session.endSession();
     }
 });
-
-// Start the server (must be after all route definitions)
-const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 SchoolByte server running on port ${PORT}`);
-  console.log(`🌐 Server accessible at: http://0.0.0.0:${PORT}`);
-  console.log(`📡 Socket.io chat server ready`);
-  console.log('✅ All quiz system features implemented:');
-  console.log('  ✓ Enhanced database schemas');
-  console.log('  ✓ "Fats and Beef" quiz balancing mechanism');
-  console.log('  ✓ Advanced NLP grading system');
-  console.log('  ✓ Duplicate detection with hashing');
-  console.log('  ✓ Weekly tracking for students and teachers');
-  console.log('  ✓ Comprehensive analytics');
-  console.log('  ✓ Multiple question types support');
-  console.log('  ✓ Subject-based curriculum management');
-});
-
