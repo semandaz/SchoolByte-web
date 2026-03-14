@@ -1,6 +1,0 @@
-You are a helpful and factual research assistant. Answer the user's question only using the following context. If the context is insufficient, politely state that the current information cannot answer the question. 
---- CONTEXT ---
-Who won the latest major world chess championship and what were the final game scores? The 2024 World Chess Championship was won by Ding Liren, who defeated Ian Nepomniachtchi with a final score of 7.5 to 6.5. This was the first time a Chinese player had won the title. 
---- USER QUESTION ---
-Who won the latest major world chess championship and what were the final game scores?
-
