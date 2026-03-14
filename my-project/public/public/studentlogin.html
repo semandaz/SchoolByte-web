@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SchoolByte - Student Login</title>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            /* Global CSS Variables for Unified Color Palette */
+            :root {
+                /* Brand Colors */
+                --color-brand-primary: #1a2a6c; /* Dark Blue - Main brand color */
+                --color-brand-secondary: #b21f1f; /* Deep Red/Maroon - Secondary brand color, accents */
+                --color-brand-gold: #ffd700; /* Gold - Accent for special elements, highlights */
+                --color-brand-orange: #ffa500; /* Orange - Used in gradients with gold */
+
+                /* Neutral Palette */
+                --color-neutral-white: #ffffff;
+                --color-neutral-lightest: #f0f4f8; /* Very light gray/blue, good for subtle backgrounds */
+                --color-neutral-light: #d1d5db; /* Light gray for disabled elements, input borders */
+                --color-neutral-medium: #9ca3af; /* Medium gray for placeholders, disabled radio accents */
+                --color-neutral-dark: #4b5563; /* Dark gray for most body text, labels */
+                --color-neutral-darkest: #333333; /* Very dark gray for prominent text */
+
+                /* Semantic Colors */
+                --color-error-red: #e74c3c; /* Standard error color */
+                --color-error-red-dark: #c0392b; /* Darker error red for hover states */
+                --color-success-green: #2ecc71; /* Success color */
+                --color-info-blue: #3498db; /* Info color */
+
+                /* Background Gradients */
+                --gradient-background-primary: linear-gradient(
+                    135deg,
+                    var(--color-brand-primary),
+                    var(--color-brand-secondary)
+                );
+                --gradient-background-secondary: linear-gradient(
+                    135deg,
+                    var(--color-brand-primary),
+                    var(--color-brand-secondary),
+                    var(--color-brand-primary)
+                );
+
+                /* Text Gradients */
+                --gradient-text-gold: linear-gradient(
+                    to right,
+                    var(--color-brand-gold),
+                    var(--color-neutral-white)
+                );
+
+                /* Button Gradients */
+                --gradient-button-active: linear-gradient(
+                    to right,
+                    var(--color-brand-gold),
+                    var(--color-brand-orange)
+                );
+                --gradient-button-active-hover: linear-gradient(
+                    to right,
+                    #ffc800,
+                    #ff8c00
+                );
+
+                /* Transparent Overlays */
+                --overlay-light: rgba(255, 255, 255, 0.1);
+                --overlay-medium: rgba(0, 0, 0, 0.2);
+                --overlay-dark: rgba(30, 30, 60, 0.95);
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                font-family: "Inter", sans-serif;
+            }
+
+            body {
+                background: var(--gradient-background-secondary);
+                min-height: 100vh;
+                color: var(--color-neutral-white);
+                overflow-x: hidden;
+            }
+
+            /* Floating Books Animation */
+            .floating-books {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 0;
+            }
+
+            .book {
+                position: absolute;
+                font-size: 2rem;
+                color: var(--color-brand-gold);
+                opacity: 0.7;
+                animation: float linear infinite;
+            }
+
+            @keyframes float {
+                0% {
+                    transform: translateY(100vh) rotate(0deg);
+                    opacity: 0;
+                }
+                10% {
+                    opacity: 0.7;
+                }
+                100% {
+                    transform: translateY(-100px) rotate(360deg);
+                    opacity: 0;
+                }
+            }
+
+            /* Main Content */
+            .main-content {
+                position: relative;
+                z-index: 10;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 2rem;
+                text-align: center;
+            }
+
+            /* Logo */
+            .logo {
+                font-size: 4rem;
+                font-weight: 900;
+                background: var(--gradient-text-gold);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                text-decoration: none;
+                margin-bottom: 1rem;
+                display: inline-block;
+            }
+
+            /* Avatar */
+            .avatar {
+                width: 100px;
+                height: 100px;
+                border-radius: 50%;
+                background: var(--gradient-background-primary);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--color-neutral-white);
+                font-size: 3rem;
+                margin: 0 auto 1.5rem;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+                transition: transform 0.3s ease;
+            }
+
+            .avatar:hover {
+                transform: scale(1.05) rotate(5deg);
+            }
+
+            /* Form Elements */
+            .form-group {
+                margin-bottom: 1.5rem;
+                text-align: left;
+            }
+
+            label {
+                display: block;
+                margin-bottom: 0.5rem;
+                font-weight: 600;
+                color: var(--color-neutral-white);
+            }
+
+            input[type="text"],
+            input[type="email"],
+            input[type="password"],
+            select {
+                width: 100%;
+                padding: 1rem;
+                border: 2px solid var(--overlay-light);
+                border-radius: 10px;
+                font-size: 1rem;
+                background-color: var(--overlay-light);
+                color: var(--color-neutral-white);
+                transition: all 0.3s;
+            }
+
+            select option {
+                background-color: var(--color-brand-primary);
+                color: var(--color-neutral-white);
+            }
+
+            input:focus,
+            select:focus {
+                border-color: var(--color-brand-gold);
+                box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+                outline: none;
+            }
+
+            input::placeholder {
+                color: var(--color-neutral-light);
+            }
+
+            /* Login Button */
+            .login-btn {
+                display: inline-block;
+                background: var(--gradient-button-active);
+                color: var(--color-neutral-darkest);
+                padding: 1rem 2rem;
+                border-radius: 50px;
+                text-decoration: none;
+                font-weight: 600;
+                transition: all 0.3s;
+                margin-top: 1rem;
+                border: none;
+                cursor: pointer;
+                width: 100%;
+                font-size: 1.1rem;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            }
+
+            .login-btn:hover {
+                background: var(--gradient-button-active-hover);
+                transform: translateY(-3px);
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            }
+
+            .login-btn:disabled {
+                background: var(--color-neutral-medium);
+                color: var(--color-neutral-dark);
+                cursor: not-allowed;
+                transform: none;
+                box-shadow: none;
+            }
+
+            /* Error Message */
+            .error-message {
+                color: var(--color-brand-gold);
+                text-align: center;
+                margin-top: 1rem;
+                min-height: 1.5rem;
+                font-weight: 500;
+                text-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+            }
+
+            /* Moving Gradient Background */
+            .moving-gradient {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(
+                    135deg,
+                    var(--color-brand-primary),
+                    var(--color-brand-secondary),
+                    var(--color-brand-primary)
+                );
+                background-size: 400% 400%;
+                animation: gradient-shift 15s ease infinite;
+                z-index: -1;
+            }
+
+            @keyframes gradient-shift {
+                0% {
+                    background-position: 0% 50%;
+                }
+                50% {
+                    background-position: 100% 50%;
+                }
+                100% {
+                    background-position: 0% 50%;
+                }
+            }
+
+            /* Password toggle */
+            .password-toggle {
+                position: absolute;
+                right: 15px;
+                top: 40px;
+                cursor: pointer;
+                color: var(--color-neutral-light);
+                transition: color 0.3s ease;
+            }
+
+            .password-toggle:hover {
+                color: var(--color-brand-gold);
+            }
+
+            /* Options */
+            .options {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin: 1.5rem 0;
+            }
+
+            .remember-me {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .remember-me input {
+                accent-color: var(--color-brand-gold);
+            }
+
+            .forgot-password a {
+                color: var(--color-brand-gold);
+                text-decoration: none;
+            }
+
+            .forgot-password a:hover {
+                text-decoration: underline;
+            }
+
+            /* Divider */
+            .divider {
+                display: flex;
+                align-items: center;
+                margin: 1.5rem 0;
+                color: var(--color-neutral-light);
+            }
+
+            .divider::before,
+            .divider::after {
+                content: "";
+                flex: 1;
+                border-bottom: 1px solid var(--color-neutral-light);
+                margin: 0 10px;
+            }
+
+            /* Social Login */
+            .social-login {
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                margin-bottom: 1.5rem;
+            }
+
+            .social-btn {
+                width: 45px;
+                height: 45px;
+                border-radius: 50%;
+                background: var(--overlay-light);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--color-neutral-white);
+                font-size: 1.2rem;
+                transition: all 0.3s;
+            }
+
+            .social-btn:hover {
+                background: var(--color-brand-gold);
+                color: var(--color-neutral-darkest);
+                transform: translateY(-3px);
+            }
+
+            /* Register Link */
+            .register-link {
+                color: var(--color-neutral-white);
+            }
+
+            .register-link a {
+                color: var(--color-brand-gold);
+                text-decoration: none;
+                font-weight: 600;
+            }
+
+            .register-link a:hover {
+                text-decoration: underline;
+            }
+
+            /* Reduced Motion */
+            @media (prefers-reduced-motion: reduce) {
+                * {
+                    animation-duration: 0.01ms !important;
+                    animation-iteration-count: 1 !important;
+                    transition-duration: 0.01ms !important;
+                    scroll-behavior: auto !important;
+                }
+
+                .book,
+                .moving-gradient {
+                    display: none !important;
+                }
+            }
+
+            /* Responsive Design */
+            @media (max-width: 768px) {
+                .main-content {
+                    padding: 2rem 1rem;
+                }
+
+                .logo {
+                    font-size: 3rem;
+                }
+
+                .avatar {
+                    width: 80px;
+                    height: 80px;
+                    font-size: 2.5rem;
+                }
+            }
+        </style>
+        <script src="api-config.js"></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const savedFont = localStorage.getItem("preferredFont");
+                if (savedFont) {
+                    document.body.style.fontFamily = savedFont;
+                } else {
+                    document.body.style.fontFamily = "Inter, sans-serif";
+                }
+            });
+        </script>
+    </head>
+    <body>
+        <!-- Moving Gradient Background -->
+        <div class="moving-gradient"></div>
+
+        <!-- Floating Books -->
+        <div class="floating-books" id="floatingBooks"></div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <h1 class="logo">SchoolByte</h1>
+
+            <div class="avatar">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+
+            <h2 class="text-2xl font-semibold mb-6">Student Login</h2>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input
+                        type="email"
+                        id="email"
+                        placeholder="schoolbyte@gmail.com"
+                        required
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div style="position: relative">
+                        <input
+                            type="password"
+                            id="password"
+                            placeholder="Enter your password"
+                            required
+                        />
+                        <i
+                            class="fas fa-eye password-toggle"
+                            id="togglePassword"
+                        ></i>
+                    </div>
+                </div>
+
+                <div class="options">
+                    <div class="remember-me">
+                        <input type="checkbox" id="rememberMe" />
+                        <label for="rememberMe">Remember me</label>
+                    </div>
+                    <div class="forgot-password">
+                        <a href="changepassword.html">Forgot password?</a>
+                    </div>
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">
+                    Log In
+                </button>
+
+                <div class="divider">or continue with</div>
+
+                <div class="social-login">
+                    <a href="#" class="social-btn">
+                        <i class="fab fa-google"></i>
+                    </a>
+                    <a href="#" class="social-btn">
+                        <i class="fab fa-microsoft"></i>
+                    </a>
+                    <a href="#" class="social-btn">
+                        <i class="fab fa-apple"></i>
+                    </a>
+                </div>
+
+                <p class="register-link">
+                    Don't have an account?
+                    <a href="studentsignup.html">Sign up</a>
+                </p>
+            </form>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                // Create floating books
+                createFloatingBooks();
+
+                // DOM Elements
+                const loginForm = document.getElementById("loginForm");
+                const loginBtn = document.getElementById("loginBtn");
+                const togglePassword =
+                    document.getElementById("togglePassword");
+                const passwordInput = document.getElementById("password");
+                const emailInput = document.getElementById("email");
+                const rememberMe = document.getElementById("rememberMe");
+
+                // Create floating books animation
+                function createFloatingBooks() {
+                    const container = document.getElementById("floatingBooks");
+                    const bookCount = 15;
+                    const bookIcons = [
+                        "book",
+                        "book-open",
+                        "bookmark",
+                        "graduation-cap",
+                        "scroll",
+                        "file-alt",
+                    ];
+
+                    // Check for reduced motion preference
+                    const reducedMotion = window.matchMedia(
+                        "(prefers-reduced-motion: reduce)",
+                    ).matches;
+                    if (reducedMotion) return;
+
+                    for (let i = 0; i < bookCount; i++) {
+                        const book = document.createElement("i");
+                        book.classList.add(
+                            "book",
+                            "fas",
+                            `fa-${bookIcons[Math.floor(Math.random() * bookIcons.length)]}`,
+                        );
+
+                        // Random position and animation
+                        const posX = Math.random() * 100;
+                        const delay = Math.random() * 10;
+                        const duration = Math.random() * 15 + 10;
+                        const size = Math.random() * 1 + 1;
+
+                        book.style.left = `${posX}%`;
+                        book.style.animationDuration = `${duration}s`;
+                        book.style.animationDelay = `${delay}s`;
+                        book.style.fontSize = `${size}rem`;
+
+                        container.appendChild(book);
+                    }
+                }
+
+                // Toggle password visibility
+                togglePassword.addEventListener("click", function () {
+                    const type =
+                        passwordInput.getAttribute("type") === "password"
+                            ? "text"
+                            : "password";
+                    passwordInput.setAttribute("type", type);
+                    this.classList.toggle("fa-eye");
+                    this.classList.toggle("fa-eye-slash");
+                });
+
+                // Validate form inputs
+                function validateForm() {
+                    const isEmailValid = emailInput.value.trim() !== "";
+                    const isPasswordValid = passwordInput.value.trim() !== "";
+
+                    loginBtn.disabled = !(isEmailValid && isPasswordValid);
+                }
+
+                // Form submission
+                loginForm.addEventListener("submit", async function (e) {
+                    e.preventDefault();
+
+                    if (!emailInput.value.trim() || !passwordInput.value) {
+                        alert("Please enter your email and password.");
+                        return;
+                    }
+
+                    loginBtn.disabled = true;
+                    loginBtn.textContent = "Logging in...";
+
+                    try {
+                        const baseUrl = window.API_BASE_URL || window.location.origin || 'http://localhost:5000';
+                        const response = await fetch(
+                            `${baseUrl}/login-student`,
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({
+                                    email: emailInput.value.trim(),
+                                    password: passwordInput.value,
+                                }),
+                            },
+                        );
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            alert(data.message || "Login failed. Please check your email and password.");
+                            loginBtn.disabled = false;
+                            loginBtn.textContent = "Log In";
+                            return;
+                        }
+
+                        if (data.token) {
+                            localStorage.setItem("token", data.token);
+                        }
+                        if (data.student) {
+                            localStorage.setItem("userData", JSON.stringify(data.student));
+                        }
+
+                        alert("Login successful! Redirecting to dashboard...");
+                        window.location.href = "studentdashboard.html";
+                    } catch (error) {
+                        console.error("Login error:", error);
+                        alert(
+                            "Network error. Please check your connection and try again.",
+                        );
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = "Log In";
+                    }
+                });
+
+                // Add event listeners for form validation
+                emailInput.addEventListener("input", validateForm);
+                passwordInput.addEventListener("input", validateForm);
+
+                // Initial validation
+                validateForm();
+            });
+        </script>
+    </body>
+</html>

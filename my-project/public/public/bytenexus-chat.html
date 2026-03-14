@@ -1,0 +1,2803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolByte Chat - ByteNexus</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        :root {
+            /* SchoolByte Brand Colors */
+            --color-brand-primary: #1a2a6c;
+            --color-brand-secondary: #b21f1f;
+            --color-brand-gold: #ffd700;
+            --color-brand-orange: #ffa500;
+
+            /* Neutral Palette */
+            --color-neutral-white: #ffffff;
+            --color-neutral-lightest: #f0f4f8;
+            --color-neutral-light: #d1d5db;
+            --color-neutral-medium: #9ca3af;
+            --color-neutral-dark: #4b5563;
+            --color-neutral-darkest: #333333;
+
+            /* Semantic Colors */
+            --color-error-red: #e74c3c;
+            --color-error-red-dark: #c0392b;
+            --color-success-green: #2ecc71;
+            --color-info-blue: #3498db;
+
+            /* Background Gradients */
+            --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            --gradient-background-secondary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
+
+            /* Text Gradients */
+            --gradient-text-gold: linear-gradient(to right, var(--color-brand-gold), var(--color-neutral-white));
+
+            /* Button Gradients */
+            --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
+            --gradient-button-active-hover: linear-gradient(to right, #ffc800, #ff8c00);
+
+            /* Transparent Overlays */
+            --overlay-light: rgba(255, 255, 255, 0.1);
+            --overlay-medium: rgba(0, 0, 0, 0.2);
+            --overlay-dark: rgba(30, 30, 60, 0.95);
+
+            /* Chat-specific variables */
+            --primary: var(--color-brand-primary);
+            --primary-dark: #0d1a4d;
+            --primary-light: #2a3a8c;
+            --secondary: var(--color-neutral-medium);
+            --success: var(--color-success-green);
+            --warning: var(--color-brand-orange);
+            --danger: var(--color-error-red);
+            --light: var(--color-neutral-lightest);
+            --dark: var(--color-neutral-darkest);
+            --gray: var(--color-neutral-medium);
+            --gray-light: var(--color-neutral-lightest);
+            --white: var(--color-neutral-white);
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --radius: 16px;
+            --radius-sm: 8px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-fast: all 0.15s ease;
+            --glass: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.18);
+        }
+
+        [data-theme="dark"] {
+            --primary: #818cf8;
+            --primary-dark: var(--color-brand-primary);
+            --primary-light: #a5b4fc;
+            --secondary: var(--color-neutral-medium);
+            --success: var(--color-success-green);
+            --warning: var(--color-brand-orange);
+            --danger: var(--color-error-red);
+            --light: #1e293b;
+            --dark: #f1f5f9;
+            --gray: var(--color-neutral-medium);
+            --gray-light: #334155;
+            --white: #0f172a;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            --glass: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(30, 41, 59, 0.5);
+        }
+
+        body {
+            background: var(--gradient-background-secondary);
+            color: var(--dark);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            transition: var(--transition);
+            font-family: 'Inter', sans-serif;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(26, 42, 108, 0.1) 0%, rgba(178, 31, 31, 0.1) 100%);
+            z-index: -1;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1400px;
+            height: 95vh;
+            background-color: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: row;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            transition: var(--transition);
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+
+        .toggle-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--dark);
+            font-size: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .sidebar {
+            width: 320px;
+            background-color: var(--glass);
+            border-right: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background-color: var(--glass);
+            border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 900;
+            font-size: 22px;
+            background: var(--gradient-background-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            transition: var(--transition);
+            margin-bottom: 15px;
+        }
+
+        .logo i {
+            font-size: 24px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 20px;
+            transition: var(--transition);
+        }
+
+        .user-profile:hover {
+            background-color: var(--gray-light);
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--gradient-background-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .user-info h3 {
+            font-size: 16px;
+            margin-bottom: 2px;
+            font-weight: 600;
+        }
+
+        .user-info p {
+            font-size: 12px;
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .search-container {
+            padding: 15px;
+            border-bottom: 1px solid var(--glass-border);
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .search-box {
+            width: 100%;
+            max-width: 100%;
+            padding: 12px 15px 12px 40px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            background-color: var(--gray-light);
+            font-size: 14px;
+            outline: none;
+            transition: var(--transition);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cpath d='m21 21-4.3-4.3'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 15px center;
+            box-sizing: border-box;
+        }
+
+        .search-box:focus {
+            border-color: var(--primary);
+            background-color: var(--white);
+            box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
+        }
+
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            background-color: var(--glass);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 5px;
+            gap: 5px;
+        }
+
+        .tab {
+            flex: 1 1 auto;
+            min-width: fit-content;
+            padding: 10px 12px;
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            border-radius: 8px 8px 0 0;
+            transition: var(--transition);
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            background-color: var(--gray-light);
+        }
+
+        .tab.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .contacts {
+            flex: 1;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        .contact {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(26, 42, 108, 0.1), transparent);
+            transition: var(--transition);
+        }
+
+        .contact:hover::before {
+            left: 100%;
+        }
+
+        .contact:hover {
+            background-color: var(--gray-light);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .contact.active {
+            background: linear-gradient(135deg, rgba(26, 42, 108, 0.1), rgba(178, 31, 31, 0.1));
+            border-left: 3px solid var(--primary);
+        }
+
+        .contact-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 12px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            background: var(--gradient-background-primary);
+            object-fit: cover;
+            font-size: 18px;
+            position: relative;
+        }
+
+        .contact-avatar .status-indicator {
+            position: absolute;
+            bottom: 3px;
+            right: 3px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid var(--glass);
+            transition: var(--transition);
+        }
+
+        .contact-avatar .status-indicator.online {
+            background-color: var(--success);
+        }
+
+        .contact-avatar .status-indicator.offline {
+            background-color: var(--gray);
+        }
+
+        .contact:hover .contact-avatar {
+            transform: scale(1.05);
+        }
+
+        .contact-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .contact-name {
+            font-size: 16px;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .contact-details {
+            font-size: 14px;
+            color: var(--gray);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--glass);
+            backdrop-filter: blur(10px);
+        }
+
+        .chat-header {
+            padding: 15px 25px;
+            background-color: var(--glass);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        .chat-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--gradient-background-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: var(--shadow);
+            object-fit: cover;
+        }
+
+        .chat-user-info h3 {
+            font-size: 18px;
+            margin-bottom: 2px;
+            font-weight: 600;
+        }
+
+        .chat-user-info p {
+            font-size: 14px;
+            color: var(--gray);
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            background-color: var(--glass);
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 20px;
+            max-width: 70%;
+            animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .message.received {
+            align-self: flex-start;
+        }
+
+        .message.sent {
+            align-self: flex-end;
+            margin-left: auto;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+            margin-top: 5px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            object-fit: cover;
+        }
+
+        .message.received .message-avatar {
+            margin-right: 12px;
+            background: linear-gradient(135deg, #17a2b8, var(--primary-light));
+        }
+
+        .message.sent .message-avatar {
+            margin-left: 12px;
+            background: var(--gradient-background-primary);
+        }
+
+        .message-bubble {
+            padding: 12px 18px;
+            border-radius: 18px;
+            position: relative;
+            box-shadow: var(--shadow);
+            word-wrap: break-word;
+            transition: var(--transition);
+        }
+
+        .message.received .message-bubble {
+            background-color: var(--white);
+            border-top-left-radius: 4px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .message.sent .message-bubble {
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
+            border-top-right-radius: 4px;
+            font-weight: 600;
+        }
+
+        .message-content {
+            font-size: 15px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+        }
+
+        .message-content a {
+            word-break: break-all;
+            color: inherit;
+            text-decoration: underline;
+        }
+
+        .message-meta {
+            font-size: 11px;
+            margin-top: 5px;
+            opacity: 0.7;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .message-time {
+            font-size: 11px;
+        }
+
+        .message-status {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .message-input-container {
+            padding: 20px 25px;
+            background-color: var(--glass);
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            align-items: flex-end;
+            gap: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .message-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .message-input {
+            width: 100%;
+            padding: 15px 20px;
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            outline: none;
+            font-size: 15px;
+            resize: none;
+            max-height: 120px;
+            transition: var(--transition);
+            line-height: 1.4;
+            background-color: var(--gray-light);
+            color: var(--dark);
+        }
+
+        .message-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
+            background-color: var(--white);
+        }
+
+        [data-theme="dark"] .message-input {
+            color: #cbd5e1;
+        }
+
+        .send-button {
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            background: var(--gradient-button-active-hover);
+        }
+
+        .send-button:active {
+            transform: translateY(0);
+        }
+
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, var(--glass) 0%, var(--glass) 100%);
+            backdrop-filter: blur(10px);
+        }
+
+        .empty-state i {
+            font-size: 80px;
+            background: var(--gradient-background-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 5px 15px rgba(26, 42, 108, 0.3));
+        }
+
+        .empty-state h3 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--dark);
+            background: var(--gradient-background-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .empty-state p {
+            font-size: 18px;
+            color: var(--gray);
+            max-width: 500px;
+            line-height: 1.6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray);
+            font-size: 1rem;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--gray);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                height: 100vh;
+                border-radius: 0;
+                max-width: 100%;
+            }
+
+            body {
+                padding: 0;
+            }
+
+            .sidebar {
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                z-index: 10;
+                transform: translateX(-100%);
+                width: 85%;
+                max-width: 300px;
+                box-shadow: var(--shadow-lg);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .chat-area {
+                width: 100%;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-menu-btn {
+                display: none !important;
+            }
+
+            .sidebar {
+                position: relative;
+                transform: translateX(0);
+            }
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            font-size: 24px;
+            color: var(--gray);
+            cursor: pointer;
+            padding: 10px;
+            margin-right: 15px;
+            transition: var(--transition);
+        }
+
+        .mobile-menu-btn:hover {
+            color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block !important;
+            }
+        }
+
+        .create-group-btn {
+            width: 100%;
+            padding: 12px 20px;
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .create-group-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            background: var(--gradient-button-active-hover);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--glass-border);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--glass-border);
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            background: var(--gradient-background-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--gray);
+            cursor: pointer;
+            transition: var(--transition);
+            padding: 5px 10px;
+        }
+
+        .modal-close:hover {
+            color: var(--danger);
+            transform: rotate(90deg);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            transition: var(--transition);
+            background: var(--gray-light);
+            color: var(--dark);
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
+            background: var(--white);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .contacts-selector {
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--gray-light);
+            border-radius: var(--radius-sm);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .contacts-selector h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: var(--dark);
+        }
+
+        .contact-checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+            background: var(--white);
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .contact-checkbox-item:hover {
+            background: var(--glass);
+            transform: translateX(5px);
+        }
+
+        .contact-checkbox-item input[type="checkbox"] {
+            margin-right: 12px;
+            cursor: pointer;
+        }
+
+        .contact-checkbox-item .contact-avatar {
+            margin-right: 12px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid var(--glass-border);
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            background: var(--gradient-button-active-hover);
+        }
+
+        .btn-secondary {
+            background: var(--gray-light);
+            color: var(--dark);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray);
+            color: white;
+        }
+
+        .selected-count {
+            display: inline-block;
+            margin-left: 10px;
+            padding: 4px 12px;
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .reply-preview {
+            display: none;
+            background-color: var(--gray-light);
+            border-left: 3px solid var(--primary);
+            padding: 10px 15px;
+            margin: 10px 25px 0 25px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .reply-preview.active {
+            display: block;
+        }
+
+        .reply-preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .reply-preview-username {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .reply-preview-close {
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .reply-preview-content {
+            font-size: 13px;
+            color: var(--gray);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .message-reply {
+            background-color: rgba(26, 42, 108, 0.1);
+            border-left: 3px solid var(--primary);
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .message-reply-username {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 3px;
+        }
+
+        .message-reply-text {
+            color: var(--gray);
+            font-style: italic;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .message.swipe-left {
+            transform: translateX(-60px);
+            transition: transform 0.2s ease;
+        }
+
+        .message-reply-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary);
+            font-size: 24px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+        }
+
+        .message.swipe-left .message-reply-icon {
+            opacity: 1;
+        }
+
+        .message {
+            position: relative;
+            transition: transform 0.2s ease;
+        }
+
+        .message:active {
+            cursor: pointer;
+        }
+
+        .message-actions {
+            position: absolute;
+            right: -120px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            pointer-events: none;
+            padding-left: 10px;
+        }
+
+        .message-actions::before {
+            content: '';
+            position: absolute;
+            right: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 100%;
+            min-height: 120px;
+        }
+
+        .message:hover .message-actions,
+        .message-actions:hover {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .message.sent .message-actions {
+            right: auto;
+            left: -120px;
+            padding-left: 0;
+            padding-right: 10px;
+        }
+
+        .message.sent .message-actions::before {
+            right: auto;
+            left: 100%;
+        }
+
+        .action-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            font-size: 14px;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .action-btn.copy-btn {
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
+        }
+
+        .action-btn.edit-btn {
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
+        }
+
+        .action-btn.reply-btn {
+            background: var(--gradient-background-primary);
+            color: white;
+        }
+
+        /* Floating Particles */
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--color-brand-gold);
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: float-up linear infinite;
+            filter: drop-shadow(0 0 5px var(--color-brand-gold));
+        }
+
+        @keyframes float-up {
+            to {
+                transform: translateY(-100vh);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Particles -->
+    <div class="floating-particles" id="floatingParticles"></div>
+
+    <div class="theme-toggle">
+        <div class="toggle-btn" id="themeToggle">
+            <i class="fas fa-moon"></i>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-comments"></i>
+                    <span>SchoolByte Chat</span>
+                </div>
+                <div class="user-profile" id="currentUserProfile">
+                    <div class="avatar" id="currentUserAvatar">...</div>
+                    <div class="user-info">
+                        <h3 id="currentUserName">Loading...</h3>
+                        <p><i class="fas fa-circle" style="color: var(--success);"></i> Online</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="search-container">
+                <input type="text" class="search-box" id="searchInput" placeholder="Search conversations...">
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" data-tab="chats">Chats</div>
+                <div class="tab" data-tab="suggestions">Suggestions</div>
+                <div class="tab" data-tab="groups">Discussion Groups</div>
+                <div class="tab" data-tab="teams">Teams</div>
+                <div class="tab" data-tab="search">Search</div>
+            </div>
+
+            <div style="padding: 10px 15px; border-bottom: 1px solid var(--glass-border);">
+                <button id="createGroupBtn" class="create-group-btn">
+                    <i class="fas fa-plus-circle"></i> Create Discussion Group
+                </button>
+            </div>
+
+            <div class="contacts" id="contactsList">
+                <div class="loading">Loading contacts...</div>
+            </div>
+        </div>
+
+        <div class="chat-area">
+            <div id="emptyState" class="empty-state">
+                <div class="mobile-menu-btn" id="menuToggleEmpty" style="position: absolute; top: 20px; left: 20px;">
+                    <i class="fas fa-bars"></i>
+                </div>
+                <i class="fas fa-comments"></i>
+                <h3>Welcome to SchoolByte Chat</h3>
+                <p>Select a conversation from the sidebar to start chatting with your classmates.</p>
+            </div>
+
+            <div id="chatContainer" style="display: none; flex-direction: column; height: 100%;">
+                <div class="chat-header">
+                    <div style="display: flex; align-items: center;">
+                        <div class="mobile-menu-btn" id="menuToggle">
+                            <i class="fas fa-bars"></i>
+                        </div>
+                        <div class="chat-user">
+                            <img class="chat-user-avatar" id="chatAvatar" src="" alt="">
+                            <div class="chat-user-info">
+                                <h3 id="chatName"></h3>
+                                <p id="chatDetails"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="messages-container" id="chatMessages">
+                    <div class="loading">Loading messages...</div>
+                </div>
+
+                <div class="reply-preview" id="replyPreview">
+                    <div class="reply-preview-header">
+                        <span class="reply-preview-username" id="replyUsername">Replying to:</span>
+                        <button class="reply-preview-close" id="closeReplyPreview">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="reply-preview-content" id="replyContent"></div>
+                </div>
+
+                <div class="message-input-container">
+                    <div class="message-input-wrapper">
+                        <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1"></textarea>
+                    </div>
+
+                    <button class="send-button" id="sendButton">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Group Modal -->
+    <div id="createGroupModal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-users"></i> Create Discussion Group</h2>
+                <button class="modal-close" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="createGroupForm">
+                <div class="form-group">
+                    <label for="groupName">Group Name *</label>
+                    <input type="text" id="groupName" required placeholder="Enter group name">
+                </div>
+
+                <div class="form-group">
+                    <label for="groupDescription">Description</label>
+                    <textarea id="groupDescription" placeholder="What is this group about?"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="groupRules">Group Rules</label>
+                    <textarea id="groupRules" placeholder="Set some ground rules for members"></textarea>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="isPublic" checked>
+                    <label for="isPublic">Make this group public (anyone can join)</label>
+                </div>
+
+                <div class="contacts-selector">
+                    <h4>
+                        Invite Members 
+                        <span class="selected-count" id="selectedCount">0 selected</span>
+                    </h4>
+                    <div id="contactsToInvite">
+                        <div class="loading">Loading contacts...</div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelGroupBtn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submitGroupBtn">
+                        <i class="fas fa-check"></i> Create Group
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="api-config.js"></script>
+    <script src="e2e-crypto.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const floatingParticles = document.getElementById('floatingParticles');
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+
+                const posX = Math.random() * 100;
+                const posY = Math.random() * 100 + 100;
+
+                const size = Math.random() * 5 + 5;
+                const duration = Math.random() * 10 + 10;
+                const delay = Math.random() * 5;
+
+                particle.style.left = `${posX}vw`;
+                particle.style.top = `${posY}vh`;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.animationDuration = `${duration}s`;
+                particle.style.animationDelay = `${delay}s`;
+
+                floatingParticles.appendChild(particle);
+            }
+        }
+
+        // Initialize particles on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+        });
+
+        // Rest of the JavaScript code remains exactly the same as in the original file
+        // ... (all the JavaScript code from the original file goes here)
+        // Since the JavaScript is very long, I'm including a placeholder comment
+        // In practice, you would copy the entire JavaScript section from the original file here
+
+        const API_URL = window.API_BASE_URL || window.location.origin || 'http://localhost:5000';
+        let token = localStorage.getItem('token');
+        let currentUser = null;
+        let activeContact = null;
+        let currentTab = 'chats';
+        let socket = null;
+        let messages = [];
+        let authenticatedSockets = new Map();
+        let replyingToMessage = null;
+        let pendingQuoteProject = null;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let mouseStartX = 0;
+        let mouseStartY = 0;
+        let isMouseDown = false;
+        let doubleTapTimer = null;
+        let lastTapTime = 0;
+        let lastClickTime = 0;
+
+        // Theme toggle
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            document.body.setAttribute('data-theme',
+                document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
+            );
+
+            const icon = document.getElementById('themeToggle').querySelector('i');
+            if (document.body.getAttribute('data-theme') === 'dark') {
+                icon.className = 'fas fa-sun';
+            } else {
+                icon.className = 'fas fa-moon';
+            }
+        });
+
+        // Mobile menu toggle
+        document.getElementById('menuToggle').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+
+        // Mobile menu toggle for empty state
+        document.getElementById('menuToggleEmpty').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+
+        // Reply preview close button
+        document.getElementById('closeReplyPreview').addEventListener('click', () => {
+            clearReplyPreview();
+        });
+
+        async function initByteNexusSession() {
+            const contactsList = document.getElementById('contactsList');
+
+            if (!token) {
+                contactsList.innerHTML = '<div class="loading" style="color: var(--danger);">❌ Please log in to SchoolByte first<br><br><a href="studentlogin.html" style="color: var(--primary); text-decoration: underline;">Go to Login</a></div>';
+                console.error('No authentication token found');
+                return;
+            }
+
+            try {
+                contactsList.innerHTML = '<div class="loading">Verifying authentication...</div>';
+                const response = await fetch(`${API_URL}/student/dashboard`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    contactsList.innerHTML = '<div class="loading" style="color: var(--danger);">❌ Authentication failed<br><br><a href="studentlogin.html" style="color: var(--primary); text-decoration: underline;">Please log in again</a></div>';
+                    return;
+                }
+
+                const data = await response.json();
+                currentUser = {
+                    id: data.student._id.toString(),
+                    username: data.student.studentName,
+                    email: data.student.email,
+                    class: data.student.class,
+                    stream: data.student.stream,
+                    avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${data.student.studentName}`
+                };
+
+                const initials = currentUser.username.split(' ').map(n => n[0]).join('').toUpperCase();
+                document.getElementById('currentUserAvatar').textContent = initials;
+                document.getElementById('currentUserName').textContent = currentUser.username;
+
+                console.log('ByteNexus initialized for:', currentUser.username);
+
+                await E2E_Crypto.init(currentUser.id, API_URL, token);
+
+                initSocket();
+                loadContacts();
+            } catch (error) {
+                console.error('ByteNexus initialization error:', error);
+                contactsList.innerHTML = '<div class="loading" style="color: var(--danger);">❌ Failed to initialize chat<br><br><a href="studentlogin.html" style="color: var(--primary); text-decoration: underline;">Back to Login</a></div>';
+            }
+        }
+
+        function initSocket() {
+            socket = io(API_URL, {
+                auth: { token: token }
+            });
+
+            socket.on('connect', () => {
+                console.log('Connected to ByteNexus chat server');
+                // When connected, emit an event to identify the user and their status
+                socket.emit('user_connected', { userId: currentUser.id, status: 'online' });
+                socket.emit('get_online_users'); // Request the list of currently online users
+            });
+
+            // Listen for online status updates
+            socket.on('user_online', (data) => {
+                updateContactStatus(data.userId, 'online');
+            });
+
+            socket.on('user_offline', (data) => {
+                updateContactStatus(data.userId, 'offline');
+            });
+
+            socket.on('online_users_list', (userIds) => {
+                userIds.forEach(userId => {
+                    authenticatedSockets.set(userId, true); // Mark user as online
+                });
+                // Refresh the contact list to reflect the online statuses
+                if (currentTab === 'suggestions') { // Only refresh if we are on the suggestions tab
+                    loadContacts();
+                }
+            });
+
+            socket.on('new_personal_message', async (message) => {
+                if (activeContact && activeContact.type !== 'group' &&
+                    (message.sender_id === activeContact.id || message.recipient_id === activeContact.id)) {
+
+                    if (message.sender_id !== currentUser.id) {
+                        const existingIndex = messages.findIndex(m => m._id === message._id);
+                        if (existingIndex === -1) {
+                            if (typeof E2E_Crypto !== 'undefined' && E2E_Crypto.isEncrypted(message.content)) {
+                                message.content = await E2E_Crypto.decrypt(message.sender_id, message.content, API_URL, token);
+                            }
+                            if (message.replyTo && message.replyTo.content && typeof E2E_Crypto !== 'undefined' && E2E_Crypto.isEncrypted(message.replyTo.content)) {
+                                message.replyTo.content = await E2E_Crypto.decrypt(message.replyTo.sender_id, message.replyTo.content, API_URL, token);
+                            }
+                            messages.push(message);
+
+                            if (message.sender_id === activeContact.id) {
+                                socket.emit('mark_message_read', { messageId: message._id });
+                            }
+
+                            displayMessages();
+                        }
+                    }
+                }
+            });
+
+            socket.on('new_group_message', (message) => {
+                if (activeContact && activeContact.type === 'group' && message.group_id === activeContact.id) {
+                    const existingIndex = messages.findIndex(m => m.id === message.id);
+                    if (existingIndex === -1) {
+                        messages.push(message);
+                        displayGroupMessages();
+                    }
+                }
+            });
+
+            socket.on('message_status_update', (data) => {
+                const { messageId, status } = data;
+                const msgIndex = messages.findIndex(m => m._id === messageId);
+                if (msgIndex !== -1) {
+                    messages[msgIndex].status = status;
+                    if (status === 'read') messages[msgIndex].read = true;
+                    else if (status === 'delivered') messages[msgIndex].delivered = true;
+                    displayMessages();
+                }
+            });
+
+            socket.on('message_sent_confirmation', (data) => {
+                const { tempId, messageId, status, message } = data;
+                const msgIndex = messages.findIndex(m => m.tempId === tempId);
+                if (msgIndex !== -1) {
+                    const plainContent = messages[msgIndex].content;
+                    if (message) {
+                        messages[msgIndex] = { ...message, status: status || 'sent' };
+                        if (message.sender_id === currentUser.id) messages[msgIndex].content = plainContent;
+                    } else {
+                        messages[msgIndex]._id = messageId;
+                        messages[msgIndex].status = status || 'sent';
+                        delete messages[msgIndex].tempId;
+                    }
+                    displayMessages();
+                }
+            });
+
+            socket.on('message_error', (data) => {
+                console.error('Message error:', data.error);
+                const pendingMsg = messages.find(m => m.status === 'pending' || m.tempId);
+                if (pendingMsg) {
+                    pendingMsg.status = 'failed';
+                    pendingMsg.error = data.error || 'Failed to send';
+                    displayMessages();
+                }
+            });
+
+            socket.on('message_read_receipt', (data) => {
+                const { messageId } = data;
+                const msgIndex = messages.findIndex(m => m._id === messageId);
+                if (msgIndex !== -1) {
+                    messages[msgIndex].read = true;
+                    messages[msgIndex].status = 'read';
+                    displayMessages();
+                }
+            });
+
+            socket.on('group_invitation', (data) => {
+                const { groupId, groupName, invitedBy, invitationToken, message } = data;
+
+                const invitationLink = `${API_URL}/bytenexus-chat.html?invite=${invitationToken}`;
+
+                const formattedMessage = `${message}\n\nInvitation Link: ${invitationLink}\n\nWould you like to join this group now?`;
+
+                if (confirm(formattedMessage)) {
+                    joinGroupByInvitation(invitationToken);
+                }
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Disconnected from chat server');
+                // Optionally, update all contacts to offline status or handle reconnections
+            });
+        }
+
+        // Function to update a contact's status in the UI
+        function updateContactStatus(userId, status) {
+            const contactElement = document.querySelector(`.contact[data-contact*='"id":"${userId}"']`); // Find contact by ID
+            if (contactElement) {
+                const statusIndicator = contactElement.querySelector('.status-indicator');
+                if (statusIndicator) {
+                    statusIndicator.className = `status-indicator ${status}`;
+                    if (status === 'online') {
+                        authenticatedSockets.set(userId, true); // Add to map
+                    } else {
+                        authenticatedSockets.delete(userId); // Remove from map
+                    }
+                }
+            }
+            // Also update the current user's status if it's them
+            if (userId === currentUser.id) {
+                const currentUserStatusIndicator = document.querySelector('.user-profile .fa-circle');
+                if (currentUserStatusIndicator) {
+                    currentUserStatusIndicator.style.color = status === 'online' ? 'var(--success)' : 'var(--gray)';
+                }
+            }
+        }
+
+        async function loadChats() {
+            const contactsList = document.getElementById('contactsList');
+            contactsList.innerHTML = '<div class="loading">Loading active chats...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/api/messages/personal/conversations`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load chats');
+
+                const conversations = await response.json();
+
+                if (conversations.length === 0) {
+                    contactsList.innerHTML = '<div class="loading">No active chats yet.<br><br><small style="color: var(--gray);">Start a conversation from Suggestions!</small></div>';
+                    return;
+                }
+
+                // Sort by most recent message
+                conversations.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+
+                contactsList.innerHTML = conversations.map(conv => {
+                    const initials = conv.contactName.split(' ').map(n => n[0]).join('').toUpperCase();
+                    const timeAgo = formatTimeAgo(new Date(conv.lastMessageTime));
+                    const unreadBadge = conv.unreadCount > 0 ? `<span class="category-badge" style="background: linear-gradient(135deg, var(--danger), var(--color-error-red-dark));">${conv.unreadCount} new</span>` : '';
+
+                    // Determine online status for the contact
+                    const isOnline = authenticatedSockets.has(conv.contact.id);
+                    const statusClass = isOnline ? 'online' : 'offline';
+
+                    return `
+                        <div class="contact" data-contact='${JSON.stringify(conv.contact)}'>
+                            <div class="contact-avatar">
+                                ${initials}
+                                <div class="status-indicator ${statusClass}"></div>
+                            </div>
+                            <div class="contact-info">
+                                <div class="contact-name">${conv.contactName}</div>
+                                <div class="contact-details">${conv.lastMessage}</div>
+                                <span class="category-badge" style="background: linear-gradient(135deg, var(--gray), var(--gray-light));">${timeAgo}</span>
+                                ${unreadBadge}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                document.querySelectorAll('.contact').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const contact = JSON.parse(item.dataset.contact);
+
+                        document.querySelectorAll('.contact').forEach(c => c.classList.remove('active'));
+                        item.classList.add('active');
+
+                        openChat(contact);
+
+                        if (window.innerWidth <= 768) {
+                            document.getElementById('sidebar').classList.remove('active');
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading chats:', error);
+                contactsList.innerHTML = '<div class="loading">Failed to load chats. Please refresh.</div>';
+            }
+        }
+
+        function formatTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        async function loadContacts() {
+            const contactsList = document.getElementById('contactsList');
+
+            if (currentTab === 'chats') {
+                await loadChats();
+            } else if (currentTab === 'suggestions') {
+                contactsList.innerHTML = '<div class="loading">Loading suggestions...</div>';
+
+                try {
+                    const response = await fetch(`${API_URL}/api/students/suggestions`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (!response.ok) throw new Error('Failed to load contacts');
+
+                    const data = await response.json();
+                    displayContacts(data.suggestions || []);
+                } catch (error) {
+                    console.error('Error loading contacts:', error);
+                    contactsList.innerHTML = '<div class="loading">Failed to load contacts. Please refresh.</div>';
+                }
+            } else if (currentTab === 'groups') {
+                contactsList.innerHTML = '<div class="loading">Loading discussion groups...</div>';
+
+                try {
+                    const response = await fetch(`${API_URL}/api/search/groups?q=`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (!response.ok) throw new Error('Failed to load groups');
+
+                    const groups = await response.json();
+                    displayGroups(groups);
+                } catch (error) {
+                    console.error('Error loading groups:', error);
+                    contactsList.innerHTML = '<div class="loading">Failed to load groups. Please refresh.</div>';
+                }
+            } else if (currentTab === 'teams') {
+                contactsList.innerHTML = '<div class="loading">Loading teams...</div>';
+
+                try {
+                    const response = await fetch(`${API_URL}/api/teams/my-teams`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (!response.ok) throw new Error('Failed to load teams');
+
+                    const teams = await response.json();
+                    displayTeams(teams);
+                } catch (error) {
+                    console.error('Error loading teams:', error);
+                    contactsList.innerHTML = '<div class="loading">Failed to load teams. Please refresh.</div>';
+                }
+            }
+        }
+
+        function displayContacts(contacts) {
+            const contactsList = document.getElementById('contactsList');
+
+            if (contacts.length === 0) {
+                contactsList.innerHTML = '<div class="loading">No contacts found</div>';
+                return;
+            }
+
+            contactsList.innerHTML = contacts.map(contact => {
+                const initials = contact.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
+                const isOnline = authenticatedSockets.has(contact.id);
+                const statusClass = isOnline ? 'online' : 'offline';
+
+                return `
+                    <div class="contact" data-contact='${JSON.stringify(contact)}'>
+                        <div class="contact-avatar">
+                            ${initials}
+                            <div class="status-indicator ${statusClass}"></div>
+                        </div>
+                        <div class="contact-info">
+                            <div class="contact-name">${contact.studentName}</div>
+                            <div class="contact-details">${contact.email}</div>
+                            <span class="category-badge">${contact.category}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.querySelectorAll('.contact').forEach(item => {
+                item.addEventListener('click', () => {
+                    const contact = JSON.parse(item.dataset.contact);
+
+                    document.querySelectorAll('.contact').forEach(c => c.classList.remove('active'));
+                    item.classList.add('active');
+
+                    openChat(contact);
+
+                    if (window.innerWidth <= 768) {
+                        document.getElementById('sidebar').classList.remove('active');
+                    }
+                });
+            });
+        }
+
+        function displayGroups(groups) {
+            const contactsList = document.getElementById('contactsList');
+
+            if (groups.length === 0) {
+                contactsList.innerHTML = '<div class="loading">No public groups found<br><br><small style="color: var(--gray);">Groups will appear here once created</small></div>';
+                return;
+            }
+
+            contactsList.innerHTML = groups.map(group => {
+                const initials = group.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                return `
+                    <div class="contact" data-group='${JSON.stringify(group)}'>
+                        <div class="contact-avatar" style="background: var(--gradient-button-active);">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="contact-info">
+                            <div class="contact-name">${group.name}</div>
+                            <div class="contact-details">${group.description || 'No description'}</div>
+                            <span class="category-badge" style="background: var(--gradient-button-active);">
+                                ${group.is_public ? 'Public Group' : 'Private Group'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.querySelectorAll('.contact').forEach(item => {
+                item.addEventListener('click', () => {
+                    const groupData = item.dataset.group;
+                    if (groupData) {
+                        const group = JSON.parse(groupData);
+
+                        document.querySelectorAll('.contact').forEach(c => c.classList.remove('active'));
+                        item.classList.add('active');
+
+                        openGroupChat(group);
+
+                        if (window.innerWidth <= 768) {
+                            document.getElementById('sidebar').classList.remove('active');
+                        }
+                    }
+                });
+            });
+        }
+
+        function displayTeams(teams) {
+            const contactsList = document.getElementById('contactsList');
+
+            const createTeamButton = `
+                <div style="padding: 10px 15px;">
+                    <button id="createTeamBtn" class="create-group-btn">
+                        <i class="fas fa-plus-circle"></i> Create Team
+                    </button>
+                </div>
+            `;
+
+            if (teams.length === 0) {
+                contactsList.innerHTML = createTeamButton + '<div class="loading" style="padding: 20px; text-align: center;">No teams yet<br><br><small style="color: var(--gray);">Create a team to share discussion groups with others</small></div>';
+            } else {
+                const teamsHTML = teams.map(team => {
+                    return `
+                        <div class="contact" data-team='${JSON.stringify(team)}'>
+                            <div class="contact-avatar" style="background: var(--gradient-background-primary);">
+                                <i class="fas fa-user-friends"></i>
+                            </div>
+                            <div class="contact-info">
+                                <div class="contact-name">${team.name}</div>
+                                <div class="contact-details">Share link: ${team.share_token.substring(0, 12)}...</div>
+                                <button class="category-badge" style="cursor: pointer; border: none;" onclick="copyTeamLink('${team.shareLink}', event)">
+                                    <i class="fas fa-copy"></i> Copy Link
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                contactsList.innerHTML = createTeamButton + teamsHTML;
+            }
+
+            const createTeamBtn = document.getElementById('createTeamBtn');
+            if (createTeamBtn) {
+                createTeamBtn.addEventListener('click', () => {
+                    const teamName = prompt('Enter team name:');
+                    if (teamName && teamName.trim()) {
+                        createTeam(teamName.trim());
+                    }
+                });
+            }
+        }
+
+        async function createTeam(teamName) {
+            try {
+                const response = await fetch(`${API_URL}/api/teams/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name: teamName })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to create team');
+                }
+
+                alert(`Team "${teamName}" created successfully!\n\nShare link:\n${data.shareLink}\n\nClick "Copy Link" to share with others.`);
+
+                if (currentTab === 'teams') {
+                    loadContacts();
+                }
+            } catch (error) {
+                console.error('Error creating team:', error);
+                alert(error.message || 'Failed to create team. Please try again.');
+            }
+        }
+
+        function copyTeamLink(link, event) {
+            event.stopPropagation();
+            navigator.clipboard.writeText(link).then(() => {
+                alert('Team link copied to clipboard!\n\nShare this link with others so they can see your discussion groups.');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                prompt('Copy this link:', link);
+            });
+        }
+
+        async function handleTeamLink(teamToken) {
+            try {
+                const response = await fetch(`${API_URL}/api/teams/by-token/${teamToken}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to load team');
+                }
+
+                const groupsList = data.groups.map(g => `- ${g.name}`).join('\n');
+                const message = `Team: ${data.team.name}\nCreated by: ${data.team.created_by}\n\nAvailable Discussion Groups:\n${groupsList || 'No groups yet'}\n\nWould you like to browse these groups?`;
+
+                if (confirm(message)) {
+                    currentTab = 'groups';
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelector('[data-tab="groups"]').classList.add('active');
+                    loadContacts();
+                }
+            } catch (error) {
+                console.error('Error loading team:', error);
+                alert(error.message || 'Failed to load team');
+            }
+        }
+
+        async function openChat(contact) {
+            activeContact = contact;
+            activeContact.type = 'personal';
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('chatContainer').style.display = 'flex';
+
+            const initials = contact.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
+            document.getElementById('chatName').textContent = contact.studentName;
+            document.getElementById('chatDetails').textContent = `${contact.class} - ${contact.stream}`;
+            document.getElementById('chatAvatar').src = contact.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${contact.studentName}`;
+            document.getElementById('chatAvatar').alt = initials;
+
+            const conversationId = [currentUser.id, contact.id].sort().join('_');
+            socket.emit('join_personal_room', { conversationId });
+
+            await loadMessages(contact.id);
+
+            messages.forEach(msg => {
+                if (msg.sender_id === contact.id && !msg.read) {
+                    socket.emit('mark_message_read', { messageId: msg._id });
+                }
+            });
+        }
+
+        async function openGroupChat(group) {
+            activeContact = {
+                id: group.id,
+                name: group.name,
+                description: group.description,
+                type: 'group'
+            };
+
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('chatContainer').style.display = 'flex';
+
+            document.getElementById('chatName').textContent = group.name;
+            document.getElementById('chatDetails').textContent = group.description || 'Discussion Group';
+            document.getElementById('chatAvatar').innerHTML = '<i class="fas fa-users"></i>';
+            document.getElementById('chatAvatar').style.background = 'var(--gradient-button-active)';
+
+            socket.emit('join_group_room', { groupId: group.id });
+
+            await loadGroupMessages(group.id);
+        }
+
+        async function loadMessages(contactId) {
+            const conversationId = [currentUser.id, contactId].sort().join('_');
+
+            try {
+                const response = await fetch(`${API_URL}/api/messages/personal/${conversationId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    messages = await response.json();
+                    for (const msg of messages) {
+                        if (typeof E2E_Crypto !== 'undefined' && E2E_Crypto.isEncrypted(msg.content)) {
+                            const senderId = (msg.sender_id && (msg.sender_id._id || msg.sender_id)) ? String(msg.sender_id._id || msg.sender_id) : '';
+                            if (senderId) msg.content = await E2E_Crypto.decrypt(senderId, msg.content, API_URL, token);
+                        }
+                        if (msg.replyTo && msg.replyTo.content && typeof E2E_Crypto !== 'undefined' && E2E_Crypto.isEncrypted(msg.replyTo.content)) {
+                            const replySenderId = (msg.replyTo.sender_id && (msg.replyTo.sender_id._id || msg.replyTo.sender_id)) ? String(msg.replyTo.sender_id._id || msg.replyTo.sender_id) : '';
+                            if (replySenderId) msg.replyTo.content = await E2E_Crypto.decrypt(replySenderId, msg.replyTo.content, API_URL, token);
+                        }
+                    }
+                    displayMessages();
+                } else {
+                    messages = [];
+                    displayMessages();
+                }
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                messages = [];
+                displayMessages();
+            }
+        }
+
+        async function loadGroupMessages(groupId) {
+            try {
+                const response = await fetch(`${API_URL}/api/messages/group/${groupId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    messages = await response.json();
+                    displayGroupMessages();
+                } else {
+                    messages = [];
+                    displayGroupMessages();
+                }
+            } catch (error) {
+                console.error('Error loading group messages:', error);
+                messages = [];
+                displayGroupMessages();
+            }
+        }
+
+        function clearReplyPreview() {
+            replyingToMessage = null;
+            document.getElementById('replyPreview').classList.remove('active');
+        }
+
+        function setReplyPreview(message) {
+            replyingToMessage = message;
+            const replyPreview = document.getElementById('replyPreview');
+            const username = message.sender_id === currentUser.id ? 'You' : (message.sender?.username || activeContact.studentName);
+
+            document.getElementById('replyUsername').textContent = `Replying to ${username}`;
+            document.getElementById('replyContent').textContent = message.content;
+            replyPreview.classList.add('active');
+
+            document.getElementById('messageInput').focus();
+        }
+
+        function displayMessages() {
+            const chatMessages = document.getElementById('chatMessages');
+
+            if (messages.length === 0) {
+                chatMessages.innerHTML = '<div class="loading">No messages yet. Start the conversation!</div>';
+                return;
+            }
+
+            const currentUserInitials = currentUser.username.split(' ').map(n => n[0]).join('').toUpperCase();
+            const contactInitials = activeContact.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
+
+            chatMessages.innerHTML = messages.map(msg => {
+                const isSent = msg.sender_id === currentUser.id;
+                const statusIcon = getMessageStatusIcon(msg);
+                const timestamp = new Date(msg.created_at || msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const retryAttr = msg.status === 'failed' ? `onclick="retryMessage('${msg.tempId}')" style="cursor: pointer;"` : '';
+
+                // Sanitize and allow specific HTML tags for links
+                const sanitizedContent = msg.content.replace(/<a href="([^"]+)"[^>]*>(.*?)<\/a>/g,
+                    '<a href="$1" style="color: var(--primary); text-decoration: underline; cursor: pointer;" target="_blank" rel="noopener noreferrer">$2</a>');
+
+                let replyHTML = '';
+                if (msg.replyTo) {
+                    const replyUsername = msg.replyTo.sender_id === currentUser.id ? 'You' : (msg.replyTo.sender?.username || 'Unknown');
+                    replyHTML = `
+                        <div class="message-reply">
+                            <div class="message-reply-username">${replyUsername}</div>
+                            <div class="message-reply-text">${msg.replyTo.content}</div>
+                        </div>
+                    `;
+                }
+                if (msg.quoteProject) {
+                    replyHTML += `
+                        <div class="message-reply" style="border-left: 3px solid var(--primary); padding-left: 8px; margin-top: 4px;">
+                            <div class="message-reply-username">Project: ${(msg.quoteProject.title || 'Project').replace(/</g,'&lt;')}</div>
+                            ${msg.quoteProject.photoUrl ? `<img src="${msg.quoteProject.photoUrl}" alt="Project" style="max-width: 120px; max-height: 80px; object-fit: cover; border-radius: 4px; margin-top: 4px;">` : ''}
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="message ${isSent ? 'sent' : 'received'}" 
+                         data-message-id="${msg._id || msg.id}"
+                         data-message-content="${msg.content.replace(/"/g, '&quot;')}"
+                         data-sender-id="${msg.sender_id}"
+                         ontouchstart="handleTouchStart(event, '${msg._id || msg.id}')"
+                         ontouchmove="handleTouchMove(event, '${msg._id || msg.id}')"
+                         ontouchend="handleTouchEnd(event, '${msg._id || msg.id}')"
+                         ondblclick="handleDoubleClick('${msg._id || msg.id}')"
+                         onmousedown="handleMouseDown(event, '${msg._id || msg.id}')"
+                         onmousemove="handleMouseMove(event, '${msg._id || msg.id}')"
+                         onmouseup="handleMouseUp(event, '${msg._id || msg.id}')">
+                        <div class="message-avatar">${isSent ? currentUserInitials : contactInitials}</div>
+                        <div class="message-bubble">
+                            ${replyHTML}
+                            <div class="message-content">${sanitizedContent}</div>
+                            ${isSent ? `
+                                <div class="message-meta">
+                                    <span class="message-time">${timestamp}</span>
+                                    <span class="message-status" ${retryAttr}>${statusIcon}</span>
+                                </div>
+                            ` : `
+                                <div class="message-meta">
+                                    <span class="message-time">${timestamp}</span>
+                                </div>
+                            `}
+                        </div>
+                        <i class="fas fa-reply message-reply-icon"></i>
+                        <div class="message-actions">
+                            <button class="action-btn reply-btn" onclick="prepareReply('${msg._id || msg.id}')">
+                                <i class="fas fa-reply"></i>
+                            </button>
+                            <button class="action-btn copy-btn" onclick="copyMessage('${escapeHtml(msg.content)}')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            ${isSent && msg.status !== 'failed' ? `
+                                <button class="action-btn edit-btn" onclick="editMessage('${msg._id || msg.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function getMessageStatusIcon(msg) {
+            if (msg.status === 'failed') {
+                return '<i class="fas fa-exclamation-circle" style="color: var(--danger);" title="Failed to send. Tap to retry"></i>';
+            }
+
+            if (!msg._id && msg.status === 'pending') {
+                return '<i class="fas fa-clock" style="color: rgba(255,255,255,0.7);" title="Sending..."></i>';
+            }
+
+            if (msg.read || msg.status === 'read') {
+                return '<i class="fas fa-check-double" style="color: var(--success);" title="Read"></i>';
+            }
+
+            if (msg.delivered || msg.status === 'delivered') {
+                return '<i class="fas fa-check-double" style="color: rgba(255,255,255,0.7);" title="Delivered"></i>';
+            }
+
+            if (msg._id || msg.status === 'sent') {
+                return '<i class="fas fa-check" style="color: rgba(255,255,255,0.7);" title="Sent"></i>';
+            }
+
+            return '<i class="fas fa-clock" style="color: rgba(255,255,255,0.7);" title="Pending"></i>';
+        }
+
+        function retryMessage(tempId) {
+            const msgIndex = messages.findIndex(m => m.tempId === tempId);
+            if (msgIndex !== -1) {
+                const msg = messages[msgIndex];
+                msg.status = 'pending';
+                delete msg.error;
+                displayMessages();
+
+                socket.emit('send_personal_message', {
+                    recipientId: activeContact.id,
+                    content: msg.content,
+                    tempId: msg.tempId
+                });
+            }
+        }
+
+        // Helper to escape HTML for copy functionality
+        function escapeHtml(unsafe) {
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        function copyMessage(content) {
+            navigator.clipboard.writeText(content).then(() => {
+                alert('Message copied!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                alert('Failed to copy message.');
+            });
+        }
+
+        function prepareReply(messageId) {
+            const message = messages.find(m => (m._id || m.id) === messageId);
+            if (message) {
+                setReplyPreview(message);
+            }
+        }
+
+        function editMessage(messageId) {
+            const message = messages.find(m => (m._id || m.id) === messageId);
+            if (message && message.sender_id === currentUser.id) {
+                const messageInput = document.getElementById('messageInput');
+                messageInput.value = message.content;
+                messageInput.focus();
+                // Optionally, add an indicator that the message is being edited
+                // and modify the send button to handle updates
+                alert('Editing not fully implemented yet. You can now edit the message in the input box.');
+            } else {
+                alert('You can only edit your own messages.');
+            }
+        }
+
+        // Touch handlers for mobile
+        function handleTouchStart(event, messageId) {
+            const touch = event.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+        }
+
+        function handleTouchMove(event, messageId) {
+            if (!touchStartX || !touchStartY) return;
+
+            const touch = event.touches[0];
+            const deltaX = touchStartX - touch.clientX;
+            const deltaY = Math.abs(touchStartY - touch.clientY);
+
+            // Only respond to horizontal swipes (not vertical scrolling)
+            if (deltaY > 30) return;
+
+            const messageElement = event.currentTarget;
+
+            if (deltaX > 50) {
+                messageElement.classList.add('swipe-left');
+                event.preventDefault();
+            } else {
+                messageElement.classList.remove('swipe-left');
+            }
+        }
+
+        function handleTouchEnd(event, messageId) {
+            const messageElement = event.currentTarget;
+
+            if (messageElement.classList.contains('swipe-left')) {
+                const message = messages.find(m => (m._id || m.id) === messageId);
+                if (message) {
+                    setReplyPreview(message);
+                }
+            }
+
+            messageElement.classList.remove('swipe-left');
+            touchStartX = 0;
+            touchStartY = 0;
+
+            // Also handle double tap
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTapTime;
+
+            if (tapLength < 300 && tapLength > 0) {
+                const message = messages.find(m => (m._id || m.id) === messageId);
+                if (message) {
+                    setReplyPreview(message);
+                }
+            }
+
+            lastTapTime = currentTime;
+        }
+
+        // Mouse handlers for desktop
+        function handleMouseDown(event, messageId) {
+            // Ignore if clicking on links or buttons
+            if (event.target.tagName === 'A' || event.target.tagName === 'BUTTON' || event.target.closest('.message-status') || event.target.closest('.action-btn')) {
+                return;
+            }
+
+            mouseStartX = event.clientX;
+            mouseStartY = event.clientY;
+            isMouseDown = true;
+        }
+
+        function handleMouseMove(event, messageId) {
+            if (!isMouseDown || !mouseStartX) return;
+
+            const deltaX = mouseStartX - event.clientX;
+            const deltaY = Math.abs(mouseStartY - event.clientY);
+
+            // Only respond to horizontal swipes
+            if (deltaY > 30) return;
+
+            const messageElement = event.currentTarget;
+
+            if (deltaX > 50) {
+                messageElement.classList.add('swipe-left');
+            } else {
+                messageElement.classList.remove('swipe-left');
+            }
+        }
+
+        function handleMouseUp(event, messageId) {
+            const messageElement = event.currentTarget;
+
+            if (messageElement.classList.contains('swipe-left')) {
+                const message = messages.find(m => (m._id || m.id) === messageId);
+                if (message) {
+                    setReplyPreview(message);
+                }
+            }
+
+            messageElement.classList.remove('swipe-left');
+            isMouseDown = false;
+            mouseStartX = 0;
+            mouseStartY = 0;
+        }
+
+        // Double click handler for desktop
+        function handleDoubleClick(messageId) {
+            const message = messages.find(m => (m._id || m.id) === messageId);
+            if (message) {
+                setReplyPreview(message);
+            }
+        }
+
+        function displayGroupMessages() {
+            const chatMessages = document.getElementById('chatMessages');
+
+            if (messages.length === 0) {
+                chatMessages.innerHTML = '<div class="loading">No messages yet. Start the conversation!</div>';
+                return;
+            }
+
+            chatMessages.innerHTML = messages.map(msg => {
+                const isSent = msg.sender_id === currentUser.id;
+                const senderName = msg.sender?.username || 'Unknown';
+                const senderInitials = senderName.split(' ').map(n => n[0]).join('').toUpperCase();
+                const timestamp = new Date(msg.created_at || msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                const boostBadge = msg.is_boosted ? `<span style="color: var(--warning); font-size: 12px; margin-left: 5px;"><i class="fas fa-fire"></i> Boosted (${msg.boost_cost} bytes)</span>` : '';
+
+                let replyHTML = '';
+                if (msg.replyTo) {
+                    const replyUsername = msg.replyTo.sender?.username || 'Unknown';
+                    replyHTML = `
+                        <div class="message-reply">
+                            <div class="message-reply-username">${replyUsername}</div>
+                            <div class="message-reply-text">${msg.replyTo.content}</div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="message ${isSent ? 'sent' : 'received'}" data-message-id="${msg.id}"
+                         ontouchstart="handleTouchStart(event, '${msg.id}')"
+                         ontouchmove="handleTouchMove(event, '${msg.id}')"
+                         ontouchend="handleTouchEnd(event, '${msg.id}')"
+                         ondblclick="handleDoubleTap('${msg.id}')">
+                        <div class="message-avatar" style="background: ${isSent ? 'var(--gradient-background-primary)' : 'linear-gradient(135deg, #17a2b8, var(--primary-light))'}">${senderInitials}</div>
+                        <div class="message-bubble">
+                            ${!isSent ? `<div style="font-size: 12px; font-weight: 600; margin-bottom: 4px; color: var(--primary);">${senderName}</div>` : ''}
+                            ${replyHTML}
+                            <div class="message-content">${msg.content}</div>
+                            <div class="message-meta">
+                                <span class="message-time">${timestamp}</span>
+                                ${boostBadge}
+                            </div>
+                        </div>
+                        <i class="fas fa-reply message-reply-icon"></i>
+                        <div class="message-actions">
+                            <button class="action-btn reply-btn" onclick="prepareReply('${msg.id}')">
+                                <i class="fas fa-reply"></i>
+                            </button>
+                            <button class="action-btn copy-btn" onclick="copyMessage('${escapeHtml(msg.content)}')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            ${isSent && msg.status !== 'failed' ? `
+                                <button class="action-btn edit-btn" onclick="editMessage('${msg.id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const content = messageInput.value.trim();
+
+            if (!content || !activeContact) {
+                console.warn('Cannot send: missing content or active contact');
+                return;
+            }
+
+            if (!socket || !socket.connected) {
+                console.error('Socket not connected. Cannot send message.');
+                alert('Connection lost. Please refresh the page.');
+                return;
+            }
+
+            if (activeContact.type === 'group') {
+                socket.emit('send_group_message', {
+                    groupId: activeContact.id,
+                    content: content,
+                    hasLatex: false,
+                    isBoosted: false,
+                    byteCost: 0,
+                    replyTo: replyingToMessage ? {
+                        id: replyingToMessage._id || replyingToMessage.id,
+                        content: replyingToMessage.content,
+                        sender_id: replyingToMessage.sender_id,
+                        sender: replyingToMessage.sender
+                    } : null
+                });
+            } else {
+                let contentToSend = content;
+                if (typeof E2E_Crypto !== 'undefined') {
+                    contentToSend = await E2E_Crypto.encrypt(activeContact.id, content, API_URL, token);
+                }
+                const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                const tempMessage = {
+                    sender_id: currentUser.id,
+                    recipient_id: activeContact.id,
+                    content: content,
+                    status: 'pending',
+                    timestamp: new Date(),
+                    created_at: new Date(),
+                    tempId: tempId,
+                    _id: tempId,
+                    replyTo: replyingToMessage ? {
+                        _id: replyingToMessage._id,
+                        content: replyingToMessage.content,
+                        sender_id: replyingToMessage.sender_id,
+                        sender: replyingToMessage.sender
+                    } : null
+                };
+
+                messages.push(tempMessage);
+                displayMessages();
+
+                const payload = {
+                    recipientId: activeContact.id,
+                    content: contentToSend,
+                    tempId: tempId,
+                    replyTo: replyingToMessage ? {
+                        id: replyingToMessage._id || replyingToMessage.id,
+                        content: replyingToMessage.content,
+                        sender_id: replyingToMessage.sender_id
+                    } : null
+                };
+                if (pendingQuoteProject) {
+                    payload.quoteProject = { id: pendingQuoteProject.id, photoUrl: pendingQuoteProject.photoUrl, title: pendingQuoteProject.title };
+                    pendingQuoteProject = null;
+                }
+                socket.emit('send_personal_message', payload);
+            }
+
+            clearReplyPreview();
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+        }
+
+        document.getElementById('sendButton').addEventListener('click', sendMessage);
+
+        const messageInput = document.getElementById('messageInput');
+
+        // Auto-resize textarea as user types
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // Handle Enter key (send) and Shift+Enter (new line)
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        let searchTimeout;
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                const query = e.target.value.trim();
+                if (query.length < 2) {
+                    loadContacts();
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_URL}/api/students/search?query=${encodeURIComponent(query)}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (!response.ok) throw new Error('Search failed');
+
+                    const data = await response.json();
+                    displayContacts(data.students.map(s => ({
+                        ...s,
+                        category: 'Search Result'
+                    })));
+                } catch (error) {
+                    console.error('Search error:', error);
+                }
+            }, 300);
+        });
+
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentTab = tab.dataset.tab;
+                loadContacts();
+            });
+        });
+
+        // Create Group Modal functionality
+        let allContactsForInvite = [];
+
+        document.getElementById('createGroupBtn').addEventListener('click', async () => {
+            document.getElementById('createGroupModal').style.display = 'flex';
+            await loadContactsForInvite();
+        });
+
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('createGroupModal').style.display = 'none';
+            resetCreateGroupForm();
+        });
+
+        document.getElementById('cancelGroupBtn').addEventListener('click', () => {
+            document.getElementById('createGroupModal').style.display = 'none';
+            resetCreateGroupForm();
+        });
+
+        async function loadContactsForInvite() {
+            const container = document.getElementById('contactsToInvite');
+            container.innerHTML = '<div class="loading">Loading contacts...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/api/students/suggestions`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load contacts');
+
+                const data = await response.json();
+                allContactsForInvite = data.suggestions || [];
+                displayContactsForInvite(allContactsForInvite);
+            } catch (error) {
+                console.error('Error loading contacts for invite:', error);
+                container.innerHTML = '<div class="loading">Failed to load contacts</div>';
+            }
+        }
+
+        function displayContactsForInvite(contacts) {
+            const container = document.getElementById('contactsToInvite');
+
+            if (contacts.length === 0) {
+                container.innerHTML = '<div class="loading">No contacts available</div>';
+                return;
+            }
+
+            container.innerHTML = contacts.map(contact => {
+                const initials = contact.studentName.split(' ').map(n => n[0]).join('').toUpperCase();
+                return `
+                    <label class="contact-checkbox-item">
+                        <input type="checkbox" value="${contact.id}" data-contact='${JSON.stringify(contact)}'>
+                        <div class="contact-avatar" style="width: 35px; height: 35px; font-size: 14px;">${initials}</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 14px;">${contact.studentName}</div>
+                            <div style="font-size: 12px; color: var(--gray);">${contact.email}</div>
+                        </div>
+                    </label>
+                `;
+            }).join('');
+
+            // Update selected count
+            container.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedCount);
+            });
+        }
+
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('#contactsToInvite input[type="checkbox"]:checked');
+            document.getElementById('selectedCount').textContent = `${checkboxes.length} selected`;
+        }
+
+        function resetCreateGroupForm() {
+            document.getElementById('createGroupForm').reset();
+            document.getElementById('selectedCount').textContent = '0 selected';
+        }
+
+        document.getElementById('createGroupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const groupName = document.getElementById('groupName').value.trim();
+            const groupDescription = document.getElementById('groupDescription').value.trim();
+            const groupRules = document.getElementById('groupRules').value.trim();
+            const isPublic = document.getElementById('isPublic').checked;
+
+            const selectedCheckboxes = document.querySelectorAll('#contactsToInvite input[type="checkbox"]:checked');
+            const invitedMembers = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+            if (!groupName) {
+                alert('Please enter a group name');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitGroupBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+            try {
+                const response = await fetch(`${API_URL}/api/groups/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        name: groupName,
+                        description: groupDescription,
+                        rules: groupRules,
+                        is_public: isPublic,
+                        invited_members: invitedMembers
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to create group');
+                }
+
+                alert(`Group "${groupName}" created successfully! ${invitedMembers.length > 0 ? 'Invitations sent to selected members.' : ''}`);
+
+                document.getElementById('createGroupModal').style.display = 'none';
+                resetCreateGroupForm();
+
+                // Refresh groups list if on groups tab
+                if (currentTab === 'groups') {
+                    loadContacts();
+                }
+            } catch (error) {
+                console.error('Error creating group:', error);
+                alert(error.message || 'Failed to create group. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check"></i> Create Group';
+            }
+        });
+
+        async function joinGroupByInvitation(invitationToken) {
+            try {
+                const response = await fetch(`${API_URL}/api/groups/join-by-invite`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ invitationToken })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to join group');
+                }
+
+                alert(data.message || 'Successfully joined the group!');
+
+                // Switch to groups tab and refresh
+                currentTab = 'groups';
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelector('[data-tab="groups"]').classList.add('active');
+                loadContacts();
+            } catch (error) {
+                console.error('Error joining group:', error);
+                alert(error.message || 'Failed to join group');
+            }
+        }
+
+        // Check for invitation, team, or project-message link in URL on page load
+        function checkForInvitation() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const inviteToken = urlParams.get('invite');
+            const teamToken = urlParams.get('team');
+            const contactId = urlParams.get('contact');
+            const quoteProjectId = urlParams.get('quoteProject');
+            const photoUrl = urlParams.get('photoUrl');
+            const projectTitle = urlParams.get('projectTitle');
+            const studentName = urlParams.get('studentName');
+            const studentClass = urlParams.get('studentClass');
+            const studentStream = urlParams.get('studentStream');
+
+            if (inviteToken && token) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+                setTimeout(() => {
+                    if (confirm('You have been invited to join a discussion group. Would you like to join now?')) {
+                        joinGroupByInvitation(inviteToken);
+                    }
+                }, 1000);
+            } else if (teamToken && token) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+                setTimeout(() => handleTeamLink(teamToken), 1000);
+            } else if (contactId && quoteProjectId && token) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+                pendingQuoteProject = { id: quoteProjectId, photoUrl: photoUrl || '', title: decodeURIComponent(projectTitle || 'Project') };
+                const contact = {
+                    id: contactId,
+                    studentName: decodeURIComponent(studentName || 'Student'),
+                    class: decodeURIComponent(studentClass || ''),
+                    stream: decodeURIComponent(studentStream || ''),
+                    avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(studentName || 'S')}`
+                };
+                setTimeout(() => {
+                    openChat(contact);
+                    document.getElementById('messageInput').placeholder = 'Message about: ' + (pendingQuoteProject?.title || 'project') + '...';
+                }, 1500);
+            }
+        }
+
+        initByteNexusSession();
+        checkForInvitation();
+    </script>
+</body>
+</html>

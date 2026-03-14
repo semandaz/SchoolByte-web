@@ -1,5 +1,6 @@
 // server.js - SchoolByte Backend - Complete Quiz System Implementation
 
+require('dotenv').config();
 
 // --- Module Imports ---
 const express = require('express');
@@ -18,6 +19,7 @@ const multer = require('multer');
 const { Ollama } = require('ollama');
 const crypto = require('crypto');
 const http = require('http');
+const { getDivision, getFixture, getQuizSerialNumber, getThreeQuartersCycle, CYCLE_SIZES, SLOT_CATEGORY, CLASS_ORDER } = require('./config/fatsAndBeef');
 const { Server } = require('socket.io');
 
 
@@ -66,121 +68,27 @@ if (!JWT_SECRET) {
     process.exit(1);
 }
 
-// --- Personal Message Schema for ByteNexus Chat ---
-const personalMessageSchema = new mongoose.Schema({
-  sender_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Student',
-    required: true
-  },
-  recipient_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Student',
-    required: true
-  },
-  content: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  read: {
-    type: Boolean,
-    default: false
-  },
-  delivered: {
-    type: Boolean,
-    default: false
-  },
-  replyTo: {
-    id: { type: mongoose.Schema.Types.ObjectId },
-    content: { type: String },
-    sender_id: { type: mongoose.Schema.Types.ObjectId }
-  },
-  created_at: {
-    type: Date,
-    default: Date.now
-  }
-}, {
-  timestamps: true
-});
-
-personalMessageSchema.index({ sender_id: 1, recipient_id: 1, created_at: -1 });
-personalMessageSchema.index({ recipient_id: 1, read: 1 });
-
-const PersonalMessage = mongoose.model('PersonalMessage', personalMessageSchema);
-
-// --- Discussion Group Schema ---
-const discussionGroupSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  description: {
-    type: String,
-    trim: true,
-    default: ''
-  },
-  rules: {
-    type: String,
-    trim: true,
-    default: ''
-  },
-  is_public: {
-    type: Boolean,
-    default: true
-  },
-  created_by: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Student',
-    required: true
-  },
-  members: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Student'
-  }],
-  created_at: {
-    type: Date,
-    default: Date.now
-  }
-}, {
-  timestamps: true
-});
-
-discussionGroupSchema.index({ name: 'text', description: 'text' });
-discussionGroupSchema.index({ is_public: 1 });
-
-const DiscussionGroup = mongoose.model('DiscussionGroup', discussionGroupSchema);
-
-// --- Team Schema ---
-const teamSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  user_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Student',
-    required: true
-  },
-  share_token: {
-    type: String,
-    unique: true,
-    default: () => crypto.randomBytes(16).toString('hex')
-  },
-  created_at: {
-    type: Date,
-    default: Date.now
-  }
-}, {
-  timestamps: true
-});
-
-teamSchema.index({ share_token: 1 });
-teamSchema.index({ user_id: 1 });
-
-const Team = mongoose.model('Team', teamSchema);
+// --- Models (schemas live in /models) ---
+const VerificationCode = require('./models/VerificationCode');
+const Subject = require('./models/Subject');
+const Student = require('./models/Student');
+const Teacher = require('./models/Teacher');
+const QuizQuestion = require('./models/QuizQuestion');
+const QuizSession = require('./models/QuizSession');
+const CompletedQuizAttempt = require('./models/CompletedQuizAttempt');
+const WorkFile = require('./models/WorkFile');
+const Activity = require('./models/Activity');
+const StudentActivitySubmission = require('./models/StudentActivitySubmission');
+const Administrator = require('./models/Administrator');
+const PlayerLevel = require('./models/PlayerLevel');
+const Achievement = require('./models/Achievement');
+const StudentAchievement = require('./models/StudentAchievement');
+const Notification = require('./models/Notification');
+const PersonalMessage = require('./models/PersonalMessage');
+const DiscussionGroup = require('./models/DiscussionGroup');
+const Team = require('./models/Team');
+const GroupMessage = require('./models/GroupMessage');
+const UnebProject = require('./models/UnebProject');
 
 // --- Socket.io Chat Management ---
 const authenticatedSockets = new Map();
@@ -240,7 +148,7 @@ io.on('connection', (socket) => {
 
   socket.on('send_personal_message', async (data) => {
     try {
-      const { recipientId, content, tempId, replyTo } = data;
+      const { recipientId, content, tempId, replyTo, quoteProject } = data;
 
       const newMessage = new PersonalMessage({
         sender_id: socket.userId,
@@ -248,7 +156,8 @@ io.on('connection', (socket) => {
         content: content,
         read: false,
         delivered: false,
-        replyTo: replyTo || null
+        replyTo: replyTo || null,
+        quoteProject: quoteProject || null
       });
 
       await newMessage.save();
@@ -272,6 +181,11 @@ io.on('connection', (socket) => {
           id: messageWithSender.replyTo.id?.toString(),
           content: messageWithSender.replyTo.content,
           sender_id: messageWithSender.replyTo.sender_id?.toString()
+        } : null,
+        quoteProject: messageWithSender.quoteProject ? {
+          id: messageWithSender.quoteProject.id?.toString(),
+          photoUrl: messageWithSender.quoteProject.photoUrl,
+          title: messageWithSender.quoteProject.title
         } : null,
         sender: {
           id: messageWithSender.sender_id._id.toString(),
@@ -393,21 +307,6 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Create group message schema if it doesn't exist
-      const GroupMessageSchema = new mongoose.Schema({
-        group_id: { type: mongoose.Schema.Types.ObjectId, ref: 'DiscussionGroup', required: true },
-        sender_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
-        content: { type: String, required: true, trim: true },
-        replyTo: {
-          id: { type: mongoose.Schema.Types.ObjectId },
-          content: { type: String },
-          sender_id: { type: mongoose.Schema.Types.ObjectId }
-        },
-        created_at: { type: Date, default: Date.now }
-      }, { timestamps: true });
-
-      const GroupMessage = mongoose.models.GroupMessage || mongoose.model('GroupMessage', GroupMessageSchema);
-
       const newMessage = new GroupMessage({
         group_id: groupId,
         sender_id: socket.userId,
@@ -493,16 +392,6 @@ app.get('/api/messages/group/:groupId', authenticateToken, async (req, res) => {
     if (!isMember) {
       return res.status(403).json({ error: 'Not a member of this group' });
     }
-
-    // Get or create GroupMessage model
-    const GroupMessageSchema = new mongoose.Schema({
-      group_id: { type: mongoose.Schema.Types.ObjectId, ref: 'DiscussionGroup', required: true },
-      sender_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
-      content: { type: String, required: true, trim: true },
-      created_at: { type: Date, default: Date.now }
-    }, { timestamps: true });
-
-    const GroupMessage = mongoose.models.GroupMessage || mongoose.model('GroupMessage', GroupMessageSchema);
 
     const messages = await GroupMessage.find({ group_id: groupId })
       .populate('sender_id', 'studentName email')
@@ -684,694 +573,6 @@ app.get('/api/workfiles/:subject', authenticateToken, async (req, res) => {
     }
 });
 
-// --- Enhanced Database Schemas ---
-
-// VerificationCode Schema with rate limiting
-const verificationCodeSchema = new mongoose.Schema({
-    email: { type: String, required: true, unique: true },
-    code: { type: String, required: true },
-    createdAt: { type: Date, default: Date.now, expires: '10m' },
-    lastSentAt: { type: Date, default: Date.now }
-});
-const VerificationCode = mongoose.model('VerificationCode', verificationCodeSchema);
-
-
-// Subject Schema (Static curriculum definition)
-const subjectSchema = new mongoose.Schema({
-    name: { type: String, required: true, unique: true, trim: true, index: true },
-    serialNumber: { type: Number, unique: true, sparse: true },
-    isCompulsory: { type: Boolean, default: false },
-    applicableLevels: {
-        type: [String],
-        enum: ["O_Level_Lower", "O_Level_Middle", "A_Level"],
-        default: []
-    },
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
-});
-subjectSchema.pre('save', function(next) {
-    this.updatedAt = Date.now();
-    next();
-});
-const Subject = mongoose.model('Subject', subjectSchema);
-
-
-// Enhanced Student Schema with all report features
-const studentSchema = new mongoose.Schema({
-    studentName: { type: String, required: true, trim: true },
-    indexNumber: { type: String, required: true, unique: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    password: { type: String, required: true },
-    isEmailVerified: { type: Boolean, default: false },
-    bytes: { type: Number, default: 20 },
-
-
-    // Core fields from report
-    class: { type: String, required: true, trim: true, index: true },
-    stream: { type: String, required: true, trim: true },
-    classTeacher: { type: String, required: true, trim: true },
-    subjectsEnrolled: {
-        type: [String],
-        required: true,
-        default: [],
-        index: true
-    },
-
-
-    // Quiz tracking fields
-    quizzesCompletedThisWeek: { type: Number, default: 0, min: 0 },
-    lastQuizResetDate: { type: Date, default: Date.now },
-    recentQuizIds: {
-        type: [mongoose.Schema.Types.ObjectId],
-        default: [],
-        maxlength: 200
-    },
-    currentQuizSessionId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'QuizSession',
-        default: null
-    },
-
-
-    // Display preferences
-    firstNameDisplay: { type: String, trim: true },
-    preferredName: { type: String, trim: true },
-    preferences: {
-        type: Object,
-        default: {
-            fontSize: "medium",
-            theme: "light",
-            notifications_on: true,
-            fontFamily: "Inter, sans-serif"
-        }
-    },
-
-
-
-
-    // Achievement and XP System
-    xp: { type: Number, default: 0, min: 0 },
-    currentTier: { type: Number, default: 1, min: 1, max: 10 },
-
-    // Achievement tracking stats
-    totalCountriesIdentified: { type: Number, default: 0, min: 0 },
-    totalSudokuPuzzlesCompleted: { type: Number, default: 0, min: 0 },
-    perfectNearnessStreak: { type: Number, default: 0, min: 0 },
-    consecutiveCorrectSudoku: { type: Number, default: 0, min: 0 },
-    geoQuizStats: {
-        africaCompleted: { type: Boolean, default: false },
-        southAmericaCompleted: { type: Boolean, default: false },
-        highestScore: { type: Number, default: 0, min: 0 },
-        highestAccuracy: { type: Number, default: 0, min: 0, max: 100 }
-    },
-    sudokuStats: {
-        easyCompleted: { type: Number, default: 0, min: 0 },
-        mediumCompleted: { type: Number, default: 0, min: 0 },
-        hardCompleted: { type: Number, default: 0, min: 0 },
-        impossibleCompleted: { type: Number, default: 0, min: 0 },
-        insaneCompleted: { type: Number, default: 0, min: 0 },
-        brutalCompleted: { type: Number, default: 0, min: 0 },
-        perfectGames: { type: Number, default: 0, min: 0 }
-    },
-
-    // Achievement System
-    achievements: [{
-        type: { 
-            type: String, 
-            enum: ['quiz_master', 'streak_champion', 'byte_collector', 'early_bird', 'night_owl', 'perfect_score', 'speed_demon'],
-            required: true 
-        },
-        name: { type: String, required: true },
-        description: { type: String, required: true },
-        earnedAt: { type: Date, default: Date.now },
-        badgeIcon: { type: String, default: '' },
-        progress: { type: Number, default: 100 }
-    }],
-
-    // Streak tracking
-    currentStreak: { type: Number, default: 0, min: 0 },
-    longestStreak: { type: Number, default: 0, min: 0 },
-    lastActivityDate: { type: Date, default: Date.now },
-
-    // Total quiz count for all time
-    totalQuizzesCompleted: { type: Number, default: 0, min: 0 },
-
-    // Notifications
-    notifications: [{
-        type: { 
-            type: String, 
-            enum: ['achievement', 'message', 'system', 'team', 'quiz'],
-            required: true 
-        },
-        title: { type: String, required: true },
-        message: { type: String, required: true },
-        isRead: { type: Boolean, default: false },
-        createdAt: { type: Date, default: Date.now },
-        data: { type: Object, default: {} }
-    }],
-
-
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
-});
-
-
-studentSchema.pre('save', function(next) {
-    this.updatedAt = Date.now();
-    next();
-});
-const Student = mongoose.model('Student', studentSchema);
-
-
-// Enhanced QuizQuestion Schema with all question types and NLP features
-const quizQuestionSchema = new mongoose.Schema({
-    questionText: { type: String, required: true, trim: true },
-    subject: { type: String, required: true, trim: true, index: true },
-    intendedClass: { 
-        type: String, 
-        required: true, 
-        trim: true,
-        enum: ['S.1', 'S.2', 'S.3', 'S.4', 'S.5', 'S.6'],
-        index: true
-    },
-
-
-    // Question type system
-    type: {
-        type: String,
-        enum: [
-            'short-answer',
-            'multiple-choice-single',
-            'multiple-choice-multi',
-            'true-false',
-            'fill-in-the-blank',
-            'matching',
-            'ordering',
-            'problem-solving',
-            'numeric-entry'
-        ],
-        required: true
-    },
-
-
-    // Type-specific answer fields
-    options: [{
-        text: { type: String, required: true },
-        isCorrect: { type: Boolean, default: false }
-    }],
-    correctAnswers: {
-        type: [String],
-        required: function() {
-            return ['short-answer', 'true-false', 'problem-solving', 'fill-in-the-blank', 'numeric-entry'].includes(this.type);
-        }
-    },
-    matchingPairs: [{
-        itemA: { type: String, required: true },
-        itemB: { type: String, required: true }
-    }],
-    orderedItems: {
-        type: [String],
-        required: function() { return this.type === 'ordering'; }
-    },
-
-
-    // Additional question fields
-    instructions: { type: String, trim: true },
-    hint: { type: String, trim: true },
-    explanation: { type: String, trim: true },
-    maxBytesRewardPerQuestion: { type: Number, required: true, default: 1, min: 0 },
-
-
-    // NLP and content enhancement fields
-    keywordsForGrading: {
-        type: [String],
-        default: [],
-        set: (v) => v.map(s => s.toLowerCase().trim())
-    },
-    negativeKeywords: {
-        type: [String],
-        default: [],
-        set: (v) => v.map(s => s.toLowerCase().trim())
-    },
-
-
-    // Content tagging
-    topic: { type: String, trim: true, index: true },
-    subTopic: { type: String, trim: true, index: true },
-    skillType: {
-        type: [String],
-        enum: ["Memorization", "Application", "Analysis", "Problem-Solving", "Evaluation", "Creation"],
-        default: []
-    },
-
-
-    // Content management
-    isActive: { type: Boolean, default: true, index: true },
-    timesServedOverall: { type: Number, default: 0, min: 0, index: true },
-    lastServedTimestamp: { type: Date, index: true },
-
-
-    // Question hashing for duplicate detection
-    questionHash: { type: String, unique: true, sparse: true },
-
-
-    // Teacher attribution
-    uploadedBy: {
-        teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null },
-        teacherName: { type: String, required: true }
-    },
-
-
-    // Featured content
-    isFeatured: { type: Boolean, default: false },
-    featuredUntil: { 
-        type: Date, 
-        required: function() { return this.isFeatured; }
-    },
-
-
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
-});
-
-
-// Pre-save middleware to generate question hash
-quizQuestionSchema.pre('save', function(next) {
-    this.updatedAt = Date.now();
-
-
-    // Generate hash for duplicate detection
-    if (this.isModified('questionText')) {
-        const normalizedText = this.questionText.toLowerCase().trim().replace(/\s+/g, ' ');
-        this.questionHash = crypto.createHash('sha256').update(normalizedText).digest('hex');
-    }
-
-
-    next();
-});
-
-
-const QuizQuestion = mongoose.model('QuizQuestion', quizQuestionSchema);
-
-
-// QuizSession Schema - "Fats and Beef" mechanism
-const quizSessionSchema = new mongoose.Schema({
-    userId: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Student', 
-        required: true, 
-        index: true
-    },
-    questionsCompletedCount: { type: Number, default: 0, min: 0, max: 180 },
-    subjectProgress: {
-        type: mongoose.Schema.Types.Mixed,
-        default: function() {
-            const subjects = [
-                "Mathematics", "English Language", "Biology", "Chemistry", "Physics",
-                "History", "Geography", "Computer Science", "Agriculture", "Literature in English",
-                "French", "German", "Kiswahili", "Luganda", "Fine Art", "Performing Arts",
-                "Physical Education", "Technology and Design"
-            ];
-
-
-            const progress = {};
-            subjects.forEach(subject => {
-                progress[subject] = {
-                    ownClass: 0,
-                    lowerClass: 0,
-                    higherClass: 0
-                };
-            });
-            return progress;
-        }
-    },
-    startedAt: { type: Date, default: Date.now },
-    completedAt: { type: Date },
-    updatedAt: { type: Date, default: Date.now }
-});
-
-
-quizSessionSchema.pre('save', function(next) {
-    this.updatedAt = Date.now();
-    next();
-});
-const QuizSession = mongoose.model('QuizSession', quizSessionSchema);
-
-
-// CompletedQuizAttempt Schema - Immutable log
-const completedQuizAttemptSchema = new mongoose.Schema({
-    userId: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Student', 
-        required: true, 
-        index: true 
-    },
-    quizId: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'QuizQuestion', 
-        required: true, 
-        index: true 
-    },
-    studentClassAtAttempt: { type: String, required: true },
-    questionSubject: { type: String, required: true, index: true },
-    questionIntendedClass: { type: String, required: true },
-    bytesAwarded: { type: Number, default: 0, min: 0 },
-    isSuccessful: { type: Boolean, required: true },
-    attemptDate: { type: Date, default: Date.now, index: true },
-    quizSessionId: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'QuizSession' 
-    },
-
-
-    // Enhanced fields for analytics
-    studentAnswer: { type: mongoose.Schema.Types.Mixed },
-    correctAnswer: { type: mongoose.Schema.Types.Mixed },
-    questionType: { type: String, required: true },
-    partialScore: { type: Number, min: 0, max: 1 }
-});
-const CompletedQuizAttempt = mongoose.model('CompletedQuizAttempt', completedQuizAttemptSchema);
-
-
-// Teacher Schema with weekly tracking
-const teacherSchema = new mongoose.Schema({
-    teacherName: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    password: { type: String, required: true },
-    bytes: { type: Number, default: 0 },
-
-
-    // Weekly contribution tracking
-    quizzesUploadedThisWeek: { type: Number, default: 0, min: 0 },
-    lastUploadResetDate: { type: Date, default: Date.now },
-
-
-    // Profile fields
-    isPasswordSet: { type: Boolean, default: false },
-    gender: { 
-        type: String, 
-        enum: ['Male', 'Female', 'Other'], 
-        trim: true, 
-        default: 'Other' 
-    },
-    physicalDescription: { type: String, trim: true },
-    preferences: {
-        type: Object,
-        default: {
-            fontSize: "medium",
-            theme: "light",
-            notifications_on: true
-        }
-    },
-
-
-    createdAt: { type: Date, default: Date.now }
-});
-const Teacher = mongoose.model('Teacher', teacherSchema);
-
-
-// WorkFile and Activity schemas (existing)
-const workFileSchema = new mongoose.Schema({
-    title: { type: String, required: true, trim: true },
-    description: { type: String, trim: true },
-    fileUrl: { type: String, required: true },
-    subject: { type: String, required: true, trim: true },
-    intendedClass: { type: String, required: true, trim: true },
-    costBytes: { type: Number, required: true, default: 2, min: 0 },
-    uploadedBy: {
-        teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null },
-        teacherName: { type: String, required: true }
-    },
-    // This field links the WorkFile to its corresponding Activity
-    activity: { type: mongoose.Schema.Types.ObjectId, ref: 'Activity', required: true, unique: true },
-    applyDownloadWatermark: { type: Boolean, default: true },
-    downloadCount: { type: Number, default: 0, min: 0 },
-    createdAt: { type: Date, default: Date.now }
-});
-const WorkFile = mongoose.model('WorkFile', workFileSchema);
-
-// This posts the activity schema to the cloudinary database
-
-
-
-// REPLACE your old activitySchema with this one
-
-
-const activitySchema = new mongoose.Schema({
-    title: { type: String, required: true, trim: true },
-    description: { type: String, trim: true },
-    subject: { type: String, required: true, trim: true },
-    intendedClass: { type: String, required: true, trim: true },
-    maxBytesReward: { type: Number, required: true, default: 5, min: 0 },
-    associatedWorkFile: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'WorkFile',
-        required: true,
-        unique: true
-    },
-    questions: [{
-        questionText: { type: String, required: true, trim: true },
-        keywordsForMarking: {
-            type: [String],
-            required: true,
-            validate: {
-                validator: function(v) {
-                    return v && v.length > 0;
-                },
-                message: 'Each question must have at least one keyword for marking.'
-            }
-        }
-    }],
-    uploadedBy: {
-        teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null },
-        teacherName: { type: String, required: true }
-    },
-    createdAt: { type: Date, default: Date.now }
-});
-
-// Virtual field to calculate attempt count
-activitySchema.virtual('attemptCount', {
-    ref: 'StudentActivitySubmission',
-    localField: '_id',
-    foreignField: 'activity',
-    count: true
-});
-
-// Ensure virtuals are included in JSON
-activitySchema.set('toJSON', { virtuals: true });
-activitySchema.set('toObject', { virtuals: true });
-
-const Activity = mongoose.model('Activity', activitySchema);
-
-
-const studentActivitySubmissionSchema = new mongoose.Schema({
-    student: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Student',
-        required: true
-    },
-    activity: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Activity',
-        required: function() { return !this.quizQuestion; }
-    },
-    quizQuestion: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'QuizQuestion',
-        required: function() { return !this.activity; }
-    },
-    answers: {
-        type: mongoose.Schema.Types.Mixed,
-        required: true
-    },
-    score: { type: Number, default: 0 },
-    bytesEarned: { type: Number, default: 0 },
-    attemptNumber: { type: Number, default: 1 },
-    attemptType: { type: String, enum: ['initial', 'revision'], default: 'initial' },
-    lastAttemptDate: { type: Date, default: Date.now },
-    revealedKeywords: [{ type: String }],
-    submittedAt: { type: Date, default: Date.now },
-    isGraded: { type: Boolean, default: false }
-});
-const StudentActivitySubmission = mongoose.model('StudentActivitySubmission', studentActivitySubmissionSchema);
-
-
-// Administrator Schema
-const adminSchema = new mongoose.Schema({
-    adminName: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    password: { type: String, required: true },
-    createdAt: { type: Date, default: Date.now }
-});
-const Administrator = mongoose.model('Administrator', adminSchema);
-
-
-
-
-// --- Achievement and XP System Schemas ---
-
-// Player Level Tiers (10 levels)
-const playerLevelSchema = new mongoose.Schema({
-    tier: { 
-        type: Number, 
-        required: true, 
-        min: 1, 
-        max: 10, 
-        unique: true 
-    },
-    name: { 
-        type: String, 
-        required: true,
-        enum: ['New User', 'Novice', 'Apprentice', 'Adept', 'Specialist', 'Expert', 'Master', 'Grandmaster', 'Virtuoso', 'Legend']
-    },
-    totalXPRequired: { 
-        type: Number, 
-        required: true, 
-        min: 0 
-    },
-    levelUpByteReward: { 
-        type: Number, 
-        required: true, 
-        min: 0 
-    }
-}, { timestamps: true });
-const PlayerLevel = mongoose.model('PlayerLevel', playerLevelSchema);
-
-
-// Achievement Definitions
-const achievementSchema = new mongoose.Schema({
-    achievementId: { 
-        type: String, 
-        required: true, 
-        unique: true, 
-        trim: true 
-    },
-    name: { 
-        type: String, 
-        required: true, 
-        trim: true 
-    },
-    description: { 
-        type: String, 
-        required: true, 
-        trim: true 
-    },
-    tier: { 
-        type: String, 
-        required: true, 
-        enum: ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'] 
-    },
-    category: { 
-        type: String, 
-        required: true, 
-        enum: ['GeoQuiz', 'ByteSudoku', 'General'] 
-    },
-    byteReward: { 
-        type: Number, 
-        required: true, 
-        min: 0 
-    },
-    xpReward: { 
-        type: Number, 
-        required: true, 
-        min: 0 
-    },
-    icon: { 
-        type: String, 
-        default: 'fa-trophy' 
-    },
-    createdAt: { 
-        type: Date, 
-        default: Date.now 
-    }
-}, { timestamps: true });
-const Achievement = mongoose.model('Achievement', achievementSchema);
-
-
-// Student Achievement Progress
-const studentAchievementSchema = new mongoose.Schema({
-    student: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Student', 
-        required: true, 
-        index: true 
-    },
-    achievement: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Achievement', 
-        required: true 
-    },
-    achievementId: { 
-        type: String, 
-        required: true, 
-        trim: true 
-    },
-    unlocked: { 
-        type: Boolean, 
-        default: false 
-    },
-    unlockedAt: { 
-        type: Date 
-    },
-    progress: { 
-        type: Number, 
-        default: 0, 
-        min: 0 
-    },
-    target: { 
-        type: Number, 
-        default: 1, 
-        min: 1 
-    },
-    notificationSent: { 
-        type: Boolean, 
-        default: false 
-    }
-}, { timestamps: true });
-studentAchievementSchema.index({ student: 1, achievementId: 1 }, { unique: true });
-const StudentAchievement = mongoose.model('StudentAchievement', studentAchievementSchema);
-
-
-// Notification Schema
-const notificationSchema = new mongoose.Schema({
-    student: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Student', 
-        required: true, 
-        index: true 
-    },
-    type: { 
-        type: String, 
-        required: true, 
-        enum: ['achievement', 'message', 'level_up', 'system'] 
-    },
-    title: { 
-        type: String, 
-        required: true, 
-        trim: true 
-    },
-    message: { 
-        type: String, 
-        required: true, 
-        trim: true 
-    },
-    read: { 
-        type: Boolean, 
-        default: false 
-    },
-    data: { 
-        type: mongoose.Schema.Types.Mixed 
-    },
-    createdAt: { 
-        type: Date, 
-        default: Date.now, 
-        index: true 
-    }
-}, { timestamps: true });
-notificationSchema.index({ student: 1, read: 1, createdAt: -1 });
-const Notification = mongoose.model('Notification', notificationSchema);
-
-
 // --- Utility Functions ---
 
 
@@ -1414,6 +615,18 @@ async function gradeNLPAnswer(studentAnswer, quizQuestion) {
 }
 
 
+// Energy: refill 1 per hour, cap 25
+function refillEnergy(student) {
+    const now = Date.now();
+    const last = (student.lastEnergyRefillAt && new Date(student.lastEnergyRefillAt).getTime()) || now;
+    const hoursElapsed = Math.floor((now - last) / (60 * 60 * 1000));
+    if (hoursElapsed <= 0) return;
+    const added = Math.min(hoursElapsed, 25 - (student.energy || 0));
+    if (added <= 0) return;
+    student.energy = Math.min(25, (student.energy || 25) + hoursElapsed);
+    student.lastEnergyRefillAt = new Date(last + hoursElapsed * 60 * 60 * 1000);
+}
+
 // Weekly reset checker for students
 async function checkAndResetWeeklyCounters(student) {
     const now = new Date();
@@ -1444,13 +657,12 @@ async function checkAndResetTeacherWeeklyCounters(teacher) {
 }
 
 
-// Quiz generation algorithm implementing "Fats and Beef"
+// Quiz generation: Fats and Beef schema with fixture tables (7 usual, 2 revision, 1 stretch)
 async function generateQuizQuestions(student, requestedSubject = null) {
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-        // Get or create quiz session
         let quizSession = await QuizSession.findById(student.currentQuizSessionId).session(session);
         if (!quizSession) {
             quizSession = new QuizSession({
@@ -1462,136 +674,136 @@ async function generateQuizQuestions(student, requestedSubject = null) {
             await student.save({ session });
         }
 
-        // Determine question distribution based on class level
-        let ownClassCount, lowerClassCount, higherClassCount;
-        const studentClass = student.class;
+        const division = getDivision(student.class);
+        if (!division) {
+            await session.abortTransaction();
+            session.endSession();
+            throw new Error('Invalid student class for quiz generation.');
+        }
 
-        if (['S.1', 'S.2', 'S.3', 'S.4'].includes(studentClass)) {
-            // O-Level distribution: 5 own, 2 lower, 3 higher
-            ownClassCount = 5;
-            lowerClassCount = 2;
-            higherClassCount = 3;
-        } else {
-            // A-Level distribution: 7 own, 3 adjacent
-            ownClassCount = 7;
-            lowerClassCount = 0;
-            higherClassCount = 3;
+        // Upper school: only first 4 subjects (exclude General Paper / subject e)
+        const enrolledSubjects = division === 'upper'
+            ? (student.subjectsEnrolled || []).slice(0, 4)
+            : (student.subjectsEnrolled || []);
+        if (enrolledSubjects.length === 0) {
+            await session.abortTransaction();
+            session.endSession();
+            throw new Error('No subjects enrolled.');
+        }
+
+        const fixture = getFixture(division);
+        if (!fixture) {
+            await session.abortTransaction();
+            session.endSession();
+            throw new Error('No fixture for division.');
+        }
+
+        const sn = getQuizSerialNumber(quizSession.questionsCompletedCount, division);
+        const rowIndex = (sn - 1) % fixture.length;
+        const fixtureRow = fixture[rowIndex];
+
+        const studentClass = student.class;
+        const classIndex = CLASS_ORDER.indexOf(studentClass);
+        const ownClasses = [studentClass];
+        const lowerClasses = classIndex > 0 ? CLASS_ORDER.slice(0, classIndex) : [];
+        const upperClasses = classIndex < CLASS_ORDER.length - 1 ? CLASS_ORDER.slice(classIndex + 1) : [];
+
+        function getAllowedClasses(category) {
+            if (category === 'usual') return ownClasses;
+            if (category === 'revision') return lowerClasses;
+            if (category === 'stretch') return upperClasses;
+            return [];
         }
 
         const selectedQuestions = [];
         const usedQuestionIds = new Set();
 
-        // Helper function to get class levels for distribution
-        function getClassLevels(targetClass, type) {
-            const classOrder = ['S.1', 'S.2', 'S.3', 'S.4', 'S.5', 'S.6'];
-            const currentIndex = classOrder.indexOf(targetClass);
+        for (let slot = 1; slot <= 10; slot++) {
+            const subjectIndex = fixtureRow[slot - 1] % enrolledSubjects.length;
+            const subject = enrolledSubjects[subjectIndex];
+            const category = SLOT_CATEGORY[slot];
+            const allowedClasses = getAllowedClasses(category);
+            if (allowedClasses.length === 0) continue;
 
-            if (type === 'own') return [targetClass];
-            if (type === 'lower') {
-                return classOrder.slice(0, currentIndex);
+            const excludeIds = [...(student.recentQuizIds || []), ...Array.from(usedQuestionIds)];
+            const questions = await QuizQuestion.find({
+                subject: subject,
+                intendedClass: { $in: allowedClasses },
+                isActive: true,
+                _id: excludeIds.length ? { $nin: excludeIds } : { $exists: true }
+            })
+                .sort({ timesServedOverall: 1, lastServedTimestamp: 1 })
+                .limit(20)
+                .session(session)
+                .lean();
+
+            if (questions.length === 0) {
+                await session.abortTransaction();
+                session.endSession();
+                const result = await runContingencyAndRetry(student, quizSession, division);
+                return result;
             }
-            if (type === 'higher') {
-                return classOrder.slice(currentIndex + 1);
-            }
+            const chosen = questions[Math.floor(Math.random() * questions.length)];
+            selectedQuestions.push({ question: chosen, slot });
+            usedQuestionIds.add(chosen._id);
         }
 
-        // Shuffle array helper
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
+        shuffleArray(selectedQuestions);
 
-        // Fill questions for each category
-        await fillQuestionCategory('ownClass', ownClassCount, getClassLevels(studentClass, 'own'));
-        await fillQuestionCategory('lowerClass', lowerClassCount, getClassLevels(studentClass, 'lower'));
-        await fillQuestionCategory('higherClass', higherClassCount, getClassLevels(studentClass, 'higher'));
-
-        async function fillQuestionCategory(categoryType, count, allowedClasses) {
-            if (count === 0 || !allowedClasses || allowedClasses.length === 0) return;
-
-            let filled = 0;
-            const subjectsToTry = shuffleArray([...student.subjectsEnrolled]);
-
-            // Round-robin through subjects to ensure variety
-            while (filled < count && subjectsToTry.length > 0) {
-                for (let i = 0; i < subjectsToTry.length && filled < count; i++) {
-                    const subject = subjectsToTry[i];
-
-                    // Find questions NOT in recent quiz IDs
-                    const questions = await QuizQuestion.find({
-                        subject: subject,
-                        intendedClass: { $in: allowedClasses },
-                        isActive: true,
-                        _id: { $nin: [...student.recentQuizIds, ...usedQuestionIds] }
-                    })
-                    .sort({ timesServedOverall: 1, lastServedTimestamp: 1 }) // Prioritize least-served
-                    .limit(1)
-                    .session(session);
-
-                    if (questions.length > 0) {
-                        selectedQuestions.push({ 
-                            question: questions[0], 
-                            category: categoryType, 
-                            subject: subject 
-                        });
-                        usedQuestionIds.add(questions[0]._id);
-                        filled++;
-                    }
-                }
-
-                // If we couldn't fill from enrolled subjects, try ANY subject
-                if (filled < count) {
-                    const questions = await QuizQuestion.find({
-                        intendedClass: { $in: allowedClasses },
-                        isActive: true,
-                        _id: { $nin: [...student.recentQuizIds, ...usedQuestionIds] }
-                    })
-                    .sort({ timesServedOverall: 1, lastServedTimestamp: 1 })
-                    .limit(count - filled)
-                    .session(session);
-
-                    for (const q of questions) {
-                        selectedQuestions.push({ 
-                            question: q, 
-                            category: categoryType, 
-                            subject: q.subject 
-                        });
-                        usedQuestionIds.add(q._id);
-                        filled++;
-                    }
-                    break;
-                }
-            }
-        }
-
-        // Shuffle final questions to avoid predictable order
-        const shuffledQuestions = shuffleArray(selectedQuestions);
-
-        // Update question stats in background
         setImmediate(async () => {
-            for (const { question } of shuffledQuestions) {
+            for (const { question } of selectedQuestions) {
                 await QuizQuestion.updateOne(
                     { _id: question._id },
-                    { 
-                        $inc: { timesServedOverall: 1 },
-                        $set: { lastServedTimestamp: new Date() }
-                    }
+                    { $inc: { timesServedOverall: 1 }, $set: { lastServedTimestamp: new Date() } }
                 );
             }
         });
 
         await session.commitTransaction();
-        return shuffledQuestions.map(sq => sq.question);
-
+        session.endSession();
+        return selectedQuestions.map(sq => sq.question);
     } catch (error) {
         await session.abortTransaction();
-        throw error;
-    } finally {
         session.endSession();
+        throw error;
     }
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+async function runContingencyAndRetry(student, quizSession, division) {
+    const studentId = student._id;
+    const currentSessionId = quizSession._id;
+    const questionsInCycle = quizSession.questionsCompletedCount;
+    const cycleSize = CYCLE_SIZES[division];
+    const threeQuarters = getThreeQuartersCycle(division);
+
+    const sessionsToUnflag = [];
+    if ((student.contingencyRepeatCount || 0) >= 10) {
+        const lastTwo = await QuizSession.find({ userId: studentId }).sort({ startedAt: -1 }).limit(2).lean();
+        sessionsToUnflag.push(...lastTwo.map(s => s._id));
+    } else if (questionsInCycle >= threeQuarters) {
+        sessionsToUnflag.push(currentSessionId);
+    } else {
+        sessionsToUnflag.push(currentSessionId);
+        const previous = await QuizSession.findOne({ userId: studentId, _id: { $ne: currentSessionId } }).sort({ startedAt: -1 }).lean();
+        if (previous) sessionsToUnflag.push(previous._id);
+    }
+
+    const attempts = await CompletedQuizAttempt.find({ quizSessionId: { $in: sessionsToUnflag } }).select('quizId').lean();
+    const idsToRestore = attempts.map(a => a.quizId);
+    const recentIds = (student.recentQuizIds || []).filter(id => !idsToRestore.some(rid => rid.equals(id)));
+    student.recentQuizIds = recentIds;
+    student.contingencyRepeatCount = (student.contingencyRepeatCount || 0) + 1;
+    await student.save();
+
+    const updatedStudent = await Student.findById(studentId);
+    return generateQuizQuestions(updatedStudent, null);
 }
 
 
@@ -1859,22 +1071,21 @@ Student's question: ${message.trim()}`;
 // Initialize admin account on startup
 async function initializeAdmin() {
     try {
-        const adminEmail = 'zackian1122@gmail.com';
-        const existingAdmin = await Administrator.findOne({ email: adminEmail });
-
-
+        const adminEmail = process.env.ADMIN_EMAIL;
+        const adminPassword = process.env.ADMIN_INITIAL_PASSWORD || process.env.ADMIN_PASSWORD;
+        if (!adminEmail || !adminPassword) {
+            console.warn('Admin init skipped: set ADMIN_EMAIL and ADMIN_INITIAL_PASSWORD (or ADMIN_PASSWORD) in .env to create the initial admin.');
+            return;
+        }
+        const existingAdmin = await Administrator.findOne({ email: adminEmail.toLowerCase() });
         if (!existingAdmin) {
             const saltRounds = 10;
-            const hashedPassword = await bcrypt.hash('001@simax001@simax', saltRounds);
-
-
+            const hashedPassword = await bcrypt.hash(adminPassword, saltRounds);
             const newAdmin = new Administrator({
-                adminName: 'Administrator',
-                email: adminEmail,
+                adminName: process.env.ADMIN_NAME || 'Administrator',
+                email: adminEmail.toLowerCase().trim(),
                 password: hashedPassword
             });
-
-
             await newAdmin.save();
             console.log('Initial administrator account created successfully.');
         } else {
@@ -2206,6 +1417,7 @@ app.post('/login-student', [
             message: 'Login successful!',
             token: token,
             student: {
+                _id: student._id,
                 studentName: student.studentName,
                 email: student.email,
                 class: student.class,
@@ -2427,9 +1639,9 @@ app.get('/student/dashboard', authenticateToken, async (req, res) => {
         }
 
 
-        // Check and reset weekly counters
         await checkAndResetWeeklyCounters(studentData);
-
+        refillEnergy(studentData);
+        await studentData.save();
 
         res.status(200).json({
             message: `Welcome to your dashboard, ${studentData.studentName}!`,
@@ -2440,6 +1652,8 @@ app.get('/student/dashboard', authenticateToken, async (req, res) => {
                 email: studentData.email,
                 isEmailVerified: studentData.isEmailVerified,
                 bytes: studentData.bytes || 0,
+                energy: studentData.energy != null ? studentData.energy : 25,
+                lastEnergyRefillAt: studentData.lastEnergyRefillAt,
                 class: studentData.class,
                 stream: studentData.stream,
                 classTeacher: studentData.classTeacher,
@@ -2471,21 +1685,26 @@ app.get('/student/quizzes/generate', authenticateToken, async (req, res) => {
         }
 
 
-        // Check weekly quiz limit
         await checkAndResetWeeklyCounters(student);
-        const weeklyLimit = 50; // Configurable
-
+        refillEnergy(student);
+        const weeklyLimit = 50;
 
         if (student.quizzesCompletedThisWeek >= weeklyLimit) {
-            return res.status(429).json({ 
+            return res.status(429).json({
                 message: 'You have reached your weekly quiz limit. Please try again next week!',
                 limit: weeklyLimit,
                 completed: student.quizzesCompletedThisWeek
             });
         }
 
+        const energy = (student.energy != null ? student.energy : 25);
+        if (energy < 1) {
+            return res.status(402).json({
+                message: 'Not enough energy. Energy refills 1 per hour (max 25).',
+                energy: student.energy
+            });
+        }
 
-        // Generate quiz questions using enhanced algorithm
         let questions = await generateQuizQuestions(student, req.query.subject);
 
 
@@ -2554,6 +1773,7 @@ IMPORTANT: Respond ONLY with valid JSON. Start with { and end with }. Do not inc
             }
         }
 
+        await Student.updateOne({ _id: req.student.id }, { $inc: { energy: -1 } });
 
         // Return questions without correct answers
         const sanitizedQuestions = questions.map(q => ({
@@ -3017,6 +2237,8 @@ app.post('/student/quizzes/submit', authenticateToken, [
                     partialScore = 0;
             }
 
+            // Fats and beef: 1 byte per correct question, 0 for wrong (no partial bytes)
+            questionBytes = isCorrect ? 1 : 0;
 
             totalBytesEarned += questionBytes;
 
@@ -3059,8 +2281,7 @@ app.post('/student/quizzes/submit', authenticateToken, [
         }
 
 
-        // Round total bytes earned
-        const finalBytesEarned = Math.round(totalBytesEarned);
+        const finalBytesEarned = totalBytesEarned;
 
 
         // Update student data
@@ -3088,32 +2309,26 @@ app.post('/student/quizzes/submit', authenticateToken, [
         quizSession.updatedAt = new Date();
 
 
-        // Check if 180-question cycle is complete
-        if (quizSession.questionsCompletedCount >= 180) {
+        const division = getDivision(updatedStudent.class);
+        const cycleSize = division ? CYCLE_SIZES[division] : 180;
+        const cycleComplete = cycleSize && quizSession.questionsCompletedCount >= cycleSize;
+
+        if (cycleComplete) {
             quizSession.completedAt = new Date();
-
-
-            // Create new quiz session
             const newQuizSession = new QuizSession({
                 userId: studentId,
                 questionsCompletedCount: 0
             });
             await newQuizSession.save({ session });
-
-
-            student.currentQuizSessionId = newQuizSession._id;
-            await student.save({ session });
+            updatedStudent.currentQuizSessionId = newQuizSession._id;
+            updatedStudent.contingencyRepeatCount = 0;
+            await updatedStudent.save({ session });
         }
-
 
         await quizSession.save({ session });
 
-
-        // Bulk insert completed attempts
         await CompletedQuizAttempt.insertMany(completedAttempts, { session });
 
-
-        // Success - commit transaction
             await session.commitTransaction();
             session.endSession();
 
@@ -3127,8 +2342,8 @@ app.post('/student/quizzes/submit', authenticateToken, [
                 gradedAnswers: gradedAnswers,
                 cycleProgress: {
                     questionsCompleted: quizSession.questionsCompletedCount,
-                    totalCycleQuestions: 180,
-                    cycleComplete: quizSession.completedAt ? true : false
+                    totalCycleQuestions: cycleSize || 180,
+                    cycleComplete: !!quizSession.completedAt
                 }
             });
 
@@ -3162,6 +2377,7 @@ app.post('/student/quizzes/submit', authenticateToken, [
     });
 
 
+});
 // Helper function to determine question category
 function determineQuestionCategory(studentClass, questionClass) {
     const classOrder = ['S.1', 'S.2', 'S.3', 'S.4', 'S.5', 'S.6'];
@@ -3946,9 +3162,52 @@ const upload = multer({
     limits: { fileSize: 25 * 1024 * 1024 } // 25MB file size limit
 });
 
+const imageFilter = (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Invalid file type. Only JPEG, PNG, WebP allowed.'), false);
+};
+const uploadImage = multer({
+    storage: multer.memoryStorage(),
+    fileFilter: imageFilter,
+    limits: { fileSize: 8 * 1024 * 1024 } // 8MB
+});
 
 
-// Game bytes award endpoint
+
+// Byte games: 2 bytes to start, 7 if well performed (net +5)
+const BYTE_GAME_NAMES = ['sudoku', 'geoquiz', 'geography quiz', 'geography'];
+const GAME_COST_BYTES = 2;
+const GAME_MAX_REWARD_BYTES = 7;
+
+app.post('/api/games/start', authenticateToken, async (req, res) => {
+    try {
+        const { gameName } = req.body;
+        const studentId = req.student.id;
+        const student = await Student.findById(studentId);
+        if (!student) return res.status(404).json({ message: 'Student not found' });
+        const cost = GAME_COST_BYTES;
+        if ((student.bytes || 0) < cost) {
+            return res.status(402).json({
+                message: `Byte games cost ${cost} bytes to start. You need ${cost - (student.bytes || 0)} more bytes.`,
+                bytesRequired: cost,
+                currentBytes: student.bytes
+            });
+        }
+        student.bytes = (student.bytes || 0) - cost;
+        await student.save();
+        res.status(200).json({
+            message: 'Game started! Perform well to earn 7 bytes.',
+            bytesDeducted: cost,
+            totalBytes: student.bytes,
+            gameName: gameName || 'game'
+        });
+    } catch (error) {
+        console.error('Error starting game:', error);
+        res.status(500).json({ message: 'Failed to start game', error: error.message });
+    }
+});
+
 app.post('/api/games/award-bytes', authenticateToken, async (req, res) => {
     try {
         const { gameName, bytesEarned, ...gameData } = req.body;
@@ -3963,13 +3222,16 @@ app.post('/api/games/award-bytes', authenticateToken, async (req, res) => {
             return res.status(404).json({ message: 'Student not found' });
         }
 
-        // Award bytes
-        student.bytes += Math.round(bytesEarned);
+        let amount = Math.round(bytesEarned);
+        const isByteGame = gameName && BYTE_GAME_NAMES.some(n => String(gameName).toLowerCase().includes(n.toLowerCase()));
+        if (isByteGame && amount > GAME_MAX_REWARD_BYTES) amount = GAME_MAX_REWARD_BYTES;
+
+        student.bytes += amount;
         await student.save();
 
         res.status(200).json({
             message: 'Bytes awarded successfully!',
-            bytesEarned: Math.round(bytesEarned),
+            bytesEarned: amount,
             totalBytes: student.bytes,
             gameName: gameName
         });
@@ -4043,6 +3305,16 @@ app.post(
             for (const [kIndex, keyword] of question.keywordsForMarking.entries()) {
                 if (!keyword || typeof keyword !== 'string' || keyword.trim().length < 1 || keyword.trim().length > 100) {
                     return res.status(400).json({ message: `Question ${qIndex + 1}, Keyword ${kIndex + 1}: Keywords cannot be empty and must be between 1 and 100 characters.` });
+                }
+            }
+            if (Array.isArray(question.negativeKeywords)) {
+                for (const [kIndex, keyword] of question.negativeKeywords.entries()) {
+                    if (keyword != null && typeof keyword !== 'string') {
+                        return res.status(400).json({ message: `Question ${qIndex + 1}, Negative keyword ${kIndex + 1}: must be a string.` });
+                    }
+                    if (typeof keyword === 'string' && keyword.trim().length > 100) {
+                        return res.status(400).json({ message: `Question ${qIndex + 1}, Negative keyword ${kIndex + 1}: cannot exceed 100 characters.` });
+                    }
                 }
             }
         }
@@ -4826,14 +4098,16 @@ app.post('/admin/trigger-yearly-upgrade', authenticateAdminToken, async (req, re
 });
 
 
-// Leaderboard endpoints (existing)
-app.get('/leaderboard', authenticateToken, async (req, res) => {
+// Leaderboard: single handler, mounted on both paths to avoid duplicate logic
+async function getLeaderboardHandler(req, res) {
     try {
+        const { limit = 200 } = req.query;
         const currentStudentId = req.student.id;
 
-        const students = await Student.find({})
+        const students = await Student.find({ isEmailVerified: true })
             .sort({ bytes: -1 })
-            .select('preferredName studentName bytes currentTier')
+            .select('preferredName studentName bytes xp currentTier')
+            .limit(Math.min(parseInt(limit, 10) || 200, 500))
             .lean();
 
         const leaderboard = students.map((student, index) => {
@@ -4842,25 +4116,27 @@ app.get('/leaderboard', authenticateToken, async (req, res) => {
             const displayName = student.preferredName || student.studentName;
 
             return {
-                rank: rank,
-                displayName: displayName,
-                bytes: rank <= 200 ? student.bytes : undefined,
+                rank,
+                displayName,
+                bytes: rank <= 200 || isCurrentUser ? student.bytes : undefined,
+                xp: student.xp,
                 tier: student.currentTier || 1,
-                isCurrentUser: isCurrentUser
+                isCurrentUser
             };
         });
 
         res.status(200).json({
             message: 'Leaderboard fetched successfully!',
-            leaderboard: leaderboard.slice(0, 200)
+            leaderboard,
+            totalPlayers: leaderboard.length
         });
-
     } catch (error) {
         console.error('Error fetching leaderboard:', error);
         res.status(500).json({ message: 'Server error fetching leaderboard.', error: error.message });
     }
-});
-
+}
+app.get('/leaderboard', authenticateToken, getLeaderboardHandler);
+app.get('/api/leaderboard', authenticateToken, getLeaderboardHandler);
 
 app.get('/teacher/leaderboard', async (req, res) => {
     try {
@@ -5059,10 +4335,10 @@ async function createNotification(studentId, type, title, message, metadata = {}
     try {
         const notification = new Notification({
             student: studentId,
-            type: type,
-            title: title,
-            message: message,
-            metadata: metadata,
+            type,
+            title,
+            message,
+            data: metadata,
             read: false
         });
         await notification.save();
@@ -5088,7 +4364,7 @@ async function checkAndUpdateTier(studentId) {
 
             await createNotification(
                 studentId,
-                'tier_up',
+                'level_up',
                 `Tier Up! You're now ${nextTier.name}!`,
                 `Congratulations! You've earned ${nextTier.levelUpByteReward} bonus bytes for reaching Tier ${nextTier.tier}.`,
                 { 
@@ -5343,52 +4619,6 @@ app.patch('/api/student/notifications/:id/read', authenticateToken, async (req, 
     } catch (error) {
         console.error('Error marking notification as read:', error);
         res.status(500).json({ message: 'Failed to update notification', error: error.message });
-    }
-});
-
-// Get Leaderboard
-app.get('/api/leaderboard', authenticateToken, async (req, res) => {
-    try {
-        const { limit = 200 } = req.query;
-        const currentStudentId = req.student.id;
-
-        // Get all students sorted by bytes
-        const allStudents = await Student.find({ isEmailVerified: true })
-            .select('preferredName studentName bytes xp currentTier')
-            .sort({ bytes: -1 });
-
-        // Top 200 get full preferred names shown
-        const leaderboard = allStudents.map((student, index) => {
-            const isCurrentUser = student._id.toString() === currentStudentId;
-            const rank = index + 1;
-            let displayName;
-
-            if (rank <= 200 || isCurrentUser) {
-                displayName = student.preferredName || student.studentName;
-            } else {
-                // Anonymize: first 3 letters + ***
-                const name = student.preferredName || student.studentName;
-                displayName = name.substring(0, 3) + '***';
-            }
-
-            return {
-                rank,
-                displayName,
-                bytes: student.bytes,
-                xp: student.xp,
-                tier: student.currentTier,
-                isCurrentUser
-            };
-        });
-
-        res.status(200).json({
-            leaderboard: leaderboard.slice(0, parseInt(limit)),
-            totalPlayers: allStudents.length
-        });
-
-    } catch (error) {
-        console.error('Error fetching leaderboard:', error);
-        res.status(500).json({ message: 'Failed to fetch leaderboard', error: error.message });
     }
 });
 
@@ -6187,6 +5417,34 @@ app.get('/api/students/suggestions', authenticateToken, async (req, res) => {
   }
 });
 
+// E2E Chat: Save current user's public key
+app.post('/api/students/me/chat-public-key', authenticateToken, async (req, res) => {
+  try {
+    const { publicKey } = req.body;
+    if (!publicKey || typeof publicKey !== 'string') {
+      return res.status(400).json({ error: 'publicKey (base64) is required' });
+    }
+    await Student.findByIdAndUpdate(req.student.id, { chatPublicKey: publicKey.trim() });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error saving chat public key:', error);
+    res.status(500).json({ error: 'Failed to save public key' });
+  }
+});
+
+// E2E Chat: Get another user's public key
+app.get('/api/students/:id/chat-public-key', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const student = await Student.findById(id).select('chatPublicKey').lean();
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+    res.json({ publicKey: student.chatPublicKey || null });
+  } catch (error) {
+    console.error('Error fetching chat public key:', error);
+    res.status(500).json({ error: 'Failed to fetch public key' });
+  }
+});
+
 // Search students for chat
 app.get('/api/students/search', authenticateToken, async (req, res) => {
   try {
@@ -6257,31 +5515,229 @@ app.get('/api/messages/personal/:conversationId', authenticateToken, async (req,
     const messages = await query.lean();
 
     // Reverse messages to display them in chronological order (oldest first)
-    const formattedMessages = messages.map(msg => ({
-      id: msg._id.toString(),
-      _id: msg._id.toString(),
-      sender_id: msg.sender_id._id.toString(),
-      recipient_id: msg.recipient_id._id.toString(),
-      content: msg.content,
-      read: msg.read,
-      delivered: msg.delivered,
-      created_at: msg.created_at,
-      sender: {
-        id: msg.sender_id._id.toString(),
-        username: msg.sender_id.studentName,
-        avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${msg.sender_id.studentName}`
-      },
-      recipient: {
-        id: msg.recipient_id._id.toString(),
-        username: msg.recipient_id.studentName,
-        avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${msg.recipient_id.studentName}`
-      }
-    })).reverse();
+    const formattedMessages = messages.map(msg => {
+      const fm = {
+        id: msg._id.toString(),
+        _id: msg._id.toString(),
+        sender_id: msg.sender_id._id.toString(),
+        recipient_id: msg.recipient_id._id.toString(),
+        content: msg.content,
+        read: msg.read,
+        delivered: msg.delivered,
+        created_at: msg.created_at,
+        replyTo: msg.replyTo ? { id: msg.replyTo.id?.toString(), content: msg.replyTo.content, sender_id: msg.replyTo.sender_id?.toString() } : null,
+        quoteProject: msg.quoteProject ? { id: msg.quoteProject.id?.toString(), photoUrl: msg.quoteProject.photoUrl, title: msg.quoteProject.title } : null,
+        sender: { id: msg.sender_id._id.toString(), username: msg.sender_id.studentName, avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${msg.sender_id.studentName}` },
+        recipient: { id: msg.recipient_id._id.toString(), username: msg.recipient_id.studentName, avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${msg.recipient_id.studentName}` }
+      };
+      return fm;
+    }).reverse();
 
     res.json(formattedMessages);
   } catch (error) {
     console.error('Failed to load personal messages:', error);
     res.status(500).json({ error: 'Failed to load messages' });
+  }
+});
+
+// ============= UNEB PROJECT GALLERY =============
+
+app.post('/api/uneb-projects', authenticateToken, uploadImage.single('photo'), [
+  body('title').notEmpty().trim().withMessage('Project title is required'),
+  body('subject').notEmpty().trim().withMessage('Subject is required'),
+  body('year').notEmpty().trim().withMessage('Year is required'),
+  body('category').notEmpty().trim().withMessage('Category is required'),
+  body('methodology').notEmpty().trim().withMessage('Methodology is required')
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  if (!req.file) return res.status(400).json({ error: 'Project photo is required (student with report)' });
+
+  try {
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        { resource_type: 'image', folder: 'schoolbyte/uneb-projects' },
+        (err, result) => err ? reject(err) : resolve(result)
+      ).end(req.file.buffer);
+    });
+
+    const student = await Student.findById(req.student.id);
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+
+    const project = new UnebProject({
+      student_id: req.student.id,
+      photoUrl: result.secure_url,
+      photoPublicId: result.public_id,
+      title: req.body.title.trim(),
+      subject: req.body.subject.trim(),
+      year: req.body.year.trim(),
+      category: req.body.category.trim(),
+      methodology: req.body.methodology.trim(),
+      abstract: (req.body.abstract || '').trim(),
+      findings: (req.body.findings || '').trim(),
+      conclusion: (req.body.conclusion || '').trim(),
+      keywords: (req.body.keywords || '').split(',').map(k => k.trim()).filter(Boolean)
+    });
+    await project.save();
+    const populated = await UnebProject.findById(project._id).populate('student_id', 'studentName class stream');
+    res.status(201).json({
+      message: 'Project published successfully!',
+      project: formatUnebProject(populated, req.student.id)
+    });
+  } catch (err) {
+    console.error('UNEB project upload error:', err);
+    res.status(500).json({ error: 'Failed to upload project', detail: err.message });
+  }
+});
+
+function formatUnebProject(p, currentUserId) {
+  const doc = p.toObject ? p.toObject() : p;
+  const student = doc.student_id;
+  return {
+    id: doc._id.toString(),
+    _id: doc._id.toString(),
+    photoUrl: doc.photoUrl,
+    title: doc.title,
+    subject: doc.subject,
+    year: doc.year,
+    category: doc.category,
+    methodology: doc.methodology,
+    abstract: doc.abstract,
+    findings: doc.findings,
+    conclusion: doc.conclusion,
+    keywords: doc.keywords || [],
+    likesCount: (doc.likes || []).length,
+    likedByMe: (doc.likes || []).some(id => id.toString() === currentUserId),
+    helpfulCount: (doc.helpfulVotes || []).filter(v => v.helpful).length,
+    notHelpfulCount: (doc.helpfulVotes || []).filter(v => !v.helpful).length,
+    myHelpfulVote: (doc.helpfulVotes || []).find(v => v.studentId.toString() === currentUserId)?.helpful ?? null,
+    student: student ? { id: student._id.toString(), studentName: student.studentName, class: student.class, stream: student.stream } : null,
+    createdAt: doc.createdAt
+  };
+}
+
+app.get('/api/uneb-projects', authenticateToken, async (req, res) => {
+  try {
+    const { sort = 'likes', subject, year, category, q, limit = 20, skip = 0 } = req.query;
+    const query = { deletedAt: null, isPublished: true };
+    if (subject) query.subject = new RegExp(subject, 'i');
+    if (year) query.year = year;
+    if (category) query.category = new RegExp(category, 'i');
+    if (q && q.trim()) {
+      const re = new RegExp(q.trim(), 'i');
+      query.$or = [
+        { title: re },
+        { methodology: re },
+        { abstract: re },
+        { keywords: re }
+      ];
+    }
+
+    let projects = await UnebProject.find(query).populate('student_id', 'studentName class stream').lean();
+
+    if (sort === 'recent') projects.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    else if (sort === 'likes') projects.sort((a, b) => (b.likes?.length || 0) - (a.likes?.length || 0) || new Date(b.createdAt) - new Date(a.createdAt));
+    else if (sort === 'helpful') projects.sort((a, b) => {
+      const hA = (a.helpfulVotes || []).filter(v => v.helpful).length;
+      const hB = (b.helpfulVotes || []).filter(v => v.helpful).length;
+      return hB - hA || new Date(b.createdAt) - new Date(a.createdAt);
+    });
+    else projects.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const skipN = parseInt(skip) || 0;
+    const limitN = parseInt(limit) || 20;
+    projects = projects.slice(skipN, skipN + limitN);
+
+    const formatted = projects.map(p => formatUnebProjectLean(p, req.student.id));
+    res.json({ projects: formatted });
+  } catch (err) {
+    console.error('UNEB projects list error:', err);
+    res.status(500).json({ error: 'Failed to fetch projects', detail: err.message });
+  }
+});
+
+function formatUnebProjectLean(doc, currentUserId) {
+  const student = doc.student_id;
+  return {
+    id: doc._id.toString(),
+    _id: doc._id.toString(),
+    photoUrl: doc.photoUrl,
+    title: doc.title,
+    subject: doc.subject,
+    year: doc.year,
+    category: doc.category,
+    methodology: doc.methodology,
+    abstract: doc.abstract,
+    findings: doc.findings,
+    conclusion: doc.conclusion,
+    keywords: doc.keywords || [],
+    likesCount: (doc.likes || []).length,
+    likedByMe: (doc.likes || []).some(id => id.toString() === currentUserId),
+    helpfulCount: (doc.helpfulVotes || []).filter(v => v.helpful).length,
+    notHelpfulCount: (doc.helpfulVotes || []).filter(v => !v.helpful).length,
+    myHelpfulVote: (doc.helpfulVotes || []).find(v => v.studentId.toString() === currentUserId)?.helpful ?? null,
+    student: student ? { id: student._id.toString(), studentName: student.studentName, class: student.class, stream: student.stream } : null,
+    createdAt: doc.createdAt
+  };
+}
+
+app.get('/api/uneb-projects/:id', authenticateToken, async (req, res) => {
+  try {
+    const project = await UnebProject.findOne({ _id: req.params.id, deletedAt: null }).populate('student_id', 'studentName email class stream');
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    res.json(formatUnebProjectLean(project.toObject ? project.toObject() : project, req.student.id));
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch project' });
+  }
+});
+
+app.post('/api/uneb-projects/:id/like', authenticateToken, async (req, res) => {
+  try {
+    const project = await UnebProject.findOne({ _id: req.params.id, deletedAt: null });
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    const idx = (project.likes || []).findIndex(id => id.toString() === req.student.id);
+    if (idx >= 0) project.likes.splice(idx, 1);
+    else project.likes.push(req.student.id);
+    await project.save();
+    res.json({ likedByMe: idx < 0, likesCount: project.likes.length });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update like' });
+  }
+});
+
+app.post('/api/uneb-projects/:id/helpful', authenticateToken, async (req, res) => {
+  try {
+    const { helpful } = req.body;
+    if (typeof helpful !== 'boolean') return res.status(400).json({ error: 'helpful (boolean) required' });
+    const project = await UnebProject.findOne({ _id: req.params.id, deletedAt: null });
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    project.helpfulVotes = project.helpfulVotes || [];
+    const existing = project.helpfulVotes.findIndex(v => v.studentId.toString() === req.student.id);
+    if (existing >= 0) project.helpfulVotes[existing].helpful = helpful;
+    else project.helpfulVotes.push({ studentId: req.student.id, helpful });
+    await project.save();
+    const hCount = project.helpfulVotes.filter(v => v.helpful).length;
+    const nCount = project.helpfulVotes.filter(v => !v.helpful).length;
+    res.json({ myHelpfulVote: helpful, helpfulCount: hCount, notHelpfulCount: nCount });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update helpful vote' });
+  }
+});
+
+app.delete('/api/uneb-projects/:id', authenticateToken, async (req, res) => {
+  try {
+    const project = await UnebProject.findOne({ _id: req.params.id });
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    if (project.student_id.toString() !== req.student.id) return res.status(403).json({ error: 'You can only delete your own projects' });
+    project.deletedAt = new Date();
+    project.isPublished = false;
+    await project.save();
+    if (project.photoPublicId) {
+      try { await cloudinary.uploader.destroy(project.photoPublicId); } catch (e) { console.warn('Cloudinary delete failed:', e); }
+    }
+    res.json({ message: 'Project removed from gallery' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete project' });
   }
 });
 
@@ -6736,24 +6192,6 @@ if (!teamSchemaUpdate.path('members')) {
   });
 }
 
-// Start the server
-const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 SchoolByte server running on port ${PORT}`);
-  console.log(`🌐 Server accessible at: http://0.0.0.0:${PORT}`);
-  console.log(`📡 Socket.io chat server ready`);
-  console.log('✅ All quiz system features implemented:');
-  console.log('  ✓ Enhanced database schemas');
-  console.log('  ✓ "Fats and Beef" quiz balancing mechanism');
-  console.log('  ✓ Advanced NLP grading system');
-  console.log('  ✓ Duplicate detection with hashing');
-  console.log('  ✓ Weekly tracking for students and teachers');
-  console.log('  ✓ Comprehensive analytics');
-  console.log('  ✓ Multiple question types support');
-  console.log('  ✓ Subject-based curriculum management');
-});
-
-
 // Student endpoint to fetch activities by subject and class
 app.get('/student/activities', authenticateToken, async (req, res) => {
     try {
@@ -6897,51 +6335,69 @@ app.post('/student/activities/submit', authenticateToken, [
             return res.status(404).json({ message: 'Activity not found.' });
         }
 
-        // Grade each answer using NLP keyword matching
+        refillEnergy(student);
+        const energy = (student.energy != null ? student.energy : 25);
+        if (energy < 1) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(402).json({
+                message: 'Not enough energy. Energy refills 1 per hour (max 25).',
+                energy: student.energy
+            });
+        }
+        student.energy = Math.max(0, energy - 1);
+        await student.save({ session });
+
+        // Activity grading: (min(w,30)/30)*5 + (p/P)*10 - (n/N)*5 per question; min 30 words recommended
         let totalScore = 0;
-        let maxPossibleScore = activity.questions.length;
         const gradedAnswers = [];
 
         for (let i = 0; i < activity.questions.length; i++) {
             const question = activity.questions[i];
-            const studentAnswer = answers[i]?.answer || '';
+            const studentAnswer = (answers[i]?.answer || '').trim();
+            const P = (question.keywordsForMarking || []).length;
+            const N = (question.negativeKeywords || []).length;
 
-            if (!studentAnswer.trim()) {
-                gradedAnswers.push({
-                    questionIndex: i,
-                    score: 0,
-                    feedback: 'No answer provided.'
-                });
+            if (!studentAnswer) {
+                gradedAnswers.push({ questionIndex: i, score: 0, feedback: 'No answer provided.' });
+                totalScore += 0;
                 continue;
             }
 
-            // NLP Grading: Count matching keywords
-            const keywords = question.keywordsForMarking || [];
             const normalizedAnswer = studentAnswer.toLowerCase();
-            let matchedKeywords = 0;
+            const words = studentAnswer.split(/\s+/).filter(Boolean);
+            const w = words.length;
+            const wCap = Math.min(w, 30);
 
-            for (const keyword of keywords) {
-                if (normalizedAnswer.includes(keyword.toLowerCase())) {
-                    matchedKeywords++;
-                }
+            let p = 0;
+            for (const kw of (question.keywordsForMarking || [])) {
+                if (normalizedAnswer.includes(kw.toLowerCase().trim())) p++;
+            }
+            let n = 0;
+            for (const kw of (question.negativeKeywords || [])) {
+                if (normalizedAnswer.includes(kw.toLowerCase().trim())) n++;
             }
 
-            // Calculate score as percentage of keywords found
-            const questionScore = keywords.length > 0 ? matchedKeywords / keywords.length : 0;
+            const wordTerm = (wCap / 30) * 5;
+            const posTerm = P > 0 ? (p / P) * 10 : 0;
+            const negTerm = N > 0 ? (n / N) * 5 : 0;
+            const questionScore = Math.max(0, wordTerm + posTerm - negTerm);
             totalScore += questionScore;
 
             gradedAnswers.push({
                 questionIndex: i,
                 score: questionScore,
-                matchedKeywords: matchedKeywords,
-                totalKeywords: keywords.length,
+                wordCount: w,
+                matchedPositive: p,
+                totalPositive: P,
+                matchedNegative: n,
+                totalNegative: N,
                 feedback: questionScore >= 0.7 ? 'Good answer!' : questionScore >= 0.4 ? 'Partial credit.' : 'Needs improvement.'
             });
         }
 
-        // Calculate bytes earned (proportional to score)
-        const scorePercentage = maxPossibleScore > 0 ? totalScore / maxPossibleScore : 0;
-        const bytesEarned = Math.round(activity.maxBytesReward * scorePercentage);
+        const scorePercentage = activity.questions.length > 0 ? totalScore / activity.questions.length : 0;
+        const bytesEarned = Math.round(activity.maxBytesReward * Math.min(1, scorePercentage));
 
         // Award bytes to student
         student.bytes += bytesEarned;
@@ -6978,4 +6434,20 @@ app.post('/student/activities/submit', authenticateToken, [
     }
 });
 
+// Start the server (must be after all route definitions)
+const PORT = process.env.PORT || 5000;
+httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 SchoolByte server running on port ${PORT}`);
+  console.log(`🌐 Server accessible at: http://0.0.0.0:${PORT}`);
+  console.log(`📡 Socket.io chat server ready`);
+  console.log('✅ All quiz system features implemented:');
+  console.log('  ✓ Enhanced database schemas');
+  console.log('  ✓ "Fats and Beef" quiz balancing mechanism');
+  console.log('  ✓ Advanced NLP grading system');
+  console.log('  ✓ Duplicate detection with hashing');
+  console.log('  ✓ Weekly tracking for students and teachers');
+  console.log('  ✓ Comprehensive analytics');
+  console.log('  ✓ Multiple question types support');
+  console.log('  ✓ Subject-based curriculum management');
+});
 

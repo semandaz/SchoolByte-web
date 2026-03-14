@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolByte - Upload Quiz Question</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- KaTeX for Math Rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #e0e7ff, #f0f4f8); /* Subtle background gradient */
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        .quiz-container {
+            background-color: white;
+            border-radius: 2rem; /* rounded-3xl equivalent */
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); /* shadow-xl equivalent */
+            padding: 2.5rem; /* p-10 equivalent */
+            max-width: 900px;
+            width: 100%;
+        }
+        .form-field {
+            margin-bottom: 1.5rem;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600; /* font-semibold */
+            color: #334155; /* slate-700 */
+        }
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0; /* border-gray-300 */
+            border-radius: 0.5rem; /* rounded-lg */
+            background-color: #f8fafc; /* bg-gray-50 */
+            transition: all 0.2s ease-in-out;
+        }
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: #3b82f6; /* blue-500 */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); /* focus:ring-blue-500 */
+        }
+        .collapsible-header {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            font-weight: 600;
+            color: #4a5568; /* gray-700 */
+        }
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .collapsible-content.expanded {
+            max-height: 500px; /* Adjust as needed */
+            transition: max-height 0.5s ease-in;
+        }
+        .add-button {
+            background-color: #2563eb; /* blue-700 */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .add-button:hover {
+            background-color: #1d4ed8; /* blue-800 */
+        }
+        .remove-button {
+            color: #ef4444; /* red-500 */
+            margin-left: 0.5rem;
+            cursor: pointer;
+            transition: color 0.2s ease-in-out;
+        }
+        .remove-button:hover {
+            color: #dc2626; /* red-600 */
+        }
+        .save-button {
+            background-color: #1a2a6c; /* Deep blue from report */
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 0.75rem; /* rounded-xl */
+            font-weight: 800; /* font-extrabold */
+            text-align: center;
+            width: 100%;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .save-button:hover {
+            background-color: #0f1a4a; /* Darker deep blue */
+        }
+        .option-item, .pair-item, .order-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        input[type="radio"], input[type="checkbox"] {
+            transform: scale(1.2); /* Make them slightly larger */
+            accent-color: #3b82f6; /* Use blue for accent color */
+        }
+        .btn-math-symbol {
+            background-color: white;
+            border: 1px solid #d1d5db;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 1.125rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-math-symbol:hover {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .math-preview-box {
+            background-color: #f0f9ff;
+            border: 2px dashed #3b82f6;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 0.5rem;
+            min-height: 50px;
+        }
+        .math-preview-label {
+            font-size: 0.875rem;
+            color: #1e40af;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1 class="text-5xl font-extrabold text-blue-900 text-center mb-6">
+            SchoolByte
+        </h1>
+        <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Upload Quiz Question</h2>
+
+        <form id="quizUploadForm" class="space-y-6">
+            <!-- General Question Details -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="form-field">
+                    <label for="subject" class="form-label">Subject <span class="text-red-500">*</span></label>
+                    <select id="subject" class="form-select" required>
+                        <option value="">Select Subject</option>
+                        <option value="Mathematics">Mathematics</option>
+                        <option value="English">English</option>
+                        <option value="Biology">Biology</option>
+                        <option value="Chemistry">Chemistry</option>
+                        <option value="Physics">Physics</option>
+                        <option value="History">History</option>
+                        <option value="Geography">Geography</option>
+                        <option value="Computer Science">Computer Science</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="intendedClass" class="form-label">Intended Class <span class="text-red-500">*</span></label>
+                    <select id="intendedClass" class="form-select" required>
+                        <option value="">Select Class</option>
+                        <option value="S.1">Senior 1</option>
+                        <option value="S.2">Senior 2</option>
+                        <option value="S.3">Senior 3</option>
+                        <option value="S.4">Senior 4</option>
+                        <option value="S.5">Senior 5</option>
+                        <option value="S.6">Senior 6</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label for="maxBytesReward" class="form-label">Bytes Reward (for this question) <span class="text-red-500">*</span></label>
+                <input type="number" id="maxBytesReward" class="form-input" placeholder="e.g., 1" min="1" required>
+            </div>
+
+            <!-- Math Symbol Toolbar (Hidden by default, shown when needed) -->
+            <div id="mathToolbar" class="border border-gray-200 rounded-lg p-4 bg-blue-50 mb-4" style="display: none;">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-semibold text-gray-700">
+                        <i class="fas fa-calculator"></i> Math Symbols & LaTeX Helper
+                    </h3>
+                    <button type="button" onclick="toggleMathToolbar()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$x^2$')">x²</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$x_1$')">x₁</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\frac{a}{b}$')">a/b</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\sqrt{x}$')">√x</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\alpha$')">α</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\beta$')">β</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\theta$')">θ</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\pi$')">π</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\sum$')">Σ</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\int$')">∫</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\leq$')">≤</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\geq$')">≥</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\text{ kg}$')">kg</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\text{ m}$')">m</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\text{ m/s}^2$')">m/s²</button>
+                    <button type="button" class="btn-math-symbol" onclick="insertMath('$\\degree$')">°</button>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <p class="mb-1"><strong>Quick Guide:</strong></p>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>Use <code>$...$</code> for inline math: <code>$2\text{ kg}$</code></li>
+                        <li>Use <code>$$...$$</code> for display math (centered)</li>
+                        <li>Superscript: <code>x^2</code>, Subscript: <code>x_1</code></li>
+                        <li>Fraction: <code>\frac{numerator}{denominator}</code></li>
+                        <li>Text in math: <code>\text{your text here}</code></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Instructions Collapsible -->
+            <div class="collapsible-section border border-gray-200 rounded-lg p-4">
+                <div class="collapsible-header" onclick="toggleCollapsible('instructionsContent', 'instructionsArrow')">
+                    <span>Instructions (Optional)</span>
+                    <i id="instructionsArrow" class="fas fa-chevron-down"></i>
+                </div>
+                <div id="instructionsContent" class="collapsible-content">
+                    <textarea id="instructions" class="form-textarea mt-2 h-20" placeholder="Provide specific instructions for the student..."></textarea>
+                </div>
+            </div>
+
+            <!-- Hint Collapsible -->
+            <div class="collapsible-section border border-gray-200 rounded-lg p-4 mt-4">
+                <div class="collapsible-header" onclick="toggleCollapsible('hintContent', 'hintArrow')">
+                    <span>Hint (Optional)</span>
+                    <i id="hintArrow" class="fas fa-chevron-down"></i>
+                </div>
+                <div id="hintContent" class="collapsible-content">
+                    <textarea id="hint" class="form-textarea mt-2 h-20" placeholder="Provide a hint for the student..."></textarea>
+                </div>
+            </div>
+
+            <!-- Question Type Selection -->
+            <div class="form-field mt-8">
+                <label for="questionType" class="form-label">Question Type <span class="text-red-500">*</span></label>
+                <select id="questionType" class="form-select" onchange="renderQuestionTypeFields()" required>
+                    <option value="">Select Question Type</option>
+                    <option value="multiple-choice-single">Multiple Choice (Single Answer)</option>
+                    <option value="multiple-choice-multi">Multiple Choice (Multiple Answers)</option>
+                    <option value="short-answer">Short Answer</option>
+                    <option value="true-false">True/False</option>
+                    <option value="fill-in-the-blank">Fill in the Blank</option>
+                    <option value="matching">Matching</option>
+                    <option value="ordering">Ordering</option>
+                    <option value="problem-solving">Problem Solving (Free Response)</option>
+                    <option value="numeric-entry">Numeric Entry</option>
+                </select>
+            </div>
+
+            <!-- Dynamic Question Type Fields Container -->
+            <div id="dynamicQuestionFields" class="border border-gray-200 rounded-lg p-6 bg-gray-50 mt-6 min-h-[150px]">
+                <p class="text-gray-500 text-center">Select a question type above to configure its options.</p>
+            </div>
+
+            <button type="submit" class="save-button mt-8">Upload Question?</button>
+        </form>
+    </div>
+
+    <!-- Custom Message Box HTML -->
+    <div id="messageBoxOverlay" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-8 rounded-lg shadow-xl max-w-sm w-full text-center">
+            <h3 id="messageBoxTitle" class="text-2xl font-bold mb-4"></h3>
+            <p id="messageBoxContent" class="text-gray-700 mb-6 whitespace-pre-wrap"></p>
+            <button id="messageBoxOkBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition duration-200">OK</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const quizUploadForm = document.getElementById('quizUploadForm');
+            quizUploadForm.addEventListener('submit', handleFormSubmission);
+            
+            // Event listener for message box OK button
+            document.getElementById('messageBoxOkBtn').addEventListener('click', hideMessageBox);
+
+            // Initial render call in case a type is pre-selected (though not in this example)
+            renderQuestionTypeFields();
+
+            // Initialize KaTeX auto-render when library loads
+            if (window.renderMathInElement) {
+                initializeMathRendering();
+            } else {
+                document.addEventListener('DOMContentLoaded', initializeMathRendering);
+            }
+        });
+
+        function initializeMathRendering() {
+            // Render math in the entire document
+            if (window.renderMathInElement) {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\[', right: '\\]', display: true},
+                        {left: '\\(', right: '\\)', display: false}
+                    ],
+                    throwOnError: false
+                });
+            }
+        }
+
+        // Function to render math in specific elements
+        function renderMathInElements() {
+            setTimeout(() => {
+                if (window.renderMathInElement) {
+                    const dynamicFields = document.getElementById('dynamicQuestionFields');
+                    if (dynamicFields) {
+                        renderMathInElement(dynamicFields, {
+                            delimiters: [
+                                {left: '$$', right: '$$', display: true},
+                                {left: '$', right: '$', display: false},
+                                {left: '\\[', right: '\\]', display: true},
+                                {left: '\\(', right: '\\)', display: false}
+                            ],
+                            throwOnError: false
+                        });
+                    }
+                }
+            }, 100);
+        }
+
+        function toggleCollapsible(contentId, arrowId) {
+            const content = document.getElementById(contentId);
+            const arrow = document.getElementById(arrowId);
+            content.classList.toggle('expanded');
+            arrow.classList.toggle('fa-chevron-up');
+            arrow.classList.toggle('fa-chevron-down');
+        }
+
+        function renderQuestionTypeFields() {
+            const questionType = document.getElementById('questionType').value;
+            const dynamicFieldsContainer = document.getElementById('dynamicQuestionFields');
+            dynamicFieldsContainer.innerHTML = ''; // Clear previous fields
+
+            let html = '';
+            switch (questionType) {
+                case 'multiple-choice-single':
+                    html = `
+                        <button type="button" onclick="toggleMathToolbar()" class="add-button mb-3">
+                            <i class="fas fa-calculator"></i> Show Math Symbols
+                        </button>
+                        <label for="questionText" class="form-label">Question Text <span class="text-red-500">*</span></label>
+                        <textarea id="questionText" class="form-textarea h-28" placeholder="Enter the full question text here..." oninput="updateMathPreview(this)" required></textarea>
+                        <div id="mathPreview" class="math-preview-box" style="display: none;">
+                            <span class="math-preview-label">Preview:</span>
+                            <div id="mathPreviewContent"></div>
+                        </div>
+                        <p class="form-label mt-6">Options (Mark one as correct):</p>
+                        <div id="optionsContainer" class="mb-4"></div>
+                        <button type="button" class="add-button" onclick="addOption('single')">
+                            <i class="fas fa-plus-circle"></i> Add Option
+                        </button>
+                    `;
+                    break;
+                case 'multiple-choice-multi':
+                    html = `
+                        <button type="button" onclick="toggleMathToolbar()" class="add-button mb-3">
+                            <i class="fas fa-calculator"></i> Show Math Symbols
+                        </button>
+                        <label for="questionText" class="form-label">Question Text <span class="text-red-500">*</span></label>
+                        <textarea id="questionText" class="form-textarea h-28" placeholder="Enter the full question text here..." oninput="updateMathPreview(this)" required></textarea>
+                        <div id="mathPreview" class="math-preview-box" style="display: none;">
+                            <span class="math-preview-label">Preview:</span>
+                            <div id="mathPreviewContent"></div>
+                        </div>
+                        <p class="form-label mt-6">Options (Mark one or more as correct):</p>
+                        <div id="optionsContainer" class="mb-4"></div>
+                        <button type="button" class="add-button" onclick="addOption('multi')">
+                            <i class="fas fa-plus-circle"></i> Add Option
+                        </button>
+                    `;
+                    break;
+                case 'short-answer':
+                case 'problem-solving':
+                    html = `
+                        <button type="button" onclick="toggleMathToolbar()" class="add-button mb-3">
+                            <i class="fas fa-calculator"></i> Show Math Symbols
+                        </button>
+                        <label for="questionText" class="form-label">Question Text <span class="text-red-500">*</span></label>
+                        <textarea id="questionText" class="form-textarea h-28" placeholder="Enter the full question text here..." oninput="updateMathPreview(this)" required></textarea>
+                        <div id="mathPreview" class="math-preview-box" style="display: none;">
+                            <span class="math-preview-label">Preview:</span>
+                            <div id="mathPreviewContent"></div>
+                        </div>
+                        <label for="correctAnswers" class="form-label mt-6">Correct Answer(s) (Comma-separated for multiple possibilities)</label>
+                        <textarea id="correctAnswers" class="form-textarea" rows="3" placeholder="e.g., Photosynthesis, Cell Respiration"></textarea>
+                    `;
+                    break;
+                case 'true-false':
+                    html = `
+                        <button type="button" onclick="toggleMathToolbar()" class="add-button mb-3">
+                            <i class="fas fa-calculator"></i> Show Math Symbols
+                        </button>
+                        <label for="questionText" class="form-label">Question Text <span class="text-red-500">*</span></label>
+                        <textarea id="questionText" class="form-textarea h-28" placeholder="Enter the full question text here..." oninput="updateMathPreview(this)" required></textarea>
+                        <div id="mathPreview" class="math-preview-box" style="display: none;">
+                            <span class="math-preview-label">Preview:</span>
+                            <div id="mathPreviewContent"></div>
+                        </div>
+                        <p class="form-label mt-6">Correct Answer:</p>
+                        <div class="flex items-center gap-4 mt-2">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="trueFalseAnswer" value="true" class="form-radio">
+                                <span class="ml-2">True</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="trueFalseAnswer" value="false" class="form-radio">
+                                <span class="ml-2">False</span>
+                            </label>
+                        </div>
+                    `;
+                    break;
+                case 'fill-in-the-blank':
+                    html = `
+                        <label for="blankQuestionText" class="form-label">Question with Blank (Use [BLANK] placeholder) <span class="text-red-500">*</span></label>
+                        <textarea id="blankQuestionText" class="form-textarea mb-4" rows="3" placeholder="e.g., The capital of France is [BLANK]." required></textarea>
+                        <label for="blankCorrectAnswer" class="form-label">Correct Answer for Blank <span class="text-red-500">*</span></label>
+                        <input type="text" id="blankCorrectAnswer" class="form-input" placeholder="e.g., Paris" required>
+                    `;
+                    break;
+                case 'matching':
+                    html = `
+                        <button type="button" onclick="toggleMathToolbar()" class="add-button mb-3">
+                            <i class="fas fa-calculator"></i> Show Math Symbols
+                        </button>
+                        <label for="questionText" class="form-label">Instructions for Matching (e.g., "Match the author to their work.") <span class="text-red-500">*</span></label>
+                        <textarea id="questionText" class="form-textarea h-28" placeholder="Enter instructions for the matching task..." oninput="updateMathPreview(this)" required></textarea>
+                        <div id="mathPreview" class="math-preview-box" style="display: none;">
+                            <span class="math-preview-label">Preview:</span>
+                            <div id="mathPreviewContent"></div>
+                        </div>
+                        <p class="form-label mt-6">Matching Pairs (Item A matches Item B): <span class="text-red-500">*</span></p>
+                        <div id="matchingPairsContainer" class="mb-4"></div>
+                        <button type="button" class="add-button" onclick="addMatchingPair()">
+                            <i class="fas fa-plus-circle"></i> Add Matching Pair
+                        </button>
+                    `;
+                    break;
+                case 'ordering':
+                    html = `
+                        <button type="button" onclick="toggleMathToolbar()" class="add-button mb-3">
+                            <i class="fas fa-calculator"></i> Show Math Symbols
+                        </button>
+                        <label for="questionText" class="form-label">Instructions for Ordering (e.g., "Put these events in chronological order:") <span class="text-red-500">*</span></label>
+                        <textarea id="questionText" class="form-textarea h-28" placeholder="Enter instructions for the ordering task..." oninput="updateMathPreview(this)" required></textarea>
+                        <div id="mathPreview" class="math-preview-box" style="display: none;">
+                            <span class="math-preview-label">Preview:</span>
+                            <div id="mathPreviewContent"></div>
+                        </div>
+                        <p class="form-label mt-6">Items in Correct Order (Add items in the sequence you want them to be ordered): <span class="text-red-500">*</span></p>
+                        <div id="orderingItemsContainer" class="mb-4"></div>
+                        <button type="button" class="add-button" onclick="addOrderingItem()">
+                            <i class="fas fa-plus-circle"></i> Add Item
+                        </button>
+                    `;
+                    break;
+                case 'numeric-entry':
+                    html = `
+                        <button type="button" onclick="toggleMathToolbar()" class="add-button mb-3">
+                            <i class="fas fa-calculator"></i> Show Math Symbols
+                        </button>
+                        <label for="questionText" class="form-label">Question Text <span class="text-red-500">*</span></label>
+                        <textarea id="questionText" class="form-textarea h-28" placeholder="e.g., Solve for x: 2x + 5 = 15" oninput="updateMathPreview(this)" required></textarea>
+                        <div id="mathPreview" class="math-preview-box" style="display: none;">
+                            <span class="math-preview-label">Preview:</span>
+                            <div id="mathPreviewContent"></div>
+                        </div>
+                        <label for="numericAnswer" class="form-label mt-6">Correct Numeric Answer <span class="text-red-500">*</span></label>
+                        <input type="number" id="numericAnswer" class="form-input" placeholder="e.g., 5" required>
+                    `;
+                    break;
+                default:
+                    html = '<p class="text-gray-500 text-center">Select a question type above to configure its options.</p>';
+                    break;
+            }
+            dynamicFieldsContainer.innerHTML = html;
+
+            // Add initial fields for dynamic types
+            if (questionType.startsWith('multiple-choice')) {
+                addOption(questionType.endsWith('single') ? 'single' : 'multi');
+            } else if (questionType === 'matching') {
+                addMatchingPair();
+            } else if (questionType === 'ordering') {
+                addOrderingItem();
+            }
+
+            // Render any math expressions in the newly added fields
+            renderMathInElements();
+        }
+
+        let optionCounter = 0;
+        function addOption(type) {
+            optionCounter++;
+            const optionsContainer = document.getElementById('optionsContainer');
+            const optionId = `option-${optionCounter}`;
+            const inputType = type === 'single' ? 'radio' : 'checkbox';
+            
+            // Name attribute for radio buttons must be consistent to allow single selection
+            // For checkboxes, each can have its own name or be part of an array name
+            const inputName = type === 'single' ? 'correctOption' : `correctOptions-${optionId}`; 
+
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'option-item';
+            optionDiv.innerHTML = `
+                <input type="${inputType}" id="${inputName}" name="${type === 'single' ? 'correctOption' : 'correctOptions[]'}" value="${optionId}" class="form-${inputType}">
+                <input type="text" id="optionText-${optionId}" class="form-input flex-grow" placeholder="Option Text" required>
+                <button type="button" class="remove-button" onclick="removeElement('${optionId}')">
+                    <i class="fas fa-times-circle"></i>
+                </button>
+            `;
+            optionDiv.id = optionId; // Set the ID on the div for easy removal
+            optionsContainer.appendChild(optionDiv);
+        }
+
+        let pairCounter = 0;
+        function addMatchingPair() {
+            pairCounter++;
+            const pairsContainer = document.getElementById('matchingPairsContainer');
+            const pairId = `pair-${pairCounter}`;
+
+            const pairDiv = document.createElement('div');
+            pairDiv.className = 'pair-item';
+            pairDiv.innerHTML = `
+                <input type="text" id="itemA-${pairId}" class="form-input" placeholder="Item A" required>
+                <i class="fas fa-link text-gray-400"></i>
+                <input type="text" id="itemB-${pairId}" class="form-input" placeholder="Item B" required>
+                <button type="button" class="remove-button" onclick="removeElement('${pairId}')">
+                    <i class="fas fa-times-circle"></i>
+                </button>
+            `;
+            pairDiv.id = pairId;
+            pairsContainer.appendChild(pairDiv);
+        }
+
+        let orderCounter = 0;
+        function addOrderingItem() {
+            orderCounter++;
+            const itemsContainer = document.getElementById('orderingItemsContainer');
+            const itemId = `order-item-${orderCounter}`;
+
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'order-item';
+            itemDiv.innerHTML = `
+                <span class="text-gray-600 font-bold">${orderCounter}.</span>
+                <input type="text" id="itemText-${itemId}" class="form-input flex-grow" placeholder="Enter item in correct order" required>
+                <button type="button" class="remove-button" onclick="removeElement('${itemId}')">
+                    <i class="fas fa-times-circle"></i>
+                </button>
+            `;
+            itemDiv.id = itemId;
+            itemsContainer.appendChild(itemDiv);
+        }
+
+        function removeElement(id) {
+            const elementToRemove = document.getElementById(id);
+            if (elementToRemove) {
+                elementToRemove.remove();
+            }
+        }
+
+        function toggleMathToolbar() {
+            const toolbar = document.getElementById('mathToolbar');
+            if (toolbar.style.display === 'none') {
+                toolbar.style.display = 'block';
+            } else {
+                toolbar.style.display = 'none';
+            }
+        }
+
+        let currentTextarea = null;
+
+        function insertMath(mathCode) {
+            const questionTextarea = document.getElementById('questionText');
+            if (questionTextarea) {
+                const cursorPos = questionTextarea.selectionStart;
+                const textBefore = questionTextarea.value.substring(0, cursorPos);
+                const textAfter = questionTextarea.value.substring(cursorPos);
+                
+                questionTextarea.value = textBefore + mathCode + textAfter;
+                questionTextarea.focus();
+                
+                // Move cursor to after the inserted math
+                const newCursorPos = cursorPos + mathCode.length;
+                questionTextarea.setSelectionRange(newCursorPos, newCursorPos);
+                
+                // Update preview
+                updateMathPreview(questionTextarea);
+            }
+        }
+
+        function updateMathPreview(textarea) {
+            const previewBox = document.getElementById('mathPreview');
+            const previewContent = document.getElementById('mathPreviewContent');
+            
+            if (!textarea || !previewBox || !previewContent) return;
+            
+            const text = textarea.value.trim();
+            
+            if (text && (text.includes('$') || text.includes('\\['))) {
+                previewBox.style.display = 'block';
+                previewContent.textContent = text;
+                
+                // Render math after a short delay
+                setTimeout(() => {
+                    if (window.renderMathInElement) {
+                        renderMathInElement(previewContent, {
+                            delimiters: [
+                                {left: '$$', right: '$$', display: true},
+                                {left: '$', right: '$', display: false},
+                                {left: '\\[', right: '\\]', display: true},
+                                {left: '\\(', right: '\\)', display: false}
+                            ],
+                            throwOnError: false
+                        });
+                    }
+                }, 150);
+            } else {
+                previewBox.style.display = 'none';
+            }
+        }
+
+        function handleFormSubmission(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            const subject = document.getElementById('subject').value;
+            const intendedClass = document.getElementById('intendedClass').value;
+            const maxBytesReward = parseInt(document.getElementById('maxBytesReward').value, 10);
+            const instructions = document.getElementById('instructions').value.trim();
+            const hint = document.getElementById('hint').value.trim();
+            const questionType = document.getElementById('questionType').value;
+
+            // Initial general validation
+            if (!subject || !intendedClass || isNaN(maxBytesReward) || questionType === '') {
+                showMessageBox('Validation Error', 'Please fill in all required general question details and select a question type.', false);
+                return;
+            }
+
+            let quizData = {
+                subject,
+                intendedClass,
+                type: questionType,
+                maxBytesRewardPerQuestion: maxBytesReward
+            };
+
+            if (instructions) quizData.instructions = instructions;
+            if (hint) quizData.hint = hint;
+
+            let specificDataValid = true;
+            let questionTextForPayload = ''; // Will hold the final questionText for quizData
+
+            // Determine questionText and validate specific fields based on type
+            switch (questionType) {
+                case 'multiple-choice-single':
+                case 'multiple-choice-multi':
+                    questionTextForPayload = document.getElementById('questionText').value.trim();
+                    if (!questionTextForPayload) {
+                        showMessageBox('Validation Error', 'Please enter the question text.', false);
+                        specificDataValid = false;
+                        break;
+                    }
+                    const options = [];
+                    const optionElements = document.querySelectorAll('#optionsContainer .option-item');
+                    let correctCount = 0;
+
+                    if (optionElements.length === 0) {
+                        showMessageBox('Validation Error', 'Please add at least one option for multiple choice questions.', false);
+                        specificDataValid = false;
+                        break;
+                    }
+
+                    optionElements.forEach(optionDiv => {
+                        const optionText = optionDiv.querySelector('input[type="text"]').value.trim();
+                        const isCorrect = optionDiv.querySelector('input').checked;
+
+                        if (!optionText) {
+                            specificDataValid = false;
+                            return; // Exit forEach, error will be shown below
+                        }
+                        options.push({ text: optionText, isCorrect });
+                        if (isCorrect) correctCount++;
+                    });
+
+                    if (!specificDataValid) { // Check if an empty option was found
+                        showMessageBox('Validation Error', 'All option texts must be filled.', false);
+                        break;
+                    }
+                    if (questionType === 'multiple-choice-single' && correctCount !== 1) {
+                        showMessageBox('Validation Error', 'For single choice, exactly one option must be marked as correct.', false);
+                        specificDataValid = false;
+                    } else if (questionType === 'multiple-choice-multi' && correctCount < 1) {
+                        showMessageBox('Validation Error', 'For multiple choice (multi-select), at least one option must be marked as correct.', false);
+                        specificDataValid = false;
+                    }
+                    quizData.options = options;
+                    break;
+
+                case 'short-answer':
+                case 'problem-solving':
+                    questionTextForPayload = document.getElementById('questionText').value.trim();
+                    if (!questionTextForPayload) {
+                        showMessageBox('Validation Error', 'Please enter the question text.', false);
+                        specificDataValid = false;
+                        break;
+                    }
+                    const correctAnswersSA = document.getElementById('correctAnswers').value.split(',').map(ans => ans.trim()).filter(ans => ans !== '');
+                    if (correctAnswersSA.length === 0) {
+                        showMessageBox('Validation Error', 'Please provide at least one correct answer.', false);
+                        specificDataValid = false;
+                        break;
+                    }
+                    quizData.correctAnswers = correctAnswersSA;
+                    break;
+
+                case 'true-false':
+                    questionTextForPayload = document.getElementById('questionText').value.trim();
+                    if (!questionTextForPayload) {
+                        showMessageBox('Validation Error', 'Please enter the question text.', false);
+                        specificDataValid = false;
+                        break;
+                    }
+                    const trueFalseAnswer = document.querySelector('input[name="trueFalseAnswer"]:checked');
+                    if (!trueFalseAnswer) {
+                        showMessageBox('Validation Error', 'Please select either True or False as the correct answer.', false);
+                        specificDataValid = false;
+                        break;
+                    }
+                    quizData.correctAnswers = [trueFalseAnswer.value];
+                    break;
+
+                case 'fill-in-the-blank':
+                    questionTextForPayload = document.getElementById('blankQuestionText').value.trim();
+                    const blankCorrectAnswer = document.getElementById('blankCorrectAnswer').value.trim();
+                    if (!questionTextForPayload || !questionTextForPayload.includes('[BLANK]')) {
+                        showMessageBox('Validation Error', 'Please enter question text with a [BLANK] placeholder.', false);
+                        specificDataValid = false;
+                        break;
+                    }
+                    if (!blankCorrectAnswer) {
+                        showMessageBox('Validation Error', 'Please provide the correct answer for the blank.', false);
+                        specificDataValid = false;
+                        break;
+                    }
+                    quizData.correctAnswers = [blankCorrectAnswer]; // Fill-in-the-blank uses correctAnswers for the blank itself
+                    break;
+
+                case 'matching':
+                    questionTextForPayload = document.getElementById('questionText').value.trim();
+                    if (!questionTextForPayload) {
+                        showMessageBox('Validation Error', 'Please enter the instructions for matching.', false);
+                        specificDataValid = false;
+                        break;
+                    }
+                    const matchingPairs = [];
+                    const pairElements = document.querySelectorAll('#matchingPairsContainer .pair-item');
+                    if (pairElements.length === 0) {
+                        showMessageBox('Validation Error', 'Please add at least one matching pair.', false);
+                        specificDataValid = false;
+                        break;
+                    }
+                    pairElements.forEach(pairDiv => {
+                        const itemA = pairDiv.querySelector('input[id^="itemA-"]').value.trim();
+                        const itemB = pairDiv.querySelector('input[id^="itemB-"]').value.trim();
+                        if (!itemA || !itemB) {
+                            specificDataValid = false; // Mark invalid, message shown below
+                            return;
+                        }
+                        matchingPairs.push({ itemA, itemB });
+                    });
+                    if (!specificDataValid) { // Check if an empty pair was found
+                        showMessageBox('Validation Error', 'All matching items must be filled.', false);
+                        break;
+                    }
+                    quizData.matchingPairs = matchingPairs;
+                    break;
+
+                case 'ordering':
+                    questionTextForPayload = document.getElementById('questionText').value.trim();
+                    if (!questionTextForPayload) {
+                        showMessageBox('Validation Error', 'Please enter the instructions for ordering.', false);
+                        specificDataValid = false;
+                        break;
+                    }
+                    const orderedItems = [];
+                    const itemElements = document.querySelectorAll('#orderingItemsContainer .order-item');
+                    if (itemElements.length === 0) {
+                        showMessageBox('Validation Error', 'Please add at least one item for ordering.', false);
+                        specificDataValid = false;
+                        break;
+                    }
+                    itemElements.forEach(itemDiv => {
+                        const itemText = itemDiv.querySelector('input[type="text"]').value.trim();
+                        if (!itemText) {
+                            specificDataValid = false; // Mark invalid, message shown below
+                            return;
+                        }
+                        orderedItems.push(itemText);
+                    });
+                    if (!specificDataValid) { // Check if an empty item was found
+                        showMessageBox('Validation Error', 'All ordering items must be filled.', false);
+                        break;
+                    }
+                    quizData.orderedItems = orderedItems;
+                    break;
+
+                case 'numeric-entry':
+                    questionTextForPayload = document.getElementById('questionText').value.trim();
+                    if (!questionTextForPayload) {
+                        showMessageBox('Validation Error', 'Please enter the question text.', false);
+                        specificDataValid = false;
+                        break;
+                    }
+                    const numericAnswer = document.getElementById('numericAnswer').value.trim();
+                    if (!numericAnswer || isNaN(parseFloat(numericAnswer))) {
+                        showMessageBox('Validation Error', 'Please enter a valid numeric answer.', false);
+                        specificDataValid = false;
+                        break;
+                    }
+                    quizData.correctAnswers = [numericAnswer]; // Store numeric answer as string in array
+                    break;
+
+                default:
+                    showMessageBox('Error', 'Invalid question type selected. Please choose one from the list.', false);
+                    specificDataValid = false;
+                    break;
+            }
+
+            if (!specificDataValid) {
+                return; // Stop if specific type data is invalid
+            }
+
+            // Add the determined questionText to the quizData payload
+            quizData.questionText = questionTextForPayload;
+
+            // Get teacher token from localStorage
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showMessageBox('Authentication Error', 'You are not logged in. Please log in as a teacher first.', false);
+                return;
+            }
+
+            // Submit to backend
+            fetch('/teacher/quiz-questions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(quizData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.message || 'Server error'); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                showMessageBox('Success', 'Quiz question uploaded successfully!', true);
+                setTimeout(() => {
+                    quizUploadForm.reset(); // Clear form after successful upload
+                    renderQuestionTypeFields(); // Re-render dynamic fields to default state
+                }, 1500);
+            })
+            .catch(error => {
+                console.error('Error uploading quiz:', error);
+                showMessageBox('Upload Failed', error.message || 'Could not connect to the server. Please try again.', false);
+            });
+        }
+
+        // Custom Message Box Functions
+        function showMessageBox(title, message, isSuccess) {
+            const overlay = document.getElementById('messageBoxOverlay');
+            const titleElement = document.getElementById('messageBoxTitle');
+            const contentElement = document.getElementById('messageBoxContent');
+
+            titleElement.textContent = title;
+            contentElement.textContent = message;
+
+            if (isSuccess) {
+                titleElement.style.color = 'var(--color-brand-primary, #2563eb)'; // Default blue
+            } else {
+                titleElement.style.color = 'var(--color-error-red, #ef4444)'; // Default red
+            }
+            overlay.classList.remove('hidden');
+        }
+
+        function hideMessageBox() {
+            document.getElementById('messageBoxOverlay').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

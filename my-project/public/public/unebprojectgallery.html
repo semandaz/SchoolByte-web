@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNEB Project Gallery - SchoolByte</title>
+    <script src="api-config.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a2a6c;
+            --secondary: #b21f1f;
+            --gold: #ffd700;
+            --orange: #ffa500;
+            --white: #ffffff;
+            --light: #f0f4f8;
+            --dark: #333333;
+            --gray: #9ca3af;
+            --gradient: linear-gradient(135deg, #1a2a6c, #b21f1f);
+            --gradient-btn: linear-gradient(to right, #ffd700, #ffa500);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--gradient); min-height: 100vh; color: var(--white); }
+        header {
+            background: rgba(0,0,0,0.2);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .logo { font-size: 1.5rem; font-weight: 800; text-decoration: none; color: var(--gold); }
+        .nav-links { display: flex; gap: 1rem; }
+        .nav-links a { color: var(--white); text-decoration: none; font-weight: 600; }
+        .nav-links a:hover { color: var(--gold); }
+        .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+        .hero {
+            text-align: center;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        .hero h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .hero p { opacity: 0.9; font-size: 1rem; }
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+        .toolbar input, .toolbar select {
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.15);
+            color: var(--white);
+            font-size: 0.95rem;
+        }
+        .toolbar input::placeholder { color: rgba(255,255,255,0.7); }
+        .toolbar select option { background: var(--primary); color: var(--white); }
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            background: var(--gradient-btn);
+            color: var(--dark);
+        }
+        .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .btn-secondary { background: rgba(255,255,255,0.2); color: var(--white); }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        .project-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .project-card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
+        .project-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+        }
+        .project-card-body { padding: 1rem; }
+        .project-card h3 { font-size: 1rem; margin-bottom: 0.5rem; line-height: 1.3; }
+        .project-card .meta { font-size: 0.85rem; opacity: 0.85; margin-bottom: 0.5rem; }
+        .project-card .stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: var(--gold);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+        .modal.active { display: flex; align-items: flex-start; justify-content: center; }
+        .modal-content {
+            background: var(--primary);
+            border-radius: 16px;
+            max-width: 600px;
+            width: 100%;
+            padding: 1.5rem;
+            margin: 2rem auto;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .modal-content img { width: 100%; max-height: 350px; object-fit: contain; border-radius: 8px; margin-bottom: 1rem; }
+        .modal-content h2 { margin-bottom: 0.5rem; }
+        .modal-content .meta { opacity: 0.9; margin-bottom: 1rem; font-size: 0.95rem; }
+        .modal-content section { margin-bottom: 1rem; }
+        .modal-content section h4 { font-size: 0.9rem; color: var(--gold); margin-bottom: 0.3rem; }
+        .modal-content section p { font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; }
+        .modal-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+        .modal-actions button { flex: 1; min-width: 120px; }
+        .upload-form {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+        .upload-form h2 { margin-bottom: 1rem; font-size: 1.2rem; }
+        .upload-form label { display: block; margin-bottom: 0.3rem; font-size: 0.9rem; }
+        .upload-form input, .upload-form select, .upload-form textarea {
+            width: 100%;
+            padding: 0.6rem;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: var(--white);
+            margin-bottom: 1rem;
+        }
+        .upload-form textarea { min-height: 80px; resize: vertical; }
+        .upload-form input[type="file"] { padding: 0.4rem; }
+        .loading { text-align: center; padding: 2rem; font-size: 1.1rem; }
+        .empty { text-align: center; padding: 3rem; opacity: 0.9; }
+        .liked { color: #e74c3c !important; }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="studentdashboard.html" class="logo"><i class="fas fa-graduation-cap"></i> SchoolByte · UNEB Gallery</a>
+        <nav class="nav-links">
+            <a href="studentdashboard.html"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="bytenexus-chat.html"><i class="fas fa-comments"></i> Chat</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="hero">
+            <h1>UNEB Project Gallery</h1>
+            <p>Share your academic work. Learn from peers. Build community.</p>
+        </div>
+
+        <div class="upload-form" id="uploadForm">
+            <h2><i class="fas fa-upload"></i> Publish Your Project</h2>
+            <form id="projectForm">
+                <label>Project Photo (you with your report) *</label>
+                <input type="file" id="photo" accept="image/jpeg,image/png,image/webp" required>
+
+                <label>Project Title *</label>
+                <input type="text" id="title" placeholder="e.g. Investigating Factors Affecting Enzyme Activity" required>
+
+                <label>Subject *</label>
+                <select id="subject" required>
+                    <option value="">Select subject</option>
+                    <option value="Biology">Biology</option>
+                    <option value="Chemistry">Chemistry</option>
+                    <option value="Physics">Physics</option>
+                    <option value="Mathematics">Mathematics</option>
+                    <option value="English Language">English Language</option>
+                    <option value="Geography">Geography</option>
+                    <option value="History">History</option>
+                    <option value="Economics">Economics</option>
+                    <option value="Agriculture">Agriculture</option>
+                    <option value="Literature">Literature</option>
+                    <option value="Other">Other</option>
+                </select>
+
+                <label>Year *</label>
+                <input type="text" id="year" placeholder="e.g. 2024" required>
+
+                <label>Category *</label>
+                <select id="category" required>
+                    <option value="">Select category</option>
+                    <option value="Science">Science</option>
+                    <option value="Arts">Arts</option>
+                    <option value="Humanities">Humanities</option>
+                    <option value="Practical">Practical</option>
+                    <option value="Other">Other</option>
+                </select>
+
+                <label>Methodology *</label>
+                <textarea id="methodology" placeholder="Describe your research methodology in 2-3 sentences..." required></textarea>
+
+                <label>Abstract (optional)</label>
+                <textarea id="abstract" placeholder="Brief summary of your project..."></textarea>
+
+                <label>Findings (optional)</label>
+                <textarea id="findings" placeholder="Key findings..."></textarea>
+
+                <label>Conclusion (optional)</label>
+                <textarea id="conclusion" placeholder="Conclusion..."></textarea>
+
+                <label>Keywords (comma-separated, optional)</label>
+                <input type="text" id="keywords" placeholder="e.g. enzymes, temperature, biology">
+
+                <button type="submit" class="btn" id="submitBtn"><i class="fas fa-paper-plane"></i> Publish</button>
+            </form>
+        </div>
+
+        <div class="toolbar">
+            <input type="text" id="searchInput" placeholder="Search projects..." style="min-width: 200px;">
+            <select id="sortSelect">
+                <option value="likes">Most Liked</option>
+                <option value="helpful">Most Helpful</option>
+                <option value="recent">Most Recent</option>
+            </select>
+            <select id="subjectFilter">
+                <option value="">All Subjects</option>
+                <option value="Biology">Biology</option>
+                <option value="Chemistry">Chemistry</option>
+                <option value="Physics">Physics</option>
+                <option value="Mathematics">Mathematics</option>
+                <option value="Other">Other</option>
+            </select>
+            <select id="yearFilter">
+                <option value="">All Years</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+                <option value="2022">2022</option>
+            </select>
+            <select id="categoryFilter">
+                <option value="">All Categories</option>
+                <option value="Science">Science</option>
+                <option value="Arts">Arts</option>
+                <option value="Humanities">Humanities</option>
+                <option value="Practical">Practical</option>
+                <option value="Other">Other</option>
+            </select>
+            <button class="btn" onclick="loadProjects()"><i class="fas fa-search"></i> Apply</button>
+        </div>
+
+        <div id="gallery" class="gallery">
+            <div class="loading">Loading projects...</div>
+        </div>
+    </div>
+
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <button class="btn btn-secondary" style="position:absolute;top:1rem;right:1rem;" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            <div id="modalBody"></div>
+            <div class="modal-actions" id="modalActions"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.API_BASE_URL || window.location.origin || 'http://localhost:5000';
+        let token = localStorage.getItem('token');
+        let projects = [];
+
+        if (!token) {
+            window.location.href = 'studentlogin.html?redirect=' + encodeURIComponent('unebprojectgallery.html');
+        }
+
+        document.getElementById('projectForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
+            const formData = new FormData();
+            formData.append('photo', document.getElementById('photo').files[0]);
+            formData.append('title', document.getElementById('title').value.trim());
+            formData.append('subject', document.getElementById('subject').value);
+            formData.append('year', document.getElementById('year').value.trim());
+            formData.append('category', document.getElementById('category').value);
+            formData.append('methodology', document.getElementById('methodology').value.trim());
+            formData.append('abstract', document.getElementById('abstract').value.trim());
+            formData.append('findings', document.getElementById('findings').value.trim());
+            formData.append('conclusion', document.getElementById('conclusion').value.trim());
+            formData.append('keywords', document.getElementById('keywords').value.trim());
+            try {
+                const r = await fetch(API_URL + '/api/uneb-projects', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token },
+                    body: formData
+                });
+                const data = await r.json();
+                if (r.ok) {
+                    alert('Project published successfully!');
+                    document.getElementById('projectForm').reset();
+                    loadProjects();
+                } else alert(data.error || data.errors?.[0]?.msg || 'Upload failed');
+            } catch (err) {
+                alert('Network error. Ensure the server is running.');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Publish';
+        });
+
+        async function loadProjects() {
+            const sort = document.getElementById('sortSelect').value;
+            const subject = document.getElementById('subjectFilter').value;
+            const year = document.getElementById('yearFilter').value;
+            const category = document.getElementById('categoryFilter').value;
+            const q = document.getElementById('searchInput').value.trim();
+            const params = new URLSearchParams({ sort, limit: 50 });
+            if (subject) params.set('subject', subject);
+            if (year) params.set('year', year);
+            if (category) params.set('category', category);
+            if (q) params.set('q', q);
+            document.getElementById('gallery').innerHTML = '<div class="loading">Loading...</div>';
+            try {
+                const r = await fetch(API_URL + '/api/uneb-projects?' + params, { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await r.json();
+                if (r.ok) {
+                    projects = data.projects || [];
+                    renderGallery();
+                } else document.getElementById('gallery').innerHTML = '<div class="empty">Failed to load projects.</div>';
+            } catch (err) {
+                document.getElementById('gallery').innerHTML = '<div class="empty">Connection error. Is the server running? Open <a href="http://localhost:5000" style="color:var(--gold)">http://localhost:5000</a> and try again.</div>';
+            }
+        }
+
+        function renderGallery() {
+            const el = document.getElementById('gallery');
+            if (!projects.length) {
+                el.innerHTML = '<div class="empty">No projects yet. Be the first to publish!</div>';
+                return;
+            }
+            el.innerHTML = projects.map(p => `
+                <div class="project-card" onclick='openDetail("${p.id}")'>
+                    <img src="${p.photoUrl}" alt="${p.title}">
+                    <div class="project-card-body">
+                        <h3>${escapeHtml(p.title)}</h3>
+                        <div class="meta">${p.subject} · ${p.year} · ${p.student?.studentName || 'Unknown'}</div>
+                        <div class="stats">
+                            <span><i class="fas fa-heart ${p.likedByMe ? 'liked' : ''}"></i> ${p.likesCount}</span>
+                            <span><i class="fas fa-thumbs-up"></i> ${p.helpfulCount} helpful</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s || '';
+            return d.innerHTML;
+        }
+
+        function openDetail(id) {
+            const p = projects.find(x => x.id === id);
+            if (!p) return;
+            const modal = document.getElementById('detailModal');
+            const body = document.getElementById('modalBody');
+            const actions = document.getElementById('modalActions');
+            body.innerHTML = `
+                <img src="${p.photoUrl}" alt="${p.title}">
+                <h2>${escapeHtml(p.title)}</h2>
+                <div class="meta">${p.subject} · ${p.year} · ${p.category} · by ${p.student?.studentName || 'Unknown'} (${p.student?.class || ''} ${p.student?.stream || ''})</div>
+                ${p.methodology ? `<section><h4>Methodology</h4><p>${escapeHtml(p.methodology)}</p></section>` : ''}
+                ${p.abstract ? `<section><h4>Abstract</h4><p>${escapeHtml(p.abstract)}</p></section>` : ''}
+                ${p.findings ? `<section><h4>Findings</h4><p>${escapeHtml(p.findings)}</p></section>` : ''}
+                ${p.conclusion ? `<section><h4>Conclusion</h4><p>${escapeHtml(p.conclusion)}</p></section>` : ''}
+                ${p.keywords?.length ? `<section><h4>Keywords</h4><p>${p.keywords.join(', ')}</p></section>` : ''}
+            `;
+            const ud = JSON.parse(localStorage.getItem('userData') || '{}');
+            const currentUserId = ud._id ? String(ud._id) : (ud.id || '');
+            const isOwner = p.student?.id === currentUserId;
+            actions.innerHTML = `
+                <button class="btn" onclick="toggleLike('${p.id}')"><i class="fas fa-heart ${p.likedByMe ? 'liked' : ''}"></i> ${p.likedByMe ? 'Unlike' : 'Like'} (${p.likesCount})</button>
+                <button class="btn btn-secondary" onclick="markHelpful('${p.id}', true)"><i class="fas fa-thumbs-up"></i> Helpful (${p.helpfulCount})</button>
+                <button class="btn btn-secondary" onclick="markHelpful('${p.id}', false)"><i class="fas fa-thumbs-down"></i> Not (${p.notHelpfulCount})</button>
+                ${p.student && !isOwner ? `<button class="btn" onclick="messageAboutProject('${p.id}','${(p.photoUrl||'').replace(/'/g,"%27")}','${escapeHtml(p.title).replace(/'/g,"%27")}','${p.student.id}','${escapeHtml(p.student.studentName||'').replace(/'/g,"%27")}','${(p.student.class||'').replace(/'/g,"%27")}','${(p.student.stream||'').replace(/'/g,"%27")}')"><i class="fas fa-envelope"></i> Message about project</button>` : ''}
+            `;
+            modal.classList.add('active');
+            window.currentDetailProject = p;
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        async function toggleLike(id) {
+            try {
+                const r = await fetch(API_URL + '/api/uneb-projects/' + id + '/like', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } });
+                const data = await r.json();
+                if (r.ok) {
+                    const p = projects.find(x => x.id === id);
+                    if (p) { p.likedByMe = data.likedByMe; p.likesCount = data.likesCount; }
+                    if (window.currentDetailProject?.id === id) { window.currentDetailProject.likedByMe = data.likedByMe; window.currentDetailProject.likesCount = data.likesCount; openDetail(id); }
+                    renderGallery();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function markHelpful(id, helpful) {
+            try {
+                const r = await fetch(API_URL + '/api/uneb-projects/' + id + '/helpful', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ helpful })
+                });
+                const data = await r.json();
+                if (r.ok) {
+                    const p = projects.find(x => x.id === id);
+                    if (p) { p.myHelpfulVote = data.myHelpfulVote; p.helpfulCount = data.helpfulCount; p.notHelpfulCount = data.notHelpfulCount; }
+                    if (window.currentDetailProject?.id === id) openDetail(id);
+                    renderGallery();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function messageAboutProject(projectId, photoUrl, title, studentId, studentName, studentClass, studentStream) {
+            closeModal();
+            const params = new URLSearchParams({ contact: studentId, quoteProject: projectId });
+            params.set('photoUrl', photoUrl || '');
+            params.set('projectTitle', title || '');
+            params.set('studentName', studentName || '');
+            params.set('studentClass', studentClass || '');
+            params.set('studentStream', studentStream || '');
+            window.location.href = 'bytenexus-chat.html?' + params.toString();
+        }
+
+        document.getElementById('searchInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadProjects(); });
+        loadProjects();
+    </script>
+</body>
+</html>

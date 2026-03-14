@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolByte - XP to Bytes Converter</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-brand-primary: #1a2a6c;
+            --color-brand-secondary: #b21f1f;
+            --color-brand-gold: #FFD700;
+            --color-brand-orange: #FFA500;
+            --color-neutral-white: #ffffff;
+            --color-neutral-lightest: #f0f4f8;
+            --color-success-green: #2ecc71;
+            --color-error-red: #e74c3c;
+            --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--gradient-background-primary);
+            min-height: 100vh;
+            color: white;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .converter-card {
+            background-color: var(--color-neutral-white);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            color: var(--color-brand-primary);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, var(--color-neutral-lightest), var(--color-neutral-white));
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid rgba(26, 42, 108, 0.1);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            background: var(--gradient-background-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .conversion-info {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 2rem;
+            color: white;
+        }
+
+        .conversion-rate {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .conversion-note {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--color-brand-primary);
+        }
+
+        .input-container {
+            position: relative;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem;
+            padding-right: 100px;
+            border: 2px solid rgba(26, 42, 108, 0.2);
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--color-brand-primary);
+        }
+
+        .max-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--gradient-button-active);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .max-btn:hover {
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .preview-box {
+            background: var(--color-neutral-lightest);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+
+        .preview-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .preview-item:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .preview-label {
+            color: #666;
+        }
+
+        .preview-value {
+            font-weight: 600;
+            color: var(--color-brand-primary);
+        }
+
+        .decimal-note {
+            font-size: 0.85rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        .convert-btn {
+            width: 100%;
+            padding: 1.2rem;
+            background: var(--gradient-button-active);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .convert-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .convert-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .back-btn {
+            display: block;
+            text-align: center;
+            margin-top: 1.5rem;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .back-btn:hover {
+            opacity: 0.8;
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .success {
+            background-color: rgba(46, 204, 113, 0.2);
+            border: 2px solid var(--color-success-green);
+            color: var(--color-success-green);
+        }
+
+        .error {
+            background-color: rgba(231, 76, 60, 0.2);
+            border: 2px solid var(--color-error-red);
+            color: var(--color-error-red);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="converter-card">
+            <div class="header">
+                <h1><i class="fas fa-exchange-alt"></i> XP to Bytes Converter</h1>
+                <p>Convert your Experience Points into Bytes</p>
+            </div>
+
+            <div id="message" style="display: none;"></div>
+
+            <div class="stats-container">
+                <div class="stat-box">
+                    <div class="stat-label"><i class="fas fa-star"></i> Your XP</div>
+                    <div class="stat-value" id="currentXP">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label"><i class="fas fa-coins"></i> Your Bytes</div>
+                    <div class="stat-value" id="currentBytes">0</div>
+                </div>
+            </div>
+
+            <div class="conversion-info">
+                <div class="conversion-rate">1 XP = 0.3 Bytes</div>
+                <div class="conversion-note">Only whole bytes are added to your account</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Amount of XP to Convert</label>
+                <div class="input-container">
+                    <input type="number" id="xpInput" class="form-input" placeholder="Enter XP amount" min="1">
+                    <button class="max-btn" onclick="setMaxXP()">MAX</button>
+                </div>
+            </div>
+
+            <div class="preview-box" id="previewBox" style="display: none;">
+                <div class="preview-item">
+                    <span class="preview-label">XP to Convert:</span>
+                    <span class="preview-value" id="previewXP">0</span>
+                </div>
+                <div class="preview-item">
+                    <span class="preview-label">Bytes (whole):</span>
+                    <span class="preview-value" id="previewWholeBytes">0</span>
+                </div>
+                <div class="preview-item">
+                    <span class="preview-label">Total Value:</span>
+                    <span class="preview-value">
+                        <span id="previewTotalBytes">0</span>
+                        <span class="decimal-note"> (... in decimal)</span>
+                    </span>
+                </div>
+            </div>
+
+            <button class="convert-btn" id="convertBtn" onclick="convertXP()">
+                <i class="fas fa-exchange-alt"></i> Convert XP to Bytes
+            </button>
+
+            <a href="studentdashboard.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token') || localStorage.getItem('studentToken');
+
+        if (!token) {
+            window.location.href = 'studentlogin.html';
+        }
+
+        let studentData = { xp: 0, bytes: 0 };
+
+        async function loadStudentData() {
+            try {
+                const response = await fetch(`${window.location.origin}/student/dashboard`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+                studentData = {
+                    xp: data.student.xp || 0,
+                    bytes: data.student.bytes || 0
+                };
+
+                document.getElementById('currentXP').textContent = studentData.xp;
+                document.getElementById('currentBytes').textContent = studentData.bytes;
+
+            } catch (error) {
+                console.error('Error loading student data:', error);
+                showMessage('Failed to load your data. Please refresh the page.', 'error');
+            }
+        }
+
+        function setMaxXP() {
+            document.getElementById('xpInput').value = studentData.xp;
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const xpAmount = parseInt(document.getElementById('xpInput').value) || 0;
+            
+            if (xpAmount > 0) {
+                const bytesEarned = xpAmount * 0.3;
+                const wholeBytes = Math.floor(bytesEarned);
+                
+                document.getElementById('previewXP').textContent = xpAmount;
+                document.getElementById('previewWholeBytes').textContent = wholeBytes;
+                document.getElementById('previewTotalBytes').textContent = bytesEarned.toFixed(1);
+                document.getElementById('previewBox').style.display = 'block';
+                document.getElementById('convertBtn').disabled = xpAmount > studentData.xp;
+            } else {
+                document.getElementById('previewBox').style.display = 'none';
+                document.getElementById('convertBtn').disabled = true;
+            }
+        }
+
+        async function convertXP() {
+            const xpAmount = parseInt(document.getElementById('xpInput').value);
+            
+            if (!xpAmount || xpAmount <= 0) {
+                showMessage('Please enter a valid XP amount', 'error');
+                return;
+            }
+
+            if (xpAmount > studentData.xp) {
+                showMessage(`You only have ${studentData.xp} XP available`, 'error');
+                return;
+            }
+
+            try {
+                document.getElementById('convertBtn').disabled = true;
+                document.getElementById('convertBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Converting...';
+
+                const response = await fetch(`${window.location.origin}/api/student/convert-xp-to-bytes`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ xpAmount })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Conversion failed');
+                }
+
+                showMessage(
+                    `Success! Converted ${data.xpConverted} XP → ${data.bytesEarned} bytes (${data.totalBytesEarned} total value)`,
+                    'success'
+                );
+
+                studentData.xp = data.remainingXP;
+                studentData.bytes = data.totalBytes;
+                
+                document.getElementById('currentXP').textContent = studentData.xp;
+                document.getElementById('currentBytes').textContent = studentData.bytes;
+                document.getElementById('xpInput').value = '';
+                document.getElementById('previewBox').style.display = 'none';
+
+                window.dispatchEvent(new CustomEvent('bytesUpdated', { detail: { bytes: studentData.bytes } }));
+
+            } catch (error) {
+                showMessage(error.message || 'Failed to convert XP', 'error');
+            } finally {
+                document.getElementById('convertBtn').disabled = false;
+                document.getElementById('convertBtn').innerHTML = '<i class="fas fa-exchange-alt"></i> Convert XP to Bytes';
+            }
+        }
+
+        function showMessage(msg, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = msg;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 5000);
+        }
+
+        document.getElementById('xpInput').addEventListener('input', updatePreview);
+
+        loadStudentData();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('floating-buttons.html')
+                .then(response => response.text())
+                .then(html => {
+                    const container = document.createElement('div');
+                    container.innerHTML = html;
+                    document.body.appendChild(container);
+                })
+                .catch(err => console.error('Error loading floating buttons:', err));
+        });
+    </script>
+</body>
+</html>

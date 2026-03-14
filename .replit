@@ -75,3 +75,7 @@ outputType = "console"
 
 [agent]
 expertMode = true
+
+[userenv]
+
+[userenv.shared]
