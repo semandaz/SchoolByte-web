@@ -893,7 +893,7 @@
 
                                     if (loginResponse.ok) {
                                         localStorage.setItem('token', loginData.token);
-                                        localStorage.removeItem('studentToken'); // Remove old token if exists
+                                        localStorage.removeItem('token'); // Remove old token if exists
                                         localStorage.setItem('userData', JSON.stringify(loginData.student));
                                         showMessage('Welcome to SchoolByte! Redirecting to your dashboard...', 'success');
                                         setTimeout(() => {

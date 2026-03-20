@@ -743,7 +743,7 @@
         // Preview Resource Function
         async function previewResource(workFileId, title) {
             try {
-                const token = localStorage.getItem('studentToken') || localStorage.getItem('token');
+                const token = localStorage.getItem('token');
                 if (!token) {
                     alert('Please log in to preview files');
                     window.location.href = 'studentlogin.html';
@@ -796,7 +796,7 @@
                 } else if (response.status === 401 || response.status === 403) {
                     alert('Session expired. Please log in again.');
                     localStorage.removeItem('token');
-                    localStorage.removeItem('studentToken');
+                    localStorage.removeItem('token');
                     window.location.href = 'studentlogin.html';
                 } else {
                     const errorData = await response.json().catch(() => ({ message: 'Preview failed' }));
@@ -880,7 +880,7 @@
         }
         async function downloadResource(workFileId, costBytes, title, teacherName) {
             try {
-                const token = localStorage.getItem('studentToken') || localStorage.getItem('token');
+                const token = localStorage.getItem('token');
                 if (!token) {
                     alert('Please log in to download files');
                     window.location.href = 'studentlogin.html';
@@ -930,7 +930,7 @@
                 } else if (response.status === 401 || response.status === 403) {
                     alert('Session expired. Please log in again.');
                     localStorage.removeItem('token');
-                    localStorage.removeItem('studentToken');
+                    localStorage.removeItem('token');
                     window.location.href = 'studentlogin.html';
                 } else {
                     const errorData = await response.json().catch(() => ({

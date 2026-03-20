@@ -686,10 +686,10 @@
             // Get student data with token standardization
             let token = localStorage.getItem('token');
             if (!token) {
-                token = localStorage.getItem('studentToken');
+                token = localStorage.getItem('token');
                 if (token) {
                     localStorage.setItem('token', token);
-                    localStorage.removeItem('studentToken');
+                    localStorage.removeItem('token');
                 }
             }
             

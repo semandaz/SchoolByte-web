@@ -722,11 +722,11 @@
                 // Check for token with backward compatibility
                 let token = localStorage.getItem('token');
                 if (!token) {
-                    token = localStorage.getItem('studentToken');
+                    token = localStorage.getItem('token');
                     if (token) {
                         // Migrate old token to new key
                         localStorage.setItem('token', token);
-                        localStorage.removeItem('studentToken');
+                        localStorage.removeItem('token');
                     }
                 }
                 
@@ -780,7 +780,7 @@
                     
                 } else if (response.status === 401 || response.status === 403) {
                     localStorage.removeItem('token');
-                    localStorage.removeItem('studentToken'); // Also remove old token
+                    localStorage.removeItem('token'); // Also remove old token
                     window.location.href = 'studentlogin.html';
                 } else {
                     console.error('Failed to fetch student data');
@@ -949,7 +949,7 @@
         document.getElementById('signOutBtn').addEventListener('click', function() {
             // Clear all student-related data
             localStorage.removeItem('token');
-            localStorage.removeItem('studentToken'); // Also remove old token if exists
+            localStorage.removeItem('token'); // Also remove old token if exists
             localStorage.removeItem('studentData');
             localStorage.removeItem('preferredName');
             localStorage.removeItem('preferredFont');
