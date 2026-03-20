@@ -505,7 +505,7 @@
                     <input type="checkbox" id="rememberMe">
                      <label for="rememberMe">Remember me</label>
                 </div>
-                <a href="#" class="forgot-password">Forgot password?</a>
+                <a href="teacherpasswordreset.html" class="forgot-password">Forgot password?</a>
             </div>
 
             <button type="submit" class="btn-login" id="login-btn">Sign In to Dashboard</button>
@@ -672,7 +672,7 @@
 
                 try {
                     // All login attempts go through the same endpoint now
-                    const requestBody = { teacherName: name, email, password };
+                    const requestBody = { teacherName: name, email: email.toLowerCase().trim(), password };
                     const response = await fetch('/login-teacher', {
                         method: 'POST',
                         headers: {
@@ -680,10 +680,11 @@
                          },
                         body: JSON.stringify(requestBody),
                     });
-                    const data = await response.json();
+                    let data = {};
+                    try { data = await response.json(); } catch (parseErr) { throw new Error('Server returned an unexpected response. Please try again.'); }
 
                     if (!response.ok) {
-                        throw new Error(data.message || 'Login failed');
+                        throw new Error(data.message || (data.errors && data.errors[0] && data.errors[0].msg) || 'Login failed. Please check your credentials.');
                     }
 
                     if (data.requiresTwoFA) {
