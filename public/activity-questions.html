@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>SchoolByte - Activity</title>
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- MathJax 3 for LaTeX rendering (professional math & chemistry) -->
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* SchoolByte Brand Colors - EXACT match from original */
+    :root {
+      --color-brand-primary: #1a2a6c;    /* Dark Blue - Main brand color */
+      --color-brand-secondary: #b21f1f;  /* Deep Red/Maroon - Secondary brand color */
+      --color-brand-gold: #FFD700;       /* Gold - Accent for special elements */
+      --color-brand-orange: #FFA500;     /* Orange - Used in gradients with gold */
+      --color-neutral-white: #ffffff;
+      --color-neutral-lightest: #f0f4f8;
+      --color-neutral-light: #d1d5db;
+      --color-neutral-medium: #9ca3af;
+      --color-neutral-dark: #4b5563;
+      --color-neutral-darkest: #333333;
+      --color-error-red: #e74c3c;
+      --color-success-green: #2ecc71;
+      --color-info-blue: #3498db;
+      --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+      --gradient-background-secondary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
+      --gradient-text-gold: linear-gradient(to right, var(--color-brand-gold), var(--color-neutral-white));
+      --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
+      --gradient-button-active-hover: linear-gradient(to right, #FFC800, #FF8C00);
+      --overlay-light: rgba(255, 255, 255, 0.1);
+      --shadow-sm: 0 8px 20px rgba(0, 0, 0, 0.08);
+      --shadow-md: 0 12px 28px rgba(0, 0, 0, 0.12);
+      --radius-card: 1.25rem;
+    }
+
+    body {
+      background: var(--gradient-background-secondary);
+      font-family: 'Inter', sans-serif;
+      color: var(--color-neutral-darkest);
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* Floating particles background (consistent with dashboard theme) */
+    .floating-particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .particle {
+      position: absolute;
+      background: rgba(255, 215, 0, 0.2);
+      border-radius: 50%;
+      animation: float-particle linear infinite;
+      backdrop-filter: blur(1px);
+    }
+    @keyframes float-particle {
+      0% { transform: translateY(100vh) rotate(0deg); opacity: 0.6; }
+      100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
+    }
+
+    /* Back to Dashboard Button - Exact style from original */
+    .back-to-dashboard {
+      position: fixed;
+      top: 1.5rem;
+      left: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      z-index: 30;
+      transition: all 0.3s;
+    }
+    .back-arrow {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--gradient-background-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-neutral-white);
+      font-size: 1.2rem;
+      transition: all 0.3s;
+    }
+    .back-text {
+      color: var(--color-neutral-white);
+      font-weight: 600;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      transition: all 0.3s;
+    }
+    .back-to-dashboard:hover .back-arrow {
+      transform: translateX(-5px);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    }
+    .back-to-dashboard:hover .back-text {
+      transform: translateX(3px);
+    }
+
+    /* Header Styles - Exact match */
+    header {
+      background-color: var(--color-neutral-white);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .header-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-size: 2.5rem;
+      font-weight: 900;
+      background: var(--gradient-background-primary);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-decoration: none;
+    }
+    .profile-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--gradient-background-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-neutral-white);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: transform 0.2s ease-in-out;
+    }
+    .avatar:hover {
+      transform: scale(1.1);
+    }
+    .student-name {
+      font-weight: 600;
+      color: var(--color-brand-primary);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Activity header */
+    .activity-header {
+      background: var(--color-neutral-white);
+      border-radius: var(--radius-card);
+      padding: 1.5rem 2rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow-sm);
+      border-left: 8px solid var(--color-brand-gold);
+    }
+    .activity-title {
+      font-size: 1.9rem;
+      font-weight: 800;
+      background: var(--gradient-background-primary);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .activity-title i {
+      background: none;
+      -webkit-background-clip: unset;
+      color: var(--color-brand-secondary);
+    }
+    .meta-info {
+      display: flex;
+      gap: 2rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    .meta-badge {
+      background: var(--color-neutral-lightest);
+      padding: 0.4rem 1rem;
+      border-radius: 40px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--color-brand-primary);
+    }
+    .meta-badge i {
+      margin-right: 6px;
+      color: var(--color-brand-secondary);
+    }
+
+    /* Question card */
+    .question-card {
+      background: var(--color-neutral-white);
+      border-radius: var(--radius-card);
+      margin-bottom: 1.8rem;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.03);
+    }
+    .question-header {
+      padding: 1.2rem 1.8rem;
+      background: #fefefe;
+      border-bottom: 1px solid var(--color-neutral-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .q-num {
+      font-weight: 800;
+      background: var(--gradient-background-primary);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-size: 1.1rem;
+    }
+    .points-badge {
+      background: #fef3c7;
+      color: #b45309;
+      border-radius: 40px;
+      padding: 0.2rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .question-text {
+      padding: 1.5rem 1.8rem 0.8rem 1.8rem;
+      font-size: 1.2rem;
+      font-weight: 500;
+      line-height: 1.5;
+      color: var(--color-neutral-darkest);
+    }
+    .question-text .math {
+      font-size: 1.1rem;
+    }
+    .options-area {
+      padding: 0.2rem 1.8rem 1.8rem 1.8rem;
+    }
+    .option-item {
+      background: var(--color-neutral-lightest);
+      margin: 0.75rem 0;
+      padding: 0.8rem 1.2rem;
+      border-radius: 1rem;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: 1px solid transparent;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .option-item:hover {
+      background: #eef2ff;
+      border-color: var(--color-brand-primary);
+      transform: translateX(4px);
+    }
+    .option-prefix {
+      font-weight: 800;
+      width: 28px;
+      color: var(--color-brand-primary);
+    }
+    .option-content {
+      flex: 1;
+      font-size: 1rem;
+    }
+    .selected-option {
+      background: #e0e7ff;
+      border-left: 5px solid var(--color-brand-primary);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .feedback-area {
+      padding: 0 1.8rem 1.2rem 1.8rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .correct-feedback { 
+      color: #15803d; 
+      background: #dcfce7; 
+      padding: 0.5rem 1rem; 
+      border-radius: 40px; 
+      display: inline-block;
+    }
+    .wrong-feedback { 
+      color: #b91c1c; 
+      background: #fee2e2; 
+      padding: 0.5rem 1rem; 
+      border-radius: 40px; 
+      display: inline-block;
+    }
+
+    /* Submit Section */
+    .submit-section {
+      background: var(--color-neutral-white);
+      border-radius: var(--radius-card);
+      padding: 1.8rem;
+      text-align: center;
+      margin-top: 2rem;
+      box-shadow: var(--shadow-md);
+    }
+    .submit-btn {
+      background: var(--gradient-button-active);
+      border: none;
+      padding: 1rem 2.5rem;
+      font-weight: 800;
+      font-size: 1.2rem;
+      border-radius: 60px;
+      color: var(--color-brand-primary);
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .submit-btn:hover {
+      background: var(--gradient-button-active-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    .submit-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .result-summary {
+      margin-top: 1.5rem;
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+
+    /* Bytes Counter - Exact style from original */
+    .bytes-counter {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background-color: var(--color-brand-primary);
+      color: var(--color-neutral-white);
+      padding: 0.8rem 1.5rem;
+      border-radius: 50px;
+      font-weight: 600;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      z-index: 100;
+    }
+    .bytes-icon {
+      color: var(--color-brand-gold);
+    }
+    .loading-state {
+      text-align: center;
+      padding: 4rem;
+      background: var(--color-neutral-white);
+      border-radius: 2rem;
+    }
+    .fa-spinner {
+      color: var(--color-brand-primary);
+    }
+
+    /* Reduced Motion Styles */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      .option-item:hover {
+        transform: none !important;
+      }
+      .back-to-dashboard:hover .back-arrow,
+      .back-to-dashboard:hover .back-text {
+        transform: none !important;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .back-to-dashboard {
+        top: 1rem;
+        left: 1rem;
+      }
+      .back-arrow {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+      }
+      .back-text {
+        font-size: 0.9rem;
+      }
+      .header-container {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .logo {
+        font-size: 2rem;
+      }
+      .container {
+        padding: 0 1rem;
+      }
+      .question-text {
+        font-size: 1rem;
+      }
+      .activity-title {
+        font-size: 1.4rem;
+      }
+      .bytes-counter {
+        bottom: 1rem;
+        right: 1rem;
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="floating-particles" id="floatingParticles"></div>
+
+<!-- Back to Dashboard Button - Exact style from original -->
+<a href="studentdashboard.html" class="back-to-dashboard">
+  <div class="back-arrow">
+    <i class="fas fa-arrow-left"></i>
+  </div>
+  <span class="back-text">Dashboard</span>
+</a>
+
+<header>
+  <div class="header-container">
+    <a href="studentdashboard.html" class="logo">SchoolByte</a>
+    <div class="profile-section">
+      <div class="avatar" onclick="window.location.href='studentprofile.html'">
+        <i class="fas fa-user-graduate"></i>
+      </div>
+      <span class="student-name" id="studentNameDisplay">Student</span>
+    </div>
+  </div>
+</header>
+
+<main class="container" id="activityContainer">
+  <div class="loading-state" id="loadingSpinner">
+    <i class="fas fa-spinner fa-pulse fa-3x"></i>
+    <p style="margin-top: 1rem; color: var(--color-brand-primary);">Loading activity questions ...</p>
+  </div>
+</main>
+
+<div class="bytes-counter">
+  <i class="fas fa-coins bytes-icon"></i>
+  <span id="bytesCount">125</span> Bytes
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const activityId = params.get('activityId') || params.get('id');
+
+  let currentBytes = 0;
+  let studentName = 'Student';
+  let activityData = null;
+  let isSubmitted = false;
+
+  const container = document.getElementById('activityContainer');
+  const bytesSpan = document.getElementById('bytesCount');
+  const studentNameSpan = document.getElementById('studentNameDisplay');
+
+  function createParticles() {
+    const particleContainer = document.getElementById('floatingParticles');
+    for (let i = 0; i < 30; i++) {
+      const p = document.createElement('div');
+      p.classList.add('particle');
+      const size = Math.random() * 8 + 3;
+      p.style.width = size + 'px';
+      p.style.height = size + 'px';
+      p.style.left = (Math.random() * 100) + '%';
+      p.style.animationDuration = (Math.random() * 20 + 12) + 's';
+      p.style.animationDelay = (Math.random() * 8) + 's';
+      p.style.backgroundColor = 'rgba(255,215,0,' + (Math.random() * 0.4 + 0.1) + ')';
+      particleContainer.appendChild(p);
+    }
+  }
+
+  function renderQuestions(activity) {
+    const questions = activity.questions || [];
+    const totalQ = questions.length;
+
+    let html = `
+      <div class="activity-header">
+        <div class="activity-title">
+          <i class="fas fa-tasks"></i> ${activity.title || 'Learning Activity'}
+        </div>
+        <div class="meta-info">
+          <span class="meta-badge"><i class="fas fa-question-circle"></i> ${totalQ} Question${totalQ !== 1 ? 's' : ''}</span>
+          <span class="meta-badge"><i class="fas fa-coins"></i> Up to ${activity.maxBytesReward} Bytes</span>
+          <span class="meta-badge"><i class="fas fa-book"></i> ${activity.subject || ''}</span>
+          <span class="meta-badge"><i class="fas fa-bolt" style="color:#e67e22"></i> Costs 1 Energy</span>
+        </div>
+        <p style="margin-top:12px;color:var(--color-neutral-dark);font-size:0.9rem;">
+          <i class="fas fa-info-circle"></i> Write detailed answers. Your score is based on the quality and detail of your responses.
+        </p>
+      </div>
+    `;
+
+    questions.forEach((q, idx) => {
+      html += `
+        <div class="question-card" data-qidx="${idx}">
+          <div class="question-header">
+            <span class="q-num"><i class="far fa-circle"></i> Question ${idx + 1}</span>
+          </div>
+          <div class="question-text">${q.questionText}</div>
+          <div class="options-area">
+            <textarea
+              id="answer-${idx}"
+              rows="5"
+              placeholder="Write your detailed answer here... (aim for at least 30 words for full credit)"
+              style="width:100%;padding:1rem;border:1px solid var(--color-neutral-light);border-radius:0.75rem;font-size:0.95rem;font-family:inherit;resize:vertical;background:var(--color-neutral-lightest);color:var(--color-neutral-darkest);outline:none;transition:border-color 0.2s;"
+              onfocus="this.style.borderColor='var(--color-brand-primary)'"
+              onblur="this.style.borderColor='var(--color-neutral-light)'"
+            ></textarea>
+            <div style="margin-top:0.5rem;font-size:0.8rem;color:var(--color-neutral-medium);" id="wordcount-${idx}">0 words</div>
+          </div>
+          <div class="feedback-area" id="feedback-${idx}"></div>
+        </div>
+      `;
+    });
+
+    html += `
+      <div class="submit-section">
+        <button class="submit-btn" id="submitActivityBtn"><i class="fas fa-check-circle"></i> Submit & Earn Bytes</button>
+        <div id="resultSummary" class="result-summary"></div>
+      </div>
+    `;
+
+    container.innerHTML = html;
+
+    // Word count listeners
+    questions.forEach((q, idx) => {
+      const ta = document.getElementById('answer-' + idx);
+      const wc = document.getElementById('wordcount-' + idx);
+      if (ta && wc) {
+        ta.addEventListener('input', () => {
+          const words = ta.value.trim().split(/\s+/).filter(Boolean).length;
+          wc.textContent = words + ' word' + (words !== 1 ? 's' : '');
+          wc.style.color = words >= 30 ? 'var(--color-success-green)' : words >= 15 ? '#f39c12' : 'var(--color-neutral-medium)';
+        });
+      }
+    });
+
+    // Submit handler
+    setTimeout(() => {
+      const submitBtn = document.getElementById('submitActivityBtn');
+      if (submitBtn) {
+        submitBtn.addEventListener('click', submitActivity);
+      }
+    }, 100);
+  }
+
+  async function submitActivity() {
+    if (isSubmitted) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) { window.location.href = 'studentlogin.html'; return; }
+
+    const questions = activityData.questions || [];
+    const answers = questions.map((q, idx) => {
+      const ta = document.getElementById('answer-' + idx);
+      return { answer: ta ? ta.value.trim() : '' };
+    });
+
+    const unanswered = answers.filter(a => !a.answer).length;
+    if (unanswered > 0) {
+      const confirmSubmit = confirm('You have ' + unanswered + ' unanswered question' + (unanswered !== 1 ? 's' : '') + '. Submit anyway?');
+      if (!confirmSubmit) return;
+    }
+
+    const submitBtn = document.getElementById('submitActivityBtn');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    }
+
+    try {
+      const response = await fetch('/student/activities/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ activityId: activityData._id, answers })
+      });
+
+      let data = {};
+      try { data = await response.json(); } catch(e) { throw new Error('Unexpected server response.'); }
+
+      if (response.status === 402) {
+        throw new Error('Not enough energy! Energy refills 1 per hour (max 25). Current energy: ' + (data.energy || 0));
+      }
+      if (!response.ok) throw new Error(data.message || 'Failed to submit activity.');
+
+      isSubmitted = true;
+
+      // Update bytes display
+      currentBytes = data.studentCurrentBytes || currentBytes;
+      bytesSpan.textContent = currentBytes;
+
+      // Show per-question feedback
+      (data.gradedAnswers || []).forEach(result => {
+        const fbDiv = document.getElementById('feedback-' + result.questionIndex);
+        if (!fbDiv) return;
+        const score = result.score || 0;
+        const isGood = score >= 0.7;
+        const isPartial = score >= 0.4;
+        fbDiv.innerHTML = `
+          <div class="${isGood ? 'correct-feedback' : isPartial ? 'wrong-feedback' : 'wrong-feedback'}">
+            <i class="fas fa-${isGood ? 'check' : 'times'}-circle"></i>
+            ${result.feedback || (isGood ? 'Good answer!' : isPartial ? 'Partial credit.' : 'Needs improvement.')}
+            &nbsp;|&nbsp; Words: ${result.wordCount || 0}
+            | Keywords matched: ${result.matchedPositive || 0}/${result.totalPositive || 0}
+          </div>
+        `;
+
+        // Disable textarea
+        const ta = document.getElementById('answer-' + result.questionIndex);
+        if (ta) { ta.disabled = true; ta.style.opacity = '0.7'; }
+      });
+
+      // Summary
+      const summaryDiv = document.getElementById('resultSummary');
+      if (summaryDiv) {
+        summaryDiv.innerHTML = `
+          <div style="background:var(--color-neutral-lightest);border-radius:60px;padding:1rem;margin-top:1rem;">
+            <i class="fas fa-chart-line"></i>
+            Score: <strong style="color:var(--color-brand-primary)">${data.scorePercentage || 0}%</strong>
+            &nbsp;&mdash;&nbsp;
+            Bytes earned: <strong style="color:#b45309">${data.bytesEarned || 0}</strong>
+            ${data.bytesEarned > 0 ? '<i class="fas fa-coins" style="color:#FFD700"></i>' : ''}
+            <br><small style="color:var(--color-neutral-medium)">Total bytes: ${currentBytes}</small>
+          </div>
+        `;
+      }
+
+      if (submitBtn) {
+        submitBtn.innerHTML = '<i class="fas fa-check-double"></i> Activity Completed';
+      }
+
+      // Animate bytes counter
+      const counter = document.querySelector('.bytes-counter');
+      if (counter && data.bytesEarned > 0) {
+        counter.style.transform = 'scale(1.15)';
+        counter.style.transition = 'transform 0.2s';
+        setTimeout(() => { counter.style.transform = 'scale(1)'; }, 300);
+      }
+
+    } catch (error) {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Submit & Earn Bytes';
+      }
+      alert(error.message || 'Failed to submit. Please try again.');
+    }
+  }
+
+  async function initializeActivity() {
+    const token = localStorage.getItem('token');
+    if (!token) { window.location.href = 'studentlogin.html'; return; }
+
+    if (!activityId) {
+      container.innerHTML = `<div class="loading-state"><i class="fas fa-exclamation-triangle fa-2x" style="color:var(--color-error-red)"></i><p style="margin-top:1rem;color:var(--color-brand-primary);">No activity specified. <a href="activitiesstudentdashboard.html">Browse activities</a></p></div>`;
+      return;
+    }
+
+    try {
+      // Fetch student info
+      const dashResponse = await fetch('/student/dashboard', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (dashResponse.ok) {
+        const dashData = await dashResponse.json();
+        studentName = dashData.student.preferredName || dashData.student.studentName || 'Student';
+        currentBytes = dashData.student.bytes || 0;
+        studentNameSpan.textContent = studentName;
+        bytesSpan.textContent = currentBytes;
+      } else if (dashResponse.status === 401 || dashResponse.status === 403) {
+        window.location.href = 'studentlogin.html';
+        return;
+      }
+
+      // Fetch activity
+      const actResponse = await fetch('/student/activities/' + activityId, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+
+      let actData = {};
+      try { actData = await actResponse.json(); } catch(e) { throw new Error('Failed to load activity.'); }
+
+      if (!actResponse.ok) throw new Error(actData.message || 'Activity not found.');
+
+      activityData = actData.activity;
+      document.title = 'SchoolByte - ' + (activityData.title || 'Activity');
+
+      renderQuestions(activityData);
+
+    } catch (error) {
+      container.innerHTML = `<div class="loading-state"><i class="fas fa-exclamation-triangle fa-2x" style="color:var(--color-error-red)"></i><p style="margin-top:1rem;color:var(--color-brand-primary);">Error: ${error.message} &mdash; <a href="activitiesstudentdashboard.html">Go back</a></p></div>`;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    createParticles();
+    initializeActivity();
+  });
+</script>
+</body>
+</html>

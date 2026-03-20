@@ -3574,7 +3574,7 @@ app.post('/login-teacher', [
 
         } else {
             // Handle regular teacher login
-            const teacher = await Teacher.findOne({ email });
+            const teacher = await Teacher.findOne({ email: email.toLowerCase().trim() });
 
 
             if (!teacher) {
@@ -3654,6 +3654,105 @@ app.get('/teacher/dashboard', authenticateTeacherToken, async (req, res) => {
     } catch (error) {
         console.error('Error accessing teacher dashboard:', error);
         res.status(500).json({ message: 'Server error accessing teacher dashboard.', error: error.message });
+    }
+});
+
+
+
+// Teacher change password (authenticated, requires old password)
+app.post('/teacher/reset-password', authenticateTeacherToken, [
+    body('oldPassword').notEmpty().withMessage('Current password is required.'),
+    body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters long.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ message: errors.array()[0].msg });
+    }
+    const { oldPassword, newPassword } = req.body;
+    try {
+        const teacher = await Teacher.findById(req.teacher.id);
+        if (!teacher) return res.status(404).json({ message: 'Teacher not found.' });
+        const isMatch = await bcrypt.compare(oldPassword, teacher.password);
+        if (!isMatch) return res.status(401).json({ message: 'Current password is incorrect.' });
+        teacher.password = await bcrypt.hash(newPassword, 12);
+        teacher.isPasswordSet = true;
+        await teacher.save();
+        res.status(200).json({ message: 'Password changed successfully!' });
+    } catch (error) {
+        console.error('Error changing teacher password:', error);
+        res.status(500).json({ message: 'Failed to change password.', error: error.message });
+    }
+});
+
+
+// Teacher send password reset code (public)
+app.post('/teacher/send-password-reset-code', [
+    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email address.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ message: errors.array()[0].msg });
+    const { email } = req.body;
+    try {
+        const teacher = await Teacher.findOne({ email: email.toLowerCase().trim() });
+        if (teacher) {
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+            const updated = await VerificationCode.findOneAndUpdate(
+                { email, $or: [{ lastSentAt: { $exists: false } }, { lastSentAt: { $lt: twoMinutesAgo } }] },
+                { email, code, lastSentAt: new Date(), createdAt: new Date() },
+                { upsert: true, new: true, setDefaultsOnInsert: true }
+            );
+            if (!updated) {
+                const existingCode = await VerificationCode.findOne({ email });
+                if (existingCode && existingCode.lastSentAt) {
+                    const secs = Math.ceil((120000 - (Date.now() - existingCode.lastSentAt.getTime())) / 1000);
+                    return res.status(429).json({ message: 'Please wait ' + secs + ' seconds before requesting another code.', retryAfter: secs });
+                }
+            }
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: 'SchoolByte - Teacher Password Reset Code',
+                html: '<div style="font-family:Arial,sans-serif"><h2 style="color:#2c3e50">SchoolByte Teacher Password Reset</h2><p>Hello ' + teacher.teacherName + ',</p><p>Use the code below to reset your password:</p><div style="background:#f0f4f8;padding:20px;text-align:center;font-size:32px;font-weight:bold;letter-spacing:5px;color:#2c3e50;margin:20px 0">' + code + '</div><p><strong>This code expires in 10 minutes.</strong></p><p>If you did not request this, ignore this email.</p></div>'
+            };
+            await transporter.sendMail(mailOptions);
+        }
+        res.status(200).json({ message: 'If a teacher account exists with this email, a password reset code has been sent.' });
+    } catch (error) {
+        console.error('Error sending teacher reset code:', error);
+        res.status(500).json({ message: 'Failed to send reset code.', error: error.message });
+    }
+});
+
+
+// Teacher reset password using verification code (public)
+app.post('/teacher/reset-password-with-code', [
+    body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email address.'),
+    body('code').notEmpty().withMessage('Verification code is required.'),
+    body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters long.')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ message: errors.array()[0].msg });
+    const { email, code, newPassword } = req.body;
+    try {
+        const teacher = await Teacher.findOne({ email: email.toLowerCase().trim() });
+        if (!teacher) return res.status(400).json({ message: 'Invalid or expired verification code.' });
+        const verificationRecord = await VerificationCode.findOne({ email });
+        if (!verificationRecord) return res.status(400).json({ message: 'No verification code found. Please request a new code.' });
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+        if (verificationRecord.createdAt < tenMinutesAgo) {
+            await VerificationCode.deleteOne({ email });
+            return res.status(400).json({ message: 'Verification code has expired. Please request a new one.' });
+        }
+        if (verificationRecord.code !== code.trim()) return res.status(400).json({ message: 'Invalid verification code.' });
+        teacher.password = await bcrypt.hash(newPassword, 12);
+        teacher.isPasswordSet = true;
+        await teacher.save();
+        await VerificationCode.deleteOne({ email });
+        res.status(200).json({ message: 'Password reset successfully! You can now log in with your new password.' });
+    } catch (error) {
+        console.error('Error resetting teacher password:', error);
+        res.status(500).json({ message: 'Failed to reset password.', error: error.message });
     }
 });
 
