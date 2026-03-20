@@ -758,36 +758,73 @@
             const modal = document.createElement('div');
             modal.className = 'widget-modal';
             modal.id = 'aiBuddyModal';
+            modal.style.cssText = 'max-width: 520px; display: flex; flex-direction: column;';
             modal.innerHTML = `
-                <div class="widget-header">
+                <div class="widget-header" style="flex-shrink:0;">
                     <h3><i class="fas fa-robot"></i> AI Study Buddy</h3>
-                    <button class="close-widget">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <button class="close-widget"><i class="fas fa-times"></i></button>
                 </div>
-                <div class="widget-content">
-                    <div class="ai-buddy-content">
-                        <div class="ai-avatar">
-                            <i class="fas fa-robot"></i>
+                <div class="ai-chat-messages" id="aiChatMessages" style="
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 16px;
+                    background: #f8f9fc;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                    min-height: 280px;
+                    max-height: 380px;
+                ">
+                    <div class="ai-welcome-msg" style="
+                        display: flex; align-items: flex-start; gap: 10px;
+                    ">
+                        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#818cf8);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-robot" style="color:white;font-size:14px;"></i>
                         </div>
-                        <h3>Hello! I'm your AI Study Buddy</h3>
-                        <p>I can help you with homework, explanations, and study tips. What would you like to learn today?</p>
-
-                        <div class="ai-input-group">
-                            <input type="text" class="ai-input" placeholder="Ask me anything...">
-                            <button class="ai-send-btn">Send</button>
+                        <div style="background:white;border-radius:0 12px 12px 12px;padding:10px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);max-width:85%;font-size:0.875rem;line-height:1.5;color:#374151;">
+                            Hi! I'm your AI Study Buddy. Ask me anything about your subjects, homework, or concepts you want to understand better!
                         </div>
+                    </div>
+                </div>
+                <div style="padding:12px 16px;border-top:1px solid #e5e7eb;background:white;flex-shrink:0;">
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input
+                            type="text"
+                            id="aiChatInput"
+                            placeholder="Ask a question..."
+                            style="flex:1;padding:10px 14px;border:2px solid #e5e7eb;border-radius:24px;font-size:0.875rem;outline:none;transition:border-color 0.2s;font-family:inherit;"
+                            autocomplete="off"
+                        />
+                        <button id="aiSendBtn" style="
+                            width:40px;height:40px;border-radius:50%;
+                            background:linear-gradient(135deg,#6366f1,#818cf8);
+                            border:none;color:white;font-size:16px;
+                            cursor:pointer;display:flex;align-items:center;justify-content:center;
+                            flex-shrink:0;transition:opacity 0.2s;
+                        ">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
                     </div>
                 </div>
             `;
             document.body.appendChild(modal);
 
-            // Add event listeners
+            const chatMessages = modal.querySelector('#aiChatMessages');
+            const chatInput = modal.querySelector('#aiChatInput');
+            const sendBtn = modal.querySelector('#aiSendBtn');
+
+            chatInput.addEventListener('focus', () => { chatInput.style.borderColor = '#6366f1'; });
+            chatInput.addEventListener('blur', () => { chatInput.style.borderColor = '#e5e7eb'; });
+
             modal.querySelector('.close-widget').addEventListener('click', () => this.closeCurrentWidget());
-            modal.querySelector('.ai-send-btn').addEventListener('click', () => this.handleAIChat());
-            modal.querySelector('.ai-input').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') this.handleAIChat();
+            sendBtn.addEventListener('click', () => this.handleAIChat());
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.handleAIChat(); }
             });
+
+            this._aiChatMessages = chatMessages;
+            this._aiChatInput = chatInput;
+            this._aiSendBtn = sendBtn;
         }
 
         createCareerModal() {
@@ -892,84 +929,146 @@
         }
 
         async handleAIChat() {
-            const input = document.querySelector('#aiBuddyModal .ai-input');
-            const question = input.value.trim();
-
+            const input = this._aiChatInput || document.querySelector('#aiChatInput');
+            const question = input ? input.value.trim() : '';
             if (!question) return;
 
-            const sendBtn = document.querySelector('#aiBuddyModal .ai-send-btn');
-            const originalBtnText = sendBtn.innerHTML;
+            const sendBtn = this._aiSendBtn || document.querySelector('#aiSendBtn');
+            const chatMessages = this._aiChatMessages || document.querySelector('#aiChatMessages');
 
-            // Show loading state
-            sendBtn.disabled = true;
-            sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            // Immediately show the user's message
+            const userBubble = document.createElement('div');
+            userBubble.style.cssText = 'display:flex;justify-content:flex-end;';
+            userBubble.innerHTML = `
+                <div style="background:linear-gradient(135deg,#6366f1,#818cf8);color:white;border-radius:12px 0 12px 12px;padding:10px 14px;max-width:85%;font-size:0.875rem;line-height:1.5;">
+                    ${question.replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+                </div>
+            `;
+            chatMessages.appendChild(userBubble);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Clear input and disable controls
+            input.value = '';
             input.disabled = true;
+            sendBtn.disabled = true;
+            sendBtn.style.opacity = '0.5';
 
-            this.addActivity(`Asked AI: ${question}`, 'info');
+            // Show typing indicator
+            const typingRow = document.createElement('div');
+            typingRow.style.cssText = 'display:flex;align-items:flex-start;gap:10px;';
+            typingRow.innerHTML = `
+                <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#818cf8);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="fas fa-robot" style="color:white;font-size:14px;"></i>
+                </div>
+                <div class="ai-typing-indicator" style="background:white;border-radius:0 12px 12px 12px;padding:10px 16px;box-shadow:0 1px 4px rgba(0,0,0,0.08);display:flex;gap:4px;align-items:center;">
+                    <span style="width:7px;height:7px;border-radius:50%;background:#6366f1;animation:aiBounce 1s infinite 0s;display:inline-block;"></span>
+                    <span style="width:7px;height:7px;border-radius:50%;background:#6366f1;animation:aiBounce 1s infinite 0.15s;display:inline-block;"></span>
+                    <span style="width:7px;height:7px;border-radius:50%;background:#6366f1;animation:aiBounce 1s infinite 0.3s;display:inline-block;"></span>
+                </div>
+            `;
+            chatMessages.appendChild(typingRow);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Ensure animation keyframes injected once
+            if (!document.getElementById('aiBounceStyle')) {
+                const s = document.createElement('style');
+                s.id = 'aiBounceStyle';
+                s.textContent = '@keyframes aiBounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}';
+                document.head.appendChild(s);
+            }
+
+            this.addActivity('Asked AI: ' + question, 'info');
 
             try {
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    throw new Error('Not authenticated');
-                }
+                const authToken = localStorage.getItem('token');
+                if (!authToken) throw new Error('Not authenticated');
 
-                const response = await fetch(`${window.location.origin}/api/ai-buddy/chat`, {
+                const response = await fetch('/api/ai-buddy/chat', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        'Authorization': 'Bearer ' + authToken,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ message: question })
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to get AI response');
+                if (!response.ok || !response.body) {
+                    let errMsg = 'Failed to get AI response';
+                    try { const d = await response.json(); errMsg = d.error || errMsg; } catch(e){}
+                    throw new Error(errMsg);
                 }
 
-                const data = await response.json();
-                this.showAIChatResponse(data.response || data.fallback);
-                input.value = '';
+                // Replace typing indicator with AI message bubble
+                const aiBubbleRow = document.createElement('div');
+                aiBubbleRow.style.cssText = 'display:flex;align-items:flex-start;gap:10px;';
+                aiBubbleRow.innerHTML = `
+                    <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#818cf8);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fas fa-robot" style="color:white;font-size:14px;"></i>
+                    </div>
+                    <div class="ai-response-text" style="background:white;border-radius:0 12px 12px 12px;padding:10px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);max-width:85%;font-size:0.875rem;line-height:1.6;color:#374151;white-space:pre-wrap;word-break:break-word;"></div>
+                `;
+
+                typingRow.replaceWith(aiBubbleRow);
+                const responseText = aiBubbleRow.querySelector('.ai-response-text');
+
+                // Stream reading
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let fullText = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // Keep incomplete line
+
+                    for (const line of lines) {
+                        if (!line.startsWith('data: ')) continue;
+                        const jsonStr = line.slice(6).trim();
+                        if (!jsonStr) continue;
+                        try {
+                            const parsed = JSON.parse(jsonStr);
+                            if (parsed.error) { responseText.textContent = parsed.error; break; }
+                            if (parsed.token) {
+                                fullText += parsed.token;
+                                responseText.textContent = fullText;
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                            }
+                            if (parsed.done) break;
+                        } catch(e) {}
+                    }
+                }
+
+                if (!fullText) responseText.textContent = 'Sorry, I could not generate a response. Please try again.';
 
             } catch (error) {
                 console.error('AI chat error:', error);
-                this.showAIChatResponse(`Sorry, I encountered an error: ${error.message}. Please try again!`);
+                typingRow.remove();
+                const errRow = document.createElement('div');
+                errRow.style.cssText = 'display:flex;align-items:flex-start;gap:10px;';
+                errRow.innerHTML = `
+                    <div style="width:32px;height:32px;border-radius:50%;background:#ef4444;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fas fa-robot" style="color:white;font-size:14px;"></i>
+                    </div>
+                    <div style="background:#fef2f2;border-radius:0 12px 12px 12px;padding:10px 14px;max-width:85%;font-size:0.875rem;line-height:1.5;color:#991b1b;">
+                        ${error.message || 'Something went wrong. Please try again.'}
+                    </div>
+                `;
+                chatMessages.appendChild(errRow);
             } finally {
-                // Restore button state
-                sendBtn.disabled = false;
-                sendBtn.innerHTML = originalBtnText;
                 input.disabled = false;
+                sendBtn.disabled = false;
+                sendBtn.style.opacity = '1';
                 input.focus();
+                chatMessages.scrollTop = chatMessages.scrollHeight;
             }
         }
 
         showAIChatResponse(response) {
-            const modal = document.getElementById('aiBuddyModal');
-            const content = modal.querySelector('.ai-buddy-content');
-
-            // Create or update chat history container
-            let chatHistory = content.querySelector('.ai-chat-history');
-            if (!chatHistory) {
-                chatHistory = document.createElement('div');
-                chatHistory.className = 'ai-chat-history';
-                chatHistory.style.cssText = 'max-height: 300px; overflow-y: auto; margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px;';
-
-                const inputGroup = content.querySelector('.ai-input-group');
-                content.insertBefore(chatHistory, inputGroup);
-            }
-
-            // Add AI response to chat
-            const messageDiv = document.createElement('div');
-            messageDiv.style.cssText = 'margin-bottom: 15px; padding: 12px; background: rgba(102, 126, 234, 0.1); border-left: 3px solid #667eea; border-radius: 8px;';
-            messageDiv.innerHTML = `
-                <div style="font-weight: 600; color: #667eea; margin-bottom: 8px; font-size: 0.9rem;">
-                    <i class="fas fa-robot"></i> AI Study Buddy
-                </div>
-                <div style="line-height: 1.6; white-space: pre-wrap;">${response}</div>
-            `;
-
-            chatHistory.appendChild(messageDiv);
-            chatHistory.scrollTop = chatHistory.scrollHeight;
+            // Legacy: now handled inline in handleAIChat streaming
         }
 
         showCareerDetails(career) {

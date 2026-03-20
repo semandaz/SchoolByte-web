@@ -1048,30 +1048,49 @@ app.post('/api/ai-buddy/chat', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'Student not found' });
         }
 
-        const prompt = `You are a friendly AI Study Buddy helping a student named ${student.studentName}. 
-The student is in class ${student.class} and studies these subjects: ${student.subjectsEnrolled.join(', ')}.
+        const systemPrompt = `You are a friendly AI Study Buddy for ${student.studentName}, a student in class ${student.class} who studies ${student.subjectsEnrolled.join(', ')}. Give concise, clear, encouraging answers. Be direct and helpful.`;
 
-Provide helpful, clear, and encouraging responses to their questions. Keep your answers concise but informative.
+        const userPrompt = message.trim();
 
-Student's question: ${message.trim()}`;
+        // Set up SSE streaming headers
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no');
+        res.flushHeaders();
 
-        const aiResponse = await callOllamaAI(
-            prompt,
-            "You are a helpful AI Study Buddy for students. Be encouraging, clear, and educational.",
-            { temperature: 0.7, num_predict: 500, timeout: 30000, retries: 1 }
-        );
-
-        res.json({
-            response: aiResponse,
-            timestamp: new Date().toISOString()
+        const stream = await ollama.chat({
+            model: OLLAMA_MODEL,
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt }
+            ],
+            stream: true,
+            options: {
+                temperature: 0.7,
+                num_predict: 350
+            }
         });
+
+        for await (const chunk of stream) {
+            const token = chunk.message && chunk.message.content;
+            if (token) {
+                res.write('data: ' + JSON.stringify({ token }) + '\n\n');
+            }
+            if (chunk.done) break;
+        }
+
+        res.write('data: ' + JSON.stringify({ done: true }) + '\n\n');
+        res.end();
 
     } catch (error) {
         console.error('AI Study Buddy error:', error);
-        res.status(500).json({ 
-            error: 'Failed to get AI response. Please try again.',
-            fallback: "I'm having trouble connecting right now. Please try asking your question again in a moment!"
-        });
+        try {
+            res.write('data: ' + JSON.stringify({ error: 'AI service error. Please try again.' }) + '\n\n');
+            res.end();
+        } catch (e) {
+            // headers already sent
+        }
     }
 });
 
