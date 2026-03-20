@@ -43,7 +43,7 @@ app.use(helmet());
 app.use(morgan('dev'));
 
 // Start listening immediately so Replit detects the port before routes finish loading
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3002;
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 SchoolByte server running on port ${PORT}`);
   console.log(`🌐 Server accessible at: http://0.0.0.0:${PORT}`);

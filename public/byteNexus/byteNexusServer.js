@@ -1,14 +1,13 @@
-
-import express from 'express';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import jwt from 'jsonwebtoken';
-import mongoose from 'mongoose';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import express from "express";
+import { createServer } from "http";
+import { Server } from "socket.io";
+import cors from "cors";
+import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
 import {
   User,
@@ -16,8 +15,8 @@ import {
   GroupMessage,
   DiscussionGroup,
   GroupMember,
-  Team
-} from './models/index.js';
+  Team,
+} from "./models/index.js";
 
 dotenv.config();
 
@@ -25,30 +24,34 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || '*',
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
+    origin: process.env.FRONTEND_URL || "*",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
 });
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/bytenexus';
+const MONGODB_URI =
+  process.env.MONGODB_URI || "mongodb://localhost:27017/bytenexus";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 if (!JWT_SECRET) {
-  console.error('❌ FATAL: JWT_SECRET environment variable is not set!');
-  console.error('Please set a secure JWT_SECRET in your environment variables.');
+  console.error("❌ FATAL: JWT_SECRET environment variable is not set!");
+  console.error(
+    "Please set a secure JWT_SECRET in your environment variables.",
+  );
   process.exit(1);
 }
 
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log('✅ MongoDB connected successfully'))
-  .catch(err => console.error('❌ MongoDB connection error:', err));
+mongoose
+  .connect(MONGODB_URI)
+  .then(() => console.log("✅ MongoDB connected successfully"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-mongoose.connection.on('error', err => {
-  console.error('MongoDB error:', err);
+mongoose.connection.on("error", (err) => {
+  console.error("MongoDB error:", err);
 });
 
 app.use(cors());
@@ -70,10 +73,10 @@ async function verifyToken(token) {
       email: user.email,
       username: user.username,
       avatar_url: user.avatar_url,
-      bytes: user.bytes
+      bytes: user.bytes,
     };
   } catch (error) {
-    console.error('JWT Token verification error:', error.message);
+    console.error("JWT Token verification error:", error.message);
     return null;
   }
 }
@@ -81,15 +84,15 @@ async function verifyToken(token) {
 async function authenticateRequest(req, res, next) {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Authentication required' });
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Authentication required" });
   }
 
   const token = authHeader.substring(7);
   const user = await verifyToken(token);
 
   if (!user) {
-    return res.status(401).json({ error: 'Invalid authentication token' });
+    return res.status(401).json({ error: "Invalid authentication token" });
   }
 
   req.userId = user.id;
@@ -101,13 +104,13 @@ io.use(async (socket, next) => {
   const token = socket.handshake.auth.token;
 
   if (!token) {
-    return next(new Error('Authentication token required'));
+    return next(new Error("Authentication token required"));
   }
 
   const user = await verifyToken(token);
 
   if (!user) {
-    return next(new Error('Invalid authentication token'));
+    return next(new Error("Invalid authentication token"));
   }
 
   socket.userId = user.id;
@@ -117,41 +120,45 @@ io.use(async (socket, next) => {
   next();
 });
 
-io.on('connection', (socket) => {
+io.on("connection", (socket) => {
   console.log(`User connected: ${socket.userId} (${socket.username})`);
   authenticatedSockets.set(socket.userId, socket);
 
-  socket.on('join_personal_room', ({ conversationId }) => {
-    const userIds = conversationId.split('_');
+  socket.on("join_personal_room", ({ conversationId }) => {
+    const userIds = conversationId.split("_");
     if (!userIds.includes(socket.userId)) {
-      socket.emit('error', { message: 'Unauthorized to join this conversation' });
+      socket.emit("error", {
+        message: "Unauthorized to join this conversation",
+      });
       return;
     }
     socket.join(`personal_${conversationId}`);
-    console.log(`User ${socket.userId} joined personal room: ${conversationId}`);
+    console.log(
+      `User ${socket.userId} joined personal room: ${conversationId}`,
+    );
   });
 
-  socket.on('join_group_room', async ({ groupId }) => {
+  socket.on("join_group_room", async ({ groupId }) => {
     try {
       const membership = await GroupMember.findOne({
         group_id: groupId,
-        user_id: socket.userId
+        user_id: socket.userId,
       });
 
       if (!membership) {
-        socket.emit('error', { message: 'Not a member of this group' });
+        socket.emit("error", { message: "Not a member of this group" });
         return;
       }
 
       socket.join(`group_${groupId}`);
       console.log(`User ${socket.userId} joined group room: ${groupId}`);
     } catch (error) {
-      console.error('Error joining group room:', error);
-      socket.emit('error', { message: 'Failed to join group' });
+      console.error("Error joining group room:", error);
+      socket.emit("error", { message: "Failed to join group" });
     }
   });
 
-  socket.on('send_personal_message', async (data) => {
+  socket.on("send_personal_message", async (data) => {
     try {
       const { recipientId, content, tempId } = data;
 
@@ -159,14 +166,14 @@ io.on('connection', (socket) => {
         sender_id: socket.userId,
         recipient_id: recipientId,
         content: content,
-        read: false
+        read: false,
       });
 
       await newMessage.save();
 
       const messageWithSender = await PersonalMessage.findById(newMessage._id)
-        .populate('sender_id', 'username avatar_url')
-        .populate('recipient_id', 'username avatar_url')
+        .populate("sender_id", "username avatar_url")
+        .populate("recipient_id", "username avatar_url")
         .lean();
 
       const formattedMessage = {
@@ -181,117 +188,125 @@ io.on('connection', (socket) => {
         sender: {
           id: messageWithSender.sender_id._id.toString(),
           username: messageWithSender.sender_id.username,
-          avatar_url: messageWithSender.sender_id.avatar_url
+          avatar_url: messageWithSender.sender_id.avatar_url,
         },
         recipient: {
           id: messageWithSender.recipient_id._id.toString(),
           username: messageWithSender.recipient_id.username,
-          avatar_url: messageWithSender.recipient_id.avatar_url
-        }
+          avatar_url: messageWithSender.recipient_id.avatar_url,
+        },
       };
 
-      const conversationId = [socket.userId, recipientId].sort().join('_');
-      
+      const conversationId = [socket.userId, recipientId].sort().join("_");
+
       // Send confirmation to sender
-      socket.emit('message_sent_confirmation', {
+      socket.emit("message_sent_confirmation", {
         tempId: tempId,
         messageId: formattedMessage._id,
-        status: 'sent'
+        status: "sent",
       });
 
       // Broadcast to conversation room (excluding sender to avoid duplication)
-      socket.to(`personal_${conversationId}`).emit('new_personal_message', formattedMessage);
+      socket
+        .to(`personal_${conversationId}`)
+        .emit("new_personal_message", formattedMessage);
 
       // Check if recipient is online
       const recipientSocket = authenticatedSockets.get(recipientId);
       if (recipientSocket) {
         // Recipient is online - mark as delivered
-        socket.emit('message_status_update', {
+        socket.emit("message_status_update", {
           messageId: formattedMessage._id,
-          status: 'delivered'
+          status: "delivered",
         });
 
-        recipientSocket.emit('new_message_notification', {
-          type: 'personal',
+        recipientSocket.emit("new_message_notification", {
+          type: "personal",
           senderId: socket.userId,
           conversationId: conversationId,
           content: content,
-          messageId: formattedMessage._id
+          messageId: formattedMessage._id,
         });
       }
     } catch (error) {
-      console.error('Error sending personal message:', error);
-      socket.emit('message_error', { error: 'Failed to send message' });
+      console.error("Error sending personal message:", error);
+      socket.emit("message_error", { error: "Failed to send message" });
     }
   });
 
-  socket.on('mark_message_read', async (data) => {
+  socket.on("mark_message_read", async (data) => {
     try {
       const { messageId } = data;
 
       await PersonalMessage.updateOne(
         { _id: messageId, recipient_id: socket.userId },
-        { read: true }
+        { read: true },
       );
 
       // Find the sender and notify them
       const message = await PersonalMessage.findById(messageId).lean();
       if (message) {
-        const senderSocket = authenticatedSockets.get(message.sender_id.toString());
+        const senderSocket = authenticatedSockets.get(
+          message.sender_id.toString(),
+        );
         if (senderSocket) {
-          senderSocket.emit('message_read_receipt', {
-            messageId: messageId
+          senderSocket.emit("message_read_receipt", {
+            messageId: messageId,
           });
         }
       }
 
-      socket.emit('message_marked_read', { messageId });
+      socket.emit("message_marked_read", { messageId });
     } catch (error) {
-      console.error('Error marking message as read:', error);
+      console.error("Error marking message as read:", error);
     }
   });
 
-  socket.on('send_group_message', async (data) => {
+  socket.on("send_group_message", async (data) => {
     try {
       const { groupId, content, hasLatex, isBoosted, byteCost } = data;
 
       const membership = await GroupMember.findOne({
         group_id: groupId,
-        user_id: socket.userId
+        user_id: socket.userId,
       });
 
       if (!membership) {
-        socket.emit('message_error', { error: 'Not a member of this group' });
+        socket.emit("message_error", { error: "Not a member of this group" });
         return;
       }
 
       if (isBoosted && byteCost > 0) {
         const updatedUser = await User.findOneAndUpdate(
-          { 
+          {
             _id: socket.userId,
-            bytes: { $gte: byteCost }
+            bytes: { $gte: byteCost },
           },
           { $inc: { bytes: -byteCost } },
-          { new: true }
+          { new: true },
         );
 
         if (!updatedUser) {
-          const currentUser = await User.findById(socket.userId).select('bytes').lean();
+          const currentUser = await User.findById(socket.userId)
+            .select("bytes")
+            .lean();
           const currentBalance = currentUser ? currentUser.bytes : 0;
-          socket.emit('message_error', { 
-            error: `Insufficient bytes. Requires ${byteCost} bytes, but you only have ${currentBalance}.` 
+          socket.emit("message_error", {
+            error: `Insufficient bytes. Requires ${byteCost} bytes, but you only have ${currentBalance}.`,
           });
           return;
         }
 
         socket.userBytes = updatedUser.bytes;
 
-        socket.emit('bytes_updated', { 
+        socket.emit("bytes_updated", {
           newBalance: updatedUser.bytes,
-          deducted: byteCost
+          deducted: byteCost,
         });
 
-        console.log(`[BYTE BOOST] User ${socket.username} spent ${byteCost} bytes on a boosted message in group ${groupId}`);
+        console.log(
+          `[BYTE BOOST] User ${socket.username} spent ${byteCost} bytes on a boosted message in group ${groupId}`,
+        );
       }
 
       const newMessage = new GroupMessage({
@@ -301,13 +316,13 @@ io.on('connection', (socket) => {
         has_latex: hasLatex || false,
         is_flagged: false,
         is_boosted: isBoosted || false,
-        boost_cost: byteCost || 0
+        boost_cost: byteCost || 0,
       });
 
       await newMessage.save();
 
       const messageWithSender = await GroupMessage.findById(newMessage._id)
-        .populate('sender_id', 'username avatar_url')
+        .populate("sender_id", "username avatar_url")
         .lean();
 
       const formattedMessage = {
@@ -323,73 +338,84 @@ io.on('connection', (socket) => {
         sender: {
           id: messageWithSender.sender_id._id.toString(),
           username: messageWithSender.sender_id.username,
-          avatar_url: messageWithSender.sender_id.avatar_url
-        }
+          avatar_url: messageWithSender.sender_id.avatar_url,
+        },
       };
 
-      io.to(`group_${groupId}`).emit('new_group_message', formattedMessage);
+      io.to(`group_${groupId}`).emit("new_group_message", formattedMessage);
     } catch (error) {
-      console.error('Error sending group message:', error);
-      socket.emit('message_error', { error: 'Failed to send message' });
+      console.error("Error sending group message:", error);
+      socket.emit("message_error", { error: "Failed to send message" });
     }
   });
 
-  socket.on('mark_message_read', async (data) => {
+  socket.on("mark_message_read", async (data) => {
     try {
       const { messageId } = data;
 
       await PersonalMessage.updateOne(
         { _id: messageId, recipient_id: socket.userId },
-        { read: true }
+        { read: true },
       );
 
-      socket.emit('message_marked_read', { messageId });
+      socket.emit("message_marked_read", { messageId });
     } catch (error) {
-      console.error('Error marking message as read:', error);
+      console.error("Error marking message as read:", error);
     }
   });
 
-  socket.on('typing_start', ({ conversationId, groupId }) => {
+  socket.on("typing_start", ({ conversationId, groupId }) => {
     if (conversationId) {
-      socket.to(`personal_${conversationId}`).emit('user_typing', { userId: socket.userId, conversationId });
+      socket
+        .to(`personal_${conversationId}`)
+        .emit("user_typing", { userId: socket.userId, conversationId });
     } else if (groupId) {
-      socket.to(`group_${groupId}`).emit('user_typing', { userId: socket.userId, groupId });
+      socket
+        .to(`group_${groupId}`)
+        .emit("user_typing", { userId: socket.userId, groupId });
     }
   });
 
-  socket.on('typing_stop', ({ conversationId, groupId }) => {
+  socket.on("typing_stop", ({ conversationId, groupId }) => {
     if (conversationId) {
-      socket.to(`personal_${conversationId}`).emit('user_stopped_typing', { userId: socket.userId, conversationId });
+      socket
+        .to(`personal_${conversationId}`)
+        .emit("user_stopped_typing", { userId: socket.userId, conversationId });
     } else if (groupId) {
-      socket.to(`group_${groupId}`).emit('user_stopped_typing', { userId: socket.userId, groupId });
+      socket
+        .to(`group_${groupId}`)
+        .emit("user_stopped_typing", { userId: socket.userId, groupId });
     }
   });
 
-  socket.on('disconnect', () => {
+  socket.on("disconnect", () => {
     console.log(`User disconnected: ${socket.userId}`);
     authenticatedSockets.delete(socket.userId);
   });
 });
 
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
     timestamp: new Date().toISOString(),
-    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    database:
+      mongoose.connection.readyState === 1 ? "connected" : "disconnected",
   });
 });
 
-app.post('/api/auth/signup', async (req, res) => {
+app.post("/api/auth/signup", async (req, res) => {
   try {
     const { email, password, username, class: userClass, stream } = req.body;
 
     if (!email || !password || !username) {
-      return res.status(400).json({ error: 'Email, password, and username are required' });
+      return res
+        .status(400)
+        .json({ error: "Email, password, and username are required" });
     }
 
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      return res.status(400).json({ error: 'Email already registered' });
+      return res.status(400).json({ error: "Email already registered" });
     }
 
     const newUser = new User({
@@ -398,7 +424,7 @@ app.post('/api/auth/signup', async (req, res) => {
       username,
       class: userClass,
       stream: stream,
-      bytes: 100
+      bytes: 100,
     });
 
     await newUser.save();
@@ -406,30 +432,32 @@ app.post('/api/auth/signup', async (req, res) => {
     const token = jwt.sign(
       { userId: newUser._id.toString(), email: newUser.email },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: "7d" },
     );
 
     res.status(201).json({
       token,
-      user: newUser.toPublicJSON()
+      user: newUser.toPublicJSON(),
     });
   } catch (error) {
-    console.error('Signup error:', error);
-    res.status(500).json({ error: 'Registration failed' });
+    console.error("Signup error:", error);
+    res.status(500).json({ error: "Registration failed" });
   }
 });
 
 // SchoolByte student auto-sync endpoint
-app.post('/api/auth/sync-schoolbyte', async (req, res) => {
+app.post("/api/auth/sync-schoolbyte", async (req, res) => {
   try {
     const { email, studentName, class: studentClass, stream } = req.body;
 
     if (!email || !studentName) {
-      return res.status(400).json({ error: 'Email and student name are required' });
+      return res
+        .status(400)
+        .json({ error: "Email and student name are required" });
     }
 
     let user = await User.findOne({ email: email.toLowerCase() });
-    
+
     if (!user) {
       // Create ByteNexus user from SchoolByte student
       const tempPassword = Math.random().toString(36).slice(-8);
@@ -439,7 +467,7 @@ app.post('/api/auth/sync-schoolbyte', async (req, res) => {
         username: studentName,
         class: studentClass,
         stream: stream,
-        bytes: 100
+        bytes: 100,
       });
       await user.save();
     } else {
@@ -453,67 +481,67 @@ app.post('/api/auth/sync-schoolbyte', async (req, res) => {
     const token = jwt.sign(
       { userId: user._id.toString(), email: user.email },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: "7d" },
     );
 
     res.json({
       token,
-      user: user.toPublicJSON()
+      user: user.toPublicJSON(),
     });
   } catch (error) {
-    console.error('SchoolByte sync error:', error);
-    res.status(500).json({ error: 'Sync failed' });
+    console.error("SchoolByte sync error:", error);
+    res.status(500).json({ error: "Sync failed" });
   }
 });
 
-app.post('/api/auth/signin', async (req, res) => {
+app.post("/api/auth/signin", async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+      return res.status(400).json({ error: "Email and password are required" });
     }
 
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
     const token = jwt.sign(
       { userId: user._id.toString(), email: user.email },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: "7d" },
     );
 
     res.json({
       token,
-      user: user.toPublicJSON()
+      user: user.toPublicJSON(),
     });
   } catch (error) {
-    console.error('Signin error:', error);
-    res.status(500).json({ error: 'Sign in failed' });
+    console.error("Signin error:", error);
+    res.status(500).json({ error: "Sign in failed" });
   }
 });
 
-app.get('/api/auth/me', authenticateRequest, async (req, res) => {
+app.get("/api/auth/me", authenticateRequest, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: "User not found" });
     }
     res.json(user.toPublicJSON());
   } catch (error) {
-    console.error('Get profile error:', error);
-    res.status(500).json({ error: 'Failed to get profile' });
+    console.error("Get profile error:", error);
+    res.status(500).json({ error: "Failed to get profile" });
   }
 });
 
-app.get('/api/search/users', authenticateRequest, async (req, res) => {
+app.get("/api/search/users", authenticateRequest, async (req, res) => {
   try {
     const { q } = req.query;
 
@@ -523,43 +551,43 @@ app.get('/api/search/users', authenticateRequest, async (req, res) => {
 
     const users = await User.find({
       $or: [
-        { username: { $regex: q, $options: 'i' } },
-        { email: { $regex: q, $options: 'i' } }
+        { username: { $regex: q, $options: "i" } },
+        { email: { $regex: q, $options: "i" } },
       ],
-      _id: { $ne: req.userId }
+      _id: { $ne: req.userId },
     })
-      .select('username email avatar_url class stream')
+      .select("username email avatar_url class stream")
       .limit(20)
       .lean();
 
-    const formattedUsers = users.map(user => ({
+    const formattedUsers = users.map((user) => ({
       id: user._id.toString(),
       username: user.username,
       email: user.email,
       avatar_url: user.avatar_url,
       class: user.class,
-      stream: user.stream
+      stream: user.stream,
     }));
 
     res.json(formattedUsers);
   } catch (error) {
-    console.error('User search error:', error);
-    res.status(500).json({ error: 'Search failed' });
+    console.error("User search error:", error);
+    res.status(500).json({ error: "Search failed" });
   }
 });
 
-app.get('/api/contacts/suggestions', authenticateRequest, async (req, res) => {
+app.get("/api/contacts/suggestions", authenticateRequest, async (req, res) => {
   try {
     const currentUser = await User.findById(req.userId).lean();
-    
+
     if (!currentUser) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: "User not found" });
     }
 
     const allUsers = await User.find({
-      _id: { $ne: req.userId }
+      _id: { $ne: req.userId },
     })
-      .select('username email avatar_url class stream')
+      .select("username email avatar_url class stream")
       .lean();
 
     // Categorize users by relevance
@@ -568,9 +596,12 @@ app.get('/api/contacts/suggestions', authenticateRequest, async (req, res) => {
     const sameClass = [];
     const others = [];
 
-    allUsers.forEach(user => {
+    allUsers.forEach((user) => {
       if (currentUser.stream && currentUser.class) {
-        if (user.stream === currentUser.stream && user.class === currentUser.class) {
+        if (
+          user.stream === currentUser.stream &&
+          user.class === currentUser.class
+        ) {
           sameStreamAndClass.push(user);
         } else if (user.stream === currentUser.stream) {
           sameStream.push(user);
@@ -595,30 +626,30 @@ app.get('/api/contacts/suggestions', authenticateRequest, async (req, res) => {
       avatar_url: user.avatar_url,
       class: user.class,
       stream: user.stream,
-      category: category
+      category: category,
     });
 
     const suggestions = [
-      ...sameStreamAndClass.map(u => formatUser(u, 'Same Stream & Class')),
-      ...sameStream.map(u => formatUser(u, 'Same Stream')),
-      ...sameClass.map(u => formatUser(u, 'Same Class')),
-      ...others.slice(0, 30).map(u => formatUser(u, 'Other Students'))
+      ...sameStreamAndClass.map((u) => formatUser(u, "Same Stream & Class")),
+      ...sameStream.map((u) => formatUser(u, "Same Stream")),
+      ...sameClass.map((u) => formatUser(u, "Same Class")),
+      ...others.slice(0, 30).map((u) => formatUser(u, "Other Students")),
     ];
 
     res.json({
       currentUser: {
         class: currentUser.class,
-        stream: currentUser.stream
+        stream: currentUser.stream,
       },
-      suggestions: suggestions
+      suggestions: suggestions,
     });
   } catch (error) {
-    console.error('Contact suggestions error:', error);
-    res.status(500).json({ error: 'Failed to fetch suggestions' });
+    console.error("Contact suggestions error:", error);
+    res.status(500).json({ error: "Failed to fetch suggestions" });
   }
 });
 
-app.get('/api/search/groups', authenticateRequest, async (req, res) => {
+app.get("/api/search/groups", authenticateRequest, async (req, res) => {
   try {
     const { q } = req.query;
 
@@ -628,14 +659,14 @@ app.get('/api/search/groups', authenticateRequest, async (req, res) => {
         .limit(50)
         .lean();
 
-      const formattedGroups = allPublicGroups.map(group => ({
+      const formattedGroups = allPublicGroups.map((group) => ({
         id: group._id.toString(),
         name: group.name,
         description: group.description,
         rules: group.rules,
         is_public: group.is_public,
         created_by: group.created_by.toString(),
-        created_at: group.created_at
+        created_at: group.created_at,
       }));
 
       return res.json(formattedGroups);
@@ -644,42 +675,42 @@ app.get('/api/search/groups', authenticateRequest, async (req, res) => {
     const groups = await DiscussionGroup.find({
       is_public: true,
       $or: [
-        { name: { $regex: q, $options: 'i' } },
-        { description: { $regex: q, $options: 'i' } }
-      ]
+        { name: { $regex: q, $options: "i" } },
+        { description: { $regex: q, $options: "i" } },
+      ],
     })
       .limit(10)
       .lean();
 
-    const formattedGroups = groups.map(group => ({
+    const formattedGroups = groups.map((group) => ({
       id: group._id.toString(),
       name: group.name,
       description: group.description,
       rules: group.rules,
       is_public: group.is_public,
       created_by: group.created_by.toString(),
-      created_at: group.created_at
+      created_at: group.created_at,
     }));
 
     res.json(formattedGroups);
   } catch (error) {
-    console.error('Group search error:', error);
-    res.status(500).json({ error: 'Search failed' });
+    console.error("Group search error:", error);
+    res.status(500).json({ error: "Search failed" });
   }
 });
 
-app.get('/api/students/suggestions', authenticateRequest, async (req, res) => {
+app.get("/api/students/suggestions", authenticateRequest, async (req, res) => {
   try {
     const currentUser = await User.findById(req.userId).lean();
-    
+
     if (!currentUser) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: "User not found" });
     }
 
     const allUsers = await User.find({
-      _id: { $ne: req.userId }
+      _id: { $ne: req.userId },
     })
-      .select('username email avatar_url class stream')
+      .select("username email avatar_url class stream")
       .lean();
 
     const sameStreamAndClass = [];
@@ -687,9 +718,12 @@ app.get('/api/students/suggestions', authenticateRequest, async (req, res) => {
     const sameClass = [];
     const others = [];
 
-    allUsers.forEach(user => {
+    allUsers.forEach((user) => {
       if (currentUser.stream && currentUser.class) {
-        if (user.stream === currentUser.stream && user.class === currentUser.class) {
+        if (
+          user.stream === currentUser.stream &&
+          user.class === currentUser.class
+        ) {
           sameStreamAndClass.push(user);
         } else if (user.stream === currentUser.stream) {
           sameStream.push(user);
@@ -715,43 +749,43 @@ app.get('/api/students/suggestions', authenticateRequest, async (req, res) => {
       avatar_url: user.avatar_url,
       class: user.class,
       stream: user.stream,
-      category: category
+      category: category,
     });
 
     const suggestions = [
-      ...sameStreamAndClass.map(u => formatUser(u, 'Same Stream & Class')),
-      ...sameStream.map(u => formatUser(u, 'Same Stream')),
-      ...sameClass.map(u => formatUser(u, 'Same Class')),
-      ...others.slice(0, 30).map(u => formatUser(u, 'Other Students'))
+      ...sameStreamAndClass.map((u) => formatUser(u, "Same Stream & Class")),
+      ...sameStream.map((u) => formatUser(u, "Same Stream")),
+      ...sameClass.map((u) => formatUser(u, "Same Class")),
+      ...others.slice(0, 30).map((u) => formatUser(u, "Other Students")),
     ];
 
     res.json({
       currentUser: {
         class: currentUser.class,
-        stream: currentUser.stream
+        stream: currentUser.stream,
       },
-      suggestions: suggestions
+      suggestions: suggestions,
     });
   } catch (error) {
-    console.error('Student suggestions error:', error);
-    res.status(500).json({ error: 'Failed to fetch suggestions' });
+    console.error("Student suggestions error:", error);
+    res.status(500).json({ error: "Failed to fetch suggestions" });
   }
 });
 
-app.post('/api/groups/create', authenticateRequest, async (req, res) => {
+app.post("/api/groups/create", authenticateRequest, async (req, res) => {
   try {
     const { name, description, rules, is_public, invited_members } = req.body;
 
     if (!name || name.trim().length === 0) {
-      return res.status(400).json({ error: 'Group name is required' });
+      return res.status(400).json({ error: "Group name is required" });
     }
 
     const newGroup = new DiscussionGroup({
       name: name.trim(),
-      description: description ? description.trim() : '',
-      rules: rules ? rules.trim() : '',
+      description: description ? description.trim() : "",
+      rules: rules ? rules.trim() : "",
       is_public: is_public !== false,
-      created_by: req.userId
+      created_by: req.userId,
     });
 
     await newGroup.save();
@@ -759,37 +793,41 @@ app.post('/api/groups/create', authenticateRequest, async (req, res) => {
     // Automatically add creator as member
     const creatorMembership = new GroupMember({
       group_id: newGroup._id,
-      user_id: req.userId
+      user_id: req.userId,
     });
     await creatorMembership.save();
 
     // Send invitations to selected members
     if (invited_members && invited_members.length > 0) {
-      const invitationToken = Buffer.from(JSON.stringify({
-        groupId: newGroup._id.toString(),
-        groupName: name,
-        invitedBy: req.userId,
-        timestamp: Date.now()
-      })).toString('base64');
+      const invitationToken = Buffer.from(
+        JSON.stringify({
+          groupId: newGroup._id.toString(),
+          groupName: name,
+          invitedBy: req.userId,
+          timestamp: Date.now(),
+        }),
+      ).toString("base64");
 
       for (const memberId of invited_members) {
         const invitedUser = await User.findById(memberId);
         if (invitedUser) {
-          const invitationLink = `${process.env.FRONTEND_URL || req.get('origin')}/bytenexus-chat.html?invite=${invitationToken}`;
-          
+          const invitationLink = `${process.env.FRONTEND_URL || req.get("origin")}/bytenexus-chat.html?invite=${invitationToken}`;
+
           // Send invitation message via socket if user is online
           const memberSocket = authenticatedSockets.get(memberId);
           if (memberSocket) {
-            memberSocket.emit('group_invitation', {
+            memberSocket.emit("group_invitation", {
               groupId: newGroup._id.toString(),
               groupName: name,
               invitedBy: req.user.username,
               invitationToken: invitationToken,
-              message: `${req.user.username} has invited you to join "${name}" discussion group.`
+              message: `${req.user.username} has invited you to join "${name}" discussion group.`,
             });
           }
 
-          console.log(`Invitation sent to ${invitedUser.username} for group ${name}`);
+          console.log(
+            `Invitation sent to ${invitedUser.username} for group ${name}`,
+          );
         }
       }
     }
@@ -803,90 +841,98 @@ app.post('/api/groups/create', authenticateRequest, async (req, res) => {
         rules: newGroup.rules,
         is_public: newGroup.is_public,
         created_by: newGroup.created_by.toString(),
-        created_at: newGroup.created_at
+        created_at: newGroup.created_at,
       },
-      message: `Group created successfully. ${invited_members?.length || 0} invitation(s) sent.`
+      message: `Group created successfully. ${invited_members?.length || 0} invitation(s) sent.`,
     });
   } catch (error) {
-    console.error('Error creating group:', error);
-    res.status(500).json({ error: 'Failed to create group' });
+    console.error("Error creating group:", error);
+    res.status(500).json({ error: "Failed to create group" });
   }
 });
 
-app.post('/api/groups/join-by-invite', authenticateRequest, async (req, res) => {
-  try {
-    const { invitationToken } = req.body;
-
-    if (!invitationToken) {
-      return res.status(400).json({ error: 'Invitation token is required' });
-    }
-
-    let invitationData;
+app.post(
+  "/api/groups/join-by-invite",
+  authenticateRequest,
+  async (req, res) => {
     try {
-      const decoded = Buffer.from(invitationToken, 'base64').toString('utf-8');
-      invitationData = JSON.parse(decoded);
+      const { invitationToken } = req.body;
+
+      if (!invitationToken) {
+        return res.status(400).json({ error: "Invitation token is required" });
+      }
+
+      let invitationData;
+      try {
+        const decoded = Buffer.from(invitationToken, "base64").toString(
+          "utf-8",
+        );
+        invitationData = JSON.parse(decoded);
+      } catch (error) {
+        return res.status(400).json({ error: "Invalid invitation token" });
+      }
+
+      const { groupId, groupName, timestamp } = invitationData;
+
+      // Check if invitation is not too old (7 days)
+      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      if (timestamp < sevenDaysAgo) {
+        return res.status(400).json({ error: "Invitation has expired" });
+      }
+
+      // Verify group exists
+      const group = await DiscussionGroup.findById(groupId);
+      if (!group) {
+        return res.status(404).json({ error: "Group not found" });
+      }
+
+      // Check if already a member
+      const existingMembership = await GroupMember.findOne({
+        group_id: groupId,
+        user_id: req.userId,
+      });
+
+      if (existingMembership) {
+        return res
+          .status(400)
+          .json({ error: "You are already a member of this group" });
+      }
+
+      // Add user as member
+      const newMembership = new GroupMember({
+        group_id: groupId,
+        user_id: req.userId,
+      });
+      await newMembership.save();
+
+      res.json({
+        success: true,
+        group: {
+          id: group._id.toString(),
+          name: group.name,
+          description: group.description,
+          rules: group.rules,
+        },
+        message: `Successfully joined "${group.name}"`,
+      });
     } catch (error) {
-      return res.status(400).json({ error: 'Invalid invitation token' });
+      console.error("Error joining group by invitation:", error);
+      res.status(500).json({ error: "Failed to join group" });
     }
+  },
+);
 
-    const { groupId, groupName, timestamp } = invitationData;
-
-    // Check if invitation is not too old (7 days)
-    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-    if (timestamp < sevenDaysAgo) {
-      return res.status(400).json({ error: 'Invitation has expired' });
-    }
-
-    // Verify group exists
-    const group = await DiscussionGroup.findById(groupId);
-    if (!group) {
-      return res.status(404).json({ error: 'Group not found' });
-    }
-
-    // Check if already a member
-    const existingMembership = await GroupMember.findOne({
-      group_id: groupId,
-      user_id: req.userId
-    });
-
-    if (existingMembership) {
-      return res.status(400).json({ error: 'You are already a member of this group' });
-    }
-
-    // Add user as member
-    const newMembership = new GroupMember({
-      group_id: groupId,
-      user_id: req.userId
-    });
-    await newMembership.save();
-
-    res.json({
-      success: true,
-      group: {
-        id: group._id.toString(),
-        name: group.name,
-        description: group.description,
-        rules: group.rules
-      },
-      message: `Successfully joined "${group.name}"`
-    });
-  } catch (error) {
-    console.error('Error joining group by invitation:', error);
-    res.status(500).json({ error: 'Failed to join group' });
-  }
-});
-
-app.post('/api/teams/create', authenticateRequest, async (req, res) => {
+app.post("/api/teams/create", authenticateRequest, async (req, res) => {
   try {
     const { name, groupIds } = req.body;
 
     if (!name || name.trim().length === 0) {
-      return res.status(400).json({ error: 'Team name is required' });
+      return res.status(400).json({ error: "Team name is required" });
     }
 
     const newTeam = new Team({
       name: name.trim(),
-      user_id: req.userId
+      user_id: req.userId,
     });
 
     await newTeam.save();
@@ -897,234 +943,261 @@ app.post('/api/teams/create', authenticateRequest, async (req, res) => {
         id: newTeam._id.toString(),
         name: newTeam.name,
         share_token: newTeam.share_token,
-        created_at: newTeam.created_at
+        created_at: newTeam.created_at,
       },
-      shareLink: `${process.env.FRONTEND_URL || req.get('origin')}/bytenexus-chat.html?team=${newTeam.share_token}`,
-      message: 'Team created successfully'
+      shareLink: `${process.env.FRONTEND_URL || req.get("origin")}/bytenexus-chat.html?team=${newTeam.share_token}`,
+      message: "Team created successfully",
     });
   } catch (error) {
-    console.error('Error creating team:', error);
-    res.status(500).json({ error: 'Failed to create team' });
+    console.error("Error creating team:", error);
+    res.status(500).json({ error: "Failed to create team" });
   }
 });
 
-app.get('/api/teams/my-teams', authenticateRequest, async (req, res) => {
+app.get("/api/teams/my-teams", authenticateRequest, async (req, res) => {
   try {
     const teams = await Team.find({ user_id: req.userId })
       .sort({ created_at: -1 })
       .lean();
 
-    const formattedTeams = teams.map(team => ({
+    const formattedTeams = teams.map((team) => ({
       id: team._id.toString(),
       name: team.name,
       share_token: team.share_token,
       created_at: team.created_at,
-      shareLink: `${process.env.FRONTEND_URL || req.get('origin')}/bytenexus-chat.html?team=${team.share_token}`
+      shareLink: `${process.env.FRONTEND_URL || req.get("origin")}/bytenexus-chat.html?team=${team.share_token}`,
     }));
 
     res.json(formattedTeams);
   } catch (error) {
-    console.error('Error fetching teams:', error);
-    res.status(500).json({ error: 'Failed to fetch teams' });
+    console.error("Error fetching teams:", error);
+    res.status(500).json({ error: "Failed to fetch teams" });
   }
 });
 
-app.get('/api/teams/by-token/:shareToken', authenticateRequest, async (req, res) => {
-  try {
-    const { shareToken } = req.params;
+app.get(
+  "/api/teams/by-token/:shareToken",
+  authenticateRequest,
+  async (req, res) => {
+    try {
+      const { shareToken } = req.params;
 
-    const team = await Team.findOne({ share_token: shareToken }).lean();
-    
-    if (!team) {
-      return res.status(404).json({ error: 'Team not found' });
-    }
+      const team = await Team.findOne({ share_token: shareToken }).lean();
 
-    const creator = await User.findById(team.user_id).select('username').lean();
-
-    const publicGroups = await DiscussionGroup.find({ 
-      is_public: true,
-      created_by: team.user_id 
-    })
-      .sort({ created_at: -1 })
-      .lean();
-
-    const formattedGroups = publicGroups.map(group => ({
-      id: group._id.toString(),
-      name: group.name,
-      description: group.description,
-      rules: group.rules,
-      created_at: group.created_at
-    }));
-
-    res.json({
-      team: {
-        id: team._id.toString(),
-        name: team.name,
-        created_by: creator ? creator.username : 'Unknown',
-        created_at: team.created_at
-      },
-      groups: formattedGroups
-    });
-  } catch (error) {
-    console.error('Error fetching team by token:', error);
-    res.status(500).json({ error: 'Failed to fetch team details' });
-  }
-});
-
-app.get('/api/messages/personal/:conversationId', authenticateRequest, async (req, res) => {
-  try {
-    const { conversationId } = req.params;
-    const { before, limit = 50 } = req.query;
-
-    const [userId1, userId2] = conversationId.split('_');
-
-    if (!userId1 || !userId2 || (userId1 !== req.userId && userId2 !== req.userId)) {
-      return res.status(403).json({ error: 'Unauthorized to access this conversation' });
-    }
-
-    let query = PersonalMessage.find({
-      $or: [
-        { sender_id: userId1, recipient_id: userId2 },
-        { sender_id: userId2, recipient_id: userId1 }
-      ]
-    })
-      .populate('sender_id', 'username avatar_url')
-      .populate('recipient_id', 'username avatar_url')
-      .sort({ created_at: -1 })
-      .limit(parseInt(limit));
-
-    if (before) {
-      query = query.where('created_at').lt(new Date(before));
-    }
-
-    const messages = await query.lean();
-
-    const formattedMessages = messages.map(msg => ({
-      id: msg._id.toString(),
-      sender_id: msg.sender_id._id.toString(),
-      recipient_id: msg.recipient_id._id.toString(),
-      content: msg.content,
-      read: msg.read,
-      created_at: msg.created_at,
-      sender: {
-        id: msg.sender_id._id.toString(),
-        username: msg.sender_id.username,
-        avatar_url: msg.sender_id.avatar_url
-      },
-      recipient: {
-        id: msg.recipient_id._id.toString(),
-        username: msg.recipient_id.username,
-        avatar_url: msg.recipient_id.avatar_url
+      if (!team) {
+        return res.status(404).json({ error: "Team not found" });
       }
-    })).reverse();
 
-    res.json(formattedMessages);
-  } catch (error) {
-    console.error('Failed to load personal messages:', error);
-    res.status(500).json({ error: 'Failed to load messages' });
-  }
-});
+      const creator = await User.findById(team.user_id)
+        .select("username")
+        .lean();
 
-app.get('/api/messages/group/:groupId', authenticateRequest, async (req, res) => {
-  try {
-    const { groupId } = req.params;
-    const { before, limit = 50 } = req.query;
+      const publicGroups = await DiscussionGroup.find({
+        is_public: true,
+        created_by: team.user_id,
+      })
+        .sort({ created_at: -1 })
+        .lean();
 
-    const membership = await GroupMember.findOne({
-      group_id: groupId,
-      user_id: req.userId
-    });
+      const formattedGroups = publicGroups.map((group) => ({
+        id: group._id.toString(),
+        name: group.name,
+        description: group.description,
+        rules: group.rules,
+        created_at: group.created_at,
+      }));
 
-    if (!membership) {
-      return res.status(403).json({ error: 'Not a member of this group' });
+      res.json({
+        team: {
+          id: team._id.toString(),
+          name: team.name,
+          created_by: creator ? creator.username : "Unknown",
+          created_at: team.created_at,
+        },
+        groups: formattedGroups,
+      });
+    } catch (error) {
+      console.error("Error fetching team by token:", error);
+      res.status(500).json({ error: "Failed to fetch team details" });
     }
+  },
+);
 
-    let query = GroupMessage.find({ group_id: groupId })
-      .populate('sender_id', 'username avatar_url')
-      .sort({ created_at: -1 })
-      .limit(parseInt(limit));
+app.get(
+  "/api/messages/personal/:conversationId",
+  authenticateRequest,
+  async (req, res) => {
+    try {
+      const { conversationId } = req.params;
+      const { before, limit = 50 } = req.query;
 
-    if (before) {
-      query = query.where('created_at').lt(new Date(before));
+      const [userId1, userId2] = conversationId.split("_");
+
+      if (
+        !userId1 ||
+        !userId2 ||
+        (userId1 !== req.userId && userId2 !== req.userId)
+      ) {
+        return res
+          .status(403)
+          .json({ error: "Unauthorized to access this conversation" });
+      }
+
+      let query = PersonalMessage.find({
+        $or: [
+          { sender_id: userId1, recipient_id: userId2 },
+          { sender_id: userId2, recipient_id: userId1 },
+        ],
+      })
+        .populate("sender_id", "username avatar_url")
+        .populate("recipient_id", "username avatar_url")
+        .sort({ created_at: -1 })
+        .limit(parseInt(limit));
+
+      if (before) {
+        query = query.where("created_at").lt(new Date(before));
+      }
+
+      const messages = await query.lean();
+
+      const formattedMessages = messages
+        .map((msg) => ({
+          id: msg._id.toString(),
+          sender_id: msg.sender_id._id.toString(),
+          recipient_id: msg.recipient_id._id.toString(),
+          content: msg.content,
+          read: msg.read,
+          created_at: msg.created_at,
+          sender: {
+            id: msg.sender_id._id.toString(),
+            username: msg.sender_id.username,
+            avatar_url: msg.sender_id.avatar_url,
+          },
+          recipient: {
+            id: msg.recipient_id._id.toString(),
+            username: msg.recipient_id.username,
+            avatar_url: msg.recipient_id.avatar_url,
+          },
+        }))
+        .reverse();
+
+      res.json(formattedMessages);
+    } catch (error) {
+      console.error("Failed to load personal messages:", error);
+      res.status(500).json({ error: "Failed to load messages" });
     }
+  },
+);
 
-    const messages = await query.lean();
+app.get(
+  "/api/messages/group/:groupId",
+  authenticateRequest,
+  async (req, res) => {
+    try {
+      const { groupId } = req.params;
+      const { before, limit = 50 } = req.query;
 
-    const formattedMessages = messages.map(msg => ({
-      id: msg._id.toString(),
-      group_id: msg.group_id.toString(),
-      sender_id: msg.sender_id._id.toString(),
-      content: msg.content,
-      has_latex: msg.has_latex,
-      is_flagged: msg.is_flagged,
-      is_boosted: msg.is_boosted,
-      boost_cost: msg.boost_cost,
-      created_at: msg.created_at,
-      sender: {
-        id: msg.sender_id._id.toString(),
-        username: msg.sender_id.username,
-        avatar_url: msg.sender_id.avatar_url
+      const membership = await GroupMember.findOne({
+        group_id: groupId,
+        user_id: req.userId,
+      });
+
+      if (!membership) {
+        return res.status(403).json({ error: "Not a member of this group" });
       }
-    })).reverse();
 
-    res.json(formattedMessages);
-  } catch (error) {
-    console.error('Failed to load group messages:', error);
-    res.status(500).json({ error: 'Failed to load messages' });
-  }
-});
+      let query = GroupMessage.find({ group_id: groupId })
+        .populate("sender_id", "username avatar_url")
+        .sort({ created_at: -1 })
+        .limit(parseInt(limit));
 
-app.get('/api/messages/personal/recent', authenticateRequest, async (req, res) => {
-  try {
-    const messages = await PersonalMessage.find({
-      $or: [
-        { sender_id: req.userId },
-        { recipient_id: req.userId }
-      ]
-    })
-      .populate('sender_id', 'username avatar_url')
-      .populate('recipient_id', 'username avatar_url')
-      .sort({ created_at: -1 })
-      .limit(100)
-      .lean();
-
-    const formattedMessages = messages.map(msg => ({
-      id: msg._id.toString(),
-      sender_id: msg.sender_id._id.toString(),
-      recipient_id: msg.recipient_id._id.toString(),
-      content: msg.content,
-      read: msg.read,
-      created_at: msg.created_at,
-      sender: {
-        id: msg.sender_id._id.toString(),
-        username: msg.sender_id.username,
-        avatar_url: msg.sender_id.avatar_url
-      },
-      recipient: {
-        id: msg.recipient_id._id.toString(),
-        username: msg.recipient_id.username,
-        avatar_url: msg.recipient_id.avatar_url
+      if (before) {
+        query = query.where("created_at").lt(new Date(before));
       }
-    }));
 
-    res.json(formattedMessages);
-  } catch (error) {
-    console.error('Failed to load recent messages:', error);
-    res.status(500).json({ error: 'Failed to load recent messages' });
-  }
-});
+      const messages = await query.lean();
 
-app.use(express.static(path.join(__dirname, 'dist')));
+      const formattedMessages = messages
+        .map((msg) => ({
+          id: msg._id.toString(),
+          group_id: msg.group_id.toString(),
+          sender_id: msg.sender_id._id.toString(),
+          content: msg.content,
+          has_latex: msg.has_latex,
+          is_flagged: msg.is_flagged,
+          is_boosted: msg.is_boosted,
+          boost_cost: msg.boost_cost,
+          created_at: msg.created_at,
+          sender: {
+            id: msg.sender_id._id.toString(),
+            username: msg.sender_id.username,
+            avatar_url: msg.sender_id.avatar_url,
+          },
+        }))
+        .reverse();
+
+      res.json(formattedMessages);
+    } catch (error) {
+      console.error("Failed to load group messages:", error);
+      res.status(500).json({ error: "Failed to load messages" });
+    }
+  },
+);
+
+app.get(
+  "/api/messages/personal/recent",
+  authenticateRequest,
+  async (req, res) => {
+    try {
+      const messages = await PersonalMessage.find({
+        $or: [{ sender_id: req.userId }, { recipient_id: req.userId }],
+      })
+        .populate("sender_id", "username avatar_url")
+        .populate("recipient_id", "username avatar_url")
+        .sort({ created_at: -1 })
+        .limit(100)
+        .lean();
+
+      const formattedMessages = messages.map((msg) => ({
+        id: msg._id.toString(),
+        sender_id: msg.sender_id._id.toString(),
+        recipient_id: msg.recipient_id._id.toString(),
+        content: msg.content,
+        read: msg.read,
+        created_at: msg.created_at,
+        sender: {
+          id: msg.sender_id._id.toString(),
+          username: msg.sender_id.username,
+          avatar_url: msg.sender_id.avatar_url,
+        },
+        recipient: {
+          id: msg.recipient_id._id.toString(),
+          username: msg.recipient_id.username,
+          avatar_url: msg.recipient_id.avatar_url,
+        },
+      }));
+
+      res.json(formattedMessages);
+    } catch (error) {
+      console.error("Failed to load recent messages:", error);
+      res.status(500).json({ error: "Failed to load recent messages" });
+    }
+  },
+);
+
+app.use(express.static(path.join(__dirname, "dist")));
 
 app.use((req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
-const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, '0.0.0.0', () => {
+const PORT = process.env.PORT || 3002;
+httpServer.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 ByteNexus Server running on port ${PORT}`);
   console.log(`📡 WebSocket server ready`);
   console.log(`🔐 JWT Authentication enabled`);
-  console.log(`💾 MongoDB connection: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Connecting...'}`);
-  console.log(`🌐 Frontend served from: ${path.join(__dirname, 'dist')}`);
+  console.log(
+    `💾 MongoDB connection: ${mongoose.connection.readyState === 1 ? "Connected" : "Connecting..."}`,
+  );
+  console.log(`🌐 Frontend served from: ${path.join(__dirname, "dist")}`);
 });
