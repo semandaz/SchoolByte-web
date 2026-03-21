@@ -2,452 +2,710 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UNEB Project Gallery - SchoolByte</title>
-    <script src="api-config.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>SchoolByte · UNEB Project Gallery | Academic Showcase</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #1a2a6c;
-            --secondary: #b21f1f;
-            --gold: #ffd700;
-            --orange: #ffa500;
-            --white: #ffffff;
-            --light: #f0f4f8;
-            --dark: #333333;
-            --gray: #9ca3af;
-            --gradient: linear-gradient(135deg, #1a2a6c, #b21f1f);
-            --gradient-btn: linear-gradient(to right, #ffd700, #ffa500);
+            --color-brand-primary: #1a2a6c;
+            --color-brand-secondary: #b21f1f;
+            --color-brand-gold: #ffd700;
+            --color-brand-orange: #ffa500;
+            --color-neutral-white: #ffffff;
+            --color-neutral-lightest: #f0f4f8;
+            --color-neutral-light: #e2e8f0;
+            --color-neutral-medium: #64748b;
+            --color-neutral-dark: #1e293b;
+            --color-neutral-darkest: #0f172a;
+            --color-error-red: #e74c3c;
+            --color-success-green: #2ecc71;
+            --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            --gradient-background-secondary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
+            --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
+            --gradient-button-active-hover: linear-gradient(to right, #ffc800, #ff8c00);
+            --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+            --shadow-card-hover: 0 20px 30px -12px rgba(0, 0, 0, 0.2);
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background: var(--gradient); min-height: 100vh; color: var(--white); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--gradient-background-secondary);
+            min-height: 100vh;
+            color: var(--color-neutral-dark);
+            overflow-x: hidden;
+            position: relative;
+        }
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--color-brand-gold);
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: float-up linear infinite;
+            filter: drop-shadow(0 0 4px #ffd700);
+        }
+        @keyframes float-up { to { transform: translateY(-100vh); } }
+
+        /* ========== PROFESSIONAL MICRO-INTERACTIONS (TikTok/IG style) ========== */
+        /* Heart pulse + particle burst */
+        .like-btn {
+            transition: transform 0.1s cubic-bezier(0.2, 1.5, 0.4, 1);
+        }
+        .like-btn:active {
+            transform: scale(0.9);
+        }
+        .heart-particle {
+            position: absolute;
+            pointer-events: none;
+            background: radial-gradient(circle, #ff3366, #ff6b6b);
+            border-radius: 50%;
+            width: 6px;
+            height: 6px;
+            animation: particleBurst 0.6s ease-out forwards;
+            z-index: 2000;
+        }
+        @keyframes particleBurst {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(1.5) translate(var(--dx, 30px), var(--dy, -30px)); opacity: 0; }
+        }
+        .heart-pulse {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,51,102,0.6) 0%, rgba(255,51,102,0) 80%);
+            animation: pulseRing 0.5s ease-out forwards;
+            pointer-events: none;
+            z-index: 1999;
+        }
+        @keyframes pulseRing {
+            0% { transform: scale(0.5); opacity: 0.8; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        /* Thumbs-up bounce + glow */
+        .helpful-up-btn {
+            transition: all 0.15s ease;
+        }
+        .helpful-up-animation {
+            animation: bounceGlow 0.4s cubic-bezier(0.34, 1.2, 0.64, 1) forwards !important;
+        }
+        @keyframes bounceGlow {
+            0% { transform: scale(1); background: transparent; box-shadow: 0 0 0 0 #2ecc71; }
+            40% { transform: scale(1.3); background: #2ecc71; color: white; box-shadow: 0 0 0 6px rgba(46,204,113,0.3); }
+            100% { transform: scale(1); background: transparent; color: inherit; box-shadow: 0 0 0 0; }
+        }
+
+        /* Thumbs-down shake + red flash */
+        .helpful-down-animation {
+            animation: shakeFlash 0.4s ease-in-out forwards !important;
+        }
+        @keyframes shakeFlash {
+            0% { transform: translateX(0); background: transparent; }
+            25% { transform: translateX(-3px); background: #e74c3c; color: white; }
+            75% { transform: translateX(3px); background: #e74c3c; color: white; }
+            100% { transform: translateX(0); background: transparent; color: inherit; }
+        }
+
+        /* Score popup */
+        .score-popup {
+            position: absolute;
+            font-weight: 800;
+            font-size: 1rem;
+            color: var(--color-brand-gold);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            pointer-events: none;
+            z-index: 2000;
+            animation: scoreFloat 0.8s ease-out forwards;
+            white-space: nowrap;
+        }
+        @keyframes scoreFloat {
+            0% { transform: translate(0,0) scale(0.7); opacity: 1; }
+            100% { transform: translate(0,-50px) scale(1.2); opacity: 0; }
+        }
+
+        /* ===== Header ===== */
         header {
-            background: rgba(0,0,0,0.2);
+            background-color: var(--color-neutral-white);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             padding: 1rem 2rem;
+            position: relative;
+            z-index: 10;
+        }
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 1rem;
         }
-        .logo { font-size: 1.5rem; font-weight: 800; text-decoration: none; color: var(--gold); }
-        .nav-links { display: flex; gap: 1rem; }
-        .nav-links a { color: var(--white); text-decoration: none; font-weight: 600; }
-        .nav-links a:hover { color: var(--gold); }
-        .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
-        .hero {
-            text-align: center;
-            padding: 2rem 0;
-            margin-bottom: 2rem;
+        .logo {
+            font-size: 2rem;
+            font-weight: 900;
+            background: var(--gradient-background-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
         }
-        .hero h1 { font-size: 2rem; margin-bottom: 0.5rem; }
-        .hero p { opacity: 0.9; font-size: 1rem; }
-        .toolbar {
+        .logo span {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--color-brand-secondary);
+            margin-left: 6px;
+        }
+        .nav-actions { display: flex; gap: 1.2rem; }
+        .dashboard-link {
+            background: rgba(26,42,108,0.08);
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            color: var(--color-brand-primary);
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        .dashboard-link:hover { background: var(--color-brand-primary); color: white; }
+        .publish-btn-header {
+            background: var(--gradient-button-active);
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 40px;
+            font-weight: 700;
+            color: var(--color-neutral-darkest);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .publish-btn-header:hover { background: var(--gradient-button-active-hover); transform: translateY(-1px); }
+
+        /* Filter Bar */
+        .filter-bar {
+            background: rgba(255,255,255,0.96);
+            margin: 2rem auto;
+            max-width: 1200px;
+            width: calc(100% - 2rem);
+            padding: 1rem 1.8rem;
+            border-radius: 80px;
             display: flex;
             flex-wrap: wrap;
+            justify-content: center;
             gap: 1rem;
-            margin-bottom: 2rem;
-            align-items: center;
+            box-shadow: var(--shadow-card);
+            border: 1px solid rgba(255,215,0,0.3);
         }
-        .toolbar input, .toolbar select {
-            padding: 0.6rem 1rem;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.3);
-            background: rgba(255,255,255,0.15);
-            color: var(--white);
-            font-size: 0.95rem;
+        .filter-bar select, .filter-bar input {
+            background: var(--color-neutral-lightest);
+            border: 1px solid var(--color-neutral-light);
+            padding: 0.65rem 1.2rem;
+            border-radius: 60px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            outline: none;
         }
-        .toolbar input::placeholder { color: rgba(255,255,255,0.7); }
-        .toolbar select option { background: var(--primary); color: var(--white); }
-        .btn {
-            padding: 0.6rem 1.2rem;
-            border-radius: 8px;
+        .filter-btn {
+            background: var(--gradient-button-active);
             border: none;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.95rem;
-            background: var(--gradient-btn);
-            color: var(--dark);
-        }
-        .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
-        .btn-secondary { background: rgba(255,255,255,0.2); color: var(--white); }
-        .gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-        }
-        .project-card {
-            background: rgba(255,255,255,0.1);
-            border-radius: 12px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-        .project-card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
-        .project-card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            display: block;
-        }
-        .project-card-body { padding: 1rem; }
-        .project-card h3 { font-size: 1rem; margin-bottom: 0.5rem; line-height: 1.3; }
-        .project-card .meta { font-size: 0.85rem; opacity: 0.85; margin-bottom: 0.5rem; }
-        .project-card .stats {
+            padding: 0.65rem 1.5rem;
+            border-radius: 60px;
+            font-weight: 700;
             display: flex;
-            gap: 1rem;
-            font-size: 0.9rem;
-            color: var(--gold);
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
         }
-        .modal {
+        .filter-btn:hover { background: var(--gradient-button-active-hover); transform: scale(0.98); }
+
+        .main-container { max-width: 1400px; margin: 0 auto; padding: 0 1.5rem 3rem; position: relative; z-index: 5; }
+        .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 2rem; margin-top: 0.5rem; }
+        .project-card {
+            background: var(--color-neutral-white);
+            border-radius: 24px;
+            box-shadow: var(--shadow-card);
+            overflow: hidden;
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .project-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-card-hover); }
+        .card-photo { width: 100%; height: 210px; object-fit: cover; background: var(--color-neutral-lightest); border-bottom: 1px solid #f1f3f5; }
+        .card-content { padding: 1.4rem; display: flex; flex-direction: column; gap: 0.7rem; }
+        .title-year { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+        .project-title { font-size: 1.35rem; font-weight: 800; color: var(--color-brand-primary); }
+        .project-year { font-weight: 700; background: #fef9e6; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; color: #b8731a; }
+        .subjects-involved { font-size: 0.8rem; font-weight: 600; color: var(--color-brand-secondary); background: #fff1f0; padding: 4px 12px; border-radius: 40px; width: fit-content; }
+        .methodology-area { margin-top: 4px; font-size: 0.9rem; line-height: 1.5; }
+        .methodology-short { display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .read-more-btn { background: none; border: none; color: var(--color-brand-gold); font-weight: 700; font-size: 0.8rem; cursor: pointer; margin-top: 6px; display: inline-flex; align-items: center; gap: 5px; }
+        .full-method-text { display: none; margin-top: 12px; background: var(--color-neutral-lightest); padding: 14px; border-radius: 18px; border-left: 4px solid var(--color-brand-gold); font-size: 0.85rem; }
+        .action-buttons { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; border-top: 1px solid var(--color-neutral-light); padding-top: 14px; flex-wrap: wrap; gap: 10px; }
+        .action-group { display: flex; gap: 18px; align-items: center; }
+        .icon-btn {
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 40px;
+            color: var(--color-neutral-medium);
+            position: relative;
+            transition: 0.1s;
+        }
+        .icon-btn:hover { background: var(--color-neutral-lightest); color: var(--color-brand-primary); }
+        .icon-btn.liked i { color: #e63946; }
+        .helpful-group { display: flex; gap: 6px; background: var(--color-neutral-lightest); padding: 3px 8px; border-radius: 50px; }
+        .helpful-btn {
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 10px;
+            border-radius: 30px;
+            transition: 0.1s;
+            color: var(--color-neutral-dark);
+        }
+        .helpful-btn.active-up { background: var(--color-success-green); color: white; }
+        .helpful-btn.active-down { background: var(--color-error-red); color: white; }
+
+        /* ===== PROFESSIONAL PUBLISH MODAL ===== */
+        .modal-overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 1000;
-            overflow-y: auto;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .upload-modal-card {
+            background: var(--color-neutral-white);
+            max-width: 620px;
+            width: 90%;
+            border-radius: 32px;
             padding: 2rem;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 30px 45px -20px rgba(0,0,0,0.5);
+            border-top: 5px solid var(--color-brand-gold);
         }
-        .modal.active { display: flex; align-items: flex-start; justify-content: center; }
-        .modal-content {
-            background: var(--primary);
-            border-radius: 16px;
-            max-width: 600px;
-            width: 100%;
-            padding: 1.5rem;
-            margin: 2rem auto;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        .modal-content img { width: 100%; max-height: 350px; object-fit: contain; border-radius: 8px; margin-bottom: 1rem; }
-        .modal-content h2 { margin-bottom: 0.5rem; }
-        .modal-content .meta { opacity: 0.9; margin-bottom: 1rem; font-size: 0.95rem; }
-        .modal-content section { margin-bottom: 1rem; }
-        .modal-content section h4 { font-size: 0.9rem; color: var(--gold); margin-bottom: 0.3rem; }
-        .modal-content section p { font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; }
-        .modal-actions {
+        .upload-modal-card h2 {
+            font-size: 1.7rem;
+            margin-bottom: 1.5rem;
+            color: var(--color-brand-primary);
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 1.5rem;
+            align-items: center;
+            gap: 12px;
+            border-left: 4px solid var(--color-brand-gold);
+            padding-left: 14px;
         }
-        .modal-actions button { flex: 1; min-width: 120px; }
-        .upload-form {
-            background: rgba(255,255,255,0.1);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            max-width: 600px;
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label {
+            font-weight: 700;
+            display: block;
+            margin-bottom: 6px;
+            color: var(--color-neutral-dark);
+            font-size: 0.85rem;
         }
-        .upload-form h2 { margin-bottom: 1rem; font-size: 1.2rem; }
-        .upload-form label { display: block; margin-bottom: 0.3rem; font-size: 0.9rem; }
-        .upload-form input, .upload-form select, .upload-form textarea {
+        .form-group input, .form-group select, .form-group textarea {
             width: 100%;
-            padding: 0.6rem;
-            border-radius: 6px;
-            border: 1px solid rgba(255,255,255,0.3);
-            background: rgba(255,255,255,0.1);
-            color: var(--white);
-            margin-bottom: 1rem;
+            padding: 12px 16px;
+            border: 1px solid var(--color-neutral-light);
+            border-radius: 24px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            background: var(--color-neutral-lightest);
+            transition: 0.2s;
         }
-        .upload-form textarea { min-height: 80px; resize: vertical; }
-        .upload-form input[type="file"] { padding: 0.4rem; }
-        .loading { text-align: center; padding: 2rem; font-size: 1.1rem; }
-        .empty { text-align: center; padding: 3rem; opacity: 0.9; }
-        .liked { color: #e74c3c !important; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--color-brand-gold);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255,215,0,0.2);
+            background: white;
+        }
+        .image-preview-area {
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .image-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            object-fit: cover;
+            background: var(--color-neutral-light);
+            display: none;
+            border: 2px solid var(--color-brand-gold);
+        }
+        .upload-submit-btn {
+            background: var(--gradient-button-active);
+            border: none;
+            padding: 14px;
+            width: 100%;
+            border-radius: 50px;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+        .upload-submit-btn:hover { background: var(--gradient-button-active-hover); transform: translateY(-1px); }
+        .close-modal {
+            float: right;
+            font-size: 1.8rem;
+            cursor: pointer;
+            background: var(--color-neutral-lightest);
+            width: 38px;
+            text-align: center;
+            border-radius: 40px;
+            transition: 0.1s;
+        }
+        .close-modal:hover { background: var(--color-neutral-light); }
+        .loading-spinner { text-align: center; padding: 3rem; background: rgba(255,255,245,0.9); border-radius: 40px; }
+        .empty-gallery { grid-column: 1/-1; text-align: center; padding: 3rem; background: rgba(255,255,255,0.9); border-radius: 2rem; }
+        @media (max-width: 700px) {
+            .header-container { flex-direction: column; }
+            .filter-bar { border-radius: 28px; width: auto; margin: 1rem; }
+            .projects-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
-    <header>
-        <a href="studentdashboard.html" class="logo"><i class="fas fa-graduation-cap"></i> SchoolByte · UNEB Gallery</a>
-        <nav class="nav-links">
-            <a href="studentdashboard.html"><i class="fas fa-home"></i> Dashboard</a>
-            <a href="bytenexus-chat.html"><i class="fas fa-comments"></i> Chat</a>
-        </nav>
-    </header>
+<div class="floating-particles" id="floatingParticles"></div>
 
-    <div class="container">
-        <div class="hero">
-            <h1>UNEB Project Gallery</h1>
-            <p>Share your academic work. Learn from peers. Build community.</p>
-        </div>
-
-        <div class="upload-form" id="uploadForm">
-            <h2><i class="fas fa-upload"></i> Publish Your Project</h2>
-            <form id="projectForm">
-                <label>Project Photo (you with your report) *</label>
-                <input type="file" id="photo" accept="image/jpeg,image/png,image/webp" required>
-
-                <label>Project Title *</label>
-                <input type="text" id="title" placeholder="e.g. Investigating Factors Affecting Enzyme Activity" required>
-
-                <label>Subject *</label>
-                <select id="subject" required>
-                    <option value="">Select subject</option>
-                    <option value="Biology">Biology</option>
-                    <option value="Chemistry">Chemistry</option>
-                    <option value="Physics">Physics</option>
-                    <option value="Mathematics">Mathematics</option>
-                    <option value="English Language">English Language</option>
-                    <option value="Geography">Geography</option>
-                    <option value="History">History</option>
-                    <option value="Economics">Economics</option>
-                    <option value="Agriculture">Agriculture</option>
-                    <option value="Literature">Literature</option>
-                    <option value="Other">Other</option>
-                </select>
-
-                <label>Year *</label>
-                <input type="text" id="year" placeholder="e.g. 2024" required>
-
-                <label>Category *</label>
-                <select id="category" required>
-                    <option value="">Select category</option>
-                    <option value="Science">Science</option>
-                    <option value="Arts">Arts</option>
-                    <option value="Humanities">Humanities</option>
-                    <option value="Practical">Practical</option>
-                    <option value="Other">Other</option>
-                </select>
-
-                <label>Methodology *</label>
-                <textarea id="methodology" placeholder="Describe your research methodology in 2-3 sentences..." required></textarea>
-
-                <label>Abstract (optional)</label>
-                <textarea id="abstract" placeholder="Brief summary of your project..."></textarea>
-
-                <label>Findings (optional)</label>
-                <textarea id="findings" placeholder="Key findings..."></textarea>
-
-                <label>Conclusion (optional)</label>
-                <textarea id="conclusion" placeholder="Conclusion..."></textarea>
-
-                <label>Keywords (comma-separated, optional)</label>
-                <input type="text" id="keywords" placeholder="e.g. enzymes, temperature, biology">
-
-                <button type="submit" class="btn" id="submitBtn"><i class="fas fa-paper-plane"></i> Publish</button>
-            </form>
-        </div>
-
-        <div class="toolbar">
-            <input type="text" id="searchInput" placeholder="Search projects..." style="min-width: 200px;">
-            <select id="sortSelect">
-                <option value="likes">Most Liked</option>
-                <option value="helpful">Most Helpful</option>
-                <option value="recent">Most Recent</option>
-            </select>
-            <select id="subjectFilter">
-                <option value="">All Subjects</option>
-                <option value="Biology">Biology</option>
-                <option value="Chemistry">Chemistry</option>
-                <option value="Physics">Physics</option>
-                <option value="Mathematics">Mathematics</option>
-                <option value="Other">Other</option>
-            </select>
-            <select id="yearFilter">
-                <option value="">All Years</option>
-                <option value="2025">2025</option>
-                <option value="2024">2024</option>
-                <option value="2023">2023</option>
-                <option value="2022">2022</option>
-            </select>
-            <select id="categoryFilter">
-                <option value="">All Categories</option>
-                <option value="Science">Science</option>
-                <option value="Arts">Arts</option>
-                <option value="Humanities">Humanities</option>
-                <option value="Practical">Practical</option>
-                <option value="Other">Other</option>
-            </select>
-            <button class="btn" onclick="loadProjects()"><i class="fas fa-search"></i> Apply</button>
-        </div>
-
-        <div id="gallery" class="gallery">
-            <div class="loading">Loading projects...</div>
+<header>
+    <div class="header-container">
+        <a href="#" class="logo">SchoolByte <span>· UNEB Gallery</span></a>
+        <div class="nav-actions">
+            <a href="studentdashboard.html" class="dashboard-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <button id="openPublishBtn" class="publish-btn-header"><i class="fas fa-upload"></i> Publish Project</button>
         </div>
     </div>
+</header>
 
-    <div class="modal" id="detailModal">
-        <div class="modal-content">
-            <button class="btn btn-secondary" style="position:absolute;top:1rem;right:1rem;" onclick="closeModal()"><i class="fas fa-times"></i></button>
-            <div id="modalBody"></div>
-            <div class="modal-actions" id="modalActions"></div>
-        </div>
+<div class="filter-bar">
+    <input type="text" id="searchFilter" placeholder="🔍 Search by title or subject...">
+    <select id="subjectFilterSelect"><option value="">All Subjects</option><option value="Biology">Biology</option><option value="Chemistry">Chemistry</option><option value="Physics">Physics</option><option value="Mathematics">Mathematics</option><option value="English">English</option><option value="Geography">Geography</option><option value="History">History</option><option value="Economics">Economics</option><option value="Other">Other</option></select>
+    <select id="yearFilterSelect"><option value="">All Years</option><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option></select>
+    <button id="applyFiltersBtn" class="filter-btn"><i class="fas fa-sliders-h"></i> Apply</button>
+</div>
+
+<div class="main-container">
+    <div id="projectsGallery" class="projects-grid"><div class="loading-spinner"><i class="fas fa-spinner fa-pulse"></i> Loading showcase...</div></div>
+</div>
+
+<!-- Enhanced Professional Publish Modal -->
+<div id="uploadModal" class="modal-overlay">
+    <div class="upload-modal-card">
+        <span id="closeUploadModal" class="close-modal">&times;</span>
+        <h2><i class="fas fa-cloud-upload-alt"></i> Publish UNEB Project</h2>
+        <form id="projectUploadForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label><i class="fas fa-image"></i> Project Cover Image *</label>
+                <input type="file" id="projectPhoto" accept="image/*" required>
+                <div class="image-preview-area">
+                    <img id="imagePreview" class="image-preview" alt="Preview">
+                    <span id="fileNameDisplay" style="font-size:0.75rem; color:var(--color-neutral-medium);"></span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-heading"></i> Project Title *</label>
+                <input type="text" id="projectTitle" placeholder="e.g., Effect of organic manure on maize yield" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-book-open"></i> Subjects Involved *</label>
+                <input type="text" id="projectSubjects" placeholder="e.g., Biology, Agriculture" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-calendar-alt"></i> Year *</label>
+                <input type="text" id="projectYear" placeholder="2025" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-list-ol"></i> Methodology (step‑by‑step) *</label>
+                <textarea id="projectMethodology" rows="4" placeholder="1. ...&#10;2. ...&#10;3. ..." required></textarea>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-shield-alt"></i> Precautions & Conclusion *</label>
+                <textarea id="projectPrecautions" rows="3" placeholder="Safety measures, ethical considerations, final remarks..." required></textarea>
+            </div>
+            <button type="submit" class="upload-submit-btn"><i class="fas fa-check-circle"></i> Publish to Gallery</button>
+        </form>
     </div>
+</div>
 
-    <script>
-        const API_URL = window.API_BASE_URL || window.location.origin || 'http://localhost:5000';
-        let token = localStorage.getItem('token');
-        let projects = [];
+<script>
+    // Data
+    let PROJECTS_DB = [];
+    const currentUserId = "student_001";
 
-        if (!token) {
-            window.location.href = 'studentlogin.html?redirect=' + encodeURIComponent('unebprojectgallery.html');
+    function saveProjects() { localStorage.setItem('uneb_gallery_pro_v5', JSON.stringify(PROJECTS_DB)); }
+    function loadProjectsFromLocal() {
+        const stored = localStorage.getItem('uneb_gallery_pro_v5');
+        if(stored) PROJECTS_DB = JSON.parse(stored);
+        else {
+            PROJECTS_DB = [
+                { id: "proj1", title: "Renewable Energy from Agricultural Waste", year: "2024", subjects: "Physics, Chemistry", photoUrl: "https://picsum.photos/id/20/400/250", methodology: "1. Collected maize husks and groundnut shells.\n2. Carbonized at 300°C for 2 hours.\n3. Formed briquettes using cassava starch binder.\n4. Tested calorific value.\n5. Analyzed burning rate.", precautions: "Heat-resistant gloves, ventilated area. Conclusion: Briquettes offer sustainable alternative.", likes: 12, likedBy: [], helpfulUp: 5, helpfulDown: 1, userHelpfulVote: null },
+                { id: "proj2", title: "Antimicrobial Activity of Mango Leaves", year: "2023", subjects: "Biology, Chemistry", photoUrl: "https://picsum.photos/id/104/400/250", methodology: "1. Air-dried mango leaves.\n2. Powdered and extracted with ethanol.\n3. Disc diffusion method against E. coli.\n4. Measured inhibition zones.", precautions: "Sterile conditions, lab coat. Remark: Significant antibacterial potential.", likes: 28, likedBy: [], helpfulUp: 12, helpfulDown: 2, userHelpfulVote: null },
+                { id: "proj3", title: "Impact of Mobile Learning on Student Performance", year: "2025", subjects: "ICT, Mathematics", photoUrl: "https://picsum.photos/id/26/400/250", methodology: "1. Quasi-experimental design.\n2. Pre-test and post-test.\n3. Mobile app quizzes for 8 weeks.\n4. Statistical analysis.", precautions: "Informed consent, data anonymized. Conclusion: 22% improvement.", likes: 45, likedBy: [], helpfulUp: 24, helpfulDown: 3, userHelpfulVote: null }
+            ];
+            saveProjects();
         }
+        PROJECTS_DB = PROJECTS_DB.map(p => ({ ...p, likes: p.likes||0, likedBy: p.likedBy||[], helpfulUp: p.helpfulUp||0, helpfulDown: p.helpfulDown||0, userHelpfulVote: p.userHelpfulVote||null }));
+        saveProjects();
+    }
 
-        document.getElementById('projectForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
-            const formData = new FormData();
-            formData.append('photo', document.getElementById('photo').files[0]);
-            formData.append('title', document.getElementById('title').value.trim());
-            formData.append('subject', document.getElementById('subject').value);
-            formData.append('year', document.getElementById('year').value.trim());
-            formData.append('category', document.getElementById('category').value);
-            formData.append('methodology', document.getElementById('methodology').value.trim());
-            formData.append('abstract', document.getElementById('abstract').value.trim());
-            formData.append('findings', document.getElementById('findings').value.trim());
-            formData.append('conclusion', document.getElementById('conclusion').value.trim());
-            formData.append('keywords', document.getElementById('keywords').value.trim());
-            try {
-                const r = await fetch(API_URL + '/api/uneb-projects', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token },
-                    body: formData
-                });
-                const data = await r.json();
-                if (r.ok) {
-                    alert('Project published successfully!');
-                    document.getElementById('projectForm').reset();
-                    loadProjects();
-                } else alert(data.error || data.errors?.[0]?.msg || 'Upload failed');
-            } catch (err) {
-                alert('Network error. Ensure the server is running.');
-            }
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Publish';
-        });
+    // === Advanced Micro-Interactions ===
+    function createHeartPulseAndParticles(x, y) {
+        // Pulse ring
+        const pulse = document.createElement('div');
+        pulse.className = 'heart-pulse';
+        pulse.style.left = (x - 20) + 'px';
+        pulse.style.top = (y - 20) + 'px';
+        document.body.appendChild(pulse);
+        setTimeout(() => pulse.remove(), 500);
+        // Particle burst (12 tiny hearts or circles)
+        for (let i = 0; i < 14; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'heart-particle';
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 20 + Math.random() * 40;
+            const dx = Math.cos(angle) * distance;
+            const dy = Math.sin(angle) * distance - 20;
+            particle.style.setProperty('--dx', dx + 'px');
+            particle.style.setProperty('--dy', dy + 'px');
+            particle.style.left = (x + (Math.random() - 0.5) * 15) + 'px';
+            particle.style.top = (y + (Math.random() - 0.5) * 15) + 'px';
+            document.body.appendChild(particle);
+            setTimeout(() => particle.remove(), 600);
+        }
+    }
 
-        async function loadProjects() {
-            const sort = document.getElementById('sortSelect').value;
-            const subject = document.getElementById('subjectFilter').value;
-            const year = document.getElementById('yearFilter').value;
-            const category = document.getElementById('categoryFilter').value;
-            const q = document.getElementById('searchInput').value.trim();
-            const params = new URLSearchParams({ sort, limit: 50 });
-            if (subject) params.set('subject', subject);
-            if (year) params.set('year', year);
-            if (category) params.set('category', category);
-            if (q) params.set('q', q);
-            document.getElementById('gallery').innerHTML = '<div class="loading">Loading...</div>';
-            try {
-                const r = await fetch(API_URL + '/api/uneb-projects?' + params, { headers: { 'Authorization': 'Bearer ' + token } });
-                const data = await r.json();
-                if (r.ok) {
-                    projects = data.projects || [];
-                    renderGallery();
-                } else document.getElementById('gallery').innerHTML = '<div class="empty">Failed to load projects.</div>';
-            } catch (err) {
-                document.getElementById('gallery').innerHTML = '<div class="empty">Connection error. Is the server running? Open <a href="http://localhost:5000" style="color:var(--gold)">http://localhost:5000</a> and try again.</div>';
+    function createScorePopup(x, y, delta) {
+        const popup = document.createElement('div');
+        popup.className = 'score-popup';
+        popup.innerHTML = (delta > 0 ? '+' : '') + delta;
+        popup.style.left = x + 'px';
+        popup.style.top = y + 'px';
+        document.body.appendChild(popup);
+        setTimeout(() => popup.remove(), 800);
+    }
+
+    // Like with TikTok-style heart burst
+    function likeProject(projectId, eventElement, clickEvent) {
+        const project = PROJECTS_DB.find(p => p.id === projectId);
+        if(!project) return;
+        const wasLiked = project.likedBy.includes(currentUserId);
+        let delta = 0;
+        if(wasLiked) {
+            project.likes -= 1;
+            project.likedBy = project.likedBy.filter(id => id !== currentUserId);
+            delta = -1;
+        } else {
+            project.likes += 1;
+            project.likedBy.push(currentUserId);
+            delta = 1;
+            if(clickEvent && eventElement) {
+                const rect = eventElement.getBoundingClientRect();
+                const centerX = rect.left + rect.width/2;
+                const centerY = rect.top + rect.height/2;
+                createHeartPulseAndParticles(centerX, centerY);
+                createScorePopup(centerX - 10, centerY - 20, delta);
+                // Add scale effect on button
+                eventElement.style.transform = 'scale(1.2)';
+                setTimeout(() => { if(eventElement) eventElement.style.transform = ''; }, 150);
             }
         }
+        saveProjects();
+        renderAllProjects();
+    }
 
-        function renderGallery() {
-            const el = document.getElementById('gallery');
-            if (!projects.length) {
-                el.innerHTML = '<div class="empty">No projects yet. Be the first to publish!</div>';
-                return;
+    // Helpful vote with bounce/shake and color flash
+    function setHelpfulVote(projectId, voteType, btnElement, clickEvent) {
+        const project = PROJECTS_DB.find(p => p.id === projectId);
+        if(!project) return;
+        const previous = project.userHelpfulVote;
+        let deltaUp = 0, deltaDown = 0;
+        if(previous === voteType) {
+            if(voteType === 'up') { project.helpfulUp -= 1; deltaUp = -1; }
+            else { project.helpfulDown -= 1; deltaDown = -1; }
+            project.userHelpfulVote = null;
+        } else {
+            if(previous === 'up') { project.helpfulUp -= 1; deltaUp = -1; }
+            if(previous === 'down') { project.helpfulDown -= 1; deltaDown = -1; }
+            if(voteType === 'up') { project.helpfulUp += 1; deltaUp = 1; }
+            else { project.helpfulDown += 1; deltaDown = 1; }
+            project.userHelpfulVote = voteType;
+        }
+        saveProjects();
+        if(btnElement && clickEvent) {
+            // Add animation class
+            btnElement.classList.add(voteType === 'up' ? 'helpful-up-animation' : 'helpful-down-animation');
+            setTimeout(() => btnElement.classList.remove(voteType === 'up' ? 'helpful-up-animation' : 'helpful-down-animation'), 400);
+            const rect = btnElement.getBoundingClientRect();
+            const deltaValue = (voteType === 'up' ? deltaUp : deltaDown);
+            if(deltaValue !== 0) {
+                createScorePopup(rect.left + rect.width/2, rect.top - 10, deltaValue);
             }
-            el.innerHTML = projects.map(p => `
-                <div class="project-card" onclick='openDetail("${p.id}")'>
-                    <img src="${p.photoUrl}" alt="${p.title}">
-                    <div class="project-card-body">
-                        <h3>${escapeHtml(p.title)}</h3>
-                        <div class="meta">${p.subject} · ${p.year} · ${p.student?.studentName || 'Unknown'}</div>
-                        <div class="stats">
-                            <span><i class="fas fa-heart ${p.likedByMe ? 'liked' : ''}"></i> ${p.likesCount}</span>
-                            <span><i class="fas fa-thumbs-up"></i> ${p.helpfulCount} helpful</span>
+        }
+        renderAllProjects();
+    }
+
+    function shareProject(projectId) {
+        const proj = PROJECTS_DB.find(p => p.id === projectId);
+        if(proj) { navigator.clipboard.writeText(`📘 ${proj.title} on SchoolByte UNEB Gallery!`); alert("🔗 Project link copied!"); }
+    }
+    function chatAboutProject() { alert("💬 Peer discussion coming soon — engage with fellow researchers!"); }
+
+    function formatFullMethodology(methodology, precautions) {
+        let formatted = `<div class="method-numbered"><ul style="margin-left:1rem;">`;
+        let lines = methodology.split(/\r?\n/).filter(l => l.trim());
+        if(lines.length && lines[0].match(/^\d+\./)) formatted += lines.map(l => `<li>${escapeHtml(l)}</li>`).join('');
+        else {
+            let steps = methodology.split(/[.;]\s+/).filter(s=>s.trim());
+            steps.forEach((step,idx)=> formatted += `<li>${idx+1}. ${escapeHtml(step.trim())}</li>`);
+        }
+        formatted += `</ul></div><div class="precautions-block"><strong><i class="fas fa-shield-alt"></i> Precautions & Conclusion:</strong><br>${escapeHtml(precautions)}</div>`;
+        return formatted;
+    }
+
+    function renderAllProjects() {
+        const container = document.getElementById('projectsGallery');
+        const searchTerm = document.getElementById('searchFilter').value.toLowerCase();
+        const subjectFilter = document.getElementById('subjectFilterSelect').value;
+        const yearFilter = document.getElementById('yearFilterSelect').value;
+        let filtered = PROJECTS_DB.filter(p => (!searchTerm || p.title.toLowerCase().includes(searchTerm) || p.subjects.toLowerCase().includes(searchTerm)) &&
+            (!subjectFilter || p.subjects.toLowerCase().includes(subjectFilter.toLowerCase())) &&
+            (!yearFilter || p.year === yearFilter));
+        if(filtered.length === 0) { container.innerHTML = `<div class="empty-gallery">✨ No projects match. Publish your research!</div>`; return; }
+        container.innerHTML = filtered.map(project => {
+            const isLiked = project.likedBy.includes(currentUserId);
+            const methodShort = project.methodology.length > 130 ? project.methodology.substring(0,130)+'...' : project.methodology;
+            const fullContent = formatFullMethodology(project.methodology, project.precautions);
+            const upActive = project.userHelpfulVote === 'up';
+            const downActive = project.userHelpfulVote === 'down';
+            return `<div class="project-card" data-id="${project.id}">
+                <img class="card-photo" src="${project.photoUrl}" alt="${escapeHtml(project.title)}" onerror="this.src='https://picsum.photos/id/1/400/250'">
+                <div class="card-content">
+                    <div class="title-year"><div class="project-title">${escapeHtml(project.title)}</div><div class="project-year">${escapeHtml(project.year)}</div></div>
+                    <div class="subjects-involved"><i class="fas fa-book-open"></i> ${escapeHtml(project.subjects)}</div>
+                    <div class="methodology-area">
+                        <div class="methodology-short" id="shortText-${project.id}">${escapeHtml(methodShort)}</div>
+                        <div class="full-method-text" id="fullText-${project.id}" style="display: none;">${fullContent}</div>
+                        <button class="read-more-btn" data-id="${project.id}" onclick="window.toggleReadMore('${project.id}')"><i class="fas fa-expand-alt"></i> Read methodology</button>
+                    </div>
+                    <div class="action-buttons">
+                        <div class="action-group">
+                            <button class="icon-btn like-btn" data-id="${project.id}"><i class="fa-heart ${isLiked ? 'fas liked' : 'far'}"></i> <span class="like-count">${project.likes}</span></button>
+                            <button class="icon-btn share-btn" data-id="${project.id}"><i class="fas fa-share-alt"></i> Share</button>
+                            <button class="icon-btn chat-message-btn" data-id="${project.id}"><i class="fas fa-comment"></i> Chat</button>
+                        </div>
+                        <div class="helpful-group">
+                            <button class="helpful-btn helpful-up-btn ${upActive ? 'active-up' : ''}" data-id="${project.id}" data-vote="up"><i class="fas fa-thumbs-up"></i> <span class="up-count">${project.helpfulUp}</span></button>
+                            <button class="helpful-btn helpful-down-btn ${downActive ? 'active-down' : ''}" data-id="${project.id}" data-vote="down"><i class="fas fa-thumbs-down"></i> <span class="down-count">${project.helpfulDown}</span></button>
                         </div>
                     </div>
                 </div>
-            `).join('');
-        }
+            </div>`;
+        }).join('');
+        attachEvents();
+    }
 
-        function escapeHtml(s) {
-            const d = document.createElement('div');
-            d.textContent = s || '';
-            return d.innerHTML;
-        }
+    function attachEvents() {
+        document.querySelectorAll('.like-btn').forEach(btn => { btn.addEventListener('click', handleLike); });
+        document.querySelectorAll('.share-btn').forEach(btn => { btn.addEventListener('click', handleShare); });
+        document.querySelectorAll('.chat-message-btn').forEach(btn => { btn.addEventListener('click', handleChat); });
+        document.querySelectorAll('.helpful-up-btn, .helpful-down-btn').forEach(btn => { btn.addEventListener('click', handleHelpful); });
+    }
+    function handleLike(e) { e.stopPropagation(); const btn = e.currentTarget; const card = btn.closest('.project-card'); const pid = card.getAttribute('data-id'); likeProject(pid, btn, e); }
+    function handleShare(e) { e.stopPropagation(); const card = e.currentTarget.closest('.project-card'); shareProject(card.getAttribute('data-id')); }
+    function handleChat(e) { e.stopPropagation(); chatAboutProject(); }
+    function handleHelpful(e) { e.stopPropagation(); const btn = e.currentTarget; const card = btn.closest('.project-card'); const pid = card.getAttribute('data-id'); const vote = btn.getAttribute('data-vote'); setHelpfulVote(pid, vote, btn, e); }
+    window.toggleReadMore = function(pid) {
+        const short = document.getElementById(`shortText-${pid}`);
+        const full = document.getElementById(`fullText-${pid}`);
+        const btn = document.querySelector(`.read-more-btn[data-id="${pid}"]`);
+        if(full.style.display === 'none') { short.style.display = 'none'; full.style.display = 'block'; btn.innerHTML = '<i class="fas fa-compress-alt"></i> Show less'; }
+        else { short.style.display = '-webkit-box'; full.style.display = 'none'; btn.innerHTML = '<i class="fas fa-expand-alt"></i> Read methodology'; }
+    };
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
 
-        function openDetail(id) {
-            const p = projects.find(x => x.id === id);
-            if (!p) return;
-            const modal = document.getElementById('detailModal');
-            const body = document.getElementById('modalBody');
-            const actions = document.getElementById('modalActions');
-            body.innerHTML = `
-                <img src="${p.photoUrl}" alt="${p.title}">
-                <h2>${escapeHtml(p.title)}</h2>
-                <div class="meta">${p.subject} · ${p.year} · ${p.category} · by ${p.student?.studentName || 'Unknown'} (${p.student?.class || ''} ${p.student?.stream || ''})</div>
-                ${p.methodology ? `<section><h4>Methodology</h4><p>${escapeHtml(p.methodology)}</p></section>` : ''}
-                ${p.abstract ? `<section><h4>Abstract</h4><p>${escapeHtml(p.abstract)}</p></section>` : ''}
-                ${p.findings ? `<section><h4>Findings</h4><p>${escapeHtml(p.findings)}</p></section>` : ''}
-                ${p.conclusion ? `<section><h4>Conclusion</h4><p>${escapeHtml(p.conclusion)}</p></section>` : ''}
-                ${p.keywords?.length ? `<section><h4>Keywords</h4><p>${p.keywords.join(', ')}</p></section>` : ''}
-            `;
-            const ud = JSON.parse(localStorage.getItem('userData') || '{}');
-            const currentUserId = ud._id ? String(ud._id) : (ud.id || '');
-            const isOwner = p.student?.id === currentUserId;
-            actions.innerHTML = `
-                <button class="btn" onclick="toggleLike('${p.id}')"><i class="fas fa-heart ${p.likedByMe ? 'liked' : ''}"></i> ${p.likedByMe ? 'Unlike' : 'Like'} (${p.likesCount})</button>
-                <button class="btn btn-secondary" onclick="markHelpful('${p.id}', true)"><i class="fas fa-thumbs-up"></i> Helpful (${p.helpfulCount})</button>
-                <button class="btn btn-secondary" onclick="markHelpful('${p.id}', false)"><i class="fas fa-thumbs-down"></i> Not (${p.notHelpfulCount})</button>
-                ${p.student && !isOwner ? `<button class="btn" onclick="messageAboutProject('${p.id}','${(p.photoUrl||'').replace(/'/g,"%27")}','${escapeHtml(p.title).replace(/'/g,"%27")}','${p.student.id}','${escapeHtml(p.student.studentName||'').replace(/'/g,"%27")}','${(p.student.class||'').replace(/'/g,"%27")}','${(p.student.stream||'').replace(/'/g,"%27")}')"><i class="fas fa-envelope"></i> Message about project</button>` : ''}
-            `;
-            modal.classList.add('active');
-            window.currentDetailProject = p;
-        }
+    // Publish modal with image preview
+    const photoInput = document.getElementById('projectPhoto');
+    const imgPreview = document.getElementById('imagePreview');
+    const fileNameSpan = document.getElementById('fileNameDisplay');
+    photoInput.addEventListener('change', function() {
+        if(this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => { imgPreview.src = e.target.result; imgPreview.style.display = 'block'; };
+            reader.readAsDataURL(this.files[0]);
+            fileNameSpan.textContent = this.files[0].name;
+        } else { imgPreview.style.display = 'none'; fileNameSpan.textContent = ''; }
+    });
 
-        function closeModal() {
-            document.getElementById('detailModal').classList.remove('active');
-        }
+    document.getElementById('projectUploadForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const file = document.getElementById('projectPhoto').files[0];
+        const title = document.getElementById('projectTitle').value.trim();
+        const subjects = document.getElementById('projectSubjects').value.trim();
+        const year = document.getElementById('projectYear').value.trim();
+        const methodology = document.getElementById('projectMethodology').value.trim();
+        const precautions = document.getElementById('projectPrecautions').value.trim();
+        if(!file || !title || !subjects || !year || !methodology || !precautions) return alert("All fields required");
+        const reader = new FileReader();
+        reader.onload = ev => {
+            PROJECTS_DB.unshift({ id: 'proj_'+Date.now()+'_'+Math.floor(Math.random()*10000), title, year, subjects, photoUrl: ev.target.result, methodology, precautions, likes:0, likedBy:[], helpfulUp:0, helpfulDown:0, userHelpfulVote:null });
+            saveProjects(); renderAllProjects(); document.getElementById('uploadModal').classList.remove('active'); document.getElementById('projectUploadForm').reset(); imgPreview.style.display = 'none'; fileNameSpan.textContent = ''; alert("✅ Project published!");
+        };
+        reader.readAsDataURL(file);
+    });
 
-        async function toggleLike(id) {
-            try {
-                const r = await fetch(API_URL + '/api/uneb-projects/' + id + '/like', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } });
-                const data = await r.json();
-                if (r.ok) {
-                    const p = projects.find(x => x.id === id);
-                    if (p) { p.likedByMe = data.likedByMe; p.likesCount = data.likesCount; }
-                    if (window.currentDetailProject?.id === id) { window.currentDetailProject.likedByMe = data.likedByMe; window.currentDetailProject.likesCount = data.likesCount; openDetail(id); }
-                    renderGallery();
-                }
-            } catch (e) { console.error(e); }
-        }
+    document.getElementById('openPublishBtn').onclick = () => document.getElementById('uploadModal').classList.add('active');
+    document.getElementById('closeUploadModal').onclick = () => document.getElementById('uploadModal').classList.remove('active');
+    document.getElementById('applyFiltersBtn').onclick = () => renderAllProjects();
+    document.getElementById('searchFilter').addEventListener('keyup', e => { if(e.key === 'Enter') renderAllProjects(); });
+    window.onclick = e => { const modal = document.getElementById('uploadModal'); if(e.target === modal) modal.classList.remove('active'); };
 
-        async function markHelpful(id, helpful) {
-            try {
-                const r = await fetch(API_URL + '/api/uneb-projects/' + id + '/helpful', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ helpful })
-                });
-                const data = await r.json();
-                if (r.ok) {
-                    const p = projects.find(x => x.id === id);
-                    if (p) { p.myHelpfulVote = data.myHelpfulVote; p.helpfulCount = data.helpfulCount; p.notHelpfulCount = data.notHelpfulCount; }
-                    if (window.currentDetailProject?.id === id) openDetail(id);
-                    renderGallery();
-                }
-            } catch (e) { console.error(e); }
+    function createParticles() {
+        const container = document.getElementById('floatingParticles');
+        for(let i=0;i<55;i++) {
+            let p = document.createElement('div'); p.classList.add('particle');
+            p.style.left = Math.random()*100+'vw'; p.style.top = Math.random()*100+100+'vh';
+            let s = Math.random()*8+3; p.style.width=p.style.height=s+'px';
+            p.style.animationDuration = (Math.random()*14+8)+'s';
+            p.style.animationDelay = (Math.random()*8)+'s';
+            container.appendChild(p);
         }
-
-        function messageAboutProject(projectId, photoUrl, title, studentId, studentName, studentClass, studentStream) {
-            closeModal();
-            const params = new URLSearchParams({ contact: studentId, quoteProject: projectId });
-            params.set('photoUrl', photoUrl || '');
-            params.set('projectTitle', title || '');
-            params.set('studentName', studentName || '');
-            params.set('studentClass', studentClass || '');
-            params.set('studentStream', studentStream || '');
-            window.location.href = 'bytenexus-chat.html?' + params.toString();
-        }
-
-        document.getElementById('searchInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadProjects(); });
-        loadProjects();
-    </script>
+    }
+    loadProjectsFromLocal(); renderAllProjects(); createParticles();
+</script>
 </body>
 </html>

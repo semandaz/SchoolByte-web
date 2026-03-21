@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>SchoolByte · Elementium – Periodic Table Quiz</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-brand-primary: #1a2a6c;
+            --color-brand-secondary: #b21f1f;
+            --color-brand-gold: #ffd700;
+            --color-brand-orange: #ffa500;
+            --color-neutral-white: #ffffff;
+            --color-neutral-lightest: #f0f4f8;
+            --color-neutral-light: #e2e8f0;
+            --color-neutral-medium: #64748b;
+            --color-neutral-dark: #1e293b;
+            --color-success-green: #2ecc71;
+            --color-error-red: #e74c3c;
+            --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            --gradient-background-secondary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
+            --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
+            --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--gradient-background-secondary);
+            min-height: 100vh;
+            color: var(--color-neutral-dark);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--color-brand-gold);
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: float-up linear infinite;
+            filter: drop-shadow(0 0 4px #ffd700);
+        }
+
+        @keyframes float-up {
+            to {
+                transform: translateY(-100vh);
+            }
+        }
+
+        header {
+            background-color: var(--color-neutral-white);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 900;
+            background: var(--gradient-background-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+        }
+
+        .logo span {
+            font-size: 0.9rem;
+            font-weight: 500;
+            background: none;
+            color: var(--color-brand-secondary);
+            margin-left: 6px;
+        }
+
+        .dashboard-link {
+            background: rgba(26, 42, 108, 0.08);
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            color: var(--color-brand-primary);
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .dashboard-link:hover {
+            background: var(--color-brand-primary);
+            color: white;
+        }
+
+        .game-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            position: relative;
+            z-index: 5;
+        }
+
+        .game-card {
+            background: var(--color-neutral-white);
+            border-radius: 32px;
+            box-shadow: var(--shadow-card);
+            padding: 2rem;
+            transition: transform 0.2s;
+        }
+
+        .score-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--color-neutral-light);
+        }
+
+        .score-box {
+            background: var(--color-neutral-lightest);
+            padding: 0.5rem 1.2rem;
+            border-radius: 60px;
+            font-weight: 800;
+            color: var(--color-brand-primary);
+        }
+
+        .streak-box {
+            background: var(--gradient-button-active);
+            padding: 0.5rem 1.2rem;
+            border-radius: 60px;
+            font-weight: 800;
+            color: var(--color-neutral-darkest);
+        }
+
+        .question-area {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .question-prompt {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--color-brand-secondary);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .question-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        .hint-text {
+            font-size: 0.85rem;
+            color: var(--color-neutral-medium);
+            margin-top: 0.5rem;
+        }
+
+        .answer-input {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+            border: 2px solid var(--color-neutral-light);
+            border-radius: 60px;
+            font-family: 'Inter', sans-serif;
+            text-align: center;
+            transition: 0.2s;
+            margin-bottom: 1rem;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: var(--color-brand-gold);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 60px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient-button-active);
+            color: var(--color-neutral-darkest);
+        }
+
+        .btn-primary:hover {
+            background: var(--gradient-button-active-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--color-neutral-lightest);
+            color: var(--color-neutral-dark);
+        }
+
+        .btn-secondary:hover {
+            background: var(--color-neutral-light);
+        }
+
+        .feedback {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 60px;
+            text-align: center;
+            font-weight: 600;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        .feedback.correct {
+            background: rgba(46, 204, 113, 0.15);
+            color: #2c6e2c;
+            border-left: 4px solid var(--color-success-green);
+        }
+
+        .feedback.incorrect {
+            background: rgba(231, 76, 60, 0.15);
+            color: #c0392b;
+            border-left: 4px solid var(--color-error-red);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .shake {
+            animation: shake 0.3s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .next-btn {
+            margin-top: 1rem;
+            width: 100%;
+            justify-content: center;
+        }
+
+        @media (max-width: 600px) {
+            .game-card { padding: 1.5rem; }
+            .question-value { font-size: 1.8rem; }
+            .btn { padding: 0.6rem 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="floating-particles" id="floatingParticles"></div>
+
+<header>
+    <div class="header-container">
+        <a href="#" class="logo">SchoolByte <span>· Elementium</span></a>
+        <a href="studentdashboard.html" class="dashboard-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    </div>
+</header>
+
+<div class="game-container">
+    <div class="game-card">
+        <div class="score-header">
+            <div class="score-box"><i class="fas fa-star"></i> Score: <span id="scoreValue">0</span></div>
+            <div class="streak-box"><i class="fas fa-fire"></i> Streak: <span id="streakValue">0</span></div>
+        </div>
+
+        <div class="question-area">
+            <div class="question-prompt" id="questionPrompt"></div>
+            <div class="question-value" id="questionValue"></div>
+            <div class="hint-text" id="hintText"></div>
+        </div>
+
+        <input type="text" id="answerInput" class="answer-input" placeholder="Type your answer..." autocomplete="off">
+
+        <div class="button-group">
+            <button id="submitBtn" class="btn btn-primary"><i class="fas fa-check-circle"></i> Submit</button>
+            <button id="skipBtn" class="btn btn-secondary"><i class="fas fa-forward"></i> Skip</button>
+            <button id="hintBtn" class="btn btn-secondary"><i class="fas fa-lightbulb"></i> Hint</button>
+        </div>
+
+        <div id="feedback" class="feedback" style="display: none;"></div>
+
+        <button id="nextBtn" class="btn btn-primary next-btn" style="display: none;"><i class="fas fa-arrow-right"></i> Next Question</button>
+    </div>
+</div>
+
+<script>
+    // Periodic table data for first 36 elements (common)
+    const elementsData = [
+        { atomic: 1, symbol: "H", name: "Hydrogen", mass: 1.008 },
+        { atomic: 2, symbol: "He", name: "Helium", mass: 4.0026 },
+        { atomic: 3, symbol: "Li", name: "Lithium", mass: 6.94 },
+        { atomic: 4, symbol: "Be", name: "Beryllium", mass: 9.0122 },
+        { atomic: 5, symbol: "B", name: "Boron", mass: 10.81 },
+        { atomic: 6, symbol: "C", name: "Carbon", mass: 12.011 },
+        { atomic: 7, symbol: "N", name: "Nitrogen", mass: 14.007 },
+        { atomic: 8, symbol: "O", name: "Oxygen", mass: 15.999 },
+        { atomic: 9, symbol: "F", name: "Fluorine", mass: 18.998 },
+        { atomic: 10, symbol: "Ne", name: "Neon", mass: 20.18 },
+        { atomic: 11, symbol: "Na", name: "Sodium", mass: 22.99 },
+        { atomic: 12, symbol: "Mg", name: "Magnesium", mass: 24.305 },
+        { atomic: 13, symbol: "Al", name: "Aluminium", mass: 26.982 },
+        { atomic: 14, symbol: "Si", name: "Silicon", mass: 28.086 },
+        { atomic: 15, symbol: "P", name: "Phosphorus", mass: 30.974 },
+        { atomic: 16, symbol: "S", name: "Sulfur", mass: 32.06 },
+        { atomic: 17, symbol: "Cl", name: "Chlorine", mass: 35.45 },
+        { atomic: 18, symbol: "Ar", name: "Argon", mass: 39.95 },
+        { atomic: 19, symbol: "K", name: "Potassium", mass: 39.098 },
+        { atomic: 20, symbol: "Ca", name: "Calcium", mass: 40.078 },
+        { atomic: 21, symbol: "Sc", name: "Scandium", mass: 44.956 },
+        { atomic: 22, symbol: "Ti", name: "Titanium", mass: 47.867 },
+        { atomic: 23, symbol: "V", name: "Vanadium", mass: 50.942 },
+        { atomic: 24, symbol: "Cr", name: "Chromium", mass: 51.996 },
+        { atomic: 25, symbol: "Mn", name: "Manganese", mass: 54.938 },
+        { atomic: 26, symbol: "Fe", name: "Iron", mass: 55.845 },
+        { atomic: 27, symbol: "Co", name: "Cobalt", mass: 58.933 },
+        { atomic: 28, symbol: "Ni", name: "Nickel", mass: 58.693 },
+        { atomic: 29, symbol: "Cu", name: "Copper", mass: 63.546 },
+        { atomic: 30, symbol: "Zn", name: "Zinc", mass: 65.38 },
+        { atomic: 31, symbol: "Ga", name: "Gallium", mass: 69.723 },
+        { atomic: 32, symbol: "Ge", name: "Germanium", mass: 72.63 },
+        { atomic: 33, symbol: "As", name: "Arsenic", mass: 74.922 },
+        { atomic: 34, symbol: "Se", name: "Selenium", mass: 78.96 },
+        { atomic: 35, symbol: "Br", name: "Bromine", mass: 79.904 },
+        { atomic: 36, symbol: "Kr", name: "Krypton", mass: 83.798 }
+    ];
+
+    // Question types
+    const questionTypes = [
+        { type: "atomic", prompt: "What is the element with atomic number?", getValue: (el) => el.atomic, correctField: "name", answerNormalizer: (ans) => ans.trim().toLowerCase(), check: (ans, el) => ans.toLowerCase() === el.name.toLowerCase() },
+        { type: "symbol", prompt: "What is the chemical symbol of", getValue: (el) => el.name, correctField: "symbol", answerNormalizer: (ans) => ans.trim(), check: (ans, el) => ans.toLowerCase() === el.symbol.toLowerCase() },
+        { type: "nameFromSymbol", prompt: "What is the full name of element with symbol", getValue: (el) => el.symbol, correctField: "name", answerNormalizer: (ans) => ans.trim().toLowerCase(), check: (ans, el) => ans.toLowerCase() === el.name.toLowerCase() },
+        { type: "mass", prompt: "Which element has approximate atomic mass", getValue: (el) => Math.round(el.mass), correctField: "name", answerNormalizer: (ans) => ans.trim().toLowerCase(), check: (ans, el) => ans.toLowerCase() === el.name.toLowerCase() }
+    ];
+
+    let currentElement = null;
+    let currentQuestionType = null;
+    let currentQuestionValue = null;
+    let score = 0;
+    let streak = 0;
+    let waitingForNext = false;
+    let hintUsed = false;
+
+    const scoreEl = document.getElementById('scoreValue');
+    const streakEl = document.getElementById('streakValue');
+    const questionPrompt = document.getElementById('questionPrompt');
+    const questionValue = document.getElementById('questionValue');
+    const hintText = document.getElementById('hintText');
+    const answerInput = document.getElementById('answerInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const skipBtn = document.getElementById('skipBtn');
+    const hintBtn = document.getElementById('hintBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const feedbackDiv = document.getElementById('feedback');
+
+    function getRandomElement() {
+        const randomIndex = Math.floor(Math.random() * elementsData.length);
+        return { ...elementsData[randomIndex] };
+    }
+
+    function getRandomQuestionType() {
+        return questionTypes[Math.floor(Math.random() * questionTypes.length)];
+    }
+
+    function generateQuestion() {
+        currentElement = getRandomElement();
+        currentQuestionType = getRandomQuestionType();
+        currentQuestionValue = currentQuestionType.getValue(currentElement);
+
+        let promptText = "";
+        if (currentQuestionType.type === "atomic") promptText = `${currentQuestionType.prompt} ${currentQuestionValue}?`;
+        else if (currentQuestionType.type === "symbol") promptText = `${currentQuestionType.prompt} ${currentQuestionValue}?`;
+        else if (currentQuestionType.type === "nameFromSymbol") promptText = `${currentQuestionType.prompt} ${currentQuestionValue}?`;
+        else if (currentQuestionType.type === "mass") promptText = `${currentQuestionType.prompt} ${currentQuestionValue}?`;
+
+        questionPrompt.textContent = promptText;
+        if (currentQuestionType.type === "atomic") questionValue.textContent = `⚛️ ${currentQuestionValue}`;
+        else if (currentQuestionType.type === "symbol") questionValue.textContent = `🧪 ${currentQuestionValue}`;
+        else if (currentQuestionType.type === "nameFromSymbol") questionValue.textContent = `🔖 ${currentQuestionValue}`;
+        else if (currentQuestionType.type === "mass") questionValue.textContent = `⚖️ ${currentQuestionValue} u`;
+
+        hintText.textContent = "";
+        hintUsed = false;
+        feedbackDiv.style.display = "none";
+        feedbackDiv.innerHTML = "";
+        answerInput.value = "";
+        answerInput.disabled = false;
+        submitBtn.disabled = false;
+        skipBtn.disabled = false;
+        hintBtn.disabled = false;
+        nextBtn.style.display = "none";
+        waitingForNext = false;
+        answerInput.focus();
+    }
+
+    function updateScoreUI() {
+        scoreEl.textContent = score;
+        streakEl.textContent = streak;
+    }
+
+    function showFeedback(isCorrect, message, correctAnswer = null) {
+        feedbackDiv.style.display = "block";
+        feedbackDiv.innerHTML = message;
+        feedbackDiv.className = `feedback ${isCorrect ? 'correct' : 'incorrect'}`;
+
+        if (!isCorrect && correctAnswer) {
+            const extraMsg = document.createElement('div');
+            extraMsg.style.marginTop = "8px";
+            extraMsg.style.fontSize = "0.85rem";
+            extraMsg.innerHTML = `<i class="fas fa-info-circle"></i> Correct answer: <strong>${correctAnswer}</strong>`;
+            feedbackDiv.appendChild(extraMsg);
+        }
+
+        // Shake on incorrect
+        if (!isCorrect) {
+            const card = document.querySelector('.game-card');
+            card.classList.add('shake');
+            setTimeout(() => card.classList.remove('shake'), 300);
+        } else {
+            // Simple bounce effect on correct
+            const card = document.querySelector('.game-card');
+            card.style.transform = "scale(1.02)";
+            setTimeout(() => card.style.transform = "", 150);
+        }
+    }
+
+    function handleSubmit() {
+        if (waitingForNext) return;
+
+        const userAnswer = answerInput.value.trim();
+        if (userAnswer === "") {
+            showFeedback(false, "⚠️ Please enter an answer.");
+            return;
+        }
+
+        const normalizedUser = currentQuestionType.answerNormalizer(userAnswer);
+        const isCorrect = currentQuestionType.check(userAnswer, currentElement);
+
+        if (isCorrect) {
+            // Correct: increase score and streak
+            const pointsEarned = 10 + (hintUsed ? 0 : 5); // bonus if no hint
+            score += pointsEarned;
+            streak++;
+            updateScoreUI();
+            let message = `✅ Correct! +${pointsEarned} points.`;
+            if (hintUsed) message = `✅ Correct! +${pointsEarned} points (hint used, no bonus).`;
+            showFeedback(true, message);
+            answerInput.disabled = true;
+            submitBtn.disabled = true;
+            skipBtn.disabled = true;
+            hintBtn.disabled = true;
+            nextBtn.style.display = "flex";
+            waitingForNext = true;
+        } else {
+            // Incorrect: reset streak, no points
+            streak = 0;
+            updateScoreUI();
+            const correctAnswer = currentQuestionType.correctField === "name" ? currentElement.name : currentElement.symbol;
+            showFeedback(false, `❌ Incorrect. Streak reset.`, correctAnswer);
+            answerInput.classList.add('shake');
+            setTimeout(() => answerInput.classList.remove('shake'), 300);
+            answerInput.value = "";
+            answerInput.focus();
+        }
+    }
+
+    function handleSkip() {
+        if (waitingForNext) return;
+        streak = 0;
+        updateScoreUI();
+        const correctAnswer = currentQuestionType.correctField === "name" ? currentElement.name : currentElement.symbol;
+        showFeedback(false, `⏭️ Skipped! No points. Streak reset.`, correctAnswer);
+        answerInput.disabled = true;
+        submitBtn.disabled = true;
+        skipBtn.disabled = true;
+        hintBtn.disabled = true;
+        nextBtn.style.display = "flex";
+        waitingForNext = true;
+    }
+
+    function handleHint() {
+        if (waitingForNext || hintUsed) return;
+        hintUsed = true;
+        let hintMsg = "";
+        if (currentQuestionType.type === "atomic") {
+            hintMsg = `💡 Hint: The element with atomic number ${currentElement.atomic} has symbol ${currentElement.symbol}.`;
+        } else if (currentQuestionType.type === "symbol") {
+            hintMsg = `💡 Hint: The element ${currentElement.name} has atomic number ${currentElement.atomic}.`;
+        } else if (currentQuestionType.type === "nameFromSymbol") {
+            hintMsg = `💡 Hint: The symbol ${currentElement.symbol} stands for ${currentElement.name}.`;
+        } else if (currentQuestionType.type === "mass") {
+            hintMsg = `💡 Hint: The element with mass ~${Math.round(currentElement.mass)} u is ${currentElement.name} (${currentElement.symbol}).`;
+        }
+        hintText.textContent = hintMsg;
+        hintBtn.disabled = true;
+    }
+
+    function nextQuestion() {
+        generateQuestion();
+    }
+
+    // Event listeners
+    submitBtn.addEventListener('click', handleSubmit);
+    skipBtn.addEventListener('click', handleSkip);
+    hintBtn.addEventListener('click', handleHint);
+    nextBtn.addEventListener('click', () => {
+        nextQuestion();
+    });
+    answerInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !waitingForNext) {
+            handleSubmit();
+        }
+    });
+
+    // Initial game start
+    generateQuestion();
+
+    // Floating particles
+    function createParticles() {
+        const container = document.getElementById('floatingParticles');
+        for (let i = 0; i < 55; i++) {
+            const p = document.createElement('div');
+            p.classList.add('particle');
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.top = Math.random() * 100 + 100 + 'vh';
+            const size = Math.random() * 8 + 3;
+            p.style.width = p.style.height = size + 'px';
+            p.style.animationDuration = (Math.random() * 14 + 8) + 's';
+            p.style.animationDelay = (Math.random() * 8) + 's';
+            container.appendChild(p);
+        }
+    }
+    createParticles();
+</script>
+</body>
+</html>
