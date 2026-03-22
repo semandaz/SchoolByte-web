@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolByte Admin · UNEB Project Gallery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --accent: #2980b9;
+            --bg-dark: #1a2530;
+            --bg-card: rgba(30,40,56,0.92);
+            --text: #ecf0f1;
+            --text-muted: #95a5a6;
+            --border: rgba(127,140,163,0.3);
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
+        body { background:linear-gradient(135deg,#2c3e50,#1a2530); color:var(--text); min-height:100vh; display:flex; flex-direction:column; }
+        header {
+            background:rgba(30,40,56,0.95);
+            padding:1rem 2rem;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            border-bottom:1px solid var(--border);
+            position:sticky; top:0; z-index:100;
+            backdrop-filter:blur(12px);
+        }
+        .header-left { display:flex; align-items:center; gap:1rem; }
+        .logo { font-size:1.4rem; font-weight:800; color:var(--primary); }
+        .page-title { font-size:1rem; font-weight:600; color:var(--text-muted); }
+        .back-btn {
+            background:rgba(52,152,219,0.15);
+            color:var(--primary);
+            border:1px solid rgba(52,152,219,0.3);
+            padding:0.5rem 1.2rem;
+            border-radius:50px;
+            text-decoration:none;
+            font-weight:600;
+            font-size:0.85rem;
+            transition:0.2s;
+            display:flex; align-items:center; gap:6px;
+        }
+        .back-btn:hover { background:var(--primary); color:white; }
+        .main { max-width:1400px; margin:0 auto; padding:2rem 1.5rem; width:100%; }
+        .stats-bar {
+            display:flex; gap:1rem; margin-bottom:2rem; flex-wrap:wrap;
+        }
+        .stat-card {
+            background:var(--bg-card);
+            border:1px solid var(--border);
+            border-radius:16px;
+            padding:1rem 1.5rem;
+            display:flex; align-items:center; gap:12px;
+            flex:1; min-width:140px;
+        }
+        .stat-icon { font-size:1.8rem; }
+        .stat-info .stat-val { font-size:1.5rem; font-weight:800; color:var(--primary); }
+        .stat-info .stat-lbl { font-size:0.75rem; color:var(--text-muted); }
+
+        .filter-bar {
+            background:var(--bg-card);
+            border:1px solid var(--border);
+            border-radius:16px;
+            padding:1rem 1.5rem;
+            display:flex; gap:1rem; flex-wrap:wrap; align-items:center;
+            margin-bottom:2rem;
+        }
+        .filter-bar input, .filter-bar select {
+            background:rgba(255,255,255,0.07);
+            border:1px solid var(--border);
+            color:var(--text);
+            padding:0.6rem 1rem;
+            border-radius:50px;
+            font-size:0.85rem;
+            outline:none;
+            transition:0.2s;
+        }
+        .filter-bar input:focus, .filter-bar select:focus { border-color:var(--primary); }
+        .filter-bar select option { background:#2c3e50; }
+        .filter-btn {
+            background:var(--primary);
+            border:none; color:white;
+            padding:0.6rem 1.5rem;
+            border-radius:50px; font-weight:600;
+            cursor:pointer; transition:0.2s;
+            display:flex; align-items:center; gap:6px;
+        }
+        .filter-btn:hover { background:var(--accent); transform:translateY(-1px); }
+
+        .sort-notice {
+            font-size:0.8rem;
+            color:var(--text-muted);
+            background:rgba(231,76,60,0.1);
+            border:1px solid rgba(231,76,60,0.2);
+            border-radius:50px;
+            padding:0.4rem 1rem;
+            display:flex; align-items:center; gap:6px;
+        }
+
+        .projects-table-wrap { overflow-x:auto; }
+        table {
+            width:100%;
+            border-collapse:collapse;
+            background:var(--bg-card);
+            border-radius:16px;
+            overflow:hidden;
+            border:1px solid var(--border);
+        }
+        thead tr { background:rgba(52,152,219,0.15); }
+        thead th {
+            padding:1rem 1.2rem;
+            text-align:left;
+            font-size:0.78rem;
+            font-weight:700;
+            text-transform:uppercase;
+            letter-spacing:0.05em;
+            color:var(--text-muted);
+            border-bottom:1px solid var(--border);
+        }
+        tbody tr {
+            border-bottom:1px solid var(--border);
+            transition:background 0.15s;
+        }
+        tbody tr:hover { background:rgba(52,152,219,0.06); }
+        tbody tr:last-child { border-bottom:none; }
+        td { padding:1rem 1.2rem; font-size:0.875rem; vertical-align:middle; }
+        .project-thumb {
+            width:56px; height:42px;
+            border-radius:8px;
+            object-fit:cover;
+            background:#2c3e50;
+        }
+        .project-info { max-width:260px; }
+        .project-title-cell { font-weight:700; color:var(--text); margin-bottom:2px; }
+        .project-meta { font-size:0.75rem; color:var(--text-muted); }
+        .badge {
+            display:inline-flex; align-items:center; gap:4px;
+            padding:3px 10px; border-radius:50px;
+            font-size:0.72rem; font-weight:700;
+        }
+        .badge-red { background:rgba(231,76,60,0.2); color:#e74c3c; border:1px solid rgba(231,76,60,0.3); }
+        .badge-green { background:rgba(46,204,113,0.2); color:#2ecc71; border:1px solid rgba(46,204,113,0.3); }
+        .badge-blue { background:rgba(52,152,219,0.2); color:#3498db; border:1px solid rgba(52,152,219,0.3); }
+        .delete-btn {
+            background:rgba(231,76,60,0.15);
+            border:1px solid rgba(231,76,60,0.3);
+            color:var(--danger);
+            padding:0.4rem 0.9rem;
+            border-radius:50px;
+            cursor:pointer;
+            font-size:0.8rem;
+            font-weight:600;
+            transition:0.2s;
+            display:flex; align-items:center; gap:5px;
+        }
+        .delete-btn:hover { background:var(--danger); color:white; }
+        .loading { text-align:center; padding:3rem; color:var(--text-muted); }
+        .empty-state { text-align:center; padding:4rem; color:var(--text-muted); }
+        .empty-state i { font-size:3rem; margin-bottom:1rem; display:block; }
+
+        .modal-overlay {
+            display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,0.8);
+            backdrop-filter:blur(8px);
+            z-index:1000; align-items:center; justify-content:center;
+        }
+        .modal-overlay.active { display:flex; }
+        .modal-card {
+            background:#1e2838;
+            border:1px solid var(--border);
+            border-radius:24px;
+            padding:2rem;
+            max-width:540px; width:90%;
+            box-shadow:0 30px 60px rgba(0,0,0,0.5);
+            border-top:4px solid var(--danger);
+        }
+        .modal-card h3 { font-size:1.3rem; margin-bottom:1rem; color:var(--danger); }
+        .modal-card p { color:var(--text-muted); margin-bottom:1.5rem; font-size:0.9rem; line-height:1.5; }
+        .modal-actions { display:flex; gap:1rem; justify-content:flex-end; }
+        .btn-cancel {
+            background:transparent; border:1px solid var(--border);
+            color:var(--text); padding:0.7rem 1.5rem; border-radius:50px;
+            cursor:pointer; font-weight:600; transition:0.2s;
+        }
+        .btn-cancel:hover { background:rgba(255,255,255,0.08); }
+        .btn-confirm-delete {
+            background:var(--danger); border:none; color:white;
+            padding:0.7rem 1.5rem; border-radius:50px;
+            cursor:pointer; font-weight:700; transition:0.2s;
+            display:flex; align-items:center; gap:6px;
+        }
+        .btn-confirm-delete:hover { background:#c0392b; }
+    </style>
+</head>
+<body>
+<header>
+    <div class="header-left">
+        <div class="logo">SchoolByte</div>
+        <div class="page-title"><i class="fas fa-images"></i> UNEB Project Gallery · Admin</div>
+    </div>
+    <a href="admin.html" class="back-btn"><i class="fas fa-arrow-left"></i> Admin Portal</a>
+</header>
+
+<div class="main">
+    <div class="stats-bar" id="statsBar">
+        <div class="stat-card"><span class="stat-icon">📁</span><div class="stat-info"><div class="stat-val" id="totalCount">—</div><div class="stat-lbl">Total Projects</div></div></div>
+        <div class="stat-card"><span class="stat-icon">👍</span><div class="stat-info"><div class="stat-val" id="totalLikes">—</div><div class="stat-lbl">Total Likes</div></div></div>
+        <div class="stat-card"><span class="stat-icon">❌</span><div class="stat-info"><div class="stat-val" id="totalUnhelpful">—</div><div class="stat-lbl">Flagged Projects</div></div></div>
+    </div>
+
+    <div class="filter-bar">
+        <input type="text" id="searchInput" placeholder="🔍 Search by title, subject...">
+        <select id="sortSelect">
+            <option value="unhelpful">Sort: Most Unhelpful ↓</option>
+            <option value="likes">Sort: Most Liked ↓</option>
+            <option value="recent">Sort: Most Recent ↓</option>
+        </select>
+        <button class="filter-btn" id="applyFilterBtn"><i class="fas fa-filter"></i> Filter</button>
+        <div class="sort-notice"><i class="fas fa-exclamation-triangle"></i> Sorted by most "Not Helpful" votes by default</div>
+    </div>
+
+    <div class="projects-table-wrap">
+        <table id="projectsTable">
+            <thead>
+                <tr>
+                    <th style="width:70px;">Photo</th>
+                    <th>Project</th>
+                    <th>Student</th>
+                    <th>Subject / Year</th>
+                    <th>Reactions</th>
+                    <th style="width:120px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="6" class="loading"><i class="fas fa-spinner fa-pulse"></i> Loading projects...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div id="deleteModal" class="modal-overlay">
+    <div class="modal-card">
+        <h3><i class="fas fa-trash-alt"></i> Delete Project</h3>
+        <p id="deleteModalDesc">Are you sure you want to permanently remove this project from the gallery? This cannot be undone.</p>
+        <div class="modal-actions">
+            <button class="btn-cancel" id="cancelDeleteBtn">Cancel</button>
+            <button class="btn-confirm-delete" id="confirmDeleteBtn"><i class="fas fa-trash"></i> Delete</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ADMIN_TOKEN = localStorage.getItem('adminToken');
+    let allProjects = [];
+    let deleteTargetId = null;
+
+    if (!ADMIN_TOKEN) { window.location.href = 'adminlogin.html'; }
+
+    async function loadProjects() {
+        try {
+            const r = await fetch('/admin/uneb-projects', { headers: { 'Authorization': 'Bearer ' + ADMIN_TOKEN } });
+            if (r.status === 401 || r.status === 403) { window.location.href = 'adminlogin.html'; return; }
+            if (!r.ok) throw new Error('Failed to fetch projects');
+            const data = await r.json();
+            allProjects = data.projects || [];
+            updateStats();
+            renderTable(allProjects);
+        } catch (err) {
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-exclamation-triangle"></i>' + err.message + '</td></tr>';
+        }
+    }
+
+    function updateStats() {
+        document.getElementById('totalCount').textContent = allProjects.length;
+        document.getElementById('totalLikes').textContent = allProjects.reduce((s, p) => s + (p.likesCount || 0), 0);
+        document.getElementById('totalUnhelpful').textContent = allProjects.filter(p => (p.notHelpfulCount || 0) > 0).length;
+    }
+
+    function renderTable(projects) {
+        const tbody = document.getElementById('tableBody');
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const sortVal = document.getElementById('sortSelect').value;
+        let list = projects.filter(p =>
+            !search || (p.title||'').toLowerCase().includes(search) || (p.subject||'').toLowerCase().includes(search) || (p.studentName||'').toLowerCase().includes(search)
+        );
+        if (sortVal === 'unhelpful') list.sort((a, b) => (b.notHelpfulCount||0) - (a.notHelpfulCount||0));
+        else if (sortVal === 'likes') list.sort((a, b) => (b.likesCount||0) - (a.likesCount||0));
+        else list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        if (list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-images"></i>No projects found.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = list.map(p => {
+            const flagged = (p.notHelpfulCount || 0) > 2;
+            return '<tr>' +
+                '<td><img class="project-thumb" src="' + (p.photoUrl || 'https://picsum.photos/id/1/100/70') + '" alt="" onerror="this.src=\'https://picsum.photos/id/1/100/70\'"></td>' +
+                '<td><div class="project-info"><div class="project-title-cell">' + esc(p.title) + '</div><div class="project-meta">' + esc(p.category || '') + '</div></div></td>' +
+                '<td><div style="font-weight:600;">' + esc(p.studentName || 'Unknown') + '</div><div style="font-size:0.75rem;color:var(--text-muted);">' + esc(p.studentClass || '') + '</div></td>' +
+                '<td><span class="badge badge-blue">' + esc(p.subject || '') + '</span><br><span style="font-size:0.8rem;color:var(--text-muted);margin-top:4px;display:inline-block;">' + esc(p.year || '') + '</span></td>' +
+                '<td>' +
+                    '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+                    '<span class="badge badge-green"><i class="fas fa-heart"></i> ' + (p.likesCount||0) + '</span>' +
+                    '<span class="badge badge-green"><i class="fas fa-thumbs-up"></i> ' + (p.helpfulCount||0) + '</span>' +
+                    '<span class="badge ' + (flagged ? 'badge-red' : '') + '" style="' + (!flagged ? 'background:rgba(127,140,163,0.1);color:#7f8c8d;' : '') + '"><i class="fas fa-thumbs-down"></i> ' + (p.notHelpfulCount||0) + '</span>' +
+                    '</div>' +
+                '</td>' +
+                '<td><button class="delete-btn" onclick="openDeleteModal(\'' + p._id + '\',\'' + esc(p.title).replace(/'/g,"\\'")+'\')"><i class="fas fa-trash"></i> Delete</button></td>' +
+            '</tr>';
+        }).join('');
+    }
+
+    function esc(str) { return (str||'').replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
+
+    function openDeleteModal(id, title) {
+        deleteTargetId = id;
+        document.getElementById('deleteModalDesc').textContent = 'Delete "' + title + '"? This action cannot be undone.';
+        document.getElementById('deleteModal').classList.add('active');
+    }
+
+    document.getElementById('cancelDeleteBtn').onclick = () => {
+        document.getElementById('deleteModal').classList.remove('active');
+        deleteTargetId = null;
+    };
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+        if (!deleteTargetId) return;
+        const btn = document.getElementById('confirmDeleteBtn');
+        btn.disabled = true; btn.textContent = 'Deleting...';
+        try {
+            const r = await fetch('/admin/uneb-projects/' + deleteTargetId, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + ADMIN_TOKEN }
+            });
+            if (!r.ok) { const d = await r.json(); throw new Error(d.error || 'Delete failed'); }
+            allProjects = allProjects.filter(p => p._id !== deleteTargetId);
+            updateStats();
+            renderTable(allProjects);
+            document.getElementById('deleteModal').classList.remove('active');
+            deleteTargetId = null;
+        } catch (err) {
+            alert('Error: ' + err.message);
+        } finally {
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+        }
+    });
+
+    document.getElementById('applyFilterBtn').onclick = () => renderTable(allProjects);
+    document.getElementById('searchInput').addEventListener('keyup', e => { if (e.key === 'Enter') renderTable(allProjects); });
+    document.getElementById('sortSelect').onchange = () => renderTable(allProjects);
+
+    loadProjects();
+</script>
+</body>
+</html>

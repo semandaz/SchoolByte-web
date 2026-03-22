@@ -16,7 +16,7 @@ const morgan = require('morgan');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 // Removed Gemini AI - now using TinyLlama via Ollama for all AI features
-const { Ollama } = require('ollama');
+const Groq = require('groq-sdk');
 const crypto = require('crypto');
 const http = require('http');
 const { getDivision, getFixture, getQuizSerialNumber, getThreeQuartersCycle, CYCLE_SIZES, SLOT_CATEGORY, CLASS_ORDER } = require('./config/fatsAndBeef');
@@ -928,19 +928,20 @@ const authenticateAdminToken = (req, res, next) => {
 
 // --- AI Service Configuration ---
 // Using TinyLlama via Ollama for all AI features
-const OLLAMA_MODEL = "tinyllama";
-const OLLAMA_HOST = process.env.OLLAMA_HOST || "http://localhost:11434";
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || '' });
 
-// Initialize Ollama client
-const ollama = new Ollama({ host: OLLAMA_HOST });
-
-// Test Ollama connection on startup
+// Test Groq connection on startup
 (async () => {
+    if (!process.env.GROQ_API_KEY) {
+        console.warn('\u26a0 GROQ_API_KEY not set. AI features will not work. Set GROQ_API_KEY in your environment.');
+        return;
+    }
     try {
-        await ollama.list();
-        console.log(`✓ Ollama service connected successfully at ${OLLAMA_HOST}`);
+        await groq.chat.completions.create({ model: GROQ_MODEL, messages: [{ role: 'user', content: 'hi' }], max_tokens: 1 });
+        console.log('\u2713 Groq AI service connected successfully.');
     } catch (error) {
-        console.warn(`⚠ Ollama service not available at ${OLLAMA_HOST}. AI features may not work:`, error.message);
+        console.warn('\u26a0 Groq AI service not available:', error.message);
     }
 })();
 
@@ -964,133 +965,83 @@ function extractJSON(text) {
     }
 }
 
-// Ollama service wrapper for AI interactions with retry and error handling
-async function callOllamaAI(prompt, systemPrompt = "", options = {}) {
-    // Extract wrapper-specific options (not passed to Ollama)
-    const maxRetries = options.retries || 2;
-    const timeout = options.timeout || 60000; // 60 seconds default
-    const maxTokens = options.maxTokens || options.num_predict || 1024;
-    
-    // Build valid Ollama options (only pass supported parameters)
-    const ollamaOptions = {
-        temperature: options.temperature !== undefined ? options.temperature : 0.7,
-        num_predict: maxTokens
-    };
-    
-    // Optionally include other valid Ollama options if provided
-    if (options.top_p !== undefined) ollamaOptions.top_p = options.top_p;
-    if (options.top_k !== undefined) ollamaOptions.top_k = options.top_k;
-    if (options.seed !== undefined) ollamaOptions.seed = options.seed;
-    if (options.stop !== undefined) ollamaOptions.stop = options.stop;
-    
+// Groq AI wrapper -- fast LLM inference
+async function callGroqAI(userPrompt, systemPrompt, options) {
+    systemPrompt = systemPrompt || '';
+    options = options || {};
+    if (!process.env.GROQ_API_KEY) throw new Error('GROQ_API_KEY not configured.');
+    const maxRetries = options.retries !== undefined ? options.retries : 1;
+    const maxTokens = options.max_tokens || options.num_predict || 350;
+    const temperature = options.temperature !== undefined ? options.temperature : 0.7;
+    const messages = [];
+    if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+    messages.push({ role: 'user', content: userPrompt });
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
-            const messages = [];
-            
-            if (systemPrompt) {
-                messages.push({ role: 'system', content: systemPrompt });
-            }
-            
-            messages.push({ role: 'user', content: prompt });
-
-            const responsePromise = ollama.chat({
-                model: OLLAMA_MODEL,
-                messages: messages,
-                stream: false,
-                options: ollamaOptions
+            const response = await groq.chat.completions.create({
+                model: GROQ_MODEL,
+                messages,
+                temperature,
+                max_tokens: maxTokens
             });
-
-            // Add timeout
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('AI request timeout')), timeout)
-            );
-
-            const response = await Promise.race([responsePromise, timeoutPromise]);
-
-            // Validate response structure
-            if (!response || !response.message || typeof response.message.content !== 'string') {
-                throw new Error('Invalid response structure from Ollama');
-            }
-
-            return response.message.content;
+            return response.choices[0] && response.choices[0].message && response.choices[0].message.content || '';
         } catch (error) {
-            const isLastAttempt = attempt === maxRetries;
-            console.error(`Ollama AI Error (attempt ${attempt + 1}/${maxRetries + 1}):`, error.message);
-            
-            if (isLastAttempt) {
-                throw new Error(`AI service error after ${maxRetries + 1} attempts: ${error.message}`);
-            }
-            
-            // Wait before retry (exponential backoff)
-            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+            if (attempt === maxRetries) throw new Error('Groq AI error: ' + error.message);
+            await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 500));
         }
     }
 }
 
-// All AI features now powered by TinyLlama via Ollama (Gemini fully removed)
 
 
 // --- API Endpoints ---
 
 // AI Study Buddy Chat Endpoint
 app.post('/api/ai-buddy/chat', authenticateToken, async (req, res) => {
-    const { message } = req.body;
-
+    const message = req.body.message;
+    const context = req.body.context || null;
     if (!message || typeof message !== 'string' || !message.trim()) {
         return res.status(400).json({ error: 'Message is required' });
     }
-
+    if (!process.env.GROQ_API_KEY) {
+        return res.status(503).json({ error: 'AI service not configured.' });
+    }
     try {
-        const studentId = req.student.id;
-        const student = await Student.findById(studentId);
-
-        if (!student) {
-            return res.status(404).json({ error: 'Student not found' });
+        const student = await Student.findById(req.student.id);
+        if (!student) return res.status(404).json({ error: 'Student not found' });
+        let systemPrompt;
+        if (context && context.type === 'counselling') {
+            const topicLabels = { academic: 'academic stress, study challenges, and time management', emotional: 'emotional wellbeing, relationships, and personal challenges', crisis: 'urgent mental health and crisis support' };
+            const topicDesc = topicLabels[context.topic] || context.topic || 'general support';
+            systemPrompt = 'You are a caring, professional school counsellor for ' + student.studentName + '. Focus on: ' + topicDesc + '. Be warm, empathetic, and supportive. Ask follow-up questions when needed. Keep responses under 120 words. Never give medical diagnoses.';
+        } else if (context && context.type === 'career') {
+            const careerLabels = { stem: 'Science, Technology, Engineering & Mathematics', arts: 'Arts, Design & Creative fields', business: 'Business, Economics & Entrepreneurship', health: 'Healthcare, Medicine & Allied Health' };
+            const careerDesc = careerLabels[context.topic] || context.topic || 'various careers';
+            systemPrompt = 'You are an enthusiastic career advisor for ' + student.studentName + ', a ' + student.class + ' student. Focus specifically on: ' + careerDesc + '. Discuss qualifications, university options, skills, and career prospects. Be direct and practical. Under 150 words.';
+        } else {
+            systemPrompt = 'You are a helpful AI Study Buddy for ' + student.studentName + ', a ' + student.class + ' student studying: ' + student.subjectsEnrolled.join(', ') + '. Give accurate, clear, concise answers. No preamble. Under 150 words unless genuinely needed. Be encouraging.';
         }
-
-        const systemPrompt = `You are a friendly AI Study Buddy for ${student.studentName}, a student in class ${student.class} who studies ${student.subjectsEnrolled.join(', ')}. Give concise, clear, encouraging answers. Be direct and helpful.`;
-
-        const userPrompt = message.trim();
-
-        // Set up SSE streaming headers
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
         res.setHeader('X-Accel-Buffering', 'no');
         res.flushHeaders();
-
-        const stream = await ollama.chat({
-            model: OLLAMA_MODEL,
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userPrompt }
-            ],
+        const stream = await groq.chat.completions.create({
+            model: GROQ_MODEL,
+            messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: message.trim() }],
             stream: true,
-            options: {
-                temperature: 0.7,
-                num_predict: 350
-            }
+            temperature: 0.7,
+            max_tokens: 350
         });
-
         for await (const chunk of stream) {
-            const token = chunk.message && chunk.message.content;
-            if (token) {
-                res.write('data: ' + JSON.stringify({ token }) + '\n\n');
-            }
-            if (chunk.done) break;
+            const token = (chunk.choices[0] && chunk.choices[0].delta && chunk.choices[0].delta.content) || '';
+            if (token) res.write('data: ' + JSON.stringify({ token }) + '\n\n');
         }
-
         res.write('data: ' + JSON.stringify({ done: true }) + '\n\n');
         res.end();
-
     } catch (error) {
         console.error('AI Study Buddy error:', error);
-        try {
-            res.write('data: ' + JSON.stringify({ error: 'AI service error. Please try again.' }) + '\n\n');
-            res.end();
-        } catch (e) {
-            // headers already sent
-        }
+        try { res.write('data: ' + JSON.stringify({ error: 'AI service error. Please try again.' }) + '\n\n'); res.end(); } catch (e) {}
     }
 });
 
@@ -1768,7 +1719,7 @@ Output strict JSON format:
 
 IMPORTANT: Respond ONLY with valid JSON. Start with { and end with }. Do not include any explanation.`;
 
-                const responseText = await callOllamaAI(
+                const responseText = await callGroqAI(
                     prompt,
                     "You are an educational quiz question generator AI. Generate questions in valid JSON format only.",
                     { temperature: 0.7, num_predict: 2000, timeout: 90000, retries: 2 }
@@ -1947,7 +1898,7 @@ Output Format (strict JSON):
 }`;
 
         // Call TinyLlama via Ollama with robust error handling
-        const responseText = await callOllamaAI(
+        const responseText = await callGroqAI(
             prompt + "\n\nIMPORTANT: Respond ONLY with valid JSON. Start with { and end with }.",
             "You are an educational quiz question generator AI. Generate questions in valid JSON format only.",
             { temperature: 0.7, num_predict: 2500, timeout: 90000, retries: 2 }
@@ -2637,7 +2588,7 @@ Output Format (strict JSON):
 }`;
 
         // Call TinyLlama via Ollama with robust error handling
-        const responseText = await callOllamaAI(
+        const responseText = await callGroqAI(
             prompt + "\n\nIMPORTANT: Respond ONLY with valid JSON. Start with { and end with }.",
             "You are an educational quiz question generator AI. Generate questions in valid JSON format only.",
             { temperature: 0.7, num_predict: 2500, timeout: 90000, retries: 2 }
@@ -5032,7 +4983,7 @@ Keep responses concise (2-4 paragraphs), friendly, and actionable. Use their per
             : `${studentContext}\n\nStudent: ${message}\n\nCareer Counselor:`;
 
         // Call TinyLlama via Ollama with robust error handling
-        const aiReply = await callOllamaAI(
+        const aiReply = await callGroqAI(
             fullPrompt,
             "You are a professional career guidance counselor AI. Provide personalized, culturally relevant career advice for students in Uganda.",
             { temperature: 0.8, num_predict: 800, timeout: 60000, retries: 2 }
@@ -5089,7 +5040,7 @@ app.post('/api/ai-buddy/chat', authenticateToken, async (req, res) => {
         const fullPrompt = `${conversationContext}Student: ${message}\n\nAI Buddy:`;
 
         // Call TinyLlama with optimized settings
-        const aiReply = await callOllamaAI(
+        const aiReply = await callGroqAI(
             fullPrompt,
             systemPrompt,
             { temperature: 0.5, num_predict: 350, timeout: 40000, retries: 1 }
@@ -5148,7 +5099,7 @@ Be professional, helpful, and specific. Reference actual SchoolByte features acc
             : `${platformContext}\n\nStudent (${student.preferredName || student.studentName}): ${message}\n\nByteNexus Support:`;
 
         // Call TinyLlama via Ollama
-        const aiReply = await callOllamaAI(
+        const aiReply = await callGroqAI(
             fullPrompt,
             "You are ByteNexus Support Team, the official technical support AI for SchoolByte. Help students understand and use platform features effectively.",
             { temperature: 0.6, num_predict: 600, timeout: 60000, retries: 2 }
@@ -5205,7 +5156,7 @@ app.post('/api/counselling/chat', authenticateToken, async (req, res) => {
 
         const fullPrompt = `${conversationContext}Student: ${message}\n\nCounsellor:`;
 
-        const aiReply = await callOllamaAI(
+        const aiReply = await callGroqAI(
             fullPrompt,
             systemPrompt,
             { temperature: 0.7, num_predict: 500, timeout: 50000, retries: 2 }
@@ -5867,6 +5818,71 @@ app.delete('/api/uneb-projects/:id', authenticateToken, async (req, res) => {
   }
 });
 
+
+// ===== ADMIN: UNEB Project Gallery Management =====
+app.get('/admin/uneb-projects', authenticateAdminToken, async (req, res) => {
+  try {
+    const projects = await UnebProject.find({ deletedAt: null })
+      .populate('student_id', 'studentName class stream indexNumber')
+      .lean();
+    // Sort by most "not helpful" votes (highest unhelpful count first)
+    projects.sort((a, b) => {
+      const aUnhelpful = (a.helpfulVotes || []).filter(v => !v.helpful).length;
+      const bUnhelpful = (b.helpfulVotes || []).filter(v => !v.helpful).length;
+      return bUnhelpful - aUnhelpful || new Date(b.createdAt) - new Date(a.createdAt);
+    });
+    const formatted = projects.map(p => ({
+      _id: p._id,
+      title: p.title,
+      subject: p.subject,
+      year: p.year,
+      photoUrl: p.photoUrl,
+      methodology: p.methodology,
+      abstract: p.abstract || '',
+      category: p.category,
+      studentName: p.student_id ? p.student_id.studentName : 'Unknown',
+      studentClass: p.student_id ? p.student_id.class : '',
+      likesCount: (p.likes || []).length,
+      helpfulCount: (p.helpfulVotes || []).filter(v => v.helpful).length,
+      notHelpfulCount: (p.helpfulVotes || []).filter(v => !v.helpful).length,
+      createdAt: p.createdAt
+    }));
+    res.json({ projects: formatted });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch projects', detail: err.message });
+  }
+});
+
+app.delete('/admin/uneb-projects/:id', authenticateAdminToken, async (req, res) => {
+  try {
+    const project = await UnebProject.findById(req.params.id);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    project.deletedAt = new Date();
+    project.isPublished = false;
+    await project.save();
+    if (project.photoPublicId) {
+      try { await cloudinary.uploader.destroy(project.photoPublicId); } catch (e) { console.warn('Cloudinary delete failed:', e); }
+    }
+    res.json({ message: 'Project deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete project' });
+  }
+});
+
+app.get('/api/student/energy', authenticateToken, async (req, res) => {
+  try {
+    const student = await Student.findById(req.student.id);
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+    refillEnergy(student);
+    await student.save();
+    const msPerHour = 60 * 60 * 1000;
+    const last = student.lastEnergyRefillAt ? new Date(student.lastEnergyRefillAt).getTime() : Date.now();
+    const nextRefillMs = student.energy >= 25 ? null : (last + msPerHour - Date.now());
+    res.json({ energy: student.energy, maxEnergy: 25, nextRefillMs: nextRefillMs > 0 ? nextRefillMs : 0 });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch energy' });
+  }
+});
 // ============= ACHIEVEMENTS & NOTIFICATIONS SYSTEM =============
 
 // Helper function to check and award achievements

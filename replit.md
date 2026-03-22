@@ -1,0 +1,73 @@
+# SchoolByte — Educational Platform
+
+## Overview
+Full-stack educational platform with student dashboards, teacher portals, quiz/activity systems, a project gallery, educational games, and AI features.
+
+## Architecture
+- **Backend**: Node.js / Express.js, running on port 3002
+- **Database**: MongoDB (Mongoose ORM)
+- **Auth**: JWT — always stored as `"token"` in localStorage for students, `"adminToken"` for admins
+- **AI**: Groq API (`groq-sdk`, model: `llama-3.1-8b-instant`) via `GROQ_API_KEY` env var
+- **File Uploads**: Cloudinary (photos for gallery, profile images)
+- **Real-time**: Socket.io (chat system)
+
+## Key Environment Variables
+- `MONGODB_URI` — MongoDB connection string (required)
+- `JWT_SECRET` — JWT signing secret (required)
+- `GROQ_API_KEY` — Groq AI API key (required for AI features)
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` — Cloudinary credentials
+- `EMAIL_USER`, `EMAIL_PASS` — Email for password reset OTPs
+- `ADMIN_EMAIL`, `ADMIN_INITIAL_PASSWORD` — Admin account bootstrap
+
+## User Roles
+1. **Student** — auth via `/login-student`, token in `localStorage.getItem('token')`
+2. **Teacher** — auth via `/login-teacher`
+3. **Admin** — auth via `/login-admin` + 2FA, token in `localStorage.getItem('adminToken')`
+
+## Important Files
+| File | Purpose |
+|------|---------|
+| `server.js` | Main Express server (6500+ lines), all API routes |
+| `models/Student.js` | Student schema (bytes, energy, achievements, etc.) |
+| `models/UnebProject.js` | UNEB project gallery schema |
+| `config/fatsAndBeef.js` | Fixture tables for quiz generation |
+| `public/floating-icons.js` | Floating AI buddy, counselling, career widgets |
+| `public/quizzesstudentdashboard.html` | Quiz page (energy-gated) |
+| `public/unebprojectgallery.html` | Student-facing project gallery |
+| `public/adminprojectgallery.html` | Admin project gallery with moderation |
+| `public/gamesstudentdashboard.html` | Games hub (Elementium, Byte-Sudoku, Geography Quiz) |
+| `public/admin.html` | Admin portal dashboard |
+
+## AI System (Groq)
+- **Study Buddy** (streaming SSE): `POST /api/ai-buddy/chat` — accepts `{ message, context }`
+  - `context: null` → Study Buddy mode
+  - `context: { type: 'counselling', topic: 'academic'|'emotional'|'crisis' }` → Counsellor mode
+  - `context: { type: 'career', topic: 'stem'|'arts'|'business'|'health' }` → Career Advisor mode
+- All other AI calls use `callGroqAI(prompt, systemPrompt, options)` helper
+
+## Energy System
+- Students have 25 max energy, refills 1/hour (`refillEnergy()` function)
+- Quizzes and activities cost 1 energy each
+- Games do NOT cost energy — they cost 2 bytes to play, earn 7 bytes for good performance
+- Energy status: `GET /api/student/energy` → `{ energy, maxEnergy, nextRefillMs }`
+
+## UNEB Project Gallery
+- Upload: `POST /api/uneb-projects` (multipart, requires `photo`, `title`, `subject`, `category`, `year`, `methodology`, `abstract`)
+- List: `GET /api/uneb-projects?sort=likes&subject=&year=&q=&limit=50`
+- Like: `POST /api/uneb-projects/:id/like`
+- Helpful vote: `POST /api/uneb-projects/:id/helpful` with `{ helpful: boolean }`
+- Admin view: `GET /admin/uneb-projects` (sorted by most unhelpful votes)
+- Admin delete: `DELETE /admin/uneb-projects/:id`
+
+## Games
+- **Elementium** (Chemistry/Periodic Table): `games/elementium/elementiumgame.html` — costs 2 bytes, earns 7
+- **Byte-Sudoku**: `games/byte-sudoku/byte-sudoku.html`
+- **Geography Quiz**: `games/geography quiz/geoquiz.html`
+
+## CRLF Note
+`server.js` and some frontend files have Windows CRLF line endings. Always use Node.js scripts (not `sed`) for multi-line replacements in these files.
+
+## Admin Routes
+- Admin middleware: `authenticateAdminToken` at server.js line ~908
+- Admin routes use `/admin/` prefix
+- Admin gallery: `/admin/uneb-projects` (GET, DELETE)

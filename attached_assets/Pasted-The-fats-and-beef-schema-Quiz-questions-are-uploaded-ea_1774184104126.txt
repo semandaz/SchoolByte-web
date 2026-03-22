@@ -1,0 +1,118 @@
+The fats and beef schema
+
+Quiz questions are uploaded each independently one at a time. The students(also referred to as users) must fetch these questions according to what they need for their academic growth. This is the work of the fats and beef schema. The words fats and beef don't have a very great derivation. The following questions are fetched. 
+*Own class - 7 questions (refer this to as usual)
+*Lower class - 2 questions (refer this to as revision)
+*Upper class - 1 question (refer this to as stretch)
+         This keeps learning forward and revision tackled whereas research is not left behind. 
+          On top of that, the fats and beef schema is not random at picking questions from subjects as enrolled by user. This avoids unnecessary content while providing wholesome academic questions based on the student's enrolled subjects necessary for the student's academic growth. 
+            Imagine a big pool of quiz questions where students get their quizzes from. Each student must ably gat what they need as mentioned earlier. The fats and beef schema does it all. But before we go that deep, it'd be right to first explain the curriculum of the school for which I'm building this project. 
+*There is lower school division. This is senior one to senior two(mostly going to refer senior to as S and the class as a figure)
+*There is middle school which is S3 and S4. 
+*Upper school, S5 and S6. 
+                 Lower school division studies 12 subjects where the one subject of the 12 is chosen by them. 
+                 Middle school 9 subjects where 2 of those they chose themselves. 
+                 Upper school 5 subjects where one of the five is dependant on the combination they chose. Combinations consist of four subjects. Take an example of upper school doing subjects a, b, c, d, and e. The combination goes abc/d where d is dependant on the subjects a, b, and c. Subject e is compulsory also called general paper. Hope it's well explained. 
+
+Cycles
+
+Already explained, each school division does a specific number of subjects. For the fats and beef schema to be effective, it must have cycles of quizzes. A cycle is a completion of receiving questions from each subject in each context, i.e. usual, revision and stretch. 
+
+Middle school cycle
+
+Take an example with middle school which has 9 subjects, the goal is to make all 9 subjects from stretch, usual, and revision. 
+*Usual - 7 questions=7×9=63
+*Revision - 2 questions=2×9=18
+*Stretch - 1 question=1×9=9
+Therefore, a middle school cycle(going to be referred to as mcycle or middle school cycle) =90 questions. In a nutshell, a user having made 9 quizzes must have covered all their enrolled subjects in usual, revision and stretch. 
+
+Lower school cycle
+*Usual - 7 questions=7×12=84
+*Revision =2×12=24
+*Stretch =1×12=12 which altogether sums up to 120 questions. 
+
+Upper school cycle
+               Upper school has subjects a, b, c, d, and e as demonstrated earlier but in quizzes, subject e, the compulsory is left out. This is because there's no way it needs short answers. 
+*Usual =7×4=28
+*Revision =2×4=8
+*Stretch =1×4=4 which altogether gives us 40 questions. 
+
+To sum up, lcycle(lower school cycle) requires 120 questions, mcycle 90 questions and ucycle(upper school cycle) needs 40 questions. Like I threw light earlier on how quizzes are not just random, there is going to be a reference for the different quiz formation. 
+
+Fats and beef schema in action
+
+Based on the acquired knowledge on cycles, here's where the action of fats and beef schema must occur. As mentioned earlier, the schema is meant to draw useful quiz questions from the pool to the user. But it cannot be able to pick random subject questions on its own. So here's the randomness it is designed to follow;
+
+LOWER SCHOOL
+Considering the 12 subjects being a-l, and the quiz questions serial numbers being 1-10
+1 is stretch
+2-8 is usual
+9-10 is revision
+Middle school is subjects a-i whereas upper school a-d
+
+| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+| - | - | - | - | - | - | - | - | - | -- |
+| A | A | B | C | D | E | F | G | A | B |
+| B | H | I | J | K | L | A | B | C | D |
+| C | C | D | E | F | G | H | I | E | F |
+| D | J | K | L | A | B | C | D | G | H |
+| E | E | F | G | H | I | J | K | I | J |
+| F | L | A | B | C | D | E | F | K | L |
+| G | G | H | I | J | K | L | A | A | B |
+| H | B | C | D | E | F | G | H | C | D |
+| I | I | J | K | L | A | B | C | E | F |
+| J | D | E | F | G | H | I | J | G | H |
+| K | K | L | A | B | C | D | E | I | J |
+| L | F | G | H | I | J | K | L | K | L |
+
+That above is the lower school fixture on how to fetch what activities in which quiz number which are represented by rows. I.e. the first quiz will have subjects: aabcdefgab.
+
+## Middle school
+| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+| - | - | - | - | - | - | - | - | - | -- |
+| A | A | B | C | D | E | F | G | A | B |
+| B | H | I | A | B | C | D | E | C | D |
+| C | F | G | H | I | A | B | C | E | F |
+| D | D | E | F | G | H | I | A | G | H |
+| E | B | C | D | E | F | G | H | I | A |
+| F | I | A | B | C | D | E | F | B | C |
+| G | G | H | I | A | B | C | D | D | E |
+| H | E | F | G | H | I | A | B | F | G |
+| I | C | D | E | F | G | H | I | H | I |
+
+This means quiz one will have subjects; aabcdefgab
+
+## Upper school
+| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+| - | - | - | - | - | - | - | - | - | -- |
+| A | A | B | C | D | A | B | C | A | B |
+| B | D | A | B | C | D | A | B | C | D |
+| C | C | D | A | B | C | D | A | A | B |
+| D | B | C | D | A | B | C | D | C | D |
+
+This means that serial number one quiz will have questions from subjects aabcdabcab.
+
+Note carefully that the subject names ABCDEFGHIJKL do not represent quiz questions but rather the subjects from which the quiz questions will be fetched. 
+
+Fetching quiz questions also depends on one's class. The schema of usual, revision and stretch. This means that someone in S2 and someone in S1 will not get the same questions. Besides, someone in S1 and another in the same class don't particularly have to get the same questions a given quiz serial number(going to be addressed as sn). This is where the randomness comes about. In choosing quiz questions and not subjects. 
+
+Contingency 
+
+There is a fall back mechanism because the fats and beef schema is too large and most likely to get stuck somewhere. The contingency is made for users with the issue of lack of enough quiz questions to make even a single complete quiz of a set of one questions. This may be because user has out done the work of the teachers by doing more quizzes than what the teachers even upload since only one quiz questions can be uploaded at a time yet 10 are done at once(outgrowth). 
+
+Before explaining the contingency, we need to first understand deeper about how the quizzes work. Once a question is drawn from the pool and the quiz is answered and submitted, that question is flagged as done. Flagged off questions will not (not never) appear again unless there is a failure. 
+
+The fall back mechanism(preferably contingency cycle or ccycle) states it that when one is at least ¾ way their cycle and reach the time of outgrowth, the questions in that cycle will all be flagged as undone and thrown back into the pool. This creates ample time for teachers to upload more quiz questions whereas the student is doing their own work still. 
+         However, if the current cycle the student is doing is less than ¾ way, then, the questions in that cycle and the ones in the previous one will all be flagged as undone in order to create more time for teacher's upload. Remember that even when the unflagged(previously flagged) questions are thrown back into the pool, the selection of questions to appear in the new quiz is till random. It's not like the thrown back questions will still be the only ones to appear. They may or may not appear. 
+
+When the contingency cycle repeats itself 10 times, then, the last two quiz cycles will be flagged undone. 
+
+Note about the fats and beef schema 
+
+The schoolbyte website has an admin portal for controlling the whole website. That will be a story for another day, but the admins carry out promotion of students. In other words, after a year, they press a button and promote all students to a higher class. During the promotion, S6 user accounts are deleted. 
+
+All of that is just the fats and beef quiz schema and it's responsible only for quiz questions fetching. 
+
+ACTIVITIES 
+
+Activities are more complex questions requiring time to think and also long answers. For this 

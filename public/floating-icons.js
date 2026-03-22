@@ -720,9 +720,34 @@
         }
 
         // AI Buddy Functionality
-        openAIBuddy() {
-            this.showWidget('aiBuddyModal', 'AI Study Buddy', 'fas fa-robot');
-            this.addActivity('Opened AI Study Buddy', 'info');
+        openAIBuddy(contextType, contextLabel) {
+            if (contextType && contextLabel) {
+                this._aiContext = this._aiContext || {};
+                // Update the modal header text to reflect context
+                const header = document.querySelector('#aiBuddyModal .widget-header h3');
+                if (header) {
+                    if (contextType === 'career') {
+                        header.innerHTML = '<i class="fas fa-briefcase"></i> Career Advisor · ' + contextLabel.split(' ').slice(0,3).join(' ');
+                    } else if (contextType === 'counselling') {
+                        header.innerHTML = '<i class="fas fa-heart"></i> ' + contextLabel;
+                    }
+                }
+                // Set a context prompt in the input
+                const input = document.querySelector('#aiChatInput');
+                if (input && !input.value) {
+                    if (contextType === 'career') input.placeholder = 'Ask about ' + contextLabel + ' careers...';
+                    else if (contextType === 'counselling') input.placeholder = 'Share what's on your mind...';
+                }
+                this.addActivity('AI ' + (contextType === 'career' ? 'Career Advisor' : 'Counsellor') + ' opened', 'info');
+            } else {
+                this._aiContext = null;
+                const header = document.querySelector('#aiBuddyModal .widget-header h3');
+                if (header) header.innerHTML = '<i class="fas fa-robot"></i> AI Study Buddy';
+                const input = document.querySelector('#aiChatInput');
+                if (input) input.placeholder = 'Ask me anything...';
+                this.addActivity('Opened AI Study Buddy', 'info');
+            }
+            this.showWidget('aiBuddyModal', null, null);
         }
 
         // Career Guidance Functionality
@@ -989,7 +1014,7 @@
                         'Authorization': 'Bearer ' + authToken,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ message: question })
+                    body: JSON.stringify({ message: question, context: this._aiContext || null })
                 });
 
                 if (!response.ok || !response.body) {
@@ -1072,14 +1097,12 @@
         }
 
         showCareerDetails(career) {
-            const careerTitles = {
-                stem: "Science, Technology, Engineering & Mathematics",
-                arts: "Arts & Creative Careers",
-                business: "Business & Entrepreneurship",
-                health: "Healthcare & Medicine"
-            };
-            this.addActivity(`Exploring ${careerTitles[career]} careers`, 'info');
-            alert(`In a real implementation, this would show detailed information about ${careerTitles[career]} career paths, required education, and job opportunities.`);
+            const careerTitles = { stem: 'Science, Technology, Engineering & Mathematics', arts: 'Arts & Creative Careers', business: 'Business & Entrepreneurship', health: 'Healthcare & Medicine' };
+            const careerDesc = careerTitles[career] || career;
+            this.addActivity('Exploring ' + careerDesc + ' careers', 'info');
+            this._aiContext = { type: 'career', topic: career };
+            this.closeCurrentWidget();
+            setTimeout(() => { this.openAIBuddy('career', careerDesc); }, 200);
         }
 
         connectToCounsellor(type) {
@@ -1088,11 +1111,13 @@
                 emotional: "Emotional Support Specialist",
                 crisis: "Crisis Support Team"
             };
-            this.addActivity(`Connected to ${types[type]}`, 'info');
+            const typeDesc = types[type] || 'Counsellor';
+            this.addActivity('Connected to ' + typeDesc, 'info');
+            this._aiContext = { type: 'counselling', topic: type };
             this.closeCurrentWidget();
-            if (window.openCounselling) {
-                window.openCounselling(type);
-            }
+            setTimeout(() => {
+                this.openAIBuddy('counselling', typeDesc);
+            }, 200);
         }
 
         makeIconsDraggable() {

@@ -442,8 +442,24 @@
                 <input type="text" id="projectTitle" placeholder="e.g., Effect of organic manure on maize yield" required>
             </div>
             <div class="form-group">
-                <label><i class="fas fa-book-open"></i> Subjects Involved *</label>
+                <label><i class="fas fa-book-open"></i> Subject *</label>
                 <input type="text" id="projectSubjects" placeholder="e.g., Biology, Agriculture" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-tag"></i> Category *</label>
+                <select id="projectCategory" required>
+                    <option value="">Select a category...</option>
+                    <option value="Biology">Biology</option>
+                    <option value="Chemistry">Chemistry</option>
+                    <option value="Physics">Physics</option>
+                    <option value="Mathematics">Mathematics</option>
+                    <option value="Agriculture">Agriculture</option>
+                    <option value="ICT">ICT</option>
+                    <option value="Geography">Geography</option>
+                    <option value="History">History</option>
+                    <option value="Economics">Economics</option>
+                    <option value="Other">Other</option>
+                </select>
             </div>
             <div class="form-group">
                 <label><i class="fas fa-calendar-alt"></i> Year *</label>
@@ -463,249 +479,260 @@
 </div>
 
 <script>
-    // Data
+    const AUTH_TOKEN = localStorage.getItem('token');
     let PROJECTS_DB = [];
-    const currentUserId = "student_001";
 
-    function saveProjects() { localStorage.setItem('uneb_gallery_pro_v5', JSON.stringify(PROJECTS_DB)); }
-    function loadProjectsFromLocal() {
-        const stored = localStorage.getItem('uneb_gallery_pro_v5');
-        if(stored) PROJECTS_DB = JSON.parse(stored);
-        else {
-            PROJECTS_DB = [
-                { id: "proj1", title: "Renewable Energy from Agricultural Waste", year: "2024", subjects: "Physics, Chemistry", photoUrl: "https://picsum.photos/id/20/400/250", methodology: "1. Collected maize husks and groundnut shells.\n2. Carbonized at 300°C for 2 hours.\n3. Formed briquettes using cassava starch binder.\n4. Tested calorific value.\n5. Analyzed burning rate.", precautions: "Heat-resistant gloves, ventilated area. Conclusion: Briquettes offer sustainable alternative.", likes: 12, likedBy: [], helpfulUp: 5, helpfulDown: 1, userHelpfulVote: null },
-                { id: "proj2", title: "Antimicrobial Activity of Mango Leaves", year: "2023", subjects: "Biology, Chemistry", photoUrl: "https://picsum.photos/id/104/400/250", methodology: "1. Air-dried mango leaves.\n2. Powdered and extracted with ethanol.\n3. Disc diffusion method against E. coli.\n4. Measured inhibition zones.", precautions: "Sterile conditions, lab coat. Remark: Significant antibacterial potential.", likes: 28, likedBy: [], helpfulUp: 12, helpfulDown: 2, userHelpfulVote: null },
-                { id: "proj3", title: "Impact of Mobile Learning on Student Performance", year: "2025", subjects: "ICT, Mathematics", photoUrl: "https://picsum.photos/id/26/400/250", methodology: "1. Quasi-experimental design.\n2. Pre-test and post-test.\n3. Mobile app quizzes for 8 weeks.\n4. Statistical analysis.", precautions: "Informed consent, data anonymized. Conclusion: 22% improvement.", likes: 45, likedBy: [], helpfulUp: 24, helpfulDown: 3, userHelpfulVote: null }
-            ];
-            saveProjects();
-        }
-        PROJECTS_DB = PROJECTS_DB.map(p => ({ ...p, likes: p.likes||0, likedBy: p.likedBy||[], helpfulUp: p.helpfulUp||0, helpfulDown: p.helpfulDown||0, userHelpfulVote: p.userHelpfulVote||null }));
-        saveProjects();
-    }
-
-    // === Advanced Micro-Interactions ===
+    // === Visual Effects ===
     function createHeartPulseAndParticles(x, y) {
-        // Pulse ring
         const pulse = document.createElement('div');
         pulse.className = 'heart-pulse';
-        pulse.style.left = (x - 20) + 'px';
-        pulse.style.top = (y - 20) + 'px';
-        document.body.appendChild(pulse);
-        setTimeout(() => pulse.remove(), 500);
-        // Particle burst (12 tiny hearts or circles)
-        for (let i = 0; i < 14; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'heart-particle';
-            const angle = Math.random() * Math.PI * 2;
-            const distance = 20 + Math.random() * 40;
-            const dx = Math.cos(angle) * distance;
-            const dy = Math.sin(angle) * distance - 20;
-            particle.style.setProperty('--dx', dx + 'px');
-            particle.style.setProperty('--dy', dy + 'px');
-            particle.style.left = (x + (Math.random() - 0.5) * 15) + 'px';
-            particle.style.top = (y + (Math.random() - 0.5) * 15) + 'px';
-            document.body.appendChild(particle);
-            setTimeout(() => particle.remove(), 600);
+        pulse.style.left = (x-20)+'px'; pulse.style.top = (y-20)+'px';
+        document.body.appendChild(pulse); setTimeout(()=>pulse.remove(),500);
+        for(let i=0;i<14;i++){
+            const p=document.createElement('div'); p.className='heart-particle';
+            const angle=Math.random()*Math.PI*2, dist=20+Math.random()*40;
+            p.style.setProperty('--dx',Math.cos(angle)*dist+'px');
+            p.style.setProperty('--dy',Math.sin(angle)*dist-20+'px');
+            p.style.left=(x+(Math.random()-0.5)*15)+'px'; p.style.top=(y+(Math.random()-0.5)*15)+'px';
+            document.body.appendChild(p); setTimeout(()=>p.remove(),600);
+        }
+    }
+    function createScorePopup(x,y,delta){
+        const popup=document.createElement('div'); popup.className='score-popup';
+        popup.innerHTML=(delta>0?'+':'')+delta; popup.style.left=x+'px'; popup.style.top=y+'px';
+        document.body.appendChild(popup); setTimeout(()=>popup.remove(),800);
+    }
+    function escapeHtml(str){if(!str)return'';return str.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]);}
+
+    // === Auth Check ===
+    if(!AUTH_TOKEN){ window.location.href='studentlogin.html'; }
+
+    // === Load Projects from API ===
+    async function loadProjects(params){
+        document.getElementById('projectsGallery').innerHTML='<div class="loading-spinner"><i class="fas fa-spinner fa-pulse"></i> Loading showcase...</div>';
+        try {
+            const q = new URLSearchParams();
+            if(params && params.subject) q.set('subject', params.subject);
+            if(params && params.year) q.set('year', params.year);
+            if(params && params.q) q.set('q', params.q);
+            q.set('sort','likes'); q.set('limit','50');
+            const r = await fetch('/api/uneb-projects?'+q.toString(), { headers:{'Authorization':'Bearer '+AUTH_TOKEN} });
+            if(!r.ok) throw new Error('Failed to load projects');
+            const data = await r.json();
+            PROJECTS_DB = data.projects || [];
+            renderAllProjects(PROJECTS_DB);
+        } catch(err) {
+            console.error(err);
+            document.getElementById('projectsGallery').innerHTML='<div class="empty-gallery">⚠️ Could not load projects. Please sign in and try again.</div>';
         }
     }
 
-    function createScorePopup(x, y, delta) {
-        const popup = document.createElement('div');
-        popup.className = 'score-popup';
-        popup.innerHTML = (delta > 0 ? '+' : '') + delta;
-        popup.style.left = x + 'px';
-        popup.style.top = y + 'px';
-        document.body.appendChild(popup);
-        setTimeout(() => popup.remove(), 800);
-    }
-
-    // Like with TikTok-style heart burst
-    function likeProject(projectId, eventElement, clickEvent) {
-        const project = PROJECTS_DB.find(p => p.id === projectId);
-        if(!project) return;
-        const wasLiked = project.likedBy.includes(currentUserId);
-        let delta = 0;
-        if(wasLiked) {
-            project.likes -= 1;
-            project.likedBy = project.likedBy.filter(id => id !== currentUserId);
-            delta = -1;
-        } else {
-            project.likes += 1;
-            project.likedBy.push(currentUserId);
-            delta = 1;
-            if(clickEvent && eventElement) {
-                const rect = eventElement.getBoundingClientRect();
-                const centerX = rect.left + rect.width/2;
-                const centerY = rect.top + rect.height/2;
-                createHeartPulseAndParticles(centerX, centerY);
-                createScorePopup(centerX - 10, centerY - 20, delta);
-                // Add scale effect on button
-                eventElement.style.transform = 'scale(1.2)';
-                setTimeout(() => { if(eventElement) eventElement.style.transform = ''; }, 150);
-            }
-        }
-        saveProjects();
-        renderAllProjects();
-    }
-
-    // Helpful vote with bounce/shake and color flash
-    function setHelpfulVote(projectId, voteType, btnElement, clickEvent) {
-        const project = PROJECTS_DB.find(p => p.id === projectId);
-        if(!project) return;
-        const previous = project.userHelpfulVote;
-        let deltaUp = 0, deltaDown = 0;
-        if(previous === voteType) {
-            if(voteType === 'up') { project.helpfulUp -= 1; deltaUp = -1; }
-            else { project.helpfulDown -= 1; deltaDown = -1; }
-            project.userHelpfulVote = null;
-        } else {
-            if(previous === 'up') { project.helpfulUp -= 1; deltaUp = -1; }
-            if(previous === 'down') { project.helpfulDown -= 1; deltaDown = -1; }
-            if(voteType === 'up') { project.helpfulUp += 1; deltaUp = 1; }
-            else { project.helpfulDown += 1; deltaDown = 1; }
-            project.userHelpfulVote = voteType;
-        }
-        saveProjects();
-        if(btnElement && clickEvent) {
-            // Add animation class
-            btnElement.classList.add(voteType === 'up' ? 'helpful-up-animation' : 'helpful-down-animation');
-            setTimeout(() => btnElement.classList.remove(voteType === 'up' ? 'helpful-up-animation' : 'helpful-down-animation'), 400);
-            const rect = btnElement.getBoundingClientRect();
-            const deltaValue = (voteType === 'up' ? deltaUp : deltaDown);
-            if(deltaValue !== 0) {
-                createScorePopup(rect.left + rect.width/2, rect.top - 10, deltaValue);
-            }
-        }
-        renderAllProjects();
-    }
-
-    function shareProject(projectId) {
-        const proj = PROJECTS_DB.find(p => p.id === projectId);
-        if(proj) { navigator.clipboard.writeText(`📘 ${proj.title} on SchoolByte UNEB Gallery!`); alert("🔗 Project link copied!"); }
-    }
-    function chatAboutProject() { alert("💬 Peer discussion coming soon — engage with fellow researchers!"); }
-
-    function formatFullMethodology(methodology, precautions) {
-        let formatted = `<div class="method-numbered"><ul style="margin-left:1rem;">`;
-        let lines = methodology.split(/\r?\n/).filter(l => l.trim());
-        if(lines.length && lines[0].match(/^\d+\./)) formatted += lines.map(l => `<li>${escapeHtml(l)}</li>`).join('');
-        else {
-            let steps = methodology.split(/[.;]\s+/).filter(s=>s.trim());
-            steps.forEach((step,idx)=> formatted += `<li>${idx+1}. ${escapeHtml(step.trim())}</li>`);
-        }
-        formatted += `</ul></div><div class="precautions-block"><strong><i class="fas fa-shield-alt"></i> Precautions & Conclusion:</strong><br>${escapeHtml(precautions)}</div>`;
+    function formatFullMethodology(methodology, precautions){
+        let formatted = '<div class="method-numbered"><ul style="margin-left:1rem;">';
+        let lines = methodology ? methodology.split(/\r?\n/).filter(l=>l.trim()) : [];
+        if(lines.length && lines[0].match(/^\d+\./)) formatted += lines.map(l=>'<li>'+escapeHtml(l)+'</li>').join('');
+        else { let steps=(methodology||'').split(/[.;]\s+/).filter(s=>s.trim()); steps.forEach((s,i)=>formatted+='<li>'+(i+1)+'. '+escapeHtml(s.trim())+'</li>'); }
+        formatted += '</ul></div>';
+        if(precautions) formatted += '<div class="precautions-block"><strong><i class="fas fa-shield-alt"></i> Precautions &amp; Conclusion:</strong><br>'+escapeHtml(precautions)+'</div>';
         return formatted;
     }
 
-    function renderAllProjects() {
+    function renderAllProjects(projects){
         const container = document.getElementById('projectsGallery');
         const searchTerm = document.getElementById('searchFilter').value.toLowerCase();
         const subjectFilter = document.getElementById('subjectFilterSelect').value;
         const yearFilter = document.getElementById('yearFilterSelect').value;
-        let filtered = PROJECTS_DB.filter(p => (!searchTerm || p.title.toLowerCase().includes(searchTerm) || p.subjects.toLowerCase().includes(searchTerm)) &&
-            (!subjectFilter || p.subjects.toLowerCase().includes(subjectFilter.toLowerCase())) &&
-            (!yearFilter || p.year === yearFilter));
-        if(filtered.length === 0) { container.innerHTML = `<div class="empty-gallery">✨ No projects match. Publish your research!</div>`; return; }
+        let filtered = projects.filter(p =>
+            (!searchTerm || (p.title||'').toLowerCase().includes(searchTerm) || (p.subject||'').toLowerCase().includes(searchTerm)) &&
+            (!subjectFilter || (p.subject||'').toLowerCase().includes(subjectFilter.toLowerCase())) &&
+            (!yearFilter || (p.year||'') === yearFilter)
+        );
+        if(filtered.length===0){ container.innerHTML='<div class="empty-gallery">✨ No projects match. Publish your research!</div>'; return; }
         container.innerHTML = filtered.map(project => {
-            const isLiked = project.likedBy.includes(currentUserId);
-            const methodShort = project.methodology.length > 130 ? project.methodology.substring(0,130)+'...' : project.methodology;
-            const fullContent = formatFullMethodology(project.methodology, project.precautions);
-            const upActive = project.userHelpfulVote === 'up';
-            const downActive = project.userHelpfulVote === 'down';
-            return `<div class="project-card" data-id="${project.id}">
-                <img class="card-photo" src="${project.photoUrl}" alt="${escapeHtml(project.title)}" onerror="this.src='https://picsum.photos/id/1/400/250'">
-                <div class="card-content">
-                    <div class="title-year"><div class="project-title">${escapeHtml(project.title)}</div><div class="project-year">${escapeHtml(project.year)}</div></div>
-                    <div class="subjects-involved"><i class="fas fa-book-open"></i> ${escapeHtml(project.subjects)}</div>
-                    <div class="methodology-area">
-                        <div class="methodology-short" id="shortText-${project.id}">${escapeHtml(methodShort)}</div>
-                        <div class="full-method-text" id="fullText-${project.id}" style="display: none;">${fullContent}</div>
-                        <button class="read-more-btn" data-id="${project.id}" onclick="window.toggleReadMore('${project.id}')"><i class="fas fa-expand-alt"></i> Read methodology</button>
-                    </div>
-                    <div class="action-buttons">
-                        <div class="action-group">
-                            <button class="icon-btn like-btn" data-id="${project.id}"><i class="fa-heart ${isLiked ? 'fas liked' : 'far'}"></i> <span class="like-count">${project.likes}</span></button>
-                            <button class="icon-btn share-btn" data-id="${project.id}"><i class="fas fa-share-alt"></i> Share</button>
-                            <button class="icon-btn chat-message-btn" data-id="${project.id}"><i class="fas fa-comment"></i> Chat</button>
-                        </div>
-                        <div class="helpful-group">
-                            <button class="helpful-btn helpful-up-btn ${upActive ? 'active-up' : ''}" data-id="${project.id}" data-vote="up"><i class="fas fa-thumbs-up"></i> <span class="up-count">${project.helpfulUp}</span></button>
-                            <button class="helpful-btn helpful-down-btn ${downActive ? 'active-down' : ''}" data-id="${project.id}" data-vote="down"><i class="fas fa-thumbs-down"></i> <span class="down-count">${project.helpfulDown}</span></button>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
+            const isLiked = project.likedByMe;
+            const methodShort = (project.methodology||'').length>130 ? (project.methodology||'').substring(0,130)+'...' : (project.methodology||'');
+            const fullContent = formatFullMethodology(project.methodology, project.abstract);
+            const myVote = project.myHelpfulVote;
+            const upActive = myVote === true;
+            const downActive = myVote === false;
+            return '<div class="project-card" data-id="'+project.id+'">'+
+                '<img class="card-photo" src="'+(project.photoUrl||'https://picsum.photos/id/1/400/250')+'" alt="'+escapeHtml(project.title)+'" onerror="this.src='https://picsum.photos/id/1/400/250'">'+
+                '<div class="card-content">'+
+                    '<div class="title-year"><div class="project-title">'+escapeHtml(project.title)+'</div><div class="project-year">'+escapeHtml(project.year)+'</div></div>'+
+                    (project.student ? '<div style="font-size:0.75rem;color:#64748b;margin-bottom:4px;"><i class="fas fa-user-graduate"></i> '+escapeHtml(project.student.studentName)+(project.student.class?' · '+escapeHtml(project.student.class):'')+'</div>' : '')+
+                    '<div class="subjects-involved"><i class="fas fa-book-open"></i> '+escapeHtml(project.subject)+'</div>'+
+                    '<div class="methodology-area">'+
+                        '<div class="methodology-short" id="shortText-'+project.id+'">'+escapeHtml(methodShort)+'</div>'+
+                        '<div class="full-method-text" id="fullText-'+project.id+'" style="display:none;">'+fullContent+'</div>'+
+                        '<button class="read-more-btn" data-id="'+project.id+'" onclick="window.toggleReadMore(''+project.id+'')"><i class="fas fa-expand-alt"></i> Read methodology</button>'+
+                    '</div>'+
+                    '<div class="action-buttons">'+
+                        '<div class="action-group">'+
+                            '<button class="icon-btn like-btn'+(isLiked?' liked':'')+'" data-id="'+project.id+'"><i class="fa-heart '+(isLiked?'fas':'far')+'"></i> <span class="like-count">'+project.likesCount+'</span></button>'+
+                            '<button class="icon-btn share-btn" data-id="'+project.id+'"><i class="fas fa-share-alt"></i> Share</button>'+
+                        '</div>'+
+                        '<div class="helpful-group">'+
+                            '<button class="helpful-btn helpful-up-btn'+(upActive?' active-up':'')+'" data-id="'+project.id+'" data-vote="up"><i class="fas fa-thumbs-up"></i> <span class="up-count">'+project.helpfulCount+'</span></button>'+
+                            '<button class="helpful-btn helpful-down-btn'+(downActive?' active-down':'')+'" data-id="'+project.id+'" data-vote="down"><i class="fas fa-thumbs-down"></i> <span class="down-count">'+project.notHelpfulCount+'</span></button>'+
+                        '</div>'+
+                    '</div>'+
+                '</div>'+
+            '</div>';
         }).join('');
         attachEvents();
     }
 
-    function attachEvents() {
-        document.querySelectorAll('.like-btn').forEach(btn => { btn.addEventListener('click', handleLike); });
-        document.querySelectorAll('.share-btn').forEach(btn => { btn.addEventListener('click', handleShare); });
-        document.querySelectorAll('.chat-message-btn').forEach(btn => { btn.addEventListener('click', handleChat); });
-        document.querySelectorAll('.helpful-up-btn, .helpful-down-btn').forEach(btn => { btn.addEventListener('click', handleHelpful); });
+    function attachEvents(){
+        document.querySelectorAll('.like-btn').forEach(btn=>btn.addEventListener('click', handleLike));
+        document.querySelectorAll('.share-btn').forEach(btn=>btn.addEventListener('click', handleShare));
+        document.querySelectorAll('.helpful-up-btn,.helpful-down-btn').forEach(btn=>btn.addEventListener('click', handleHelpful));
     }
-    function handleLike(e) { e.stopPropagation(); const btn = e.currentTarget; const card = btn.closest('.project-card'); const pid = card.getAttribute('data-id'); likeProject(pid, btn, e); }
-    function handleShare(e) { e.stopPropagation(); const card = e.currentTarget.closest('.project-card'); shareProject(card.getAttribute('data-id')); }
-    function handleChat(e) { e.stopPropagation(); chatAboutProject(); }
-    function handleHelpful(e) { e.stopPropagation(); const btn = e.currentTarget; const card = btn.closest('.project-card'); const pid = card.getAttribute('data-id'); const vote = btn.getAttribute('data-vote'); setHelpfulVote(pid, vote, btn, e); }
-    window.toggleReadMore = function(pid) {
-        const short = document.getElementById(`shortText-${pid}`);
-        const full = document.getElementById(`fullText-${pid}`);
-        const btn = document.querySelector(`.read-more-btn[data-id="${pid}"]`);
-        if(full.style.display === 'none') { short.style.display = 'none'; full.style.display = 'block'; btn.innerHTML = '<i class="fas fa-compress-alt"></i> Show less'; }
-        else { short.style.display = '-webkit-box'; full.style.display = 'none'; btn.innerHTML = '<i class="fas fa-expand-alt"></i> Read methodology'; }
-    };
-    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
 
-    // Publish modal with image preview
+    async function handleLike(e){
+        e.stopPropagation();
+        const btn = e.currentTarget;
+        const pid = btn.closest('.project-card').getAttribute('data-id');
+        try {
+            const r = await fetch('/api/uneb-projects/'+pid+'/like', { method:'POST', headers:{'Authorization':'Bearer '+AUTH_TOKEN} });
+            if(!r.ok) throw new Error('Like failed');
+            const data = await r.json();
+            // Update local
+            const proj = PROJECTS_DB.find(p=>p.id===pid);
+            if(proj){ proj.likedByMe = data.likedByMe; proj.likesCount = data.likesCount; }
+            if(data.likedByMe){
+                const rect = btn.getBoundingClientRect();
+                createHeartPulseAndParticles(rect.left+rect.width/2, rect.top+rect.height/2);
+                createScorePopup(rect.left+rect.width/2-10, rect.top-20, 1);
+            }
+            renderAllProjects(PROJECTS_DB);
+        } catch(err){ console.error(err); }
+    }
+
+    function handleShare(e){
+        e.stopPropagation();
+        const pid = e.currentTarget.closest('.project-card').getAttribute('data-id');
+        const proj = PROJECTS_DB.find(p=>p.id===pid);
+        if(proj){ navigator.clipboard.writeText('📘 '+proj.title+' on SchoolByte UNEB Gallery!'); alert('🔗 Project link copied!'); }
+    }
+
+    async function handleHelpful(e){
+        e.stopPropagation();
+        const btn = e.currentTarget;
+        const pid = btn.closest('.project-card').getAttribute('data-id');
+        const isUp = btn.classList.contains('helpful-up-btn');
+        const proj = PROJECTS_DB.find(p=>p.id===pid);
+        if(!proj) return;
+        // Toggle: if already voted same way, send opposite to "undo" (API handles idempotency)
+        // The API replaces the vote, so sending same = no change; we handle undo client-side
+        let helpful;
+        if(isUp){ helpful = !(proj.myHelpfulVote === true); }
+        else { helpful = !(proj.myHelpfulVote === false); }
+        // If toggling off (undo), skip server call and just clear client state visually
+        // Actually: the API sets the vote; to undo, we could just re-send same (API will keep it)
+        // Better: the API doesn't have an "undo" mechanism so we handle it differently
+        // Send whatever vote is needed
+        if(isUp && proj.myHelpfulVote === true){ /* already up-voted: undo by not voting */ }
+        if(!isUp && proj.myHelpfulVote === false){ /* already down-voted: undo */ }
+        try {
+            const r = await fetch('/api/uneb-projects/'+pid+'/helpful', {
+                method:'POST',
+                headers:{'Authorization':'Bearer '+AUTH_TOKEN, 'Content-Type':'application/json'},
+                body: JSON.stringify({ helpful: isUp })
+            });
+            if(!r.ok) throw new Error('Vote failed');
+            const data = await r.json();
+            if(proj){ proj.myHelpfulVote = data.myHelpfulVote; proj.helpfulCount = data.helpfulCount; proj.notHelpfulCount = data.notHelpfulCount; }
+            btn.classList.add(isUp ? 'helpful-up-animation' : 'helpful-down-animation');
+            setTimeout(()=>btn.classList.remove('helpful-up-animation','helpful-down-animation'), 400);
+            const delta = isUp ? 1 : -1;
+            const rect = btn.getBoundingClientRect();
+            createScorePopup(rect.left+rect.width/2, rect.top-10, delta);
+            renderAllProjects(PROJECTS_DB);
+        } catch(err){ console.error(err); }
+    }
+
+    window.toggleReadMore = function(pid){
+        const short = document.getElementById('shortText-'+pid);
+        const full = document.getElementById('fullText-'+pid);
+        const btn = document.querySelector('.read-more-btn[data-id="'+pid+'"]');
+        if(full.style.display==='none'){ short.style.display='none'; full.style.display='block'; btn.innerHTML='<i class="fas fa-compress-alt"></i> Show less'; }
+        else { short.style.display='-webkit-box'; full.style.display='none'; btn.innerHTML='<i class="fas fa-expand-alt"></i> Read methodology'; }
+    };
+
+    // === Publish Modal ===
     const photoInput = document.getElementById('projectPhoto');
     const imgPreview = document.getElementById('imagePreview');
     const fileNameSpan = document.getElementById('fileNameDisplay');
-    photoInput.addEventListener('change', function() {
-        if(this.files && this.files[0]) {
+    photoInput.addEventListener('change', function(){
+        if(this.files && this.files[0]){
             const reader = new FileReader();
-            reader.onload = e => { imgPreview.src = e.target.result; imgPreview.style.display = 'block'; };
+            reader.onload = e => { imgPreview.src = e.target.result; imgPreview.style.display='block'; };
             reader.readAsDataURL(this.files[0]);
             fileNameSpan.textContent = this.files[0].name;
-        } else { imgPreview.style.display = 'none'; fileNameSpan.textContent = ''; }
+        } else { imgPreview.style.display='none'; fileNameSpan.textContent=''; }
     });
 
-    document.getElementById('projectUploadForm').addEventListener('submit', e => {
+    document.getElementById('projectUploadForm').addEventListener('submit', async e => {
         e.preventDefault();
         const file = document.getElementById('projectPhoto').files[0];
         const title = document.getElementById('projectTitle').value.trim();
-        const subjects = document.getElementById('projectSubjects').value.trim();
+        const subject = document.getElementById('projectSubjects').value.trim();
+        const category = document.getElementById('projectCategory').value.trim();
         const year = document.getElementById('projectYear').value.trim();
         const methodology = document.getElementById('projectMethodology').value.trim();
-        const precautions = document.getElementById('projectPrecautions').value.trim();
-        if(!file || !title || !subjects || !year || !methodology || !precautions) return alert("All fields required");
-        const reader = new FileReader();
-        reader.onload = ev => {
-            PROJECTS_DB.unshift({ id: 'proj_'+Date.now()+'_'+Math.floor(Math.random()*10000), title, year, subjects, photoUrl: ev.target.result, methodology, precautions, likes:0, likedBy:[], helpfulUp:0, helpfulDown:0, userHelpfulVote:null });
-            saveProjects(); renderAllProjects(); document.getElementById('uploadModal').classList.remove('active'); document.getElementById('projectUploadForm').reset(); imgPreview.style.display = 'none'; fileNameSpan.textContent = ''; alert("✅ Project published!");
-        };
-        reader.readAsDataURL(file);
+        const abstract = document.getElementById('projectPrecautions').value.trim();
+        if(!file||!title||!subject||!category||!year||!methodology||!abstract){ alert('All fields required'); return; }
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.disabled=true; submitBtn.textContent='Publishing...';
+        try {
+            const fd = new FormData();
+            fd.append('photo', file);
+            fd.append('title', title);
+            fd.append('subject', subject);
+            fd.append('category', category);
+            fd.append('year', year);
+            fd.append('methodology', methodology);
+            fd.append('abstract', abstract);
+            const r = await fetch('/api/uneb-projects', { method:'POST', headers:{'Authorization':'Bearer '+AUTH_TOKEN}, body: fd });
+            const data = await r.json();
+            if(!r.ok) throw new Error(data.error || 'Upload failed');
+            document.getElementById('uploadModal').classList.remove('active');
+            document.getElementById('projectUploadForm').reset();
+            imgPreview.style.display='none'; fileNameSpan.textContent='';
+            alert('✅ Project published to gallery!');
+            await loadProjects();
+        } catch(err){
+            alert('❌ '+err.message);
+        } finally {
+            submitBtn.disabled=false; submitBtn.innerHTML='<i class="fas fa-check-circle"></i> Publish to Gallery';
+        }
     });
 
     document.getElementById('openPublishBtn').onclick = () => document.getElementById('uploadModal').classList.add('active');
     document.getElementById('closeUploadModal').onclick = () => document.getElementById('uploadModal').classList.remove('active');
-    document.getElementById('applyFiltersBtn').onclick = () => renderAllProjects();
-    document.getElementById('searchFilter').addEventListener('keyup', e => { if(e.key === 'Enter') renderAllProjects(); });
-    window.onclick = e => { const modal = document.getElementById('uploadModal'); if(e.target === modal) modal.classList.remove('active'); };
+    document.getElementById('applyFiltersBtn').onclick = () => {
+        const q = document.getElementById('searchFilter').value.trim();
+        const subject = document.getElementById('subjectFilterSelect').value;
+        const year = document.getElementById('yearFilterSelect').value;
+        if(q || subject || year) { loadProjects({ q, subject, year }); }
+        else { renderAllProjects(PROJECTS_DB); }
+    };
+    document.getElementById('searchFilter').addEventListener('keyup', e => { if(e.key==='Enter') document.getElementById('applyFiltersBtn').click(); });
+    window.onclick = e => { const modal = document.getElementById('uploadModal'); if(e.target===modal) modal.classList.remove('active'); };
 
-    function createParticles() {
+    function createParticles(){
         const container = document.getElementById('floatingParticles');
-        for(let i=0;i<55;i++) {
-            let p = document.createElement('div'); p.classList.add('particle');
-            p.style.left = Math.random()*100+'vw'; p.style.top = Math.random()*100+100+'vh';
-            let s = Math.random()*8+3; p.style.width=p.style.height=s+'px';
-            p.style.animationDuration = (Math.random()*14+8)+'s';
-            p.style.animationDelay = (Math.random()*8)+'s';
+        for(let i=0;i<55;i++){
+            let p=document.createElement('div'); p.classList.add('particle');
+            p.style.left=Math.random()*100+'vw'; p.style.top=Math.random()*100+100+'vh';
+            let s=Math.random()*8+3; p.style.width=p.style.height=s+'px';
+            p.style.animationDuration=(Math.random()*14+8)+'s'; p.style.animationDelay=(Math.random()*8)+'s';
             container.appendChild(p);
         }
     }
-    loadProjectsFromLocal(); renderAllProjects(); createParticles();
+
+    createParticles();
+    loadProjects();
 </script>
 </body>
 </html>
