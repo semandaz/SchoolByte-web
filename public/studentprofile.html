@@ -425,7 +425,7 @@
     <div class="container">
         <!-- Welcome Card -->
         <div class="welcome-card">
-            <h2 class="welcome-title">Welcome back, John!</h2>
+            <h2 class="welcome-title">Welcome back, <span id="welcomeName">...</span>!</h2>
             <p>Continue your learning journey and earn more bytes</p>
             
             <div class="welcome-stats">
@@ -456,9 +456,7 @@
                 <button class="tabs-trigger" data-tab="leaderboard">
                     <i class="fas fa-award"></i> Leaderboard
                 </button>
-                <button class="tabs-trigger" data-tab="resources">
-                    <i class="fas fa-book-open"></i> Resources
-                </button>
+                
                 <button class="tabs-trigger" data-tab="settings">
                     <i class="fas fa-cog"></i> Settings
                 </button>
@@ -594,60 +592,6 @@
                 </div>
             </div></div>
 
-            <!-- Resources Tab -->
-            <div id="resources" class="tab-content">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-book-open"></i> Downloadable Resources
-                        </h3>
-                    </div>
-                    <div class="card-content">
-                        <p style="color: var(--color-neutral-dark); margin-bottom: 1.5rem;">
-                            Download study materials for bytes, or view them online for free (no auto-refresh).
-                        </p>
-                        
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-                            <div class="card" style="border: 1px solid var(--color-neutral-light);">
-                                <div class="card-content">
-                                    <h4 style="font-weight: 600; margin-bottom: 0.5rem;">Math Notes</h4>
-                                    <span class="badge" style="background-color: var(--color-neutral-light); color: var(--color-neutral-darkest); padding: 0.25rem 0.5rem; border-radius: var(--radius-input); font-size: 0.8rem; margin-bottom: 1rem;">Mathematics</span>
-                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                                        <button class="btn btn-primary" id="downloadMathBtn">
-                                            <i class="fas fa-download"></i> Download (2 Bytes)
-                                        </button>
-                                        <button class="btn btn-secondary" id="viewMathBtn">
-                                            <i class="fas fa-eye"></i> View Online (Free)
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card" style="border: 1px solid var(--color-neutral-light);">
-                                <div class="card-content">
-                                    <h4 style="font-weight: 600; margin-bottom: 0.5rem;">Science Guide</h4>
-                                    <span class="badge" style="background-color: var(--color-neutral-light); color: var(--color-neutral-darkest); padding: 0.25rem 0.5rem; border-radius: var(--radius-input); font-size: 0.8rem; margin-bottom: 1rem;">Science</span>
-                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                                        <button class="btn btn-primary" id="downloadScienceBtn">
-                                            <i class="fas fa-download"></i> Download (3 Bytes)
-                                        </button>
-                                        <button class="btn btn-secondary" id="viewScienceBtn">
-                                            <i class="fas fa-eye"></i> View Online (Free)
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div style="text-align: center; margin-top: 2rem;">
-                            <p style="color: var(--color-neutral-dark); margin-bottom: 1rem;">Need more bytes?</p>
-                            <button class="btn btn-primary" id="earnBytesBtn">
-                                <i class="fas fa-coins"></i> Earn More Bytes (Quizzes: 3 Bytes, Games: 5 Bytes)
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Settings Tab -->
             <div id="settings" class="tab-content">
                 <div class="card">
@@ -716,20 +660,33 @@
     </div>
 
     <script>
+        // Active time helpers
+        function getActiveSeconds() {
+            return parseInt(localStorage.getItem('schoolbyte_active_seconds') || '0');
+        }
+        function formatActiveTime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            if (h === 0) return m + 'm';
+            return h + 'h ' + m + 'm';
+        }
+        function updateActiveTimeDisplay() {
+            const secs = getActiveSeconds();
+            const display = formatActiveTime(secs);
+            const el = document.getElementById('activeHoursDisplay');
+            const el2 = document.getElementById('progressActiveHours');
+            const bar = document.getElementById('activeHoursBar');
+            if (el) el.textContent = display;
+            if (el2) el2.textContent = display;
+            const pct = Math.min(100, Math.round(secs / (20 * 3600) * 100));
+            if (bar) bar.style.width = pct + '%';
+        }
+
         // Function to fetch and display student data
         async function fetchStudentData() {
             try {
                 // Check for token with backward compatibility
-                let token = localStorage.getItem('token');
-                if (!token) {
-                    token = localStorage.getItem('token');
-                    if (token) {
-                        // Migrate old token to new key
-                        localStorage.setItem('token', token);
-                        localStorage.removeItem('token');
-                    }
-                }
-                
+                const token = localStorage.getItem('token');
                 if (!token) {
                     window.location.href = 'studentlogin.html';
                     return;
@@ -756,7 +713,14 @@
                     document.getElementById('email').value = student.email;
                     document.getElementById('class').value = `${student.class} ${student.stream}`;
                     document.getElementById('bytesCount').textContent = student.bytes || 0;
-                    document.getElementById('totalBytes').textContent = student.bytes >= 1000 ? `${(student.bytes/1000).toFixed(1)} kB` : `${student.bytes} Bytes`;
+                    document.getElementById('totalBytes').textContent = student.bytes >= 1000 ? `${(student.bytes/1000).toFixed(1)} kB` : `${student.bytes || 0} Bytes`;
+                    const wnEl = document.getElementById('welcomeName');
+                    if (wnEl) wnEl.textContent = displayName;
+                    const qEl = document.getElementById('quizzesDisplay');
+                    if (qEl) qEl.textContent = student.quizzesCompletedThisWeek || 0;
+                                        const achEl = document.getElementById('progressAchievements');
+                    if (achEl) achEl.textContent = (data.totalAchievements || 0);
+                    updateActiveTimeDisplay();
                     
                     // Set up preferred name dropdown
                     const preferredNameSelect = document.getElementById('preferred-name');
@@ -920,31 +884,7 @@
             }
         });
 
-        // PDF Download/View functionality
-        document.getElementById('downloadMathBtn').addEventListener('click', function() {
-            const cost = 2;
-            const currentBytes = parseInt(document.getElementById('bytesCount').textContent);
-            
-            if (currentBytes < cost) {
-                alert('Insufficient bytes! You need ' + cost + ' bytes to download this file.');
-                return;
-            }
-            
-            alert('Downloading Math Notes for ' + cost + ' bytes. (Backend integration needed)');
-            // In a real implementation, you would deduct bytes here after successful download
-        });
-
-        document.getElementById('viewMathBtn').addEventListener('click', function() {
-            window.open('https://www.africau.edu/images/default/sample.pdf', '_blank');
-            alert('Viewing Math Notes online. (No byte cost, no auto-refresh)');
-        });
-
         // Earn Bytes button
-        document.getElementById('earnBytesBtn').addEventListener('click', function() {
-            alert('Redirecting to Quizzes/Games to earn bytes!');
-            // window.location.href = 'quizzes_games.html';
-        });
-
         // Sign Out button
         document.getElementById('signOutBtn').addEventListener('click', function() {
             // Clear all student-related data
@@ -1033,6 +973,8 @@
 
         // Load achievements on page load
         loadAchievements();
+        updateActiveTimeDisplay();
+
     </script>
 
     <script src="notifications-widget.js"></script>
