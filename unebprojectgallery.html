@@ -612,7 +612,17 @@
         e.stopPropagation();
         const pid = e.currentTarget.closest('.project-card').getAttribute('data-id');
         const proj = PROJECTS_DB.find(p=>p.id===pid);
-        if(proj){ navigator.clipboard.writeText('📘 '+proj.title+' on SchoolByte UNEB Gallery!'); alert('🔗 Project link copied!'); }
+        if(!proj || !proj.student) { alert('Cannot share: project data unavailable.'); return; }
+        const params = new URLSearchParams({
+            contact: proj.student.id,
+            quoteProject: proj.id,
+            photoUrl: proj.photoUrl || '',
+            projectTitle: proj.title || 'Project',
+            studentName: proj.student.studentName || 'Student',
+            studentClass: proj.student.class || '',
+            studentStream: proj.student.stream || ''
+        });
+        window.location.href = 'bytenexus-chat.html?' + params.toString();
     }
 
     async function handleHelpful(e){

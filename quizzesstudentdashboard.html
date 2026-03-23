@@ -903,6 +903,7 @@
 
                     renderCurrentQuestion();
                     updateProgress();
+                    localStorage.setItem('quiz_start_ms', Date.now());
                 } else {
                     const errorData = await response.json();
                     alert(errorData.message || 'Failed to generate quiz');
@@ -1154,6 +1155,16 @@
         }
 
         async function submitQuiz() {
+            // Accumulate active time from this quiz session
+            const quizStartMs = parseInt(localStorage.getItem('quiz_start_ms') || '0');
+            if (quizStartMs > 0) {
+                const elapsed = Math.floor((Date.now() - quizStartMs) / 1000);
+                if (elapsed > 10 && elapsed < 7200) { // sanity: 10s min, 2h max
+                    const prev = parseInt(localStorage.getItem('schoolbyte_active_seconds') || '0');
+                    localStorage.setItem('schoolbyte_active_seconds', prev + elapsed);
+                }
+                localStorage.removeItem('quiz_start_ms');
+            }
             // Check if at least some questions have been answered
             const answeredCount = studentAnswers.filter(answer => {
                 if (Array.isArray(answer)) return answer.length > 0;

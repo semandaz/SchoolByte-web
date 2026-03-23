@@ -665,6 +665,14 @@
                     className: 'career',
                     defaultLeft: 20,
                     defaultTop: 360
+                },
+                {
+                    id: 'bytenexusIcon',
+                    icon: 'fas fa-comments',
+                    tooltip: 'ByteNexus Chat',
+                    className: 'bytenexus',
+                    defaultLeft: 20,
+                    defaultTop: 440
                 }
             ];
 
@@ -714,6 +722,9 @@
                         break;
                     case 'careerIcon':
                         this.openCareerGuidance();
+                        break;
+                    case 'bytenexusIcon':
+                        window.location.href = 'bytenexus-chat.html';
                         break;
                 }
             });
