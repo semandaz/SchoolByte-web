@@ -5869,6 +5869,39 @@ app.delete('/admin/uneb-projects/:id', authenticateAdminToken, async (req, res) 
   }
 });
 
+// Admin: list students (for notification targeting)
+app.get('/admin/students', authenticateAdminToken, async (req, res) => {
+  try {
+    const students = await Student.find({}, '_id studentName class indexNumber').lean();
+    res.json({ students });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch students' });
+  }
+});
+
+// Admin: send notification to all or specific student
+app.post('/admin/send-notification', authenticateAdminToken, async (req, res) => {
+  try {
+    const { title, message, type, target } = req.body;
+    if (!title || !message) return res.status(400).json({ error: 'Title and message are required' });
+    const notifType = ['achievement','message','system','team','quiz'].includes(type) ? type : 'system';
+    let students;
+    if (!target || target === 'all') {
+      students = await Student.find({});
+    } else {
+      students = await Student.find({ _id: target });
+    }
+    if (!students.length) return res.status(404).json({ error: 'No students found' });
+    for (const student of students) {
+      student.notifications.push({ type: notifType, title, message, isRead: false, createdAt: new Date() });
+      await student.save();
+    }
+    res.json({ success: true, sentTo: students.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/student/energy', authenticateToken, async (req, res) => {
   try {
     const student = await Student.findById(req.student.id);

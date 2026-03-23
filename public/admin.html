@@ -481,6 +481,39 @@
                         <button class="btn-submit" onclick="triggerYearlyUpgrade()">Promote Students</button>
                     </div>
                 </div>
+                <h2 class="section-header" style="margin-top:2rem;">Send Notification</h2>
+                <div style="background:var(--light-bg);border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;max-width:600px;">
+                    <form id="sendNotifForm">
+                        <div class="form-group" style="margin-bottom:1rem;">
+                            <label style="display:block;margin-bottom:6px;font-weight:600;color:#bdc3c7;">Target</label>
+                            <select id="notifTarget" style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid var(--border-color);color:var(--text-color);font-size:0.9rem;">
+                                <option value="all">📢 All Students</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom:1rem;">
+                            <label style="display:block;margin-bottom:6px;font-weight:600;color:#bdc3c7;">Type</label>
+                            <select id="notifType" style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid var(--border-color);color:var(--text-color);font-size:0.9rem;">
+                                <option value="system">📣 System</option>
+                                <option value="message">💬 Message</option>
+                                <option value="achievement">🏆 Achievement</option>
+                                <option value="quiz">📝 Quiz</option>
+                                <option value="team">👥 Team</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom:1rem;">
+                            <label style="display:block;margin-bottom:6px;font-weight:600;color:#bdc3c7;">Title</label>
+                            <input type="text" id="notifTitle" placeholder="Notification title..." required style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid var(--border-color);color:var(--text-color);font-size:0.9rem;">
+                        </div>
+                        <div class="form-group" style="margin-bottom:1.2rem;">
+                            <label style="display:block;margin-bottom:6px;font-weight:600;color:#bdc3c7;">Message</label>
+                            <textarea id="notifMessage" placeholder="Notification message..." rows="3" required style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid var(--border-color);color:var(--text-color);font-size:0.9rem;resize:vertical;"></textarea>
+                        </div>
+                        <button type="submit" class="btn-submit" id="sendNotifBtn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;">
+                            <i class="fas fa-paper-plane"></i> Send Notification
+                        </button>
+                    </form>
+                    <div id="notifResult" style="margin-top:1rem;display:none;padding:10px 14px;border-radius:8px;font-size:0.9rem;font-weight:600;"></div>
+                </div>
             </div>
 
             <!-- Content Management Tab -->
@@ -840,6 +873,64 @@
                 }, 500);
             }, 4500);
         }
+
+        // ── Notification sending ──
+        async function loadStudentsForNotif() {
+            const token = localStorage.getItem('token');
+            try {
+                const r = await fetch('/admin/students', { headers: { 'Authorization': 'Bearer ' + token } });
+                if (!r.ok) return;
+                const data = await r.json();
+                const sel = document.getElementById('notifTarget');
+                data.students.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s._id;
+                    opt.textContent = s.studentName + ' (' + (s.class || '') + ')';
+                    sel.appendChild(opt);
+                });
+            } catch(e) { console.error('loadStudents error', e); }
+        }
+        loadStudentsForNotif();
+
+        document.getElementById('sendNotifForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const token = localStorage.getItem('token');
+            const btn = document.getElementById('sendNotifBtn');
+            const result = document.getElementById('notifResult');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            result.style.display = 'none';
+            try {
+                const r = await fetch('/admin/send-notification', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        target: document.getElementById('notifTarget').value,
+                        type: document.getElementById('notifType').value,
+                        title: document.getElementById('notifTitle').value,
+                        message: document.getElementById('notifMessage').value
+                    })
+                });
+                const d = await r.json();
+                if (!r.ok) throw new Error(d.error || 'Failed');
+                result.style.display = 'block';
+                result.style.background = 'rgba(46,204,113,0.15)';
+                result.style.color = '#2ecc71';
+                result.style.border = '1px solid rgba(46,204,113,0.3)';
+                result.textContent = 'Notification sent to ' + d.sentTo + ' student(s)!';
+                document.getElementById('sendNotifForm').reset();
+                loadStudentsForNotif();
+            } catch(err) {
+                result.style.display = 'block';
+                result.style.background = 'rgba(231,76,60,0.15)';
+                result.style.color = '#e74c3c';
+                result.style.border = '1px solid rgba(231,76,60,0.3)';
+                result.textContent = 'Error: ' + err.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Notification';
+            }
+        });
 
         // Close modal when clicking outside
         window.onclick = function(event) {

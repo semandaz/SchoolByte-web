@@ -147,6 +147,22 @@
         .badge-red { background:rgba(231,76,60,0.2); color:#e74c3c; border:1px solid rgba(231,76,60,0.3); }
         .badge-green { background:rgba(46,204,113,0.2); color:#2ecc71; border:1px solid rgba(46,204,113,0.3); }
         .badge-blue { background:rgba(52,152,219,0.2); color:#3498db; border:1px solid rgba(52,152,219,0.3); }
+        .preview-btn {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+    padding: 7px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.preview-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(52,152,219,0.4); }
         .delete-btn {
             background:rgba(231,76,60,0.15);
             border:1px solid rgba(231,76,60,0.3);
@@ -301,7 +317,7 @@
         tbody.innerHTML = list.map(p => {
             const flagged = (p.notHelpfulCount || 0) > 2;
             return '<tr>' +
-                '<td><img class="project-thumb" src="' + (p.photoUrl || 'https://picsum.photos/id/1/100/70') + '" alt="" onerror="this.src=\'https://picsum.photos/id/1/100/70\'"></td>' +
+                '<td><img class="project-thumb" src="' + (p.photoUrl || 'https://picsum.photos/id/1/100/70') + '" alt="" onerror="this.src=\'https://picsum.photos/id/1/100/70\'"></div></td>' +
                 '<td><div class="project-info"><div class="project-title-cell">' + esc(p.title) + '</div><div class="project-meta">' + esc(p.category || '') + '</div></div></td>' +
                 '<td><div style="font-weight:600;">' + esc(p.studentName || 'Unknown') + '</div><div style="font-size:0.75rem;color:var(--text-muted);">' + esc(p.studentClass || '') + '</div></td>' +
                 '<td><span class="badge badge-blue">' + esc(p.subject || '') + '</span><br><span style="font-size:0.8rem;color:var(--text-muted);margin-top:4px;display:inline-block;">' + esc(p.year || '') + '</span></td>' +
@@ -312,7 +328,7 @@
                     '<span class="badge ' + (flagged ? 'badge-red' : '') + '" style="' + (!flagged ? 'background:rgba(127,140,163,0.1);color:#7f8c8d;' : '') + '"><i class="fas fa-thumbs-down"></i> ' + (p.notHelpfulCount||0) + '</span>' +
                     '</div>' +
                 '</td>' +
-                '<td><button class="delete-btn" onclick="openDeleteModal(\'' + p._id + '\',\'' + esc(p.title).replace(/'/g,"\\'")+'\')"><i class="fas fa-trash"></i> Delete</button></td>' +
+                '<td><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;"><button class="preview-btn" onclick="openPreviewModal(allProjects.find(x=>x._id===\'' + p._id + '\''))"><i class="fas fa-eye"></i> Preview</button><button class="delete-btn" onclick="openDeleteModal(\'' + p._id + '\',\'' + esc(p.title).replace(/'/g,"\\'")+'\')"><i class="fas fa-trash"></i> Delete</button></td>' +
             '</tr>';
         }).join('');
     }
@@ -357,6 +373,63 @@
     document.getElementById('sortSelect').onchange = () => renderTable(allProjects);
 
     loadProjects();
+
+    function openPreviewModal(p) {
+        if (!p) return;
+        document.getElementById('previewPhoto').src = p.photoUrl || '';
+        document.getElementById('previewTitle').textContent = p.title || '';
+        document.getElementById('previewSubject').textContent = p.subject || '';
+        document.getElementById('previewCategory').textContent = p.category || '';
+        document.getElementById('previewYear').textContent = p.year || '';
+        document.getElementById('previewStudent').textContent = (p.studentName || 'Unknown') + (p.studentClass ? ' · ' + p.studentClass : '');
+        document.getElementById('previewAbstract').textContent = p.abstract || '—';
+        document.getElementById('previewMethod').textContent = p.methodology || '—';
+        const findings = [p.findings, p.conclusion].filter(Boolean).join('\n\n');
+        document.getElementById('previewFindings').textContent = findings || '—';
+        const modal = document.getElementById('previewModal');
+        modal.style.display = 'flex';
+    }
+    function closePreviewModal() {
+        document.getElementById('previewModal').style.display = 'none';
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        const pm = document.getElementById('previewModal');
+        if (pm) pm.addEventListener('click', function(e) { if (e.target === this) closePreviewModal(); });
+    });
 </script>
+
+    <!-- Preview Modal -->
+    <div id="previewModal" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;">
+        <div class="modal" style="max-width:700px;width:95%;max-height:90vh;overflow-y:auto;background:var(--card-bg);border:1px solid var(--border-color);border-radius:16px;padding:0;display:flex;flex-direction:column;">
+            <div style="position:relative;">
+                <img id="previewPhoto" src="" alt="Project Photo" style="width:100%;max-height:340px;object-fit:cover;border-radius:16px 16px 0 0;display:block;" onerror="this.src='https://picsum.photos/id/1/700/340'">
+                <button onclick="closePreviewModal()" style="position:absolute;top:12px;right:14px;background:rgba(0,0,0,0.6);border:none;color:white;font-size:1.3rem;border-radius:50%;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&times;</button>
+            </div>
+            <div style="padding:1.5rem;">
+                <h2 id="previewTitle" style="margin:0 0 10px;color:var(--text-color);font-size:1.3rem;"></h2>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+                    <span id="previewSubject" class="badge badge-blue" style="font-size:0.8rem;"></span>
+                    <span id="previewCategory" class="badge badge-green" style="font-size:0.8rem;"></span>
+                    <span id="previewYear" class="badge" style="background:rgba(127,140,163,0.15);color:#bdc3c7;font-size:0.8rem;"></span>
+                </div>
+                <div style="margin-bottom:8px;">
+                    <strong style="color:#bdc3c7;font-size:0.85rem;display:block;margin-bottom:4px;">Student</strong>
+                    <span id="previewStudent" style="color:var(--text-color);font-size:0.95rem;"></span>
+                </div>
+                <div id="previewAbstractWrap" style="margin-top:12px;">
+                    <strong style="color:#bdc3c7;font-size:0.85rem;display:block;margin-bottom:4px;">Abstract</strong>
+                    <p id="previewAbstract" style="color:var(--text-color);font-size:0.9rem;line-height:1.6;margin:0;white-space:pre-wrap;"></p>
+                </div>
+                <div id="previewMethodWrap" style="margin-top:12px;">
+                    <strong style="color:#bdc3c7;font-size:0.85rem;display:block;margin-bottom:4px;">Methodology</strong>
+                    <p id="previewMethod" style="color:var(--text-color);font-size:0.9rem;line-height:1.6;margin:0;white-space:pre-wrap;"></p>
+                </div>
+                <div id="previewFindingsWrap" style="margin-top:12px;">
+                    <strong style="color:#bdc3c7;font-size:0.85rem;display:block;margin-bottom:4px;">Findings &amp; Conclusion</strong>
+                    <p id="previewFindings" style="color:var(--text-color);font-size:0.9rem;line-height:1.6;margin:0;white-space:pre-wrap;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
