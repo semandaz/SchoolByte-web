@@ -556,7 +556,7 @@
             const upActive = myVote === true;
             const downActive = myVote === false;
             return '<div class="project-card" data-id="'+project.id+'">'+
-                '<img class="card-photo" src="'+(project.photoUrl||'https://picsum.photos/id/1/400/250')+'" alt="'+escapeHtml(project.title)+'" onerror="this.src='https://picsum.photos/id/1/400/250'">'+
+                '<img class="card-photo" src="'+(project.photoUrl||'https://picsum.photos/id/1/400/250')+'" alt="'+escapeHtml(project.title)+'" onerror="this.src=\'https://picsum.photos/id/1/400/250\'">'+
                 '<div class="card-content">'+
                     '<div class="title-year"><div class="project-title">'+escapeHtml(project.title)+'</div><div class="project-year">'+escapeHtml(project.year)+'</div></div>'+
                     (project.student ? '<div style="font-size:0.75rem;color:#64748b;margin-bottom:4px;"><i class="fas fa-user-graduate"></i> '+escapeHtml(project.student.studentName)+(project.student.class?' · '+escapeHtml(project.student.class):'')+'</div>' : '')+
@@ -564,7 +564,7 @@
                     '<div class="methodology-area">'+
                         '<div class="methodology-short" id="shortText-'+project.id+'">'+escapeHtml(methodShort)+'</div>'+
                         '<div class="full-method-text" id="fullText-'+project.id+'" style="display:none;">'+fullContent+'</div>'+
-                        '<button class="read-more-btn" data-id="'+project.id+'" onclick="window.toggleReadMore(''+project.id+'')"><i class="fas fa-expand-alt"></i> Read methodology</button>'+
+                        '<button class="read-more-btn" data-id="'+project.id+'" onclick="window.toggleReadMore(\''+project.id+'\')"><i class="fas fa-expand-alt"></i> Read methodology</button>'+
                     '</div>'+
                     '<div class="action-buttons">'+
                         '<div class="action-group">'+
