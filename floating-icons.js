@@ -335,6 +335,63 @@
             .fi-tooltip { left: 58px; }
             .fi-card-grid { grid-template-columns: 1fr; }
         }
+
+        /* ── ByteNexus PiP ──────────────────────────────────────────────────── */
+        #bn-pip {
+            position: fixed;
+            bottom: 24px; right: 24px;
+            width: 360px; height: 520px;
+            background: #111827;
+            border: 1px solid rgba(178,31,31,0.5);
+            border-radius: 16px;
+            z-index: 10100;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0,0,0,.6);
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(.4,0,.2,1);
+        }
+        #bn-pip.hidden { display: none !important; }
+        #bn-pip-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: linear-gradient(135deg,#b21f1f,#7f1313);
+            flex-shrink: 0;
+        }
+        #bn-pip-bar span {
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        #bn-pip-bar .pip-controls {
+            display: flex;
+            gap: 6px;
+        }
+        #bn-pip-bar .pip-controls button {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: #fff;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        #bn-pip-bar .pip-controls button:hover { background: rgba(255,255,255,0.28); }
+        #bn-pip iframe {
+            flex: 1;
+            border: none;
+            width: 100%;
+            height: 100%;
+        }
     `;
     document.head.appendChild(style);
 
@@ -820,11 +877,38 @@
         openModal(counselModal);
     });
 
-    /* ── ByteNexus icon ──────────────────────────────────────────────────── */
-    document.getElementById('fi-bytenexus').addEventListener('click', e => {
-        if (e.currentTarget.classList.contains('dragging')) return;
-        window.location.href = 'bytenexus-chat.html';
-    });
+    /* ── ByteNexus icon → PiP chat ─────────────────────────────────────── */
+    (function initBnPip() {
+        const pip = document.createElement('div');
+        pip.id = 'bn-pip';
+        pip.classList.add('hidden');
+        pip.innerHTML = `
+            <div id="bn-pip-bar">
+                <span><i class="fas fa-comments"></i> ByteNexus Chat</span>
+                <div class="pip-controls">
+                    <button title="Full screen" onclick="window.open('bytenexus-chat.html','_self')">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    <button title="Close PiP" onclick="document.getElementById('bn-pip').classList.add('hidden')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <iframe src="bytenexus-chat.html" id="bn-pip-frame" allow="microphone" loading="lazy"></iframe>
+        `;
+        document.body.appendChild(pip);
+
+        document.getElementById('fi-bytenexus').addEventListener('click', e => {
+            if (e.currentTarget.classList.contains('dragging')) return;
+            const pip = document.getElementById('bn-pip');
+            pip.classList.toggle('hidden');
+            // Reload iframe when opening so it picks up fresh auth
+            if (!pip.classList.contains('hidden')) {
+                const frame = document.getElementById('bn-pip-frame');
+                if (!frame.src || frame.src === 'about:blank') frame.src = 'bytenexus-chat.html';
+            }
+        });
+    })();
 
     /* ── Expose addActivity for external use ─────────────────────────────── */
     window.floatingIcons = {
