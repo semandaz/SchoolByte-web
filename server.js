@@ -5880,6 +5880,84 @@ app.delete('/admin/uneb-projects/:id', authenticateAdminToken, async (req, res) 
   }
 });
 
+// Student: update preferences (font, theme, etc.)
+app.put('/student/preferences', authenticateToken, async (req, res) => {
+  try {
+    const { preferences } = req.body;
+    if (!preferences || typeof preferences !== 'object') return res.status(400).json({ message: 'Invalid preferences' });
+    const student = await Student.findById(req.student.id);
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    student.preferences = { ...(student.preferences || {}), ...preferences };
+    student.markModified('preferences');
+    await student.save();
+    res.json({ message: 'Preferences saved', preferences: student.preferences });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Student: update preferred name
+app.put('/student/preferred-name', authenticateToken, async (req, res) => {
+  try {
+    const { preferredName } = req.body;
+    const student = await Student.findById(req.student.id);
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    student.preferredName = (preferredName || '').trim();
+    await student.save();
+    res.json({ message: 'Preferred name updated', preferredName: student.preferredName });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Public health check (no auth)
+app.get('/api/health', async (req, res) => {
+  const status = { api: 'ok', database: 'unknown', timestamp: new Date().toISOString() };
+  try {
+    await Student.findOne().select('_id').lean();
+    status.database = 'ok';
+  } catch (e) { status.database = 'error'; }
+  res.json(status);
+});
+
+// Admin: list all workfiles (notes)
+app.get('/admin/workfiles', authenticateAdminToken, async (req, res) => {
+  try {
+    const files = await WorkFile.find({}).sort({ createdAt: -1 }).lean();
+    res.json({ workfiles: files });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Admin: delete a workfile
+app.delete('/admin/workfiles/:id', authenticateAdminToken, async (req, res) => {
+  try {
+    const wf = await WorkFile.findById(req.params.id);
+    if (!wf) return res.status(404).json({ error: 'Not found' });
+    if (wf.cloudinaryPublicId) {
+      try { await cloudinary.uploader.destroy(wf.cloudinaryPublicId, { resource_type: 'raw' }); } catch(e) {}
+    }
+    await WorkFile.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Admin: list all activities
+app.get('/admin/activities', authenticateAdminToken, async (req, res) => {
+  try {
+    const acts = await Activity.find({}).sort({ createdAt: -1 }).lean();
+    res.json({ activities: acts });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Admin: delete an activity
+app.delete('/admin/activities/:id', authenticateAdminToken, async (req, res) => {
+  try {
+    const act = await Activity.findByIdAndDelete(req.params.id);
+    if (!act) return res.status(404).json({ error: 'Not found' });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // Admin: list students (for notification targeting)
 app.get('/admin/students', authenticateAdminToken, async (req, res) => {
   try {
@@ -5893,16 +5971,15 @@ app.get('/admin/students', authenticateAdminToken, async (req, res) => {
 // Admin: send notification to all or specific student
 app.post('/admin/send-notification', authenticateAdminToken, async (req, res) => {
   try {
-    const { title, message, type, target } = req.body;
+    const { title, message, type, targetMode, targetValue } = req.body;
     if (!title || !message) return res.status(400).json({ error: 'Title and message are required' });
     const notifType = ['achievement','message','system','team','quiz'].includes(type) ? type : 'system';
-    let students;
-    if (!target || target === 'all') {
-      students = await Student.find({});
-    } else {
-      students = await Student.find({ _id: target });
-    }
-    if (!students.length) return res.status(404).json({ error: 'No students found' });
+    let query = {};
+    if (targetMode === 'class' && targetValue) query = { class: targetValue };
+    else if (targetMode === 'stream' && targetValue) query = { stream: targetValue };
+    else if (targetMode === 'student' && targetValue) query = { _id: targetValue };
+    const students = await Student.find(query);
+    if (!students || !students.length) return res.status(404).json({ error: 'No students found for the selected target' });
     for (const student of students) {
       student.notifications.push({ type: notifType, title, message, isRead: false, createdAt: new Date() });
       await student.save();

@@ -305,6 +305,37 @@
         .btn-submit:hover {
             background-color: var(--accent-color);
         }
+        .btn-delete {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn-delete:hover { opacity: 0.85; }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        .table th, .table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
+        }
+        .table th {
+            background: rgba(255,255,255,0.04);
+            color: #bdc3c7;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .table tr:hover td { background: rgba(255,255,255,0.03); }
 
         .error-message, .success-message {
             position: fixed;
@@ -485,10 +516,29 @@
                 <div style="background:var(--light-bg);border:1px solid var(--border-color);border-radius:12px;padding:1.5rem;max-width:600px;">
                     <form id="sendNotifForm">
                         <div class="form-group" style="margin-bottom:1rem;">
-                            <label style="display:block;margin-bottom:6px;font-weight:600;color:#bdc3c7;">Target</label>
-                            <select id="notifTarget" style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid var(--border-color);color:var(--text-color);font-size:0.9rem;">
-                                <option value="all">📢 All Students</option>
+                            <label style="display:block;margin-bottom:6px;font-weight:600;color:#bdc3c7;">Target Mode</label>
+                            <select id="notifTargetMode" onchange="handleNotifTargetMode()" style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid var(--border-color);color:var(--text-color);font-size:0.9rem;">
+                                <option value="all">All Students</option>
+                                <option value="class">By Class (S.1-S.6)</option>
+                                <option value="stream">By Stream</option>
+                                <option value="student">By Student Name</option>
                             </select>
+                        </div>
+                        <div id="notifTargetValueWrapper" style="margin-bottom:1rem;display:none;">
+                            <label style="display:block;margin-bottom:6px;font-weight:600;color:#bdc3c7;" id="notifTargetValueLabel">Value</label>
+                            <select id="notifTargetClass" style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid var(--border-color);color:var(--text-color);font-size:0.9rem;display:none;">
+                                <option value="S.1">S.1</option><option value="S.2">S.2</option><option value="S.3">S.3</option>
+                                <option value="S.4">S.4</option><option value="S.5">S.5</option><option value="S.6">S.6</option>
+                            </select>
+                            <select id="notifTargetStream" style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid var(--border-color);color:var(--text-color);font-size:0.9rem;display:none;">
+                                <option value="Arts">Arts</option><option value="Science">Science</option>
+                                <option value="Commerce">Commerce</option><option value="Technical">Technical</option>
+                            </select>
+                            <div id="notifStudentSearch" style="display:none;position:relative;">
+                                <input type="text" id="notifStudentQuery" placeholder="Type student name to search..." oninput="searchStudentsForNotif()" style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid var(--border-color);color:var(--text-color);font-size:0.9rem;box-sizing:border-box;">
+                                <div id="notifStudentSuggestions" style="position:absolute;top:100%;left:0;right:0;background:#1e2a3a;border:1px solid var(--border-color);border-radius:8px;z-index:999;max-height:200px;overflow-y:auto;display:none;"></div>
+                                <input type="hidden" id="notifTargetStudentId">
+                            </div>
                         </div>
                         <div class="form-group" style="margin-bottom:1rem;">
                             <label style="display:block;margin-bottom:6px;font-weight:600;color:#bdc3c7;">Type</label>
@@ -519,9 +569,28 @@
             <!-- Content Management Tab -->
             <div id="content-management-tab" class="tab-pane">
                 <h2 class="section-header">Content Management</h2>
-                <p>This section will be developed soon.</p>
+                <div style="margin-bottom:2.5rem;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                        <h3 style="font-size:1.1rem;font-weight:700;color:var(--text-color);display:flex;align-items:center;gap:8px;"><i class="fas fa-file-pdf" style="color:#e74c3c;"></i> Uploaded Notes (WorkFiles)</h3>
+                        <button class="btn-submit" style="padding:8px 16px;font-size:0.85rem;" onclick="loadContentManagement()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="table" id="workfilesTable">
+                            <thead><tr><th>Title</th><th>Subject</th><th>Class</th><th>Teacher</th><th>Date</th><th>Actions</th></tr></thead>
+                            <tbody id="workfilesTableBody"><tr><td colspan="6" style="text-align:center;opacity:0.5;">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--text-color);display:flex;align-items:center;gap:8px;"><i class="fas fa-tasks" style="color:#3498db;"></i> Activities</h3>
+                    <div style="overflow-x:auto;">
+                        <table class="table" id="activitiesTable">
+                            <thead><tr><th>Title</th><th>Subject</th><th>Class</th><th>Teacher</th><th>Date</th><th>Actions</th></tr></thead>
+                            <tbody id="activitiesTableBody"><tr><td colspan="6" style="text-align:center;opacity:0.5;">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-
             <!-- Reporting & Analytics Tab -->
             <div id="reporting-analytics-tab" class="tab-pane">
                 <h2 class="section-header">Reporting & Analytics</h2>
@@ -875,22 +944,156 @@
         }
 
         // ── Notification sending ──
+        let _allStudentsCache = [];
         async function loadStudentsForNotif() {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('adminToken');
             try {
                 const r = await fetch('/admin/students', { headers: { 'Authorization': 'Bearer ' + token } });
                 if (!r.ok) return;
                 const data = await r.json();
-                const sel = document.getElementById('notifTarget');
-                data.students.forEach(s => {
-                    const opt = document.createElement('option');
-                    opt.value = s._id;
-                    opt.textContent = s.studentName + ' (' + (s.class || '') + ')';
-                    sel.appendChild(opt);
-                });
+                _allStudentsCache = data.students || [];
             } catch(e) { console.error('loadStudents error', e); }
         }
         loadStudentsForNotif();
+
+        function handleNotifTargetMode() {
+            const mode = document.getElementById('notifTargetMode').value;
+            const wrapper = document.getElementById('notifTargetValueWrapper');
+            const classEl = document.getElementById('notifTargetClass');
+            const streamEl = document.getElementById('notifTargetStream');
+            const studentEl = document.getElementById('notifStudentSearch');
+            const label = document.getElementById('notifTargetValueLabel');
+            wrapper.style.display = mode === 'all' ? 'none' : 'block';
+            classEl.style.display = mode === 'class' ? 'block' : 'none';
+            streamEl.style.display = mode === 'stream' ? 'block' : 'none';
+            studentEl.style.display = mode === 'student' ? 'block' : 'none';
+            if (mode === 'class') label.textContent = 'Select Class';
+            else if (mode === 'stream') label.textContent = 'Select Stream';
+            else if (mode === 'student') label.textContent = 'Search Student';
+        }
+
+        function searchStudentsForNotif() {
+            const q = document.getElementById('notifStudentQuery').value.toLowerCase().trim();
+            const sugg = document.getElementById('notifStudentSuggestions');
+            if (!q) { sugg.style.display = 'none'; return; }
+            const matches = _allStudentsCache.filter(s => (s.studentName || '').toLowerCase().includes(q)).slice(0, 8);
+            sugg.innerHTML = matches.map(s => `<div onclick="selectStudentForNotif('${s._id}','${(s.studentName||'').replace(/'/g, '\\'')}','${s.class||''}')" style="padding:9px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.07);color:#e0e0e0;font-size:0.88rem;" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background=''">${s.studentName} <span style="opacity:0.5;font-size:0.8rem;">${s.class||''}</span></div>`).join('');
+            sugg.style.display = matches.length ? 'block' : 'none';
+        }
+
+        function selectStudentForNotif(id, name, cls) {
+            document.getElementById('notifStudentQuery').value = name + (cls ? ' (' + cls + ')' : '');
+            document.getElementById('notifTargetStudentId').value = id;
+            document.getElementById('notifStudentSuggestions').style.display = 'none';
+        }
+
+        async function loadContentManagement() {
+            const token = localStorage.getItem('adminToken');
+            const wfBody = document.getElementById('workfilesTableBody');
+            const actBody = document.getElementById('activitiesTableBody');
+            if (!wfBody || !actBody) return;
+            const fmt = d => new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+            try {
+                const r = await fetch('/admin/workfiles', { headers: { 'Authorization': 'Bearer ' + token } });
+                const d = await r.json();
+                const files = d.workfiles || [];
+                wfBody.innerHTML = files.length ? files.map(f => `<tr>
+                    <td>${f.title||f.workFileTitle||'—'}</td>
+                    <td>${f.subject||'—'}</td>
+                    <td>${f.intendedClass||'—'}</td>
+                    <td>${f.uploadedBy?.teacherName||'—'}</td>
+                    <td>${fmt(f.createdAt)}</td>
+                    <td><button class="btn-delete" onclick="deleteWorkfile('${f._id}')"><i class="fas fa-trash"></i> Delete</button></td>
+                </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;opacity:0.5;">No notes uploaded yet.</td></tr>';
+            } catch(e) { wfBody.innerHTML = '<tr><td colspan="6" style="color:#e74c3c;">Failed to load</td></tr>'; }
+            try {
+                const r = await fetch('/admin/activities', { headers: { 'Authorization': 'Bearer ' + token } });
+                const d = await r.json();
+                const acts = d.activities || [];
+                actBody.innerHTML = acts.length ? acts.map(a => `<tr>
+                    <td>${a.title||'—'}</td>
+                    <td>${a.subject||'—'}</td>
+                    <td>${a.intendedClass||'—'}</td>
+                    <td>${a.uploadedBy?.teacherName||'—'}</td>
+                    <td>${fmt(a.createdAt)}</td>
+                    <td><button class="btn-delete" onclick="deleteActivity('${a._id}')"><i class="fas fa-trash"></i> Delete</button></td>
+                </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;opacity:0.5;">No activities uploaded yet.</td></tr>';
+            } catch(e) { actBody.innerHTML = '<tr><td colspan="6" style="color:#e74c3c;">Failed to load</td></tr>'; }
+        }
+
+        async function deleteWorkfile(id) {
+            if (!confirm('Delete this WorkFile? This cannot be undone.')) return;
+            const token = localStorage.getItem('adminToken');
+            try {
+                const r = await fetch('/admin/workfiles/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+                if (!r.ok) throw new Error();
+                loadContentManagement();
+            } catch(e) { alert('Failed to delete WorkFile.'); }
+        }
+
+        async function deleteActivity(id) {
+            if (!confirm('Delete this Activity? This cannot be undone.')) return;
+            const token = localStorage.getItem('adminToken');
+            try {
+                const r = await fetch('/admin/activities/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+                if (!r.ok) throw new Error();
+                loadContentManagement();
+            } catch(e) { alert('Failed to delete Activity.'); }
+        }
+
+        // Load content management when tab is opened
+        document.querySelectorAll('[data-tab]').forEach(a => {
+            a.addEventListener('click', () => { if (a.dataset.tab === 'content-management-tab') loadContentManagement(); });
+        });
+
+        document.getElementById('sendNotifForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const token = localStorage.getItem('adminToken');
+            const btn = document.getElementById('sendNotifBtn');
+            const result = document.getElementById('notifResult');
+            const mode = document.getElementById('notifTargetMode').value;
+            let targetValue = '';
+            if (mode === 'class') targetValue = document.getElementById('notifTargetClass').value;
+            else if (mode === 'stream') targetValue = document.getElementById('notifTargetStream').value;
+            else if (mode === 'student') {
+                targetValue = document.getElementById('notifTargetStudentId').value;
+                if (!targetValue) { alert('Please select a student from the search results.'); return; }
+            }
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            result.style.display = 'none';
+            try {
+                const r = await fetch('/admin/send-notification', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        targetMode: mode,
+                        targetValue: targetValue,
+                        type: document.getElementById('notifType').value,
+                        title: document.getElementById('notifTitle').value,
+                        message: document.getElementById('notifMessage').value
+                    })
+                });
+                const d = await r.json();
+                if (!r.ok) throw new Error(d.error || 'Failed');
+                result.style.display = 'block';
+                result.style.background = 'rgba(46,204,113,0.15)';
+                result.style.color = '#2ecc71';
+                result.style.border = '1px solid rgba(46,204,113,0.3)';
+                result.textContent = 'Notification sent to ' + d.sentTo + ' student(s)!';
+                document.getElementById('sendNotifForm').reset();
+                handleNotifTargetMode();
+            } catch(err) {
+                result.style.display = 'block';
+                result.style.background = 'rgba(231,76,60,0.15)';
+                result.style.color = '#e74c3c';
+                result.style.border = '1px solid rgba(231,76,60,0.3)';
+                result.textContent = 'Error: ' + err.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Notification';
+            }
+        });
 
         document.getElementById('sendNotifForm').addEventListener('submit', async function(e) {
             e.preventDefault();

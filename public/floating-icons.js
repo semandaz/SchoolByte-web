@@ -398,6 +398,46 @@
             width: 100%;
             height: 100%;
         }
+
+        /* ── Duolingo-style top-right stats bar ─────────────────────────────── */
+        #sb-stats-bar {
+            position: fixed;
+            top: 14px;
+            right: 18px;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(18,18,30,0.82);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 40px;
+            padding: 7px 16px;
+            pointer-events: all;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+            transition: opacity 0.3s;
+        }
+        #sb-stats-bar:hover { opacity: 1 !important; }
+        .sb-stat-pill {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.01em;
+        }
+        .sb-stat-pill .sb-stat-icon {
+            font-size: 1.05rem;
+        }
+        .sb-stat-pill .sb-streak-icon { color: #f97316; }
+        .sb-stat-pill .sb-energy-icon { color: #60a5fa; }
+        .sb-stat-pill .sb-bytes-icon  { color: #ffd700; }
+        .sb-stat-divider {
+            width: 1px;
+            height: 18px;
+            background: rgba(255,255,255,0.18);
+        }
     `;
     document.head.appendChild(style);
 
@@ -914,6 +954,48 @@
                 if (!frame.src || frame.src === 'about:blank') frame.src = 'bytenexus-chat.html';
             }
         });
+    })();
+
+    /* ── Top stats bar (streak + energy + bytes) ───────────────────────── */
+    (function initStatsBar() {
+        const bar = document.createElement('div');
+        bar.id = 'sb-stats-bar';
+        bar.innerHTML = `
+            <div class="sb-stat-pill">
+                <span class="sb-stat-icon sb-streak-icon">🔥</span>
+                <span id="sb-streak-val">—</span>
+            </div>
+            <div class="sb-stat-divider"></div>
+            <div class="sb-stat-pill">
+                <span class="sb-stat-icon sb-energy-icon">⚡</span>
+                <span id="sb-energy-val">—</span>
+            </div>
+            <div class="sb-stat-divider"></div>
+            <div class="sb-stat-pill">
+                <span class="sb-stat-icon sb-bytes-icon">🪙</span>
+                <span id="sb-bytes-val">—</span>
+            </div>
+        `;
+        document.body.appendChild(bar);
+
+        async function refreshStats() {
+            try {
+                const r = await fetch('/student/dashboard', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!r.ok) return;
+                const d = await r.json();
+                const s = d.student;
+                const streakEl = document.getElementById('sb-streak-val');
+                const energyEl = document.getElementById('sb-energy-val');
+                const bytesEl  = document.getElementById('sb-bytes-val');
+                if (streakEl) streakEl.textContent = (s.currentStreak || 0) + ' day' + ((s.currentStreak || 0) !== 1 ? 's' : '');
+                if (energyEl) energyEl.textContent = (s.energy != null ? s.energy : 25);
+                if (bytesEl)  bytesEl.textContent  = (s.bytes || 0) + ' B';
+            } catch(e) { /* silent */ }
+        }
+        refreshStats();
+        setInterval(refreshStats, 60000);
     })();
 
     /* ── Expose addActivity for external use ─────────────────────────────── */
