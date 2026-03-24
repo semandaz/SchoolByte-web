@@ -7,6 +7,7 @@ const studentSchema = new mongoose.Schema({
     password: { type: String, required: true },
     isEmailVerified: { type: Boolean, default: false },
     bytes: { type: Number, default: 20 },
+    peakBytes: { type: Number, default: 20 },
     energy: { type: Number, default: 25, min: 0 },
     lastEnergyRefillAt: { type: Date, default: Date.now },
 
@@ -80,7 +81,17 @@ const studentSchema = new mongoose.Schema({
     currentStreak: { type: Number, default: 0, min: 0 },
     longestStreak: { type: Number, default: 0, min: 0 },
     lastActivityDate: { type: Date, default: Date.now },
+    lastLoginDate: { type: Date, default: null },
     totalQuizzesCompleted: { type: Number, default: 0, min: 0 },
+
+    studyHours: {
+        type: [{
+            month: { type: String, required: true },
+            minutes: { type: Number, default: 0, min: 0 }
+        }],
+        default: [],
+        _id: false
+    },
 
     notifications: [{
         type: { type: String, enum: ['achievement', 'message', 'system', 'team', 'quiz'], required: true },
@@ -91,7 +102,7 @@ const studentSchema = new mongoose.Schema({
         data: { type: Object, default: {} }
     }],
 
-    chatPublicKey: { type: String, default: null }, // Base64 ECDH public key for E2E chat encryption
+    chatPublicKey: { type: String, default: null },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
@@ -102,6 +113,9 @@ studentSchema.index({ class: 1 });
 studentSchema.index({ subjectsEnrolled: 1 });
 studentSchema.pre('save', function (next) {
     this.updatedAt = Date.now();
+    if (this.bytes > (this.peakBytes || 0)) {
+        this.peakBytes = this.bytes;
+    }
     next();
 });
 

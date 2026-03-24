@@ -1621,6 +1621,12 @@ app.get('/student/dashboard', authenticateToken, async (req, res) => {
         refillEnergy(studentData);
         await studentData.save();
 
+        const today = new Date(); today.setHours(0,0,0,0);
+        if (!studentData.lastLoginDate || new Date(studentData.lastLoginDate) < today) {
+            studentData.lastLoginDate = new Date();
+        }
+        const currentMonth = today.toISOString().slice(0,7);
+        const monthStudy = (studentData.studyHours || []).find(h => h.month === currentMonth);
         res.status(200).json({
             message: `Welcome to your dashboard, ${studentData.studentName}!`,
             student: {
@@ -1630,6 +1636,7 @@ app.get('/student/dashboard', authenticateToken, async (req, res) => {
                 email: studentData.email,
                 isEmailVerified: studentData.isEmailVerified,
                 bytes: studentData.bytes || 0,
+                peakBytes: studentData.peakBytes || 20,
                 energy: studentData.energy != null ? studentData.energy : 25,
                 lastEnergyRefillAt: studentData.lastEnergyRefillAt,
                 class: studentData.class,
@@ -1641,7 +1648,11 @@ app.get('/student/dashboard', authenticateToken, async (req, res) => {
                 preferences: studentData.preferences,
                 quizzesCompletedThisWeek: studentData.quizzesCompletedThisWeek,
                 quizSession: studentData.currentQuizSessionId,
-                createdAt: studentData.createdAt
+                createdAt: studentData.createdAt,
+                currentStreak: studentData.currentStreak || 0,
+                longestStreak: studentData.longestStreak || 0,
+                lastActivityDate: studentData.lastActivityDate,
+                studyMinutesThisMonth: monthStudy ? monthStudy.minutes : 0
             }
         });
 
@@ -5982,6 +5993,30 @@ async function checkAndAwardAchievements(student) {
 
   return newAchievements;
 }
+
+// Log study time for current student
+app.post('/api/student/log-study-time', authenticateToken, async (req, res) => {
+  try {
+    const { minutes } = req.body;
+    if (!minutes || minutes <= 0) return res.json({ ok: true });
+    const student = await Student.findById(req.student.id);
+    if (!student) return res.status(404).json({ error: 'Not found' });
+    const month = new Date().toISOString().slice(0, 7);
+    const idx = (student.studyHours || []).findIndex(h => h.month === month);
+    if (idx >= 0) {
+      student.studyHours[idx].minutes += Math.round(minutes);
+    } else {
+      if (!student.studyHours) student.studyHours = [];
+      student.studyHours.push({ month, minutes: Math.round(minutes) });
+    }
+    student.markModified('studyHours');
+    await student.save();
+    const updated = student.studyHours.find(h => h.month === month);
+    res.json({ ok: true, month, minutes: updated ? updated.minutes : 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Helper function to update streak
 async function updateStudentStreak(studentId) {

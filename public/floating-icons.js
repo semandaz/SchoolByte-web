@@ -8,6 +8,12 @@
     if (window.floatingIconsInitialized) return;
     window.floatingIconsInitialized = true;
 
+    /* ── Apply preferred font from localStorage ──────────────────────────── */
+    (function applyFont() {
+        const f = localStorage.getItem("sb_preferred_font");
+        if (f) document.body.style.fontFamily = f;
+    })();
+
     /* ── Styles ──────────────────────────────────────────────────────────── */
     const style = document.createElement('style');
     style.textContent = `
