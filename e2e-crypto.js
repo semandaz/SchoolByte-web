@@ -2,10 +2,15 @@
  * E2E encryption for ByteNexus personal messages.
  * Uses Web Crypto API: ECDH P-256 for key exchange, AES-GCM for encryption.
  * Encrypted format: "E2E:" + base64(JSON.stringify({iv, ct}))
+ *
+ * Private keys are stored per-user in localStorage so re-login never regenerates keys.
  */
 const E2E_Crypto = (function() {
-    const STORAGE_KEY = 'schoolbyte_chat_private_key';
     const E2E_PREFIX = 'E2E:';
+
+    function storageKey(userId) {
+        return 'schoolbyte_chat_priv_' + userId;
+    }
 
     async function generateKeyPair() {
         return crypto.subtle.generateKey(
@@ -62,7 +67,8 @@ const E2E_Crypto = (function() {
     async function ensureKeyPair(userId, apiUrl, token) {
         if (privateKeyCrypto && currentUserId === userId) return privateKeyCrypto;
         currentUserId = userId;
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const KEY = storageKey(userId);
+        const stored = localStorage.getItem(KEY);
         if (stored) {
             try {
                 const jwk = JSON.parse(stored);
@@ -75,12 +81,12 @@ const E2E_Crypto = (function() {
                 );
                 return privateKeyCrypto;
             } catch (e) {
-                console.warn('E2E: Failed to load stored key, regenerating', e);
+                console.warn('E2E: Stored key load failed, regenerating', e);
             }
         }
         const keyPair = await generateKeyPair();
         const privJwk = await crypto.subtle.exportKey('jwk', keyPair.privateKey);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(privJwk));
+        localStorage.setItem(KEY, JSON.stringify(privJwk));
         privateKeyCrypto = keyPair.privateKey;
         const pubB64 = await exportPublicKey(keyPair);
         try {
@@ -144,7 +150,7 @@ const E2E_Crypto = (function() {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
-                if (!data || !data.publicKey) return '[Encrypted - key unavailable]';
+                if (!data || !data.publicKey) return '[Encrypted — key unavailable]';
                 const theirPubKey = await importPublicKey(data.publicKey);
                 await ensureKeyPair(currentUserId, apiUrl, token);
                 const aesKey = await deriveAesKey(privateKeyCrypto, theirPubKey);
@@ -156,7 +162,7 @@ const E2E_Crypto = (function() {
                 return bytesToString(dec);
             } catch (e) {
                 console.warn('E2E decrypt failed:', e);
-                return '[Could not decrypt]';
+                return '[Encrypted — open chat on original device to read]';
             }
         }
     };

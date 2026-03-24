@@ -406,6 +406,7 @@
             }
         }
     </style>
+    <script src="apply-font.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -515,13 +516,11 @@
                                 <h3 style="font-weight: 600;">Learning Bytes</h3>
                                 <i class="fas fa-coins" style="color: var(--color-brand-gold);"></i>
                             </div>
-                            <div style="font-size: 2rem; font-weight: 700; color: var(--color-brand-primary); margin-bottom: 0.5rem;">
-                                1.2 kB
-                            </div>
+                            <div id="progressBytesValue" style="font-size: 2rem; font-weight: 700; color: var(--color-brand-primary); margin-bottom: 0.5rem;">0 / 20</div>
                             <div class="progress">
-                                <div class="progress-bar" style="width: 75%;"></div>
+                                <div class="progress"><div class="progress-bar" id="progressBytesBar" style="width: 0%;"></div></div>
                             </div>
-                            <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">75% to next level</p>
+                            <p id="progressBytesLabel" style="color: var(--color-neutral-dark); font-size: 0.9rem;">0 bytes earned</p>
                         </div>
                     </div>
                     <div class="card">
@@ -530,11 +529,9 @@
                                 <h3 style="font-weight: 600;">Study Hours</h3>
                                 <i class="fas fa-clock" style="color: var(--color-success-green);"></i>
                             </div>
-                            <div style="font-size: 2rem; font-weight: 700; color: var(--color-success-green); margin-bottom: 0.5rem;">
-                                45h
-                            </div>
+                            <div id="progressStudyHours" style="font-size: 2rem; font-weight: 700; color: var(--color-success-green); margin-bottom: 0.5rem;">0h 0m</div>
                             <div class="progress">
-                                <div class="progress-bar" style="width: 60%;"></div>
+                                <div class="progress"><div class="progress-bar" id="progressStudyBar" style="width: 0%;"></div></div>
                             </div>
                             <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">This month</p>
                         </div>
@@ -545,13 +542,22 @@
                                 <h3 style="font-weight: 600;">Achievements</h3>
                                 <i class="fas fa-trophy" style="color: var(--color-brand-secondary);"></i>
                             </div>
-                            <div style="font-size: 2rem; font-weight: 700; color: var(--color-brand-secondary); margin-bottom: 0.5rem;">
-                                15
-                            </div>
+                            <div id="progressAchievements" style="font-size: 2rem; font-weight: 700; color: var(--color-brand-secondary); margin-bottom: 0.5rem;">0</div>
                             <div class="progress">
-                                <div class="progress-bar" style="width: 85%;"></div>
+                                <div class="progress"><div class="progress-bar" id="progressAchBar" style="width: 0%;"></div></div>
                             </div>
                             <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">Unlocked</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-content">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                                <h3 style="font-weight: 600;">Daily Streak</h3>
+                                <i class="fas fa-fire" style="color: #f97316;"></i>
+                            </div>
+                            <div id="progressStreakValue" style="font-size: 2rem; font-weight: 700; color: #f97316; margin-bottom: 0.5rem;">0 days</div>
+                            <div class="progress"><div class="progress-bar" id="progressStreakBar" style="width: 0%; background: linear-gradient(90deg,#f97316,#ef4444);"></div></div>
+                            <p id="progressStreakLabel" style="color: var(--color-neutral-dark); font-size: 0.9rem;">Best: 0 days</p>
                         </div>
                     </div>
                 </div>
@@ -578,7 +584,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <i class="fas fa-award"></i> Top 5 Leaderboard
+                            <i class="fas fa-award"></i> Leaderboard
                         </h3>
                     </div>
                     <div class="card-content">
@@ -712,8 +718,37 @@
                     document.getElementById('index').value = student.indexNumber;
                     document.getElementById('email').value = student.email;
                     document.getElementById('class').value = `${student.class} ${student.stream}`;
+                    // Bytes counter (floating)
                     document.getElementById('bytesCount').textContent = student.bytes || 0;
-                    document.getElementById('totalBytes').textContent = student.bytes >= 1000 ? `${(student.bytes/1000).toFixed(1)} kB` : `${student.bytes || 0} Bytes`;
+                    document.getElementById('totalBytes').textContent = student.bytes || 0;
+                    // Learning Bytes card: X/max(peakBytes,20) format
+                    const peak = Math.max(student.peakBytes || 20, 20);
+                    const bPct = Math.min(100, Math.round(((student.bytes || 0) / peak) * 100));
+                    const bytesVal = document.getElementById('progressBytesValue');
+                    const bytesBar = document.getElementById('progressBytesBar');
+                    const bytesLbl = document.getElementById('progressBytesLabel');
+                    if (bytesVal) bytesVal.textContent = (student.bytes || 0) + ' / ' + peak;
+                    if (bytesBar) bytesBar.style.width = bPct + '%';
+                    if (bytesLbl) bytesLbl.textContent = (student.bytes || 0) + ' bytes earned';
+                    // Study Hours card
+                    const totalMins = student.studyMinutesThisMonth || 0;
+                    const shEl = document.getElementById('progressStudyHours');
+                    const shBar = document.getElementById('progressStudyBar');
+                    if (shEl) shEl.textContent = Math.floor(totalMins/60) + 'h ' + (totalMins%60) + 'm';
+                    if (shBar) shBar.style.width = Math.min(100, Math.round(totalMins/6)) + '%';
+                    // Streak card
+                    const streak = student.currentStreak || 0;
+                    const longest = student.longestStreak || 0;
+                    const streakEl = document.getElementById('progressStreakValue');
+                    const streakBar = document.getElementById('progressStreakBar');
+                    const streakLbl = document.getElementById('progressStreakLabel');
+                    if (streakEl) streakEl.textContent = streak + ' day' + (streak !== 1 ? 's' : '');
+                    if (streakBar) streakBar.style.width = Math.min(100, Math.round((streak / Math.max(longest, 7)) * 100)) + '%';
+                    if (streakLbl) streakLbl.textContent = 'Best: ' + longest + ' day' + (longest !== 1 ? 's' : '');
+                    // Save font to localStorage for cross-page use
+                    if (student.preferences && student.preferences.fontFamily) {
+                        localStorage.setItem('sb_preferred_font', student.preferences.fontFamily);
+                    }
                     const wnEl = document.getElementById('welcomeName');
                     if (wnEl) wnEl.textContent = displayName;
                     const qEl = document.getElementById('quizzesDisplay');
@@ -755,7 +790,7 @@
         }
 
         // Function to fetch and display top 5 leaderboard
-        async function fetchTop5Leaderboard() {
+        async function fetchLeaderboard() {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) return;
@@ -770,26 +805,18 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    const top5 = data.leaderboard.slice(0, 5);
-                    
+                    const all = data.leaderboard;
                     const leaderboardPreview = document.getElementById('leaderboardPreview');
                     leaderboardPreview.innerHTML = '';
-                    
-                    top5.forEach(student => {
-                        const rankClass = student.rank === 1 ? 'rank-1' : student.rank === 2 ? 'rank-2' : student.rank === 3 ? 'rank-3' : '';
-                        const bytesDisplay = student.bytes >= 1000 ? `${(student.bytes/1000).toFixed(1)} kB` : `${student.bytes} Bytes`;
-                        
-                        const itemHTML = `
-                            <div class="leaderboard-item" style="${student.isCurrentUser ? 'background: linear-gradient(to right, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1)); border: 2px solid var(--color-brand-gold);' : ''}">
-                                <div class="rank ${rankClass}">${student.rank}</div>
-                                <div class="student-info">
-                                    <div class="student-name">${student.displayName}${student.isCurrentUser ? ' (You)' : ''}</div>
-                                </div>
-                                <div class="student-bytes">${bytesDisplay}</div>
-                            </div>
-                        `;
-                        leaderboardPreview.innerHTML += itemHTML;
-                    });
+                    if (!all || !all.length) {
+                        leaderboardPreview.innerHTML = '<p style="color:var(--color-neutral-dark);text-align:center;">No students yet.</p>';
+                    } else {
+                        all.forEach(student => {
+                            const rankClass = student.rank === 1 ? 'rank-1' : student.rank === 2 ? 'rank-2' : student.rank === 3 ? 'rank-3' : '';
+                            const bytesDisplay = student.bytes != null ? student.bytes + ' B' : '—';
+                            leaderboardPreview.innerHTML += `<div class="leaderboard-item" style="${student.isCurrentUser ? 'background: linear-gradient(to right, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1)); border: 2px solid var(--color-brand-gold);' : ''}"><div class="rank ${rankClass}">${student.rank}</div><div class="student-info"><div class="student-name">${student.displayName}${student.isCurrentUser ? ' (You)' : ''}</div></div><div class="student-bytes">${bytesDisplay}</div></div>`;
+                        });
+                    }
                 } else if (response.status === 401 || response.status === 403) {
                     localStorage.removeItem('token');
                     window.location.href = 'studentlogin.html';
@@ -801,7 +828,7 @@
 
         // Load student data and leaderboard on page load
         fetchStudentData();
-        fetchTop5Leaderboard();
+        fetchLeaderboard();
 
         // Tab functionality
         document.querySelectorAll('.tabs-trigger').forEach(tab => {
@@ -936,6 +963,10 @@
 
                 // Update achievements count
                 document.querySelector('.stat-item:nth-child(2) .stat-value').textContent = data.totalAchievements;
+                const achProgressEl = document.getElementById("progressAchievements");
+                const achBar = document.getElementById("progressAchBar");
+                if (achProgressEl) achProgressEl.textContent = data.totalAchievements;
+                if (achBar) achBar.style.width = Math.min(100, Math.round(data.totalAchievements * 14)) + "%";
 
                 if (data.achievements && data.achievements.length > 0) {
                     const achievementsHTML = data.achievements.slice(0, 10).map(achievement => `
