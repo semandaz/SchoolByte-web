@@ -1,153 +1,797 @@
-Valid = false;
-                    }
-                    quizData.options = options;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolByte - Upload Quiz Question</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-brand-primary: #1a2a6c;
+            --color-brand-secondary: #b21f1f;
+            --color-brand-gold: #FFD700;
+            --color-error-red: #ef4444;
+            --color-success-green: #22c55e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid #f0f4f8;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p { color: #6b7280; }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--color-brand-primary);
+            font-weight: 600;
+            text-decoration: none;
+            margin-bottom: 1.5rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .back-btn:hover { background: #f0f4f8; }
+
+        .form-group { margin-bottom: 1.25rem; }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.4rem;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"], input[type="number"], textarea, select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s;
+            background: #fafafa;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus,
+        textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--color-brand-primary);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(26,42,108,0.1);
+        }
+
+        textarea { min-height: 100px; resize: vertical; }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--color-brand-primary);
+            margin: 1.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Dynamic question type fields */
+        #dynamicFields { margin-top: 1rem; }
+
+        .option-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .option-row input[type="text"] { flex: 1; }
+
+        .option-row input[type="radio"],
+        .option-row input[type="checkbox"] {
+            width: auto;
+            accent-color: var(--color-brand-primary);
+        }
+
+        .correct-label {
+            font-size: 0.8rem;
+            color: #6b7280;
+            white-space: nowrap;
+        }
+
+        .btn-add-option, .btn-add-pair, .btn-add-item {
+            margin-top: 0.5rem;
+            padding: 0.4rem 1rem;
+            background: #e5e7eb;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #374151;
+            transition: background 0.2s;
+        }
+        .btn-add-option:hover, .btn-add-pair:hover, .btn-add-item:hover { background: #d1d5db; }
+
+        .btn-remove {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            padding: 0.3rem;
+            border-radius: 4px;
+        }
+        .btn-remove:hover { background: #fef2f2; }
+
+        .pair-row, .item-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .pair-row input, .item-row input { flex: 1; }
+
+        .true-false-options {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .true-false-options label {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .true-false-options input[type="radio"] {
+            width: auto;
+            accent-color: var(--color-brand-primary);
+        }
+
+        .hint-box {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+            color: #92400e;
+            margin-bottom: 1rem;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 0.9rem;
+            background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .btn-submit:hover { opacity: 0.95; transform: translateY(-1px); }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        /* Message Box Overlay */
+        #messageBoxOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        #messageBoxOverlay.hidden { display: none; }
+
+        .message-box {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .message-box .icon { font-size: 2.5rem; margin-bottom: 1rem; }
+
+        #messageBoxTitle {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        #messageBoxContent {
+            color: #4b5563;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .message-box button {
+            padding: 0.6rem 2rem;
+            background: var(--color-brand-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .required { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="teacherdashboard.html" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+
+        <div class="header">
+            <h1><i class="fas fa-question-circle"></i> Upload Quiz Question</h1>
+            <p>Add a new quiz question to the SchoolByte question bank</p>
+        </div>
+
+        <form id="quizUploadForm">
+            <!-- Basic Info -->
+            <div class="section-title">
+                <i class="fas fa-info-circle"></i> Basic Information
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="subject">Subject <span class="required">*</span></label>
+                    <select id="subject" name="subject" required>
+                        <option value="">Select Subject</option>
+                        <option value="Agriculture">Agriculture</option>
+                        <option value="Biology">Biology</option>
+                        <option value="Chemistry">Chemistry</option>
+                        <option value="Christian Religious Education">Christian Religious Education</option>
+                        <option value="English Language">English Language</option>
+                        <option value="Entrepreneurship Education">Entrepreneurship Education</option>
+                        <option value="Food and Nutrition">Food and Nutrition</option>
+                        <option value="Geography">Geography</option>
+                        <option value="German">German</option>
+                        <option value="History">History</option>
+                        <option value="Kiswahili">Kiswahili</option>
+                        <option value="Literature in English">Literature in English</option>
+                        <option value="Luganda">Luganda</option>
+                        <option value="Mathematics">Mathematics</option>
+                        <option value="Performing Arts">Performing Arts</option>
+                        <option value="Physical Education">Physical Education</option>
+                        <option value="Physics">Physics</option>
+                        <option value="Technology and Design">Technology and Design</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="intendedClass">Class Level <span class="required">*</span></label>
+                    <select id="intendedClass" name="intendedClass" required>
+                        <option value="">Select Class</option>
+                        <option value="S.1">S.1</option>
+                        <option value="S.2">S.2</option>
+                        <option value="S.3">S.3</option>
+                        <option value="S.4">S.4</option>
+                        <option value="S.5">S.5</option>
+                        <option value="S.6">S.6</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="questionType">Question Type <span class="required">*</span></label>
+                    <select id="questionType" name="questionType" required onchange="renderQuestionTypeFields()">
+                        <option value="">Select Type</option>
+                        <option value="multiple-choice-single">Multiple Choice (Single)</option>
+                        <option value="multiple-choice-multi">Multiple Choice (Multi)</option>
+                        <option value="true-false">True / False</option>
+                        <option value="fill-in-the-blank">Fill in the Blank</option>
+                        <option value="short-answer">Short Answer</option>
+                        <option value="problem-solving">Problem Solving</option>
+                        <option value="matching">Matching</option>
+                        <option value="ordering">Ordering</option>
+                        <option value="numeric-entry">Numeric Entry</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="topic">Topic</label>
+                    <input type="text" id="topic" name="topic" placeholder="e.g. Photosynthesis">
+                </div>
+            </div>
+
+            <!-- Dynamic question fields -->
+            <div id="dynamicFields"></div>
+
+            <!-- Optional Fields -->
+            <div class="section-title">
+                <i class="fas fa-lightbulb"></i> Optional Details
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="hint">Hint (optional)</label>
+                    <input type="text" id="hint" name="hint" placeholder="Give students a clue">
+                </div>
+
+                <div class="form-group">
+                    <label for="explanation">Explanation (optional)</label>
+                    <input type="text" id="explanation" name="explanation" placeholder="Explain the correct answer">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="keywordsForGrading">Keywords for Grading (comma-separated, for short-answer)</label>
+                <input type="text" id="keywordsForGrading" name="keywordsForGrading" placeholder="e.g. mitochondria, ATP, energy">
+            </div>
+
+            <button type="button" class="btn-submit" id="submitBtn" onclick="submitQuiz()">
+                <i class="fas fa-upload"></i> Upload Question
+            </button>
+        </form>
+    </div>
+
+    <!-- Message Box -->
+    <div id="messageBoxOverlay" class="hidden">
+        <div class="message-box">
+            <div class="icon" id="messageBoxIcon">✅</div>
+            <div id="messageBoxTitle"></div>
+            <div id="messageBoxContent"></div>
+            <button onclick="hideMessageBox()">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Please log in as a teacher first.');
+            window.location.href = 'teacherlogin.html';
+        }
+
+        let optionCount = 0;
+        let pairCount = 0;
+        let itemCount = 0;
+
+        function renderQuestionTypeFields() {
+            const type = document.getElementById('questionType').value;
+            const container = document.getElementById('dynamicFields');
+            optionCount = 0;
+            pairCount = 0;
+            itemCount = 0;
+
+            if (!type) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '<div class="section-title"><i class="fas fa-edit"></i> Question Content</div>';
+
+            switch (type) {
+                case 'multiple-choice-single':
+                    html += `
+                        <div class="form-group">
+                            <label>Question Text <span class="required">*</span></label>
+                            <textarea id="questionText" placeholder="Enter your multiple-choice question..."></textarea>
+                        </div>
+                        <div class="hint-box"><i class="fas fa-info-circle"></i> Add at least 2 options. Mark the <strong>one correct</strong> answer with the radio button.</div>
+                        <label>Answer Options <span class="required">*</span></label>
+                        <div id="optionsContainer"></div>
+                        <button type="button" class="btn-add-option" onclick="addOption('single')"><i class="fas fa-plus"></i> Add Option</button>
+                    `;
+                    break;
+
+                case 'multiple-choice-multi':
+                    html += `
+                        <div class="form-group">
+                            <label>Question Text <span class="required">*</span></label>
+                            <textarea id="questionText" placeholder="Enter your question..."></textarea>
+                        </div>
+                        <div class="hint-box"><i class="fas fa-info-circle"></i> Add at least 2 options. Check <strong>all correct</strong> answers.</div>
+                        <label>Answer Options <span class="required">*</span></label>
+                        <div id="optionsContainer"></div>
+                        <button type="button" class="btn-add-option" onclick="addOption('multi')"><i class="fas fa-plus"></i> Add Option</button>
+                    `;
+                    break;
+
+                case 'true-false':
+                    html += `
+                        <div class="form-group">
+                            <label>Question Text <span class="required">*</span></label>
+                            <textarea id="questionText" placeholder="Enter a true or false statement..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Correct Answer <span class="required">*</span></label>
+                            <div class="true-false-options">
+                                <label><input type="radio" name="trueFalseAnswer" value="true"> True</label>
+                                <label><input type="radio" name="trueFalseAnswer" value="false"> False</label>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'fill-in-the-blank':
+                    html += `
+                        <div class="hint-box"><i class="fas fa-info-circle"></i> Use <strong>[BLANK]</strong> in your question to mark where the blank should be.</div>
+                        <div class="form-group">
+                            <label>Question Text with [BLANK] <span class="required">*</span></label>
+                            <textarea id="blankQuestionText" placeholder="e.g. The powerhouse of the cell is the [BLANK]."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Correct Answer for Blank <span class="required">*</span></label>
+                            <input type="text" id="blankCorrectAnswer" placeholder="e.g. mitochondria">
+                        </div>
+                    `;
                     break;
 
                 case 'short-answer':
                 case 'problem-solving':
-                    questionTextForPayload = document.getElementById('questionText').value.trim();
+                    html += `
+                        <div class="form-group">
+                            <label>Question Text <span class="required">*</span></label>
+                            <textarea id="questionText" placeholder="Enter your question..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Accepted Correct Answers <span class="required">*</span> <small style="font-weight:400;color:#6b7280;">(comma-separated)</small></label>
+                            <input type="text" id="correctAnswers" placeholder="e.g. mitochondria, powerhouse, energy organelle">
+                        </div>
+                    `;
+                    break;
+
+                case 'matching':
+                    html += `
+                        <div class="form-group">
+                            <label>Instructions <span class="required">*</span></label>
+                            <input type="text" id="questionText" placeholder="e.g. Match each term with its correct definition">
+                        </div>
+                        <div class="hint-box"><i class="fas fa-info-circle"></i> Add pairs: the left column (items) and right column (matches).</div>
+                        <label>Matching Pairs <span class="required">*</span></label>
+                        <div id="matchingPairsContainer"></div>
+                        <button type="button" class="btn-add-pair" onclick="addMatchingPair()"><i class="fas fa-plus"></i> Add Pair</button>
+                    `;
+                    break;
+
+                case 'ordering':
+                    html += `
+                        <div class="form-group">
+                            <label>Instructions <span class="required">*</span></label>
+                            <input type="text" id="questionText" placeholder="e.g. Arrange the following steps in the correct order">
+                        </div>
+                        <div class="hint-box"><i class="fas fa-info-circle"></i> Add items in their <strong>correct order</strong> (top to bottom).</div>
+                        <label>Items in Correct Order <span class="required">*</span></label>
+                        <div id="orderingItemsContainer"></div>
+                        <button type="button" class="btn-add-item" onclick="addOrderingItem()"><i class="fas fa-plus"></i> Add Item</button>
+                    `;
+                    break;
+
+                case 'numeric-entry':
+                    html += `
+                        <div class="form-group">
+                            <label>Question Text <span class="required">*</span></label>
+                            <textarea id="questionText" placeholder="e.g. What is 12 × 15?"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Correct Numeric Answer <span class="required">*</span></label>
+                            <input type="number" id="numericAnswer" placeholder="e.g. 180" step="any">
+                        </div>
+                    `;
+                    break;
+            }
+
+            container.innerHTML = html;
+
+            // Initialize with default options for multiple choice
+            if (type === 'multiple-choice-single') {
+                addOption('single'); addOption('single'); addOption('single'); addOption('single');
+            } else if (type === 'multiple-choice-multi') {
+                addOption('multi'); addOption('multi'); addOption('multi'); addOption('multi');
+            } else if (type === 'matching') {
+                addMatchingPair(); addMatchingPair();
+            } else if (type === 'ordering') {
+                addOrderingItem(); addOrderingItem(); addOrderingItem();
+            }
+        }
+
+        function addOption(mode) {
+            optionCount++;
+            const id = optionCount;
+            const container = document.getElementById('optionsContainer');
+            const row = document.createElement('div');
+            row.className = 'option-row';
+            row.id = `optionRow-${id}`;
+
+            const inputType = mode === 'single' ? 'radio' : 'checkbox';
+            const inputName = mode === 'single' ? 'correctOption' : `correctOption-${id}`;
+
+            row.innerHTML = `
+                <input type="${inputType}" name="${inputName}" id="correct-${id}" value="${id}" title="Mark as correct">
+                <span class="correct-label">Correct?</span>
+                <input type="text" id="optionText-${id}" placeholder="Option ${id}">
+                <button type="button" class="btn-remove" onclick="removeRow('optionRow-${id}')"><i class="fas fa-times"></i></button>
+            `;
+            container.appendChild(row);
+        }
+
+        function addMatchingPair() {
+            pairCount++;
+            const id = pairCount;
+            const container = document.getElementById('matchingPairsContainer');
+            const row = document.createElement('div');
+            row.className = 'pair-row';
+            row.id = `pairRow-${id}`;
+            row.innerHTML = `
+                <input type="text" id="itemA-${id}" placeholder="Item A (left)">
+                <span style="color:#6b7280;">→</span>
+                <input type="text" id="itemB-${id}" placeholder="Item B (right)">
+                <button type="button" class="btn-remove" onclick="removeRow('pairRow-${id}')"><i class="fas fa-times"></i></button>
+            `;
+            container.appendChild(row);
+        }
+
+        function addOrderingItem() {
+            itemCount++;
+            const id = itemCount;
+            const container = document.getElementById('orderingItemsContainer');
+            const row = document.createElement('div');
+            row.className = 'item-row';
+            row.id = `itemRow-${id}`;
+            row.innerHTML = `
+                <span style="color:#6b7280;font-weight:600;min-width:24px;">${id}.</span>
+                <input type="text" id="orderItem-${id}" placeholder="Item ${id}">
+                <button type="button" class="btn-remove" onclick="removeRow('itemRow-${id}')"><i class="fas fa-times"></i></button>
+            `;
+            container.appendChild(row);
+        }
+
+        function removeRow(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        function submitQuiz() {
+            const type = document.getElementById('questionType').value;
+            const subject = document.getElementById('subject').value;
+            const intendedClass = document.getElementById('intendedClass').value;
+
+            if (!type) { showMessageBox('Validation Error', 'Please select a question type.', false); return; }
+            if (!subject) { showMessageBox('Validation Error', 'Please select a subject.', false); return; }
+            if (!intendedClass) { showMessageBox('Validation Error', 'Please select a class level.', false); return; }
+
+            const quizData = {
+                type,
+                subject,
+                intendedClass,
+                topic: document.getElementById('topic').value.trim() || undefined,
+                hint: document.getElementById('hint').value.trim() || undefined,
+                explanation: document.getElementById('explanation').value.trim() || undefined,
+            };
+
+            const kwRaw = document.getElementById('keywordsForGrading').value.trim();
+            if (kwRaw) quizData.keywordsForGrading = kwRaw.split(',').map(k => k.trim()).filter(Boolean);
+
+            let questionTextForPayload = '';
+            let specificDataValid = true;
+
+            switch (type) {
+                case 'multiple-choice-single': {
+                    questionTextForPayload = (document.getElementById('questionText') || {}).value?.trim() || '';
                     if (!questionTextForPayload) {
                         showMessageBox('Validation Error', 'Please enter the question text.', false);
-                        specificDataValid = false;
-                        break;
+                        return;
                     }
-                    const correctAnswersSA = document.getElementById('correctAnswers').value.split(',').map(ans => ans.trim()).filter(ans => ans !== '');
+                    const options = [];
+                    document.querySelectorAll('#optionsContainer .option-row').forEach((row, idx) => {
+                        const textEl = row.querySelector('input[type="text"]');
+                        const radioEl = row.querySelector('input[type="radio"]');
+                        if (!textEl || !textEl.value.trim()) { specificDataValid = false; return; }
+                        options.push({ text: textEl.value.trim(), isCorrect: radioEl ? radioEl.checked : false });
+                    });
+                    if (!specificDataValid || options.length < 2) {
+                        showMessageBox('Validation Error', 'Please add at least 2 options and fill in all option texts.', false);
+                        return;
+                    }
+                    if (!options.some(o => o.isCorrect)) {
+                        showMessageBox('Validation Error', 'Please mark one option as the correct answer.', false);
+                        return;
+                    }
+                    quizData.options = options;
+                    break;
+                }
+
+                case 'multiple-choice-multi': {
+                    questionTextForPayload = (document.getElementById('questionText') || {}).value?.trim() || '';
+                    if (!questionTextForPayload) {
+                        showMessageBox('Validation Error', 'Please enter the question text.', false);
+                        return;
+                    }
+                    const options = [];
+                    document.querySelectorAll('#optionsContainer .option-row').forEach((row) => {
+                        const textEl = row.querySelector('input[type="text"]');
+                        const checkEl = row.querySelector('input[type="checkbox"]');
+                        if (!textEl || !textEl.value.trim()) { specificDataValid = false; return; }
+                        options.push({ text: textEl.value.trim(), isCorrect: checkEl ? checkEl.checked : false });
+                    });
+                    if (!specificDataValid || options.length < 2) {
+                        showMessageBox('Validation Error', 'Please add at least 2 options and fill in all option texts.', false);
+                        return;
+                    }
+                    if (!options.some(o => o.isCorrect)) {
+                        showMessageBox('Validation Error', 'Please mark at least one correct answer.', false);
+                        return;
+                    }
+                    quizData.options = options;
+                    break;
+                }
+
+                case 'short-answer':
+                case 'problem-solving': {
+                    questionTextForPayload = (document.getElementById('questionText') || {}).value?.trim() || '';
+                    if (!questionTextForPayload) {
+                        showMessageBox('Validation Error', 'Please enter the question text.', false);
+                        return;
+                    }
+                    const correctAnswersSA = (document.getElementById('correctAnswers').value || '').split(',').map(ans => ans.trim()).filter(ans => ans !== '');
                     if (correctAnswersSA.length === 0) {
                         showMessageBox('Validation Error', 'Please provide at least one correct answer.', false);
-                        specificDataValid = false;
-                        break;
+                        return;
                     }
                     quizData.correctAnswers = correctAnswersSA;
                     break;
+                }
 
-                case 'true-false':
-                    questionTextForPayload = document.getElementById('questionText').value.trim();
+                case 'true-false': {
+                    questionTextForPayload = (document.getElementById('questionText') || {}).value?.trim() || '';
                     if (!questionTextForPayload) {
                         showMessageBox('Validation Error', 'Please enter the question text.', false);
-                        specificDataValid = false;
-                        break;
+                        return;
                     }
                     const trueFalseAnswer = document.querySelector('input[name="trueFalseAnswer"]:checked');
                     if (!trueFalseAnswer) {
                         showMessageBox('Validation Error', 'Please select either True or False as the correct answer.', false);
-                        specificDataValid = false;
-                        break;
+                        return;
                     }
                     quizData.correctAnswers = [trueFalseAnswer.value];
                     break;
+                }
 
-                case 'fill-in-the-blank':
-                    questionTextForPayload = document.getElementById('blankQuestionText').value.trim();
-                    const blankCorrectAnswer = document.getElementById('blankCorrectAnswer').value.trim();
+                case 'fill-in-the-blank': {
+                    questionTextForPayload = (document.getElementById('blankQuestionText') || {}).value?.trim() || '';
+                    const blankCorrectAnswer = (document.getElementById('blankCorrectAnswer') || {}).value?.trim() || '';
                     if (!questionTextForPayload || !questionTextForPayload.includes('[BLANK]')) {
-                        showMessageBox('Validation Error', 'Please enter question text with a [BLANK] placeholder.', false);
-                        specificDataValid = false;
-                        break;
+                        showMessageBox('Validation Error', 'Please enter question text containing [BLANK] as a placeholder.', false);
+                        return;
                     }
                     if (!blankCorrectAnswer) {
                         showMessageBox('Validation Error', 'Please provide the correct answer for the blank.', false);
-                        specificDataValid = false;
-                        break;
+                        return;
                     }
-                    quizData.correctAnswers = [blankCorrectAnswer]; // Fill-in-the-blank uses correctAnswers for the blank itself
+                    quizData.correctAnswers = [blankCorrectAnswer];
                     break;
+                }
 
-                case 'matching':
-                    questionTextForPayload = document.getElementById('questionText').value.trim();
+                case 'matching': {
+                    questionTextForPayload = (document.getElementById('questionText') || {}).value?.trim() || '';
                     if (!questionTextForPayload) {
-                        showMessageBox('Validation Error', 'Please enter the instructions for matching.', false);
-                        specificDataValid = false;
-                        break;
+                        showMessageBox('Validation Error', 'Please enter the matching instructions.', false);
+                        return;
                     }
                     const matchingPairs = [];
-                    const pairElements = document.querySelectorAll('#matchingPairsContainer .pair-item');
-                    if (pairElements.length === 0) {
-                        showMessageBox('Validation Error', 'Please add at least one matching pair.', false);
-                        specificDataValid = false;
-                        break;
-                    }
-                    pairElements.forEach(pairDiv => {
-                        const itemA = pairDiv.querySelector('input[id^="itemA-"]').value.trim();
-                        const itemB = pairDiv.querySelector('input[id^="itemB-"]').value.trim();
-                        if (!itemA || !itemB) {
-                            specificDataValid = false; // Mark invalid, message shown below
-                            return;
-                        }
+                    document.querySelectorAll('#matchingPairsContainer .pair-row').forEach(pairDiv => {
+                        const idParts = pairDiv.id.split('-');
+                        const num = idParts[idParts.length - 1];
+                        const itemA = (document.getElementById(`itemA-${num}`) || {}).value?.trim() || '';
+                        const itemB = (document.getElementById(`itemB-${num}`) || {}).value?.trim() || '';
+                        if (!itemA || !itemB) { specificDataValid = false; return; }
                         matchingPairs.push({ itemA, itemB });
                     });
-                    if (!specificDataValid) { // Check if an empty pair was found
-                        showMessageBox('Validation Error', 'All matching items must be filled.', false);
-                        break;
+                    if (!specificDataValid || matchingPairs.length === 0) {
+                        showMessageBox('Validation Error', 'Please add at least one matching pair with both items filled.', false);
+                        return;
                     }
                     quizData.matchingPairs = matchingPairs;
                     break;
+                }
 
-                case 'ordering':
-                    questionTextForPayload = document.getElementById('questionText').value.trim();
+                case 'ordering': {
+                    questionTextForPayload = (document.getElementById('questionText') || {}).value?.trim() || '';
                     if (!questionTextForPayload) {
-                        showMessageBox('Validation Error', 'Please enter the instructions for ordering.', false);
-                        specificDataValid = false;
-                        break;
+                        showMessageBox('Validation Error', 'Please enter the ordering instructions.', false);
+                        return;
                     }
                     const orderedItems = [];
-                    const itemElements = document.querySelectorAll('#orderingItemsContainer .order-item');
-                    if (itemElements.length === 0) {
-                        showMessageBox('Validation Error', 'Please add at least one item for ordering.', false);
-                        specificDataValid = false;
-                        break;
-                    }
-                    itemElements.forEach(itemDiv => {
-                        const itemText = itemDiv.querySelector('input[type="text"]').value.trim();
-                        if (!itemText) {
-                            specificDataValid = false; // Mark invalid, message shown below
-                            return;
-                        }
+                    document.querySelectorAll('#orderingItemsContainer .item-row').forEach(itemDiv => {
+                        const idParts = itemDiv.id.split('-');
+                        const num = idParts[idParts.length - 1];
+                        const itemText = (document.getElementById(`orderItem-${num}`) || {}).value?.trim() || '';
+                        if (!itemText) { specificDataValid = false; return; }
                         orderedItems.push(itemText);
                     });
-                    if (!specificDataValid) { // Check if an empty item was found
-                        showMessageBox('Validation Error', 'All ordering items must be filled.', false);
-                        break;
+                    if (!specificDataValid || orderedItems.length < 2) {
+                        showMessageBox('Validation Error', 'Please add at least 2 items for ordering, all filled in.', false);
+                        return;
                     }
                     quizData.orderedItems = orderedItems;
                     break;
+                }
 
-                case 'numeric-entry':
-                    questionTextForPayload = document.getElementById('questionText').value.trim();
+                case 'numeric-entry': {
+                    questionTextForPayload = (document.getElementById('questionText') || {}).value?.trim() || '';
                     if (!questionTextForPayload) {
                         showMessageBox('Validation Error', 'Please enter the question text.', false);
-                        specificDataValid = false;
-                        break;
+                        return;
                     }
-                    const numericAnswer = document.getElementById('numericAnswer').value.trim();
+                    const numericAnswer = (document.getElementById('numericAnswer') || {}).value?.trim() || '';
                     if (!numericAnswer || isNaN(parseFloat(numericAnswer))) {
                         showMessageBox('Validation Error', 'Please enter a valid numeric answer.', false);
-                        specificDataValid = false;
-                        break;
+                        return;
                     }
-                    quizData.correctAnswers = [numericAnswer]; // Store numeric answer as string in array
+                    quizData.correctAnswers = [numericAnswer];
                     break;
+                }
 
                 default:
-                    showMessageBox('Error', 'Invalid question type selected. Please choose one from the list.', false);
-                    specificDataValid = false;
-                    break;
+                    showMessageBox('Error', 'Invalid question type selected.', false);
+                    return;
             }
 
-            if (!specificDataValid) {
-                return; // Stop if specific type data is invalid
-            }
-
-            // Add the determined questionText to the quizData payload
             quizData.questionText = questionTextForPayload;
 
-            // Get teacher token from localStorage
             const token = localStorage.getItem('token');
             if (!token) {
                 showMessageBox('Authentication Error', 'You are not logged in. Please log in as a teacher first.', false);
                 return;
             }
 
-            // Submit to backend
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
             fetch('/teacher/quiz-questions', {
                 method: 'POST',
                 headers: {
@@ -158,37 +802,35 @@ Valid = false;
             })
             .then(response => {
                 if (!response.ok) {
-                    return response.json().then(err => { throw new Error(err.message || 'Server error'); });
+                    return response.json().then(err => { throw new Error(err.message || err.errors?.[0]?.msg || 'Server error'); });
                 }
                 return response.json();
             })
             .then(data => {
-                showMessageBox('Success', 'Quiz question uploaded successfully!', true);
-                setTimeout(() => {
-                    quizUploadForm.reset(); // Clear form after successful upload
-                    renderQuestionTypeFields(); // Re-render dynamic fields to default state
-                }, 1500);
+                showMessageBox('Success!', `Quiz question uploaded successfully! (Weekly uploads: ${data.weeklyStats?.uploaded || '-'}/${data.weeklyStats?.target || '-'})`, true);
+                document.getElementById('quizUploadForm').reset();
+                document.getElementById('dynamicFields').innerHTML = '';
             })
             .catch(error => {
                 console.error('Error uploading quiz:', error);
                 showMessageBox('Upload Failed', error.message || 'Could not connect to the server. Please try again.', false);
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Question';
             });
         }
 
-        // Custom Message Box Functions
         function showMessageBox(title, message, isSuccess) {
             const overlay = document.getElementById('messageBoxOverlay');
             const titleElement = document.getElementById('messageBoxTitle');
             const contentElement = document.getElementById('messageBoxContent');
+            const icon = document.getElementById('messageBoxIcon');
 
             titleElement.textContent = title;
             contentElement.textContent = message;
-
-            if (isSuccess) {
-                titleElement.style.color = 'var(--color-brand-primary, #2563eb)'; // Default blue
-            } else {
-                titleElement.style.color = 'var(--color-error-red, #ef4444)'; // Default red
-            }
+            icon.textContent = isSuccess ? '✅' : '❌';
+            titleElement.style.color = isSuccess ? 'var(--color-brand-primary)' : 'var(--color-error-red)';
             overlay.classList.remove('hidden');
         }
 

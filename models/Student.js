@@ -103,6 +103,7 @@ const studentSchema = new mongoose.Schema({
     }],
 
     chatPublicKey: { type: String, default: null },
+    chatPrivateKeyBackup: { type: String, default: null },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });

@@ -755,8 +755,13 @@
 
     <!-- Main Content -->
     <div class="container">
+        <div id='streakCounterQuiz' style='position:fixed;top:1rem;right:1rem;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);color:white;padding:0.5rem 1.1rem;border-radius:50px;font-weight:600;z-index:100;display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;backdrop-filter:blur(8px);'>
+            <i class='fas fa-fire' style='color:#f97316;'></i>
+            <span id='streakCountQuiz'>0</span><span style='opacity:0.7;font-size:0.8rem;'> streak</span>
+        </div>
+        
         <!-- Energy Display -->
-        <div id="energyDisplay" style="position:fixed;top:1rem;right:1rem;background:rgba(26,42,108,0.92);color:white;padding:0.5rem 1.1rem;border-radius:50px;font-weight:600;z-index:100;display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;backdrop-filter:blur(8px);">
+        <div id='energyDisplay' style="position:fixed;top:1rem;right:1rem;background:rgba(26,42,108,0.92);color:white;padding:0.5rem 1.1rem;border-radius:50px;font-weight:600;z-index:100;display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;backdrop-filter:blur(8px);">
             <i class="fas fa-bolt" style="color:#ffd700;"></i>
             <span id="energyCount">25</span><span style="opacity:0.7;font-size:0.8rem;">/25 Energy</span>
         </div>
@@ -874,6 +879,8 @@
             generateQuiz();
             // Fetch energy
             loadEnergy();
+            // Fetch streak
+            loadStreak();
         });
 
         async function generateQuiz() {
@@ -1339,6 +1346,23 @@
         }
 
     
+        async function loadStreak() {
+            try {
+                const tok = localStorage.getItem('token');
+                if (!tok) return;
+                // Try localStorage first for quick display
+                const cached = JSON.parse(localStorage.getItem('studentData') || '{}');
+                const streakEl = document.getElementById('streakCountQuiz');
+                if (streakEl && cached.currentStreak !== undefined) streakEl.textContent = cached.currentStreak;
+                // Also fetch fresh from dashboard endpoint
+                const r = await fetch('/student/dashboard', { headers: { 'Authorization': 'Bearer ' + tok } });
+                if (r.ok) {
+                    const d = await r.json();
+                    if (streakEl) streakEl.textContent = d.student.currentStreak || 0;
+                }
+            } catch(e) { console.warn('Streak fetch failed:', e); }
+        }
+
         async function loadEnergy() {
             try {
                 const tok = localStorage.getItem('token');
@@ -1354,6 +1378,7 @@
             } catch(e) { console.warn('Energy fetch failed:', e); }
         }
     </script>
+    <script src="apply-font.js"></script>
     <script src="floating-icons.js"></script>
 </body>
 </html>

@@ -5520,6 +5520,33 @@ app.post('/api/students/me/chat-public-key', authenticateToken, async (req, res)
   }
 });
 
+// E2E Chat: Save current user's private key backup (stored on server for cross-device access)
+app.post('/api/students/me/chat-private-key-backup', authenticateToken, async (req, res) => {
+  try {
+    const { privateKeyBackup } = req.body;
+    if (!privateKeyBackup || typeof privateKeyBackup !== 'string') {
+      return res.status(400).json({ error: 'privateKeyBackup is required' });
+    }
+    await Student.findByIdAndUpdate(req.student.id, { chatPrivateKeyBackup: privateKeyBackup.trim() });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error saving chat private key backup:', error);
+    res.status(500).json({ error: 'Failed to save private key backup' });
+  }
+});
+
+// E2E Chat: Get current user's private key backup
+app.get('/api/students/me/chat-private-key-backup', authenticateToken, async (req, res) => {
+  try {
+    const student = await Student.findById(req.student.id).select('chatPrivateKeyBackup').lean();
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+    res.json({ privateKeyBackup: student.chatPrivateKeyBackup || null });
+  } catch (error) {
+    console.error('Error fetching chat private key backup:', error);
+    res.status(500).json({ error: 'Failed to fetch private key backup' });
+  }
+});
+
 // E2E Chat: Get another user's public key
 app.get('/api/students/:id/chat-public-key', authenticateToken, async (req, res) => {
   try {
