@@ -836,12 +836,19 @@
             </div>
         </div>
 
+        
+        <!-- Streak Counter (top right) -->
+        <div id='streakCounter' style='position:fixed;top:1rem;right:1rem;background:rgba(26,42,108,0.92);color:white;padding:0.5rem 1.1rem;border-radius:50px;font-weight:600;z-index:10001;display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;backdrop-filter:blur(8px);cursor:pointer;' onclick="window.location.href='studentprofile.html'" title='View your streak on profile'>
+            <i class='fas fa-fire' style='color:#f97316;'></i>
+            <span id='streakCount'>0</span><span style='opacity:0.7;font-size:0.8rem;'> day streak</span>
+        </div>
         <div class="bytes-counter">
             <i class="fas fa-coins bytes-icon"></i>
             <span id="bytesCount">0</span> Bytes
         </div>
 
         <!-- Floating icons with drag functionality -->
+        <script src="apply-font.js"></script>
         <script src="floating-icons.js"></script>
 
         <script>
@@ -1011,6 +1018,10 @@
                             welcomeMessage.textContent = `Hello ${displayName}, what do you want to dive into today?`;
                             bytesCountElement.textContent = student.bytes || 0;
                             bytesCount = student.bytes || 0;
+
+                            // Update streak display
+                            const streakEl = document.getElementById("streakCount");
+                            if (streakEl) streakEl.textContent = student.currentStreak || 0;
 
                             // Apply saved font preference
                             if (

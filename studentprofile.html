@@ -896,6 +896,7 @@
 
                 if (response.ok) {
                     document.body.style.fontFamily = selectedFont;
+                    localStorage.setItem('sb_preferred_font', selectedFont);
                     alert('Font preference saved successfully!');
                     
                     // Update local storage
@@ -940,7 +941,7 @@
         }
 
         // Initialize preferred font from localStorage
-        const savedFont = localStorage.getItem('preferredFont');
+        const savedFont = localStorage.getItem('sb_preferred_font') || localStorage.getItem('preferredFont');
         if (savedFont) {
             document.getElementById('font-select').value = savedFont;
             document.body.style.fontFamily = savedFont;
