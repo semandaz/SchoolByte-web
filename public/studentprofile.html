@@ -875,6 +875,10 @@
         // Font selection
         document.getElementById('font-select').addEventListener('change', async function() {
             const selectedFont = this.value;
+            // Apply immediately for instant feedback
+            document.body.style.fontFamily = selectedFont;
+            document.documentElement.style.fontFamily = selectedFont;
+            localStorage.setItem('sb_preferred_font', selectedFont);
             try {
                 const token = localStorage.getItem('token');
                 
@@ -895,8 +899,6 @@
                 });
 
                 if (response.ok) {
-                    document.body.style.fontFamily = selectedFont;
-                    localStorage.setItem('sb_preferred_font', selectedFont);
                     alert('Font preference saved successfully!');
                     
                     // Update local storage

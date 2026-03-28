@@ -393,6 +393,17 @@
             });
 
             fileInput.addEventListener('change', () => handleFileSelection(fileInput.files[0]));
+            // Subject and class selects must also trigger validation
+            document.getElementById('workFileSubject').addEventListener('change', () => {
+                const actSub = document.getElementById('activitySubject');
+                if (actSub) actSub.value = document.getElementById('workFileSubject').value;
+                validateForm();
+            });
+            document.getElementById('workFileIntendedClass').addEventListener('change', () => {
+                const actCls = document.getElementById('activityIntendedClass');
+                if (actCls) actCls.value = document.getElementById('workFileIntendedClass').value;
+                validateForm();
+            });
 
             dropZone.addEventListener('dragover', (e) => {
                 e.preventDefault();
@@ -571,10 +582,10 @@
             const isCostValid = !isNaN(costValue) && costValue >= 5 && costValue <= 20;
 
             const questionItems = document.querySelectorAll('.question-item');
-            const hasFiveQuestions = questionItems.length === 5;
-            let allQuestionsValid = hasFiveQuestions;
+            const hasEnoughQuestions = questionItems.length >= 1 && questionItems.length <= 5;
+            let allQuestionsValid = hasEnoughQuestions;
 
-            if (hasFiveQuestions) {
+            if (hasEnoughQuestions) {
                 questionItems.forEach(item => {
                     const questionText = item.querySelector('.question-text').value.trim();
                     const keywordCount = item.querySelectorAll('.keyword-tag').length;
@@ -583,7 +594,7 @@
                     }
                 });
             } else {
-                allQuestionsValid = false;
+                allQuestionsValid = false; // 0 questions
             }
 
             const isFormValid = isTitleValid && isSubjectValid && isClassValid && isPdfValid && isCostValid && allQuestionsValid;
