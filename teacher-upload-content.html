@@ -386,6 +386,7 @@
                 window._draftQuestions = null;
             }
             restoreFormDraft();
+            window.saveFormDraft = saveFormDraft;
             saveableFields.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.addEventListener('input', saveFormDraft);
@@ -417,6 +418,9 @@
             let highlightedQuestion = null;
 
             // --- Initial Setup ---
+            // Expose functions needed by global-scope helpers
+            window.validateForm = validateForm;
+
             // Create all 5 question slots upfront, then restore draft
             for (let _qi = 0; _qi < 5; _qi++) addQuestion();
             applyDraftQuestions();
