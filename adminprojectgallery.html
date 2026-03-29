@@ -273,7 +273,7 @@
 </div>
 
 <script>
-    const ADMIN_TOKEN = localStorage.getItem('adminToken');
+    const ADMIN_TOKEN = localStorage.getItem('token') || localStorage.getItem('adminToken');
     window.allProjects = [];
     let deleteTargetId = null;
 

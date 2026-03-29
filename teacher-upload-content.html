@@ -178,9 +178,12 @@
             </div>
 
             <!-- Form Actions -->
-            <div class="flex justify-center items-center gap-4 mt-8">
+            <div class="flex justify-center items-center gap-4 mt-8 flex-wrap">
                 <button type="button" class="px-6 py-3 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition" onclick="window.location.href='teacherdashboard.html'">
                     Cancel
+                </button>
+                <button type="button" class="px-6 py-3 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition" onclick="clearAllDraft()" title="Clear all saved form data and reset questions">
+                    <i class="fas fa-trash-alt mr-2"></i> Clear Saved Data
                 </button>
                 <button type="submit" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:bg-blue-400 disabled:cursor-not-allowed" id="submitBtn" disabled>
                     <i class="fas fa-upload mr-2"></i> Upload Content
@@ -334,6 +337,14 @@
                     const el = document.getElementById(id);
                     if (el) draft[id] = el.value;
                 });
+                // Also save question content
+                const questions = [];
+                document.querySelectorAll('.question-item').forEach(item => {
+                    const text = (item.querySelector('.question-text') || {}).value || '';
+                    const keywords = Array.from(item.querySelectorAll('.keyword-tag span:first-child')).map(s => s.textContent.trim());
+                    questions.push({ text, keywords });
+                });
+                draft._questions = questions;
                 localStorage.setItem(FORM_CACHE_KEY, JSON.stringify(draft));
             }
             function restoreFormDraft() {
@@ -345,7 +356,34 @@
                         const el = document.getElementById(id);
                         if (el && draft[id] != null) el.value = draft[id];
                     });
+                    // Store question draft to be applied after questions are rendered
+                    if (draft._questions && draft._questions.length > 0) {
+                        window._draftQuestions = draft._questions;
+                    }
                 } catch(e) {}
+            }
+            function applyDraftQuestions() {
+                if (!window._draftQuestions || !window._draftQuestions.length) return;
+                const items = document.querySelectorAll('.question-item');
+                items.forEach((item, idx) => {
+                    const q = window._draftQuestions[idx];
+                    if (!q) return;
+                    const ta = item.querySelector('.question-text');
+                    if (ta && q.text) ta.value = q.text;
+                    if (q.keywords && q.keywords.length) {
+                        const display = item.querySelector('.keywords-display');
+                        if (display) {
+                            display.innerHTML = '';
+                            q.keywords.forEach(kw => {
+                                const tag = document.createElement('div');
+                                tag.className = 'keyword-tag flex items-center bg-gray-200 text-gray-800 text-sm font-medium px-2 py-1 rounded-full';
+                                tag.innerHTML = '<span>' + kw + '</span><button type="button" class="ml-2 text-gray-500 hover:text-gray-800" onclick="removeKeyword(this)"><i class="fas fa-times"></i></button>';
+                                display.appendChild(tag);
+                            });
+                        }
+                    }
+                });
+                window._draftQuestions = null;
             }
             restoreFormDraft();
             saveableFields.forEach(id => {
@@ -379,7 +417,9 @@
             let highlightedQuestion = null;
 
             // --- Initial Setup ---
-            addQuestion();
+            // Create all 5 question slots upfront, then restore draft
+            for (let _qi = 0; _qi < 5; _qi++) addQuestion();
+            applyDraftQuestions();
 
             // --- Event Listeners ---
             workFileTitle.addEventListener('input', () => {
@@ -559,7 +599,23 @@
             validateForm();
         }
 
-        function validateForm() {
+
+        function clearAllDraft() {
+            if (!confirm('Clear all saved draft data? This will reset all questions and fields so you can start fresh.')) return;
+            localStorage.removeItem('sb_teacher_upload_draft');
+            window._draftQuestions = null;
+            // Reset plain fields
+            ['workFileTitle','workFileSubject','workFileDescription','workFileIntendedClass','workFileCostBytes','activityDescription'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            // Reset questions container - rebuild 5 blank questions
+            document.getElementById('questionsContainer').innerHTML = '';
+            for (let _qi = 0; _qi < 5; _qi++) addQuestion();
+            validateForm();
+        }
+
+                function validateForm() {
             const workFileTitle = document.getElementById('workFileTitle');
             const workFileSubject = document.getElementById('workFileSubject');
             const workFileIntendedClass = document.getElementById('workFileIntendedClass');
@@ -582,10 +638,10 @@
             const isCostValid = !isNaN(costValue) && costValue >= 5 && costValue <= 20;
 
             const questionItems = document.querySelectorAll('.question-item');
-            const hasEnoughQuestions = questionItems.length >= 1 && questionItems.length <= 5;
-            let allQuestionsValid = hasEnoughQuestions;
+            const hasFiveQuestions = questionItems.length === 5;
+            let allQuestionsValid = hasFiveQuestions;
 
-            if (hasEnoughQuestions) {
+            if (hasFiveQuestions) {
                 questionItems.forEach(item => {
                     const questionText = item.querySelector('.question-text').value.trim();
                     const keywordCount = item.querySelectorAll('.keyword-tag').length;
@@ -669,7 +725,7 @@
             container.appendChild(questionDiv);
 
             const questionTextarea = questionDiv.querySelector('.question-text');
-            questionTextarea.addEventListener('input', validateForm);
+            questionTextarea.addEventListener('input', () => { saveFormDraft(); validateForm(); });
 
             const keywordInput = questionDiv.querySelector('.new-keyword');
             const addKeywordBtn = questionDiv.querySelector('.btn-add-keyword');
@@ -751,12 +807,14 @@
             keywordsDisplay.appendChild(keywordTag);
             input.value = '';
             input.focus();
+            saveFormDraft();
             validateForm();
         }
 
         function removeKeyword(button) {
             const keywordTag = button.closest('.keyword-tag');
             keywordTag.remove();
+            saveFormDraft();
             validateForm();
         }
 
