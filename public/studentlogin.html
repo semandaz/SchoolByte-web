@@ -503,6 +503,9 @@
 
         <script>
             document.addEventListener("DOMContentLoaded", function () {
+                // already logged in redirect
+                if (localStorage.getItem("token")) { window.location.replace("studentdashboard.html"); return; }
+
                 // Create floating books
                 createFloatingBooks();
 
@@ -621,7 +624,7 @@
                         }
 
                         alert("Login successful! Redirecting to dashboard...");
-                        window.location.href = "studentdashboard.html";
+                        window.location.replace("studentdashboard.html");
                     } catch (error) {
                         console.error("Login error:", error);
                         alert(

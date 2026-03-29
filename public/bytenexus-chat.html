@@ -1475,8 +1475,13 @@
         async function initByteNexusSession() {
             const contactsList = document.getElementById('contactsList');
 
+            var _inPiP = window !== window.top;
+            function _redirectToLogin() {
+                if (_inPiP) { window.top.location.replace('studentlogin.html'); }
+                else { window.location.replace('studentlogin.html'); }
+            }
             if (!token) {
-                contactsList.innerHTML = '<div class="loading" style="color: var(--danger);">❌ Please log in to SchoolByte first<br><br><a href="studentlogin.html" style="color: var(--primary); text-decoration: underline;">Go to Login</a></div>';
+                contactsList.innerHTML = '<div class="loading" style="color: var(--danger);">❌ Session expired. Please log in again.<br><br><button onclick="_redirectToLogin()" style="margin-top:10px;padding:8px 18px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.95rem;">Go to Login</button></div>';
                 console.error('No authentication token found');
                 return;
             }
@@ -1488,7 +1493,7 @@
                 });
 
                 if (!response.ok) {
-                    contactsList.innerHTML = '<div class="loading" style="color: var(--danger);">❌ Authentication failed<br><br><a href="studentlogin.html" style="color: var(--primary); text-decoration: underline;">Please log in again</a></div>';
+                    contactsList.innerHTML = '<div class="loading" style="color: var(--danger);">❌ Authentication failed.<br><br><button onclick="_redirectToLogin()" style="margin-top:10px;padding:8px 18px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.95rem;">Log in again</button></div>';
                     return;
                 }
 
@@ -1514,7 +1519,7 @@
                 loadContacts();
             } catch (error) {
                 console.error('ByteNexus initialization error:', error);
-                contactsList.innerHTML = '<div class="loading" style="color: var(--danger);">❌ Failed to initialize chat<br><br><a href="studentlogin.html" style="color: var(--primary); text-decoration: underline;">Back to Login</a></div>';
+                contactsList.innerHTML = '<div class="loading" style="color: var(--danger);">❌ Failed to initialize chat.<br><br><button onclick="_redirectToLogin()" style="margin-top:10px;padding:8px 18px;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.95rem;">Back to Login</button></div>';
             }
         }
 

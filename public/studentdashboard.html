@@ -853,6 +853,12 @@
 
         <script>
             document.addEventListener("DOMContentLoaded", function () {
+                // Prevent back-button navigation into/out-of dashboard
+                history.replaceState(null, "", window.location.href);
+                window.addEventListener("popstate", function () {
+                    history.pushState(null, "", window.location.href);
+                });
+
                 // Initialize elements
                 const studentNameDisplay =
                     document.getElementById("studentNameDisplay");
@@ -992,7 +998,7 @@
                     try {
                         const token = localStorage.getItem("token");
                         if (!token) {
-                            window.location.href = "studentlogin.html";
+                            window.location.replace("studentlogin.html");
                             return;
                         }
 
@@ -1052,7 +1058,7 @@
                             // Token is invalid or expired
                             localStorage.removeItem("token");
                             localStorage.removeItem("studentData");
-                            window.location.href = "studentlogin.html";
+                            window.location.replace("studentlogin.html");
                         } else {
                             throw new Error(`Server error: ${response.status}`);
                         }

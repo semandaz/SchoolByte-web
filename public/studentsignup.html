@@ -553,6 +553,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // already logged in redirect
+            if (localStorage.getItem('token')) { window.location.replace('studentdashboard.html'); return; }
+
             // API Base URL - Using current repl URL
             const API_BASE_URL = window.API_BASE_URL || window.location.origin || 'http://localhost:5000';
 
@@ -898,18 +901,18 @@
                                         localStorage.setItem('userData', JSON.stringify(loginData.student));
                                         showMessage('Welcome to SchoolByte! Redirecting to your dashboard...', 'success');
                                         setTimeout(() => {
-                                            window.location.href = 'studentdashboard.html';
+                                            window.location.replace('studentdashboard.html');
                                         }, 1500);
                                     } else {
                                         showMessage('Registration successful! Please go to login page.', 'success');
                                         setTimeout(() => {
-                                            window.location.href = 'studentlogin.html';
+                                            window.location.replace('studentlogin.html');
                                         }, 2000);
                                     }
                                 } catch (error) {
                                     showMessage('Registration successful! Please go to login page.', 'success');
                                     setTimeout(() => {
-                                        window.location.href = 'studentlogin.html';
+                                        window.location.replace('studentlogin.html');
                                     }, 2000);
                                 }
                             }, 1500);
