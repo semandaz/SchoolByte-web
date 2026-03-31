@@ -6017,6 +6017,68 @@ app.post('/admin/send-notification', authenticateAdminToken, async (req, res) =>
   }
 });
 
+
+// Admin: list all quiz questions with teacher info
+app.get('/admin/quiz-questions', authenticateAdminToken, async (req, res) => {
+  try {
+    const questions = await QuizQuestion.find({})
+      .select('questionText subject intendedClass type keywordsForGrading uploadedBy createdAt isActive')
+      .sort({ createdAt: -1 })
+      .lean();
+    res.json({ questions });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Admin: edit a quiz question (text + keywords)
+app.put('/admin/quiz-questions/:id', authenticateAdminToken, async (req, res) => {
+  try {
+    const { questionText, keywordsForGrading } = req.body;
+    const update = {};
+    if (questionText !== undefined) update.questionText = questionText;
+    if (keywordsForGrading !== undefined) update.keywordsForGrading = keywordsForGrading;
+    const question = await QuizQuestion.findByIdAndUpdate(req.params.id, update, { new: true });
+    if (!question) return res.status(404).json({ error: 'Question not found' });
+    res.json({ question });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Admin: delete a quiz question
+app.delete('/admin/quiz-questions/:id', authenticateAdminToken, async (req, res) => {
+  try {
+    const q = await QuizQuestion.findByIdAndDelete(req.params.id);
+    if (!q) return res.status(404).json({ error: 'Question not found' });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Admin: analytics - student/teacher growth over time + active students
+app.get('/admin/analytics', authenticateAdminToken, async (req, res) => {
+  try {
+    const now = new Date();
+    const last30Days = new Date(now);
+    last30Days.setDate(last30Days.getDate() - 29);
+    last30Days.setHours(0, 0, 0, 0);
+    const last12MonthsDate = new Date(now);
+    last12MonthsDate.setMonth(last12MonthsDate.getMonth() - 11);
+    last12MonthsDate.setDate(1);
+    last12MonthsDate.setHours(0, 0, 0, 0);
+    const [studentsByDay, teachersByDay, studentsByMonth, teachersByMonth, studentsByYear, teachersByYear] = await Promise.all([
+      Student.aggregate([{$match:{createdAt:{$gte:last30Days}}},{$group:{_id:{y:{$year:'$createdAt'},m:{$month:'$createdAt'},d:{$dayOfMonth:'$createdAt'}},count:{$sum:1}}},{$sort:{'_id.y':1,'_id.m':1,'_id.d':1}}]),
+      Teacher.aggregate([{$match:{createdAt:{$gte:last30Days}}},{$group:{_id:{y:{$year:'$createdAt'},m:{$month:'$createdAt'},d:{$dayOfMonth:'$createdAt'}},count:{$sum:1}}},{$sort:{'_id.y':1,'_id.m':1,'_id.d':1}}]),
+      Student.aggregate([{$match:{createdAt:{$gte:last12MonthsDate}}},{$group:{_id:{y:{$year:'$createdAt'},m:{$month:'$createdAt'}},count:{$sum:1}}},{$sort:{'_id.y':1,'_id.m':1}}]),
+      Teacher.aggregate([{$match:{createdAt:{$gte:last12MonthsDate}}},{$group:{_id:{y:{$year:'$createdAt'},m:{$month:'$createdAt'}},count:{$sum:1}}},{$sort:{'_id.y':1,'_id.m':1}}]),
+      Student.aggregate([{$group:{_id:{y:{$year:'$createdAt'}},count:{$sum:1}}},{$sort:{'_id.y':1}}]),
+      Teacher.aggregate([{$group:{_id:{y:{$year:'$createdAt'}},count:{$sum:1}}},{$sort:{'_id.y':1}}])
+    ]);
+    const activeStudentIds = Array.from(authenticatedSockets.keys());
+    let activeStudents = [];
+    if (activeStudentIds.length > 0) {
+      activeStudents = await Student.find({ _id: { $in: activeStudentIds } }, 'studentName class').lean();
+    }
+    res.json({ studentsByDay, teachersByDay, studentsByMonth, teachersByMonth, studentsByYear, teachersByYear, activeStudents, activeCount: activeStudentIds.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.get('/api/student/energy', authenticateToken, async (req, res) => {
   try {
     const student = await Student.findById(req.student.id);
