@@ -1053,9 +1053,10 @@
                             mainContent.classList.remove("hidden");
                         } else if (
                             response.status === 401 ||
-                            response.status === 403
+                            response.status === 403 ||
+                            response.status === 404
                         ) {
-                            // Token is invalid or expired
+                            // Token invalid, expired, or account not found — clear and re-login
                             localStorage.removeItem("token");
                             localStorage.removeItem("studentData");
                             window.location.replace("studentlogin.html");

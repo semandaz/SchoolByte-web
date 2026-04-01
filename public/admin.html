@@ -578,7 +578,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────────────────────────────────────
-const token = () => localStorage.getItem('token');
+const token = () => localStorage.getItem('adminToken');
 let _analyticsData = null;
 let _studentsChart = null, _teachersChart = null, _combinedChart = null;
 let _currentPeriod = 'month';
@@ -1270,7 +1270,7 @@ document.getElementById('gallerySort').onchange = renderGallery;
 // LOGOUT & UTILS
 // ─────────────────────────────────────────────────────────────────────────────
 function logout() {
-    ['token','adminToken','adminEmail','adminName'].forEach(k=>localStorage.removeItem(k));
+    ['adminToken','adminEmail','adminName'].forEach(k=>localStorage.removeItem(k));
     window.location.href = 'adminlogin.html';
 }
 
