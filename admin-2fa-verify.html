@@ -246,8 +246,12 @@
                     localStorage.setItem('adminName', data.admin.adminName);
                     localStorage.setItem('adminEmail', data.admin.email);
 
-                    // Redirect to admin dashboard
-                    window.location.href = 'admin.html';
+                    // Check if admin needs to set their password first
+                    if (data.isPasswordSet === false) {
+                        window.location.replace('admin-set-password.html');
+                    } else {
+                        window.location.href = 'admin.html';
+                    }
 
                 } catch (error) {
                     console.error('2FA verification error:', error);
