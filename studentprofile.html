@@ -407,6 +407,7 @@
         }
     </style>
     <script src="apply-font.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -552,13 +553,49 @@
                     <div class="card">
                         <div class="card-content">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                                <h3 style="font-weight: 600;">Daily Streak</h3>
-                                <i class="fas fa-fire" style="color: #f97316;"></i>
+                                <h3 style="font-weight: 600;">Total Quizzes</h3>
+                                <i class="fas fa-question-circle" style="color: var(--color-brand-primary);"></i>
                             </div>
-                            <div id="progressStreakValue" style="font-size: 2rem; font-weight: 700; color: #f97316; margin-bottom: 0.5rem;">0 days</div>
-                            <div class="progress"><div class="progress-bar" id="progressStreakBar" style="width: 0%; background: linear-gradient(90deg,#f97316,#ef4444);"></div></div>
-                            <p id="progressStreakLabel" style="color: var(--color-neutral-dark); font-size: 0.9rem;">Best: 0 days</p>
+                            <div id="progressQuizzesValue" style="font-size: 2rem; font-weight: 700; color: var(--color-brand-primary); margin-bottom: 0.5rem;">0</div>
+                            <div class="progress"><div class="progress-bar" id="progressQuizzesBar" style="width: 0%;"></div></div>
+                            <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">Completed all time</p>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Activity Analytics Graph -->
+                <div class="card" style="margin-bottom: 2rem;">
+                    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+                        <h3 class="card-title" style="margin:0;">
+                            <i class="fas fa-chart-area" style="color:var(--color-brand-primary);"></i> Activity Analytics
+                        </h3>
+                        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+                            <select id="activityTimeUnit" style="padding:0.4rem 0.8rem;border:1px solid var(--color-neutral-light);border-radius:8px;font-size:0.9rem;background:#fff;cursor:pointer;">
+                                <option value="hours">Hours</option>
+                                <option value="minutes">Minutes</option>
+                                <option value="seconds">Seconds</option>
+                            </select>
+                            <select id="activityRange" style="padding:0.4rem 0.8rem;border:1px solid var(--color-neutral-light);border-radius:8px;font-size:0.9rem;background:#fff;cursor:pointer;">
+                                <option value="7days">Last 7 Days</option>
+                                <option value="month">Last Month</option>
+                                <option value="year">Last Year</option>
+                                <option value="2025">Year 2025</option>
+                                <option value="2024">Year 2024</option>
+                                <option value="2026">Year 2026</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div id="activityPeakInfo" style="background:linear-gradient(135deg,var(--color-brand-primary),var(--color-brand-secondary));color:#fff;border-radius:10px;padding:0.75rem 1.25rem;margin-bottom:1.25rem;font-size:0.95rem;display:none;">
+                            <i class="fas fa-star" style="margin-right:0.5rem;color:var(--color-brand-gold);"></i>
+                            <span id="activityPeakText">Peak day: –</span>
+                        </div>
+                        <div style="position:relative;height:320px;">
+                            <canvas id="activityChart"></canvas>
+                        </div>
+                        <p style="text-align:center;font-size:0.82rem;color:var(--color-neutral-medium);margin-top:0.75rem;">
+                            Time is logged automatically while you use SchoolByte.
+                        </p>
                     </div>
                 </div>
 
@@ -736,15 +773,12 @@
                     const shBar = document.getElementById('progressStudyBar');
                     if (shEl) shEl.textContent = Math.floor(totalMins/60) + 'h ' + (totalMins%60) + 'm';
                     if (shBar) shBar.style.width = Math.min(100, Math.round(totalMins/6)) + '%';
-                    // Streak card
-                    const streak = student.currentStreak || 0;
-                    const longest = student.longestStreak || 0;
-                    const streakEl = document.getElementById('progressStreakValue');
-                    const streakBar = document.getElementById('progressStreakBar');
-                    const streakLbl = document.getElementById('progressStreakLabel');
-                    if (streakEl) streakEl.textContent = streak + ' day' + (streak !== 1 ? 's' : '');
-                    if (streakBar) streakBar.style.width = Math.min(100, Math.round((streak / Math.max(longest, 7)) * 100)) + '%';
-                    if (streakLbl) streakLbl.textContent = 'Best: ' + longest + ' day' + (longest !== 1 ? 's' : '');
+                    // Total Quizzes card
+                    const totalQ = student.totalQuizzesCompleted || 0;
+                    const qVal = document.getElementById('progressQuizzesValue');
+                    const qBar = document.getElementById('progressQuizzesBar');
+                    if (qVal) qVal.textContent = totalQ;
+                    if (qBar) qBar.style.width = Math.min(100, Math.round(totalQ / 2)) + '%';
                     // Save font to localStorage for cross-page use
                     if (student.preferences && student.preferences.fontFamily) {
                         localStorage.setItem('sb_preferred_font', student.preferences.fontFamily);
@@ -1005,6 +1039,175 @@
             }
         }
 
+
+        // ─── ACTIVITY ANALYTICS GRAPH ───────────────────────────────────────
+        let activityChart = null;
+
+        function formatDateLabel(dateStr, range) {
+            const d = new Date(dateStr + 'T00:00:00');
+            if (range === '7days') {
+                return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            } else if (range === 'month') {
+                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            } else {
+                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }
+        }
+
+        function convertMinutes(minutes, unit) {
+            if (unit === 'hours') return +(minutes / 60).toFixed(2);
+            if (unit === 'seconds') return minutes * 60;
+            return minutes;
+        }
+
+        function unitLabel(unit) {
+            return unit === 'hours' ? 'Hours' : unit === 'seconds' ? 'Seconds' : 'Minutes';
+        }
+
+        function getPeakText(peak, unit, range) {
+            if (!peak) return null;
+            const val = convertMinutes(peak.minutes, unit);
+            const d = new Date(peak.date + 'T00:00:00');
+            const dayStr = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const rangeLabel = range === '7days' ? 'last 7 days' :
+                               range === 'month' ? 'last month' :
+                               range === 'year'  ? 'last year'  : 'year ' + range;
+            return `Peak in ${rangeLabel}: ${val.toFixed(unit === 'minutes' ? 0 : 2)} ${unitLabel(unit).toLowerCase()} on ${dayStr}`;
+        }
+
+        async function loadActivityGraph() {
+            const token = localStorage.getItem('studentAuthToken');
+            if (!token) return;
+            const range = document.getElementById('activityRange').value;
+            const unit = document.getElementById('activityTimeUnit').value;
+
+            try {
+                const res = await fetch(`/api/student/activity-stats?range=${range}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!res.ok) return;
+                const stats = await res.json();
+
+                // Build a complete date array for the range with zero-fills
+                const dataMap = {};
+                (stats.data || []).forEach(d => { dataMap[d.date] = d.minutes; });
+
+                const labels = [];
+                const values = [];
+                const now = new Date();
+                let startDate, days;
+
+                if (range === '7days') {
+                    days = 7;
+                    startDate = new Date(now); startDate.setDate(startDate.getDate() - 6);
+                } else if (range === 'month') {
+                    days = 30;
+                    startDate = new Date(now); startDate.setDate(startDate.getDate() - 29);
+                } else if (range === 'year') {
+                    days = 365;
+                    startDate = new Date(now); startDate.setFullYear(startDate.getFullYear() - 1);
+                    startDate.setDate(startDate.getDate() + 1);
+                } else {
+                    // specific year
+                    startDate = new Date(parseInt(range), 0, 1);
+                    const endDate = new Date(parseInt(range), 11, 31);
+                    const allDates = (stats.data || []).map(d => d.date).sort();
+                    allDates.forEach(dateStr => {
+                        labels.push(formatDateLabel(dateStr, range));
+                        values.push(convertMinutes(dataMap[dateStr] || 0, unit));
+                    });
+                    days = 0;
+                }
+
+                if (days > 0) {
+                    for (let i = 0; i < days; i++) {
+                        const d = new Date(startDate);
+                        d.setDate(d.getDate() + i);
+                        const dateStr = d.toISOString().slice(0, 10);
+                        labels.push(formatDateLabel(dateStr, range));
+                        values.push(convertMinutes(dataMap[dateStr] || 0, unit));
+                    }
+                }
+
+                // Peak info
+                const peakInfo = document.getElementById('activityPeakInfo');
+                const peakText = document.getElementById('activityPeakText');
+                if (stats.peak && stats.peak.minutes > 0) {
+                    peakText.textContent = getPeakText(stats.peak, unit, range);
+                    peakInfo.style.display = 'block';
+                } else {
+                    peakInfo.style.display = 'none';
+                }
+
+                // Draw chart
+                const ctx = document.getElementById('activityChart').getContext('2d');
+                if (activityChart) activityChart.destroy();
+
+                activityChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: unitLabel(unit) + ' on SchoolByte',
+                            data: values,
+                            backgroundColor: values.map((v, i) => {
+                                const maxV = Math.max(...values, 0.01);
+                                if (v === maxV && v > 0) return 'rgba(255, 193, 7, 0.9)'; // gold for peak
+                                return 'rgba(26, 42, 108, 0.75)';
+                            }),
+                            borderColor: values.map((v) => {
+                                const maxV = Math.max(...values, 0.01);
+                                return (v === maxV && v > 0) ? '#FFD700' : '#1a2a6c';
+                            }),
+                            borderWidth: 1,
+                            borderRadius: 5,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => ` ${ctx.parsed.y.toFixed(unit === 'minutes' ? 0 : 2)} ${unitLabel(unit).toLowerCase()}`
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: unitLabel(unit) },
+                                ticks: { precision: unit === 'minutes' ? 0 : 2 }
+                            },
+                            x: {
+                                ticks: {
+                                    maxRotation: 45,
+                                    font: { size: days > 100 ? 9 : 11 }
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error('Activity graph error:', e);
+            }
+        }
+
+        document.getElementById('activityRange').addEventListener('change', loadActivityGraph);
+        document.getElementById('activityTimeUnit').addEventListener('change', loadActivityGraph);
+
+        // Load when progress tab is activated
+        document.querySelectorAll('.tabs-trigger').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.getAttribute('data-tab') === 'progress') setTimeout(loadActivityGraph, 200);
+            });
+        });
+        // Load only if progress tab is currently active
+        if (document.getElementById('progress') && document.getElementById('progress').classList.contains('active')) {
+            loadActivityGraph();
+        }
+        // ────────────────────────────────────────────────────────────────────
         // Load achievements on page load
         loadAchievements();
         updateActiveTimeDisplay();
