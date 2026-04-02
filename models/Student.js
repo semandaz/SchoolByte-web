@@ -93,6 +93,15 @@ const studentSchema = new mongoose.Schema({
         _id: false
     },
 
+    dailyActivity: {
+        type: [{
+            date: { type: String, required: true },
+            minutes: { type: Number, default: 0, min: 0 }
+        }],
+        default: [],
+        _id: false
+    },
+
     notifications: [{
         type: { type: String, enum: ['achievement', 'message', 'system', 'team', 'quiz'], required: true },
         title: { type: String, required: true },

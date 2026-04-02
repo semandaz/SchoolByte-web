@@ -66,49 +66,6 @@ function generateRandomPassword(length = 10) {
     }
     return pass.sort(() => Math.random() - 0.5).join('');
 }
-// ═══════════════════════════════════════════════════════════════════════════
-// STUDENT BYTES REFUND
-// ═══════════════════════════════════════════════════════════════════════════
-
-app.post('/student/workfiles/:workFileId/refund', authenticateToken, async (req, res) => {
-    try {
-        const { workFileId } = req.params;
-        const studentId = req.student.id;
-
-        const workFile = await WorkFile.findById(workFileId).lean();
-        if (!workFile) return res.status(404).json({ message: 'Work file not found.' });
-
-        const student = await Student.findById(studentId);
-        if (!student) return res.status(404).json({ message: 'Student not found.' });
-
-        const refundAmount = workFile.costBytes || 0;
-        if (refundAmount === 0) return res.status(400).json({ message: 'No bytes to refund for this file.' });
-
-        student.bytes += refundAmount;
-        await student.save();
-
-        await createNotification(
-            studentId,
-            'bytes_refund',
-            'Bytes Refunded',
-            `${refundAmount} bytes have been refunded because your download of "${workFile.title}" was unsuccessful.`,
-            { workFileId, workFileTitle: workFile.title, refundAmount, newBalance: student.bytes }
-        );
-
-        res.json({ success: true, refundAmount, newBalance: student.bytes, message: `${refundAmount} bytes refunded successfully.` });
-    } catch (err) {
-        console.error('Bytes refund error:', err);
-        res.status(500).json({ message: 'Failed to process refund', error: err.message });
-    }
-});
-
-
-httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 SchoolByte server running on port ${PORT}`);
-  console.log(`🌐 Server accessible at: http://0.0.0.0:${PORT}`);
-  console.log('📡 Socket.io chat server ready');
-});
-
 
 // --- MongoDB Connection ---
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -450,6 +407,34 @@ const authenticateToken = (req, res, next) => {
         next();
     });
 };
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STUDENT BYTES REFUND
+// ═══════════════════════════════════════════════════════════════════════════
+app.post('/student/workfiles/:workFileId/refund', authenticateToken, async (req, res) => {
+    try {
+        const { workFileId } = req.params;
+        const studentId = req.student.id;
+        const workFile = await WorkFile.findById(workFileId).lean();
+        if (!workFile) return res.status(404).json({ message: 'Work file not found.' });
+        const student = await Student.findById(studentId);
+        if (!student) return res.status(404).json({ message: 'Student not found.' });
+        const refundAmount = workFile.costBytes || 0;
+        if (refundAmount === 0) return res.status(400).json({ message: 'No bytes to refund for this file.' });
+        student.bytes += refundAmount;
+        await student.save();
+        await createNotification(
+            studentId, 'bytes_refund', 'Bytes Refunded',
+            `${refundAmount} bytes have been refunded because your download of "${workFile.title}" was unsuccessful.`,
+            { workFileId, workFileTitle: workFile.title, refundAmount, newBalance: student.bytes }
+        );
+        res.json({ success: true, refundAmount, newBalance: student.bytes, message: `${refundAmount} bytes refunded successfully.` });
+    } catch (err) {
+        console.error('Bytes refund error:', err);
+        res.status(500).json({ message: 'Failed to process refund', error: err.message });
+    }
+});
 
 // Get group messages
 app.get('/api/messages/group/:groupId', authenticateToken, async (req, res) => {
@@ -6596,18 +6581,93 @@ app.post('/api/student/log-study-time', authenticateToken, async (req, res) => {
     if (!minutes || minutes <= 0) return res.json({ ok: true });
     const student = await Student.findById(req.student.id);
     if (!student) return res.status(404).json({ error: 'Not found' });
-    const month = new Date().toISOString().slice(0, 7);
+    const now = new Date();
+    const month = now.toISOString().slice(0, 7);
+    const today = now.toISOString().slice(0, 10);
+    const roundedMinutes = Math.round(minutes);
+
+    // Update monthly hours
     const idx = (student.studyHours || []).findIndex(h => h.month === month);
     if (idx >= 0) {
-      student.studyHours[idx].minutes += Math.round(minutes);
+      student.studyHours[idx].minutes += roundedMinutes;
     } else {
       if (!student.studyHours) student.studyHours = [];
-      student.studyHours.push({ month, minutes: Math.round(minutes) });
+      student.studyHours.push({ month, minutes: roundedMinutes });
     }
+
+    // Update daily activity
+    if (!student.dailyActivity) student.dailyActivity = [];
+    const dayIdx = student.dailyActivity.findIndex(d => d.date === today);
+    if (dayIdx >= 0) {
+      student.dailyActivity[dayIdx].minutes += roundedMinutes;
+    } else {
+      student.dailyActivity.push({ date: today, minutes: roundedMinutes });
+    }
+    // Keep only last 400 days of data to limit array size
+    if (student.dailyActivity.length > 400) {
+      student.dailyActivity.sort((a, b) => a.date.localeCompare(b.date));
+      student.dailyActivity = student.dailyActivity.slice(-400);
+    }
+
     student.markModified('studyHours');
+    student.markModified('dailyActivity');
     await student.save();
     const updated = student.studyHours.find(h => h.month === month);
     res.json({ ok: true, month, minutes: updated ? updated.minutes : 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STUDENT ACTIVITY ANALYTICS
+// ═══════════════════════════════════════════════════════════════════════════
+app.get('/api/student/activity-stats', authenticateToken, async (req, res) => {
+  try {
+    const student = await Student.findById(req.student.id).select('dailyActivity studentName').lean();
+    if (!student) return res.status(404).json({ error: 'Not found' });
+
+    const { range = '7days' } = req.query;
+    const now = new Date();
+    let startDate;
+
+    if (range === '7days') {
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 6);
+    } else if (range === 'month') {
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 29);
+    } else if (range === 'year') {
+      startDate = new Date(now);
+      startDate.setFullYear(startDate.getFullYear() - 1);
+      startDate.setDate(startDate.getDate() + 1);
+    } else if (range.match(/^d{4}$/)) {
+      // specific year like '2024'
+      startDate = new Date(parseInt(range), 0, 1);
+      const endDate = new Date(parseInt(range), 11, 31);
+      // filter to that year
+      const yearData = (student.dailyActivity || []).filter(d => d.date.startsWith(range));
+      const peakEntry = yearData.reduce((max, d) => d.minutes > (max ? max.minutes : 0) ? d : max, null);
+      return res.json({
+        range,
+        data: yearData,
+        peak: peakEntry ? { date: peakEntry.date, minutes: peakEntry.minutes } : null
+      });
+    } else {
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - 6);
+    }
+
+    const startStr = startDate.toISOString().slice(0, 10);
+    const filtered = (student.dailyActivity || []).filter(d => d.date >= startStr);
+    const peakEntry = filtered.reduce((max, d) => d.minutes > (max ? max.minutes : 0) ? d : max, null);
+
+    res.json({
+      range,
+      data: filtered,
+      peak: peakEntry ? { date: peakEntry.date, minutes: peakEntry.minutes } : null
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -7250,4 +7310,10 @@ app.post('/student/activities/submit', authenticateToken, [
     } finally {
         session.endSession();
     }
+});
+
+httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log('SchoolByte server running on port ' + PORT);
+  console.log('Server accessible at: http://0.0.0.0:' + PORT);
+  console.log('Socket.io chat server ready');
 });
