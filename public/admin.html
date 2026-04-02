@@ -189,6 +189,7 @@
         <li><a href="#" data-tab="content-management-tab"><i class="fas fa-book-open"></i> Content</a></li>
         <li><a href="#" data-tab="reporting-analytics-tab"><i class="fas fa-chart-line"></i> Analytics</a></li>
         <li><a href="#" data-tab="project-gallery-tab"><i class="fas fa-images"></i> Project Gallery</a></li>
+        <li><a href="#" data-tab="admin-management-tab"><i class="fas fa-user-shield"></i> Admin Management</a></li>
     </ul>
     <div class="sidebar-footer">
         <div class="admin-avatar" id="adminAvatarInitial">A</div>
@@ -445,6 +446,37 @@
             </div>
         </div>
 
+
+        <div id="admin-management-tab" class="tab-pane">
+            <div class="section-header">
+                <h2>Admin Management</h2>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button class="btn-primary" onclick="openModal('createAdminModal')"><i class="fas fa-user-plus"></i> Create Admin</button>
+                    <button class="btn-secondary" onclick="openModal('messageTeacherModal')"><i class="fas fa-envelope"></i> Message Teacher</button>
+                </div>
+            </div>
+            <div class="card-box">
+                <div id="adminListLoading" style="text-align:center;padding:30px;"><span class="spinner"></span></div>
+                <div id="adminListError" class="alert-error" style="display:none;padding:12px;"></div>
+                <div class="table-wrapper" id="adminTableWrapper" style="display:none;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Password Set</th>
+                                <th>Created By</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </div><!-- /content -->
 </div><!-- /main -->
 
@@ -616,7 +648,8 @@ const tabTitles = {
     'system-operations-tab': ['System Operations', 'Notifications and promotions'],
     'content-management-tab': ['Content Management', 'All uploaded notes, activities and quiz questions'],
     'reporting-analytics-tab': ['Analytics & Reporting', 'Growth charts and online activity'],
-    'project-gallery-tab': ['Project Gallery', 'UNEB student project submissions']
+    'project-gallery-tab': ['Project Gallery', 'UNEB student project submissions'],
+    'admin-management-tab': ['Admin Management', 'Create, manage and delete administrator accounts.']
 };
 
 function setupNavigation() {
@@ -644,6 +677,7 @@ function switchTab(tabId) {
     if (tabId === 'content-management-tab') loadContentManagement();
     if (tabId === 'reporting-analytics-tab') loadAnalytics();
     if (tabId === 'project-gallery-tab') loadGallery();
+    if (tabId === 'admin-management-tab') loadAdminManagement();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1276,6 +1310,252 @@ function logout() {
 
 function esc(str) {
     return (str||'').toString().replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+}
+</script>
+
+<!-- Admin Management Modals -->
+<div id="createAdminModal" class="modal-overlay">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('createAdminModal')">&times;</button>
+        <h3><i class="fas fa-user-shield" style="color:var(--primary);margin-right:8px;"></i> Create New Admin</h3>
+        <form id="createAdminForm">
+            <div class="form-group"><label>Full Name *</label><input type="text" id="newAdminName" required placeholder="e.g. Jane Admin"></div>
+            <div class="form-group"><label>Email *</label><input type="email" id="newAdminEmail" required placeholder="admin@school.ac.ug"></div>
+            <div class="form-group"><label>Role</label>
+                <select id="newAdminRole">
+                    <option value="admin">Admin</option>
+                    <option value="super_admin">Super Admin</option>
+                </select>
+            </div>
+            <p style="font-size:0.8rem;color:rgba(255,255,255,0.5);margin-bottom:14px;"><i class="fas fa-info-circle"></i> A temporary password will be generated and emailed to the admin. They will be prompted to set a permanent password on first login.</p>
+            <button type="submit" class="btn-primary" style="width:100%;" id="createAdminBtn"><i class="fas fa-plus"></i> Create Admin</button>
+        </form>
+    </div>
+</div>
+
+<div id="deleteAdminModal" class="modal-overlay">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('deleteAdminModal')">&times;</button>
+        <h3 style="color:#e74c3c;"><i class="fas fa-user-times" style="margin-right:8px;"></i> Delete Admin</h3>
+        <p id="deleteAdminInfo" style="color:rgba(255,255,255,0.7);margin-bottom:18px;font-size:0.9rem;"></p>
+        <div class="form-group"><label>Reason for deletion *</label><textarea id="deleteAdminReason" rows="3" required placeholder="Briefly state why this admin is being removed..." style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px;color:#ecf0f1;font-size:0.9rem;resize:vertical;"></textarea></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button class="btn-secondary" onclick="closeModal('deleteAdminModal')">Cancel</button>
+            <button class="btn-danger" id="confirmDeleteAdminBtn" onclick="confirmDeleteAdmin()"><i class="fas fa-trash"></i> Delete Admin</button>
+        </div>
+    </div>
+</div>
+
+<div id="resetAdminPasswordModal" class="modal-overlay">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('resetAdminPasswordModal')">&times;</button>
+        <h3><i class="fas fa-key" style="color:#f39c12;margin-right:8px;"></i> Reset Admin Password</h3>
+        <p id="resetAdminInfo" style="color:rgba(255,255,255,0.7);margin-bottom:18px;font-size:0.9rem;"></p>
+        <p style="font-size:0.82rem;color:rgba(255,255,255,0.5);margin-bottom:18px;"><i class="fas fa-info-circle"></i> A new temporary password will be generated and emailed to the admin. They will be prompted to set a new permanent password on next login.</p>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button class="btn-secondary" onclick="closeModal('resetAdminPasswordModal')">Cancel</button>
+            <button class="btn-warning" id="confirmResetAdminBtn" onclick="confirmResetAdminPassword()"><i class="fas fa-key"></i> Reset Password</button>
+        </div>
+    </div>
+</div>
+
+<div id="messageTeacherModal" class="modal-overlay">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('messageTeacherModal')">&times;</button>
+        <h3><i class="fas fa-envelope" style="color:var(--primary);margin-right:8px;"></i> Message Teacher</h3>
+        <form id="messageTeacherForm">
+            <div class="form-group"><label>Select Teacher *</label>
+                <select id="msgTeacherId" required>
+                    <option value="">Loading teachers...</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Subject *</label><input type="text" id="msgTeacherSubject" required placeholder="Message subject"></div>
+            <div class="form-group"><label>Message *</label><textarea id="msgTeacherBody" rows="5" required placeholder="Your message..." style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px;color:#ecf0f1;font-size:0.9rem;resize:vertical;"></textarea></div>
+            <button type="submit" class="btn-primary" style="width:100%;" id="sendMsgBtn"><i class="fas fa-paper-plane"></i> Send Message</button>
+        </form>
+    </div>
+</div>
+
+<script>
+// ──────────────────────────────────────────────────────────────────────────────
+// ADMIN MANAGEMENT
+// ──────────────────────────────────────────────────────────────────────────────
+let adminMgmtLoaded = false;
+let selectedDeleteAdminId = null;
+let selectedResetAdminId = null;
+
+async function loadAdminManagement() {
+    if (adminMgmtLoaded) return;
+    adminMgmtLoaded = false; // allow reload each time
+    document.getElementById('adminListLoading').style.display = 'block';
+    document.getElementById('adminTableWrapper').style.display = 'none';
+    document.getElementById('adminListError').style.display = 'none';
+    try {
+        const r = await fetchAdmin('/admin/admins');
+        if (!r.ok) throw new Error((await r.json()).message || 'Failed to load admins');
+        const data = await r.json();
+        renderAdminTable(data.admins || []);
+        adminMgmtLoaded = true;
+    } catch (e) {
+        document.getElementById('adminListLoading').style.display = 'none';
+        document.getElementById('adminListError').textContent = e.message;
+        document.getElementById('adminListError').style.display = 'block';
+    }
+}
+
+function renderAdminTable(admins) {
+    const tbody = document.getElementById('adminTableBody');
+    const myEmail = localStorage.getItem('adminEmail') || '';
+    if (!admins.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:rgba(255,255,255,0.4);">No administrators found.</td></tr>';
+    } else {
+        tbody.innerHTML = admins.map(a => {
+            const isSelf = a.email === myEmail;
+            return `<tr>
+                <td><strong>${escHtml(a.adminName)}</strong>${isSelf ? ' <span style="font-size:0.7rem;color:#3498db;">(you)</span>' : ''}</td>
+                <td>${escHtml(a.email)}</td>
+                <td><span class="badge">${escHtml(a.role || 'admin')}</span></td>
+                <td>${a.isPasswordSet !== false ? '<span style="color:#2ecc71;"><i class="fas fa-check-circle"></i> Yes</span>' : '<span style="color:#f39c12;"><i class="fas fa-clock"></i> Pending</span>'}</td>
+                <td>${escHtml(a.createdBy || 'System')}</td>
+                <td>${a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '—'}</td>
+                <td>
+                    <button class="btn-icon" title="Reset Password" onclick="openResetAdminPassword('${a._id}','${escHtml(a.adminName)}','${escHtml(a.email)}')" ${isSelf ? 'disabled' : ''}><i class="fas fa-key"></i></button>
+                    <button class="btn-icon btn-icon-danger" title="Delete Admin" onclick="openDeleteAdmin('${a._id}','${escHtml(a.adminName)}','${escHtml(a.email)}')" ${isSelf ? 'disabled' : ''}><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+    document.getElementById('adminListLoading').style.display = 'none';
+    document.getElementById('adminTableWrapper').style.display = 'block';
+}
+
+document.getElementById('createAdminForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('createAdminBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+    try {
+        const r = await fetchAdmin('/admin/admins', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminName: document.getElementById('newAdminName').value.trim(),
+                email: document.getElementById('newAdminEmail').value.trim(),
+                role: document.getElementById('newAdminRole').value
+            })
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.message || 'Failed to create admin');
+        showToast('Admin created! Temporary password sent to their email.', 'success');
+        closeModal('createAdminModal');
+        document.getElementById('createAdminForm').reset();
+        adminMgmtLoaded = false;
+        loadAdminManagement();
+    } catch (err) {
+        showToast(err.message, 'error');
+    } finally {
+        btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus"></i> Create Admin';
+    }
+});
+
+function openDeleteAdmin(id, name, email) {
+    selectedDeleteAdminId = id;
+    document.getElementById('deleteAdminInfo').textContent = 'You are about to permanently delete admin ' + name + ' (' + email + ').';
+    document.getElementById('deleteAdminReason').value = '';
+    openModal('deleteAdminModal');
+}
+
+async function confirmDeleteAdmin() {
+    const reason = document.getElementById('deleteAdminReason').value.trim();
+    if (!reason) { showToast('Please provide a reason for deletion.', 'error'); return; }
+    const btn = document.getElementById('confirmDeleteAdminBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+    try {
+        const r = await fetchAdmin('/admin/admins/' + selectedDeleteAdminId, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason })
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.message || 'Failed to delete admin');
+        showToast('Admin deleted successfully.', 'success');
+        closeModal('deleteAdminModal');
+        adminMgmtLoaded = false;
+        loadAdminManagement();
+    } catch (err) {
+        showToast(err.message, 'error');
+    } finally {
+        btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash"></i> Delete Admin';
+    }
+}
+
+function openResetAdminPassword(id, name, email) {
+    selectedResetAdminId = id;
+    document.getElementById('resetAdminInfo').textContent = 'Reset password for admin ' + name + ' (' + email + ')?';
+    openModal('resetAdminPasswordModal');
+}
+
+async function confirmResetAdminPassword() {
+    const btn = document.getElementById('confirmResetAdminBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+    try {
+        const r = await fetchAdmin('/admin/admins/' + selectedResetAdminId + '/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.message || 'Failed to reset password');
+        showToast('Password reset! New temporary password sent to their email.', 'success');
+        closeModal('resetAdminPasswordModal');
+        adminMgmtLoaded = false;
+        loadAdminManagement();
+    } catch (err) {
+        showToast(err.message, 'error');
+    } finally {
+        btn.disabled = false; btn.innerHTML = '<i class="fas fa-key"></i> Reset Password';
+    }
+}
+
+// Message Teacher
+(async function populateTeacherSelect() {
+    try {
+        const r = await fetchAdmin('/admin/teachers');
+        if (!r.ok) return;
+        const data = await r.json();
+        const sel = document.getElementById('msgTeacherId');
+        sel.innerHTML = '<option value="">-- Select a teacher --</option>' +
+            (data.teachers || []).map(t => '<option value="' + t._id + '">' + escHtml(t.teacherName) + ' (' + escHtml(t.email) + ')</option>').join('');
+    } catch {}
+})();
+
+document.getElementById('messageTeacherForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('sendMsgBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    try {
+        const r = await fetchAdmin('/admin/message-teachers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                teacherId: document.getElementById('msgTeacherId').value,
+                subject: document.getElementById('msgTeacherSubject').value.trim(),
+                message: document.getElementById('msgTeacherBody').value.trim()
+            })
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.message || 'Failed to send message');
+        showToast('Message sent to teacher!', 'success');
+        closeModal('messageTeacherModal');
+        document.getElementById('messageTeacherForm').reset();
+    } catch (err) {
+        showToast(err.message, 'error');
+    } finally {
+        btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message';
+    }
+});
+
+function escHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
 </body>
