@@ -1532,7 +1532,15 @@
                 console.log('Connected to ByteNexus chat server');
                 // When connected, emit an event to identify the user and their status
                 socket.emit('user_connected', { userId: currentUser.id, status: 'online' });
-                socket.emit('get_online_users'); // Request the list of currently online users
+                socket.emit('get_online_users');
+            });
+
+            socket.on('connect_error', (err) => {
+                console.error('ByteNexus socket connection error:', err.message);
+                const cList = document.getElementById('contactsList');
+                if (cList) {
+                    cList.innerHTML = '<div class="loading" style="color: var(--danger);">&#10060; Chat connection failed. Please <a href="studentlogin.html" style="color:var(--primary)">log in again</a>.</div>';
+                }
             });
 
             // Listen for online status updates
