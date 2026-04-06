@@ -2194,8 +2194,7 @@ IMPORTANT: Respond ONLY with valid JSON. Start with { and end with }.`;
 
                 const aiResponse = extractJSON(responseText);
 
-                const aiQuestions = (aiResponse.questions || []).map(q => ({
-                    _id: new mongoose.Types.ObjectId(),
+                const aiQuestionDocs = (aiResponse.questions || []).map(q => ({
                     questionText: q.questionText,
                     subject: q.subject || (schemaGaps[0] && schemaGaps[0].subject) || student.subjectsEnrolled[0],
                     intendedClass: q.intendedClass || schemaClass,
@@ -2211,11 +2210,22 @@ IMPORTANT: Respond ONLY with valid JSON. Start with { and end with }.`;
                     subTopic: q.subTopic || '',
                     keywordsForGrading: (q.keywordsForGrading || []).map(k => k.toLowerCase().trim()),
                     maxBytesRewardPerQuestion: q.maxBytesRewardPerQuestion || 1,
+                    isActive: true,
                     uploadedBy: { teacherName: 'AI Generated' }
                 }));
 
-                questions = [...questions, ...aiQuestions];
-                console.log(`AI filled ${aiQuestions.length} gap(s); quiz now has ${questions.length} question(s).`);
+                // Save AI questions to DB so the submit endpoint can find and grade them
+                let savedAiQuestions = [];
+                try {
+                    savedAiQuestions = await QuizQuestion.insertMany(aiQuestionDocs, { ordered: false });
+                } catch (insertErr) {
+                    // ordered:false — partial inserts are ok; use whatever was saved
+                    savedAiQuestions = insertErr.insertedDocs || [];
+                    console.warn('Some AI questions failed to save:', insertErr.message);
+                }
+
+                questions = [...questions, ...savedAiQuestions];
+                console.log(`AI filled ${savedAiQuestions.length} gap(s); quiz now has ${questions.length} question(s).`);
             } catch (aiError) {
                 console.error('AI gap-fill failed:', aiError);
                 if (questions.length === 0) {
@@ -2547,7 +2557,9 @@ app.post('/student/quizzes/submit', authenticateToken, [
             const studentAnswer = submission.studentAnswer;
 
 
-            const quizQuestion = await QuizQuestion.findById(questionId).session(session);
+            // Read quiz question outside the transaction — it is read-only for grading
+            // and using the session here causes write conflicts with background serve-count updates
+            const quizQuestion = await QuizQuestion.findById(questionId).lean();
             if (!quizQuestion) {
                 console.warn(`Quiz question with ID ${questionId} not found. Skipping.`);
                 continue;
