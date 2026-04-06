@@ -158,7 +158,7 @@ io.on('connection', (socket) => {
   // Send current online users list to newly connected user
   socket.on('get_online_users', () => {
     const onlineUsers = Array.from(authenticatedSockets.keys());
-    socket.emit('online_users_list', { users: onlineUsers });
+    socket.emit('online_users_list', onlineUsers);
   });
 
   socket.on('join_personal_room', ({ conversationId }) => {
@@ -718,7 +718,7 @@ async function checkAndResetTeacherWeeklyCounters(teacher) {
 
 
 // Quiz generation: Fats and Beef schema with fixture tables (7 usual, 2 revision, 1 stretch)
-async function generateQuizQuestions(student, requestedSubject = null) {
+async function generateQuizQuestions(student, requestedSubject = null, isRetry = false) {
     const session = await mongoose.startSession();
     session.startTransaction();
 
@@ -800,6 +800,7 @@ async function generateQuizQuestions(student, requestedSubject = null) {
             if (questions.length === 0) {
                 await session.abortTransaction();
                 session.endSession();
+                if (isRetry) return [];
                 const result = await runContingencyAndRetry(student, quizSession, division);
                 return result;
             }
@@ -863,7 +864,7 @@ async function runContingencyAndRetry(student, quizSession, division) {
     await student.save();
 
     const updatedStudent = await Student.findById(studentId);
-    return generateQuizQuestions(updatedStudent, null);
+    return generateQuizQuestions(updatedStudent, null, true);
 }
 
 

@@ -1079,7 +1079,7 @@
         }
 
         async function loadActivityGraph() {
-            const token = localStorage.getItem('studentAuthToken');
+            const token = localStorage.getItem('token');
             if (!token) return;
             const range = document.getElementById('activityRange').value;
             const unit = document.getElementById('activityTimeUnit').value;
