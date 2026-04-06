@@ -777,13 +777,19 @@ async function generateQuizQuestions(student, requestedSubject = null, isRetry =
 
         const selectedQuestions = [];
         const usedQuestionIds = new Set();
+        const gaps = []; // slots with no matching DB question
 
         for (let slot = 1; slot <= 10; slot++) {
             const subjectIndex = fixtureRow[slot - 1] % enrolledSubjects.length;
             const subject = enrolledSubjects[subjectIndex];
             const category = SLOT_CATEGORY[slot];
             const allowedClasses = getAllowedClasses(category);
-            if (allowedClasses.length === 0) continue;
+
+            if (allowedClasses.length === 0) {
+                // e.g. revision slot for S.1 — no lower class exists
+                gaps.push({ slot, subject, intendedClasses: allowedClasses, category });
+                continue;
+            }
 
             const excludeIds = [...(student.recentQuizIds || []), ...Array.from(usedQuestionIds)];
             const questions = await QuizQuestion.find({
@@ -798,12 +804,18 @@ async function generateQuizQuestions(student, requestedSubject = null, isRetry =
                 .lean();
 
             if (questions.length === 0) {
-                await session.abortTransaction();
-                session.endSession();
-                if (isRetry) return [];
-                const result = await runContingencyAndRetry(student, quizSession, division);
-                return result;
+                if (!isRetry) {
+                    // First pass — run contingency (clear old exclusions) then retry
+                    await session.abortTransaction();
+                    session.endSession();
+                    const result = await runContingencyAndRetry(student, quizSession, division);
+                    return result;
+                }
+                // Second pass (isRetry) — record gap and keep going; AI will fill it
+                gaps.push({ slot, subject, intendedClasses: allowedClasses, category });
+                continue;
             }
+
             const chosen = questions[Math.floor(Math.random() * questions.length)];
             selectedQuestions.push({ question: chosen, slot });
             usedQuestionIds.add(chosen._id);
@@ -822,7 +834,13 @@ async function generateQuizQuestions(student, requestedSubject = null, isRetry =
 
         await session.commitTransaction();
         session.endSession();
-        return selectedQuestions.map(sq => sq.question);
+
+        const foundQuestions = selectedQuestions.map(sq => sq.question);
+        if (gaps.length === 0) {
+            return foundQuestions; // fully satisfied from DB — backward compatible
+        }
+        // Return partial result so endpoint can fill gaps with AI
+        return { questions: foundQuestions, gaps, division, studentClass };
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
@@ -2043,71 +2061,170 @@ app.get('/student/quizzes/generate', authenticateToken, async (req, res) => {
             });
         }
 
-        let questions = await generateQuizQuestions(student, req.query.subject);
+        let schemaResult = await generateQuizQuestions(student, req.query.subject);
 
+        // Normalise: generateQuizQuestions returns either a plain array (all DB) or
+        // { questions, gaps, division, studentClass } when some slots had no DB match.
+        let questions = [];
+        let schemaGaps = [];
+        let schemaDivision = getDivision(student.class);
+        let schemaClass = student.class;
 
-        // Fallback to AI generation if no questions found
-        if (questions.length === 0) {
-            console.log('No teacher questions available, attempting AI generation with TinyLlama...');
+        if (Array.isArray(schemaResult)) {
+            questions = schemaResult;
+        } else {
+            questions = schemaResult.questions || [];
+            schemaGaps = schemaResult.gaps || [];
+            schemaDivision = schemaResult.division || schemaDivision;
+            schemaClass = schemaResult.studentClass || schemaClass;
+        }
+
+        // AI fill-in: invoked when the DB could not satisfy one or more slots
+        if (schemaGaps.length > 0) {
+            console.log(`Fats & Beef schema found ${questions.length} DB questions; AI filling ${schemaGaps.length} gap(s).`);
 
             try {
-                // Pick a random subject from student's enrolled subjects
-                const randomSubject = student.subjectsEnrolled[Math.floor(Math.random() * student.subjectsEnrolled.length)];
+                // Describe the division/slot system to the AI
+                const divisionDescriptions = {
+                    lower: 'Lower School (S.1–S.2): 12 subjects, 120-question cycles',
+                    middle: 'Middle School (S.3–S.4): 9 subjects, 90-question cycles',
+                    upper: 'Upper School (S.5–S.6): 4 principal subjects, 40-question cycles'
+                };
+                const categoryDescriptions = {
+                    usual: `"usual" — a standard question at the student's own class level (${schemaClass}). This is core curriculum content.`,
+                    stretch: `"stretch" — a challenge question one class level ABOVE ${schemaClass}. It is intentionally harder to push the student beyond their current grade.`,
+                    revision: `"revision" — a reinforcement question from a class level BELOW ${schemaClass}. It consolidates prior knowledge.`
+                };
 
-                const prompt = `Generate 10 multiple-choice-single questions for ${randomSubject}, class level ${student.class}.
-Each question must have exactly 4 options with EXACTLY ONE marked as correct.
+                // Build per-gap instructions
+                const gapInstructions = schemaGaps.map((g, i) => {
+                    const classTarget = g.intendedClasses && g.intendedClasses.length > 0
+                        ? g.intendedClasses.join(' or ')
+                        : schemaClass;
+                    const catDesc = categoryDescriptions[g.category] || `category: ${g.category}`;
+                    return `Gap ${i + 1} (quiz slot ${g.slot}):
+  - Subject: ${g.subject}
+  - Target class level: ${classTarget}
+  - Slot category: ${catDesc}`;
+                }).join('\n\n');
 
-Output strict JSON format:
+                const systemPrompt = `You are an expert educational quiz question generator for Ugandan secondary school students.
+Your output must be a single, valid JSON object — nothing else. Do not add prose, markdown, or code fences.
+
+QUIZ STRUCTURE (Fats & Beef Schema):
+Every quiz has 10 slots designed for balanced, curriculum-aligned learning:
+  - Slot 1       → STRETCH   (one class above the student — challenges growth)
+  - Slots 2–8   → USUAL     (student's own class — core curriculum)
+  - Slots 9–10  → REVISION  (one or more classes below — consolidates prior knowledge)
+
+STUDENT PROFILE:
+  - Current class: ${schemaClass}
+  - Division: ${divisionDescriptions[schemaDivision] || schemaDivision}
+
+EDUCATIONAL QUALITY STANDARDS:
+  - Questions must test genuine understanding, critical thinking, and application — not just recall.
+  - Use real-world contexts, examples, and scenarios relevant to Uganda where possible.
+  - Stretch questions should require analysis or synthesis beyond the student's grade.
+  - Revision questions should reinforce fundamental concepts from earlier classes.
+  - Usual questions should cover core curriculum topics at the exact class level specified.
+  - Every question must have a clear, unambiguous correct answer.
+  - Hints should guide thinking without giving the answer away.
+  - Explanations must be thorough and teach the concept, not just state the answer.
+  - keywordsForGrading are the essential terms/phrases that must appear in a correct open-ended answer.
+
+ALLOWED QUESTION TYPES (use the exact string values below):
+  1. "multiple-choice-single"  — 4 options, exactly 1 correct. Requires: options[], correctAnswers[].
+  2. "multiple-choice-multi"   — 4+ options, 2+ correct. Requires: options[], correctAnswers[].
+  3. "true-false"              — exactly 2 options ("True"/"False"). Requires: options[], correctAnswers[].
+  4. "fill-in-the-blank"       — sentence with a blank. Requires: correctAnswers[], keywordsForGrading[].
+  5. "short-answer"            — open-ended written response. Requires: correctAnswers[], keywordsForGrading[].
+  6. "matching"                — match column A to column B. Requires: matchingPairs[{itemA, itemB}].
+  7. "ordering"                — arrange items in correct sequence. Requires: orderedItems[] (correct order).
+  8. "problem-solving"         — multi-step problem (maths, science, logic). Requires: correctAnswers[], explanation.
+  9. "numeric-entry"           — exact numeric answer. Requires: correctAnswers[] (numeric string).
+
+Vary the question types across the gaps — do NOT default to only multiple-choice.`;
+
+                const userPrompt = `Generate exactly ${schemaGaps.length} quiz question(s) to fill the following gap(s) left by the database.
+Each question must strictly match the subject, class level, and slot category described.
+
+${gapInstructions}
+
+Return ONLY this JSON structure (no extra keys, no trailing text):
 {
   "questions": [
     {
-      "questionText": "Question text here",
-      "type": "multiple-choice-single",
+      "slot": <quiz slot number (integer)>,
+      "subject": "<exact subject name>",
+      "intendedClass": "<exact class string, e.g. S.2>",
+      "category": "<stretch|usual|revision>",
+      "type": "<one of the 9 allowed types>",
+      "questionText": "<full, clear question>",
       "options": [
-        {"text": "Option A", "isCorrect": false},
-        {"text": "Option B", "isCorrect": true},
-        {"text": "Option C", "isCorrect": false},
-        {"text": "Option D", "isCorrect": false}
+        {"text": "<option text>", "isCorrect": <true|false>}
       ],
-      "correctAnswers": ["Option B"],
-      "hint": "Helpful hint",
-      "explanation": "Detailed explanation",
-      "topic": "Topic name"
+      "correctAnswers": ["<answer 1>"],
+      "matchingPairs": [{"itemA": "<left>", "itemB": "<right>"}],
+      "orderedItems": ["<item in correct position 1>", "..."],
+      "instructions": "<brief instructions if the question type needs them>",
+      "hint": "<subtle hint that guides without revealing the answer>",
+      "explanation": "<thorough explanation of why the answer is correct and what concept it teaches>",
+      "topic": "<specific curriculum topic>",
+      "subTopic": "<sub-topic within that topic>",
+      "keywordsForGrading": ["<key term 1>", "<key term 2>"],
+      "maxBytesRewardPerQuestion": 1
     }
   ]
 }
 
-IMPORTANT: Respond ONLY with valid JSON. Start with { and end with }. Do not include any explanation.`;
+Notes:
+- Include "options" only for multiple-choice-single, multiple-choice-multi, and true-false.
+- Include "matchingPairs" only for matching type.
+- Include "orderedItems" only for ordering type.
+- Include "correctAnswers" for all types except matching and ordering.
+- "keywordsForGrading" is required for short-answer and fill-in-the-blank, optional but encouraged for others.
+- Do not omit "hint" or "explanation" — they are essential for learning.
+IMPORTANT: Respond ONLY with valid JSON. Start with { and end with }.`;
 
                 const responseText = await callGroqAI(
-                    prompt,
-                    "You are an educational quiz question generator AI. Generate questions in valid JSON format only.",
-                    { temperature: 0.7, num_predict: 2000, timeout: 90000, retries: 2 }
+                    userPrompt,
+                    systemPrompt,
+                    { temperature: 0.7, num_predict: 3000, timeout: 90000, retries: 2 }
                 );
 
-                // Extract and parse JSON using robust helper
                 const aiResponse = extractJSON(responseText);
 
-                // Convert AI questions to match QuizQuestion format
-                questions = aiResponse.questions.map(q => ({
+                const aiQuestions = (aiResponse.questions || []).map(q => ({
                     _id: new mongoose.Types.ObjectId(),
                     questionText: q.questionText,
-                    subject: randomSubject,
-                    intendedClass: student.class,
+                    subject: q.subject || (schemaGaps[0] && schemaGaps[0].subject) || student.subjectsEnrolled[0],
+                    intendedClass: q.intendedClass || schemaClass,
                     type: q.type,
-                    options: q.options,
-                    hint: q.hint,
-                    explanation: q.explanation,
-                    topic: q.topic,
+                    options: q.options || [],
+                    correctAnswers: q.correctAnswers || [],
+                    matchingPairs: q.matchingPairs || [],
+                    orderedItems: q.orderedItems || [],
+                    instructions: q.instructions || '',
+                    hint: q.hint || '',
+                    explanation: q.explanation || '',
+                    topic: q.topic || '',
+                    subTopic: q.subTopic || '',
+                    keywordsForGrading: (q.keywordsForGrading || []).map(k => k.toLowerCase().trim()),
+                    maxBytesRewardPerQuestion: q.maxBytesRewardPerQuestion || 1,
                     uploadedBy: { teacherName: 'AI Generated' }
                 }));
 
-                console.log(`Successfully generated ${questions.length} AI questions`);
+                questions = [...questions, ...aiQuestions];
+                console.log(`AI filled ${aiQuestions.length} gap(s); quiz now has ${questions.length} question(s).`);
             } catch (aiError) {
-                console.error('AI generation failed:', aiError);
-                return res.status(404).json({ 
-                    message: 'No suitable questions found. Please try again later.' 
-                });
+                console.error('AI gap-fill failed:', aiError);
+                if (questions.length === 0) {
+                    return res.status(404).json({
+                        message: 'No suitable questions found. Please try again later.'
+                    });
+                }
+                // Proceed with whatever DB questions we have
+                console.log(`Proceeding with ${questions.length} DB question(s) after AI failure.`);
             }
         }
 
