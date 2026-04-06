@@ -59,10 +59,16 @@
             styleEl.id = STYLE_ID;
             (document.head || document.documentElement).appendChild(styleEl);
         }
+        // Apply to all elements but NOT ::before/::after pseudo-elements (those are used by
+        // Font Awesome icons). Then explicitly restore Font Awesome font families.
         styleEl.textContent =
-            'html, body, *, *::before, *::after {' +
-            '  font-family: ' + fontFamily + ' !important;' +
-            '}';
+            'html, body, * { font-family: ' + fontFamily + ' !important; }' +
+            '.fa, .fas, .far, .fal, .fad, .fass, .fasr, .fat,' +
+            ' i[class*="fa-"], span[class*="fa-"] { font-family: "Font Awesome 6 Free" !important; }' +
+            '.fab, i.fab, span.fab { font-family: "Font Awesome 6 Brands" !important; }' +
+            '.fa, .fas, .far, .fal, .fad, .fass, .fasr, .fat,' +
+            ' i[class*="fa-"], span[class*="fa-"],' +
+            '.fab, i.fab, span.fab { -webkit-font-smoothing: antialiased; font-style: normal; }';
     }
 
     function saveAndApply(fontFamily) {
