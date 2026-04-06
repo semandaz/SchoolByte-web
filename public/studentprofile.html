@@ -808,7 +808,8 @@
                     // Set font preference
                     if (student.preferences && student.preferences.fontFamily) {
                         document.getElementById('font-select').value = student.preferences.fontFamily;
-                        document.body.style.fontFamily = student.preferences.fontFamily;
+                        if (window.SBFont) window.SBFont.saveAndApply(student.preferences.fontFamily);
+                        else document.body.style.fontFamily = student.preferences.fontFamily;
                     }
                     
                 } else if (response.status === 401 || response.status === 403) {
@@ -909,20 +910,20 @@
         // Font selection
         document.getElementById('font-select').addEventListener('change', async function() {
             const selectedFont = this.value;
-            // Apply immediately for instant feedback
-            document.body.style.fontFamily = selectedFont;
-            document.documentElement.style.fontFamily = selectedFont;
-            localStorage.setItem('sb_preferred_font', selectedFont);
+            // Apply immediately on this page + all other open tabs via SBFont
+            if (window.SBFont) window.SBFont.saveAndApply(selectedFont);
+            else {
+                document.body.style.fontFamily = selectedFont;
+                document.documentElement.style.fontFamily = selectedFont;
+                localStorage.setItem('sb_preferred_font', selectedFont);
+            }
             try {
                 const token = localStorage.getItem('token');
-                
-                // Get current preferences and update font family
                 const currentData = JSON.parse(localStorage.getItem('studentData') || '{}');
                 const updatedPreferences = {
                     ...(currentData.preferences || {}),
                     fontFamily: selectedFont
                 };
-                
                 const response = await fetch(`${window.location.origin}/student/preferences`, {
                     method: 'PUT',
                     headers: {
@@ -931,16 +932,18 @@
                     },
                     body: JSON.stringify({ preferences: updatedPreferences })
                 });
-
                 if (response.ok) {
-                    alert('Font preference saved successfully!');
-                    
-                    // Update local storage
                     currentData.preferences = updatedPreferences;
                     localStorage.setItem('studentData', JSON.stringify(currentData));
+                    // Show subtle feedback
+                    const btn = document.querySelector('[data-tab="settings"]') || document.getElementById('font-select');
+                    const notice = document.createElement('span');
+                    notice.textContent = ' ✓ Font saved';
+                    notice.style.cssText = 'color:#2ecc71;font-size:0.85rem;margin-left:0.5rem;';
+                    document.getElementById('font-select').parentNode.appendChild(notice);
+                    setTimeout(() => notice.remove(), 2500);
                 } else {
-                    const error = await response.json();
-                    alert('Error saving font preference: ' + error.message);
+                    alert('Error saving font preference');
                 }
             } catch (error) {
                 console.error('Error updating font preference:', error);
