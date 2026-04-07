@@ -175,6 +175,12 @@ io.on('connection', (socket) => {
     try {
       const { recipientId, content, tempId, replyTo, quoteProject } = data;
 
+      // Deduct 0.2 bytes per personal message sent
+      await Student.updateOne(
+        { _id: socket.userId, bytes: { $gte: 0.2 } },
+        { $inc: { bytes: -0.2 } }
+      ).catch(() => {});
+
       const newMessage = new PersonalMessage({
         sender_id: socket.userId,
         recipient_id: recipientId,
@@ -237,6 +243,14 @@ io.on('connection', (socket) => {
       // Broadcast to conversation room (excluding sender to prevent duplication)
       socket.to(`personal_${conversationId}`).emit('new_personal_message', formattedMessage);
 
+      // Always save persistent notification for the recipient (whether online or offline)
+      createNotification(
+          recipientId, 'new_chat_message',
+          'New Message from ' + socket.username,
+          socket.username + ' sent you a message on ByteNexus.',
+          { senderId: socket.userId, senderName: socket.username, conversationId }
+      ).catch(() => {});
+
       // Check if recipient is online
       const recipientSocket = authenticatedSockets.get(recipientId);
       if (recipientSocket) {
@@ -258,13 +272,6 @@ io.on('connection', (socket) => {
           conversationId: conversationId,
           messageId: formattedMessage._id
         });
-        // Save persistent notification (without message content for privacy)
-        createNotification(
-            recipientId, 'new_chat_message',
-            'New Message from ' + socket.username,
-            socket.username + ' sent you a message on ByteNexus.',
-            { senderId: socket.userId, senderName: socket.username, conversationId }
-        ).catch(() => {});
       }
     } catch (error) {
       console.error('Error sending personal message:', error);
@@ -2517,7 +2524,7 @@ Output Format (strict JSON):
 app.post('/student/quizzes/submit', authenticateToken, [
     body('quizSubmissions').isArray({ min: 1 }).withMessage('Quiz submissions array is required and must not be empty.'),
     body('quizSubmissions.*.questionId').isMongoId().withMessage('Invalid question ID.'),
-    body('quizSubmissions.*.studentAnswer').notEmpty().withMessage('Student answer is required for each question.')
+    body('quizSubmissions.*.studentAnswer').exists().withMessage('Student answer field is required for each question.')
 ], async (req, res) => {
     const { quizSubmissions } = req.body;
     const studentId = req.student.id;
@@ -2565,6 +2572,18 @@ app.post('/student/quizzes/submit', authenticateToken, [
                 continue;
             }
 
+            // Skip unanswered questions (null, undefined, empty string, empty array)
+            const isUnanswered = studentAnswer === null || studentAnswer === undefined ||
+                studentAnswer === '' || (Array.isArray(studentAnswer) && studentAnswer.length === 0);
+            if (isUnanswered) {
+                gradedAnswers.push({
+                    questionId, studentAnswer: null, isCorrect: false,
+                    bytesEarned: 0, partialScore: 0,
+                    subject: quizQuestion.subject, intendedClass: quizQuestion.intendedClass,
+                    questionType: quizQuestion.type, skipped: true
+                });
+                continue;
+            }
 
             let isCorrect = false;
             let questionBytes = 0;
@@ -2750,33 +2769,25 @@ app.post('/student/quizzes/submit', authenticateToken, [
 
         const finalBytesEarned = totalBytesEarned;
 
-
-        // Update student data
+        // Update student data — all changes on the session-bound student object
         student.bytes += finalBytesEarned;
         student.quizzesCompletedThisWeek += 1;
         student.totalQuizzesCompleted = (student.totalQuizzesCompleted || 0) + 1;
 
-        // Update streak
-        await updateStudentStreak(studentId);
-
-        // Check and award achievements (reload student after streak update)
-        const updatedStudent = await Student.findById(studentId).session(session);
-        await checkAndAwardAchievements(updatedStudent);
+        // Award achievements in-memory (modifies student.achievements / notifications)
+        await checkAndAwardAchievements(student);
 
         // Update recent quiz IDs (sliding window)
         const newQuizIds = quizSubmissions.map(sub => new mongoose.Types.ObjectId(sub.questionId));
-        updatedStudent.recentQuizIds = [...newQuizIds, ...updatedStudent.recentQuizIds].slice(0, 200);
+        student.recentQuizIds = [...newQuizIds, ...(student.recentQuizIds || [])].slice(0, 200);
 
-
-        await updatedStudent.save({ session });
-
+        await student.save({ session });
 
         // Update quiz session
         quizSession.questionsCompletedCount += quizSubmissions.length;
         quizSession.updatedAt = new Date();
 
-
-        const division = getDivision(updatedStudent.class);
+        const division = getDivision(student.class);
         const cycleSize = division ? CYCLE_SIZES[division] : 180;
         const cycleComplete = cycleSize && quizSession.questionsCompletedCount >= cycleSize;
 
@@ -2787,9 +2798,9 @@ app.post('/student/quizzes/submit', authenticateToken, [
                 questionsCompletedCount: 0
             });
             await newQuizSession.save({ session });
-            updatedStudent.currentQuizSessionId = newQuizSession._id;
-            updatedStudent.contingencyRepeatCount = 0;
-            await updatedStudent.save({ session });
+            student.currentQuizSessionId = newQuizSession._id;
+            student.contingencyRepeatCount = 0;
+            await student.save({ session });
         }
 
         await quizSession.save({ session });
@@ -2799,11 +2810,16 @@ app.post('/student/quizzes/submit', authenticateToken, [
             await session.commitTransaction();
             session.endSession();
 
-            const scoreVal = Math.round((gradedAnswers.filter(a => a.isCorrect).length / gradedAnswers.length) * 100);
+            // Update streak AFTER the transaction commits — prevents write conflict
+            updateStudentStreak(studentId).catch(e => console.warn('Streak update after quiz:', e));
+
+            const scoreVal = gradedAnswers.length > 0
+                ? Math.round((gradedAnswers.filter(a => a.isCorrect).length / gradedAnswers.length) * 100)
+                : 0;
             createNotification(
                 studentId, 'quiz_complete',
                 'Quiz Completed',
-                'You scored ' + scoreVal + '% and earned ' + finalBytesEarned + ' bytes. Total balance: ' + updatedStudent.bytes + ' bytes.',
+                'You scored ' + scoreVal + '% and earned ' + finalBytesEarned + ' bytes. Total balance: ' + student.bytes + ' bytes.',
                 { score: scoreVal, bytesEarned: finalBytesEarned, correct: gradedAnswers.filter(a => a.isCorrect).length, total: gradedAnswers.length }
             ).catch(() => {});
 
@@ -2813,7 +2829,7 @@ app.post('/student/quizzes/submit', authenticateToken, [
                 totalAttemptedQuestions: gradedAnswers.length,
                 score: scoreVal,
                 bytesEarned: finalBytesEarned,
-                studentCurrentBytes: updatedStudent.bytes,
+                studentCurrentBytes: student.bytes,
                 gradedAnswers: gradedAnswers,
                 cycleProgress: {
                     questionsCompleted: quizSession.questionsCompletedCount,
