@@ -316,33 +316,62 @@
         .matching-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1rem;
+            gap: 1.2rem;
             max-width: 700px;
+        }
+
+        .matching-col-header {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--color-neutral-dark);
+            margin-bottom: 0.4rem;
+            text-align: center;
         }
 
         .matching-column {
             display: flex;
             flex-direction: column;
-            gap: 0.8rem;
+            gap: 0.7rem;
         }
 
         .matching-item {
-            padding: 0.8rem 1rem;
+            padding: 0.75rem 1rem;
             background-color: var(--color-neutral-lightest);
             border-radius: 8px;
-            cursor: move;
-            border: 1px dashed var(--color-neutral-medium);
-            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 2px solid var(--color-neutral-light);
+            transition: all 0.18s ease;
+            text-align: center;
+            user-select: none;
         }
 
-        .matching-item:hover {
+        .matching-item:hover:not(.matched) {
             background-color: var(--color-neutral-light);
+            border-color: var(--color-brand-primary);
+        }
+
+        .matching-item.selected {
+            border-color: var(--color-brand-secondary);
+            background-color: rgba(178,31,31,0.08);
+            box-shadow: 0 0 0 3px rgba(178,31,31,0.18);
         }
 
         .matching-item.matched {
             border-style: solid;
             border-color: var(--color-success-green);
-            background-color: rgba(46, 204, 113, 0.05);
+            background-color: rgba(46, 204, 113, 0.1);
+            cursor: default;
+            opacity: 0.82;
+        }
+
+        .matching-hint {
+            font-size: 0.8rem;
+            color: var(--color-neutral-dark);
+            font-style: italic;
+            margin-bottom: 0.5rem;
+            grid-column: 1 / -1;
         }
 
         /* Question Type: Short Answer */
@@ -755,9 +784,9 @@
 
     <!-- Main Content -->
     <div class="container">
-        <div id='streakCounterQuiz' style='position:fixed;top:1rem;right:1rem;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);color:white;padding:0.5rem 1.1rem;border-radius:50px;font-weight:600;z-index:100;display:flex;align-items:center;gap:0.5rem;font-size:0.9rem;backdrop-filter:blur(8px);'>
-            <i class='fas fa-fire' style='color:#f97316;'></i>
-            <span id='streakCountQuiz'>0</span><span style='opacity:0.7;font-size:0.8rem;'> streak</span>
+        <div id='streakCounterQuiz' style='position:fixed;top:3.6rem;right:1rem;background:rgba(249,115,22,0.18);border:1px solid rgba(249,115,22,0.35);color:white;padding:0.28rem 0.7rem;border-radius:50px;font-weight:600;z-index:100;display:flex;align-items:center;gap:0.35rem;font-size:0.75rem;backdrop-filter:blur(8px);'>
+            <i class='fas fa-fire' style='color:#f97316;font-size:0.7rem;'></i>
+            <span id='streakCountQuiz'>0</span><span style='opacity:0.65;font-size:0.68rem;'> streak</span>
         </div>
         
         <!-- Energy Display -->
@@ -1012,23 +1041,29 @@
                     `;
                     break;
 
-                case 'matching':
+                case 'matching': {
+                    const matchPairs = question.matchingPairs || [];
+                    // Shuffle right column so order differs from left
+                    const rightItems = matchPairs.map((p, i) => ({ text: p.itemB, origIdx: i }));
+                    for (let ri = rightItems.length - 1; ri > 0; ri--) {
+                        const rj = Math.floor(Math.random() * (ri + 1));
+                        [rightItems[ri], rightItems[rj]] = [rightItems[rj], rightItems[ri]];
+                    }
+                    questionHTML += '<p class="matching-hint">Click an item on the left, then click its match on the right.</p>';
                     questionHTML += '<div class="matching-container">';
-                    const leftColumn = question.matchingPairs || [];
-                    
-                    questionHTML += '<div class="matching-column" id="matchingItems">';
-                    leftColumn.forEach((pair, idx) => {
-                        questionHTML += `<div class="matching-item" data-id="${idx}-a">${pair.itemA}</div>`;
+                    questionHTML += '<div class="matching-column" id="matchingLeft">';
+                    matchPairs.forEach((pair, idx) => {
+                        questionHTML += `<div class="matching-item" data-side="left" data-idx="${idx}" data-orig-text="${pair.itemA.replace(/"/g, "&quot;").trim()}">${pair.itemA}</div>`;
                     });
                     questionHTML += '</div>';
-
-                    questionHTML += '<div class="matching-column" id="matchingTargets">';
-                    leftColumn.forEach((pair, idx) => {
-                        questionHTML += `<div class="matching-item" data-id="${idx}-b">${pair.itemB}</div>`;
+                    questionHTML += '<div class="matching-column" id="matchingRight">';
+                    rightItems.forEach((item) => {
+                        questionHTML += `<div class="matching-item" data-side="right" data-orig="${item.origIdx}" data-orig-text="${item.text.replace(/"/g, "&quot;").trim()}">${item.text}</div>`;
                     });
                     questionHTML += '</div>';
                     questionHTML += '</div>';
                     break;
+                }
 
                 case 'ordering':
                     const orderedItems = question.orderedItems || [];
@@ -1295,54 +1330,65 @@
         createParticles();
 
 
-        // Setup matching question drag and drop functionality
+                // Click-to-match: click a left item then a right item to pair them
         function setupMatchingQuestion() {
-            const matchingItems = document.querySelectorAll('.matching-item');
+            let selectedLeft = null; // currently selected left item
 
-            matchingItems.forEach(item => {
-                item.setAttribute('draggable', 'true');
+            const leftItems = document.querySelectorAll('#matchingLeft .matching-item');
+            const rightItems = document.querySelectorAll('#matchingRight .matching-item');
 
-                item.addEventListener('dragstart', function(e) {
-                    e.dataTransfer.setData('text/plain', this.dataset.id);
-                    this.classList.add('dragging');
-                });
-
-                item.addEventListener('dragend', function() {
-                    this.classList.remove('dragging');
-                });
-            });
-
-            const matchingTargets = document.querySelectorAll('.matching-column');
-
-            matchingTargets.forEach(column => {
-                column.addEventListener('dragover', function(e) {
-                    e.preventDefault();
-                    const draggingItem = document.querySelector('.dragging');
-                    if (draggingItem && draggingItem.parentElement !== this) {
-                        const afterElement = getDragAfterElement(this, e.clientY);
-                        if (afterElement) {
-                            this.insertBefore(draggingItem, afterElement);
-                        } else {
-                            this.appendChild(draggingItem);
-                        }
+            leftItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (this.classList.contains('matched')) return;
+                    // Deselect if clicking same item
+                    if (selectedLeft === this) {
+                        this.classList.remove('selected');
+                        selectedLeft = null;
+                        return;
                     }
+                    // Swap selection
+                    if (selectedLeft) selectedLeft.classList.remove('selected');
+                    selectedLeft = this;
+                    this.classList.add('selected');
                 });
             });
-        }
 
-        function getDragAfterElement(container, y) {
-            const draggableElements = [...container.querySelectorAll('.matching-item:not(.dragging)')];
+            rightItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (this.classList.contains('matched')) return;
+                    if (!selectedLeft) return; // must select left first
 
-            return draggableElements.reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = y - box.top - box.height / 2;
+                    const leftIdx = parseInt(selectedLeft.dataset.idx);
+                    const rightOrig = parseInt(this.dataset.orig);
 
-                if (offset < 0 && offset > closest.offset) {
-                    return { offset: offset, element: child };
-                } else {
-                    return closest;
-                }
-            }, { offset: Number.NEGATIVE_INFINITY }).element;
+                    // Record this pair
+                    const pairNum = document.querySelectorAll('#matchingLeft .matching-item.matched').length + 1;
+                    selectedLeft.classList.remove('selected');
+                    selectedLeft.classList.add('matched');
+                    selectedLeft.dataset.pairedWith = rightOrig;
+                    selectedLeft.innerHTML = `<span style='font-size:0.65rem;background:var(--color-success-green);color:#fff;border-radius:50%;padding:0 5px;margin-right:4px;'>${pairNum}</span>` + selectedLeft.textContent;
+
+                    this.classList.add('matched');
+                    this.dataset.pairedWith = leftIdx;
+                    this.innerHTML = `<span style='font-size:0.65rem;background:var(--color-success-green);color:#fff;border-radius:50%;padding:0 5px;margin-right:4px;'>${pairNum}</span>` + this.textContent;
+
+                    selectedLeft = null;
+
+                    // Build answer array from all paired left items
+                    const pairs = [];
+                    document.querySelectorAll('#matchingLeft .matching-item.matched').forEach(el => {
+                        const rightOrig2 = parseInt(el.dataset.pairedWith);
+                        // Find right item text
+                        const rightEl = document.querySelector(`#matchingRight .matching-item[data-orig='${rightOrig2}']`);
+                        if (rightEl) {
+                            const leftText = el.dataset.origText || el.querySelector('span') ? el.textContent.replace(/^s*d+s*/, '').trim() : el.textContent.trim();
+                            const rightText = rightEl.dataset.origText || rightEl.querySelector('span') ? rightEl.textContent.replace(/^s*d+s*/, '').trim() : rightEl.textContent.trim();
+                            pairs.push({ itemA: leftText, itemB: rightText });
+                        }
+                    });
+                    saveAnswer(pairs);
+                });
+            });
         }
 
     

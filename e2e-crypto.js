@@ -218,7 +218,7 @@ const E2E_Crypto = (function() {
                 return bytesToString(dec);
             } catch (e) {
                 console.warn('E2E decrypt failed:', e);
-                return '[Could not decrypt — message may have been sent before your key was updated]';
+                return '🔒 [Encrypted message]';
             }
         }
     };
