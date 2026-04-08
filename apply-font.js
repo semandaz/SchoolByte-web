@@ -14,7 +14,7 @@
         'Merriweather':          'family=Merriweather:wght@400;700',
         'Playfair Display':      'family=Playfair+Display:wght@400;700',
         'Space Mono':            'family=Space+Mono',
-        'Dancing Script':        'family=Dancing+Script:wght@400;700',
+        'Dancing Script':        'family=Dancing+Script:wght@400;700;900',
         'Satisfy':               'family=Satisfy',
         'Atkinson Hyperlegible': 'family=Atkinson+Hyperlegible:wght@400;700',
         'Oswald':                'family=Oswald:wght@400;700',
@@ -61,8 +61,9 @@
         }
         // Apply to all elements but NOT ::before/::after pseudo-elements (those are used by
         // Font Awesome icons). Then explicitly restore Font Awesome font families.
+        var weightBoost = name === 'Dancing Script' ? 'html, body, * { font-weight: 700 !important; } ' : '';
         styleEl.textContent =
-            'html, body, * { font-family: ' + fontFamily + ' !important; }' +
+            'html, body, * { font-family: ' + fontFamily + ' !important; }' + weightBoost +
             '.fa, .fas, .far, .fal, .fad, .fass, .fasr, .fat,' +
             ' i[class*="fa-"], span[class*="fa-"] { font-family: "Font Awesome 6 Free" !important; }' +
             '.fab, i.fab, span.fab { font-family: "Font Awesome 6 Brands" !important; }' +
