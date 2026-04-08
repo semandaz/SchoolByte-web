@@ -326,9 +326,9 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             // Fetch teacher data on page load
-            fetchTeacherData();
+            await fetchTeacherData().catch(() => {});
 
             // --- Health Status Badge ---
             (async function updateHealthBadge() {
@@ -336,7 +336,10 @@
                 const txt = document.getElementById('healthText');
                 if (!dot || !txt) return;
                 try {
-                    const status = await performConnectivityCheck();
+                    const status = await Promise.race([
+                        performConnectivityCheck(),
+                        new Promise(resolve => setTimeout(() => resolve({ reachable: true }), 4000))
+                    ]);
                     if (status.reachable) {
                         dot.style.background = '#22c55e';
                         document.getElementById('uploadHealthBadge').style.background = '#f0fdf4';

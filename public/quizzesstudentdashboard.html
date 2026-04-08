@@ -874,10 +874,24 @@
                 <a href="quizzesstudentdashboard.html" class="new-quiz-btn">
                     <i class="fas fa-redo"></i> Take Another Quiz
                 </a>
+                <a href="studentdashboard.html" class="review-btn" style="background:rgba(26,42,108,0.12);color:var(--color-brand-primary);border:2px solid var(--color-brand-primary);">
+                    <i class="fas fa-home"></i> Back to Dashboard
+                </a>
             </div>
         </div>
     </div>
 
+
+    <!-- Review Answers Modal -->
+    <div id="reviewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:5000;overflow-y:auto;padding:1rem;">
+      <div style="max-width:780px;margin:2rem auto;background:#fff;border-radius:16px;padding:2rem;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;border-bottom:2px solid #f0f4f8;padding-bottom:1rem;">
+          <h2 style="font-size:1.4rem;font-weight:700;color:var(--color-brand-primary);"><i class="fas fa-book-open" style="margin-right:0.5rem;"></i>Answer Review</h2>
+          <button onclick="document.getElementById('reviewModal').style.display='none'" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#6b7280;line-height:1;">&#x2715;</button>
+        </div>
+        <div id="reviewContent"></div>
+      </div>
+    </div>
     <!-- Bytes Counter -->
     <div class="bytes-counter">
         <i class="fas fa-coins bytes-icon"></i>
@@ -890,6 +904,7 @@
         let currentQuestionIndex = 0;
         let studentAnswers = [];
         let quizSessionId = null;
+        let lastSubmissionData = null;
 
         document.addEventListener('DOMContentLoaded', function() {
             // Load student data
@@ -904,6 +919,57 @@
             let bytesCount = parseInt(localStorage.getItem('bytesCount')) || 0;
             document.getElementById('bytesCount').textContent = bytesCount;
 
+
+        // Review Answers button handler
+        document.getElementById('reviewBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!lastSubmissionData) return;
+            const { questions, answers, graded } = lastSubmissionData;
+            let html = '';
+            questions.forEach((q, i) => {
+                const g = graded.find(a => a.questionId === q._id) || {};
+                const correct = g.isCorrect;
+                const skipped = g.skipped;
+                const studentAns = g.studentAnswer !== null && g.studentAnswer !== undefined ? g.studentAnswer : answers[i];
+                const borderColor = skipped ? '#9ca3af' : correct ? '#22c55e' : '#ef4444';
+                const bgColor = skipped ? '#f9fafb' : correct ? '#f0fdf4' : '#fef2f2';
+                const icon = skipped ? '&#x23ED;' : correct ? '&#x2714;' : '&#x2718;';
+                const iconColor = skipped ? '#9ca3af' : correct ? '#22c55e' : '#ef4444';
+                const label = skipped ? 'Skipped' : correct ? 'Correct' : 'Incorrect';
+
+                // Format correct answer display
+                let correctHtml = '';
+                if (!skipped && !correct) {
+                    let ca = '';
+                    if (q.type === 'multiple-choice-single') ca = q.correctOption !== undefined ? (q.options && q.options[q.correctOption] ? q.options[q.correctOption] : q.correctOption) : '';
+                    else if (q.type === 'multiple-choice-multi') ca = q.correctOptions && q.options ? q.correctOptions.map(i2 => q.options[i2]).join(', ') : '';
+                    else if (q.type === 'true-false') ca = q.correctAnswer !== undefined ? String(q.correctAnswer) : '';
+                    else if (q.type === 'fill-in-the-blank') ca = q.correctAnswers ? q.correctAnswers.join(' / ') : '';
+                    else if (q.type === 'matching') ca = q.matchingPairs ? q.matchingPairs.map(p => p.itemA + ' → ' + p.itemB).join('; ') : '';
+                    else if (q.type === 'ordering') ca = q.correctOrder ? q.correctOrder.join(', ') : (q.orderedItems ? q.orderedItems.join(', ') : '');
+                    else ca = q.correctAnswers ? q.correctAnswers.join(' / ') : '';
+                    if (ca) correctHtml = '<div style="margin-top:0.4rem;font-size:0.82rem;color:#16a34a;"><strong>Correct answer:</strong> ' + ca + '</div>';
+                }
+
+                // Format student answer
+                let saDisplay = '';
+                if (Array.isArray(studentAns)) saDisplay = studentAns.length ? JSON.stringify(studentAns) : '(none)';
+                else saDisplay = studentAns !== null && studentAns !== undefined && studentAns !== '' ? String(studentAns) : '(none)';
+
+                html += '<div style="border:2px solid ' + borderColor + ';border-radius:10px;padding:1rem;margin-bottom:1rem;background:' + bgColor + ';">' +
+                    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;">' +
+                    '<span style="font-weight:700;color:#374151;font-size:0.85rem;">Q' + (i+1) + '. ' + (q.subject || '') + '</span>' +
+                    '<span style="font-size:1.1rem;color:' + iconColor + ';font-weight:700;">' + icon + ' ' + label + '</span>' +
+                    '</div>' +
+                    '<p style="font-weight:600;color:#1f2937;margin-bottom:0.5rem;font-size:0.9rem;">' + (q.questionText || '') + '</p>' +
+                    '<div style="font-size:0.82rem;color:#6b7280;"><strong>Your answer:</strong> ' + saDisplay + '</div>' +
+                    correctHtml +
+                    '<div style="margin-top:0.4rem;font-size:0.78rem;color:#9ca3af;">Type: ' + (q.type || '') + ' · Bytes earned: ' + (g.bytesEarned || 0) + '</div>' +
+                    '</div>';
+            });
+            document.getElementById('reviewContent').innerHTML = html;
+            document.getElementById('reviewModal').style.display = 'block';
+        });
             // Generate quiz
             generateQuiz();
             // Fetch energy
@@ -1259,6 +1325,8 @@
                     localStorage.setItem('bytesCount', currentBytes);
                     document.getElementById('bytesCount').textContent = currentBytes;
 
+                    // Store results for review
+                    lastSubmissionData = { questions: currentQuestions.slice(), answers: studentAnswers.slice(), graded: data.gradedAnswers || [] };
                     // Show results
                     document.getElementById('quizContent').style.display = 'none';
                     document.getElementById('quizResults').style.display = 'block';
@@ -1404,7 +1472,21 @@
                 const r = await fetch('/student/dashboard', { headers: { 'Authorization': 'Bearer ' + tok } });
                 if (r.ok) {
                     const d = await r.json();
-                    if (streakEl) streakEl.textContent = d.student.currentStreak || 0;
+                    const sv = d.student.currentStreak || 0;
+                    const streakBox = document.getElementById('streakCounterQuiz');
+                    if (streakEl) streakEl.textContent = sv;
+                    if (streakBox) {
+                        if (sv === 0) {
+                            streakBox.style.background = 'rgba(107,114,128,0.55)';
+                            streakBox.style.border = '1px solid rgba(156,163,175,0.35)';
+                            const fi = streakBox.querySelector('.fa-fire');
+                            if (fi) fi.style.color = '#9ca3af';
+                        } else {
+                            streakBox.style.background = 'rgba(249,115,22,0.18)';
+                            const fi = streakBox.querySelector('.fa-fire');
+                            if (fi) fi.style.color = '#f97316';
+                        }
+                    }
                 }
             } catch(e) { console.warn('Streak fetch failed:', e); }
         }
