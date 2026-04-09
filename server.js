@@ -812,8 +812,30 @@ async function generateQuizQuestions(student, requestedSubject = null, isRetry =
                 .lean();
 
             if (questions.length === 0) {
+                // Targeted per-slot fallback: find the oldest recently-served question
+                // for THIS specific subject/class before triggering global contingency.
+                const usedIdsStr = new Set(Array.from(usedQuestionIds).map(id => id.toString()));
+                const recentCandidateIds = (student.recentQuizIds || []).filter(
+                    id => !usedIdsStr.has(id.toString())
+                );
+                const fallbackQs = recentCandidateIds.length
+                    ? await QuizQuestion.find({
+                        subject,
+                        intendedClass: { $in: allowedClasses },
+                        isActive: true,
+                        _id: { $in: recentCandidateIds }
+                    }).sort({ lastServedTimestamp: 1 }).limit(3).session(session).lean()
+                    : [];
+
+                if (fallbackQs.length > 0) {
+                    const chosen = fallbackQs[Math.floor(Math.random() * fallbackQs.length)];
+                    selectedQuestions.push({ question: chosen, slot });
+                    usedQuestionIds.add(chosen._id);
+                    continue;
+                }
+
                 if (!isRetry) {
-                    // First pass — run contingency (clear old exclusions) then retry
+                    // Targeted fallback exhausted — run global contingency then retry
                     await session.abortTransaction();
                     session.endSession();
                     const result = await runContingencyAndRetry(student, quizSession, division);
@@ -3053,10 +3075,6 @@ app.post('/student/quizzes/submit', authenticateToken, [
         // Award achievements in-memory (modifies student.achievements / notifications)
         await checkAndAwardAchievements(student);
 
-        // Update recent quiz IDs (sliding window)
-        const newQuizIds = quizSubmissions.map(sub => new mongoose.Types.ObjectId(sub.questionId));
-        student.recentQuizIds = [...newQuizIds, ...(student.recentQuizIds || [])].slice(0, 200);
-
         await student.save({ session });
 
         // Update quiz session
@@ -3064,7 +3082,12 @@ app.post('/student/quizzes/submit', authenticateToken, [
         quizSession.updatedAt = new Date();
 
         const division = getDivision(student.class);
-        const cycleSize = division ? CYCLE_SIZES[division] : 180;
+        const cycleSize = division ? CYCLE_SIZES[division] : 120;
+
+        // Update recent quiz IDs (sliding window — sized to one full cycle for this division)
+        const newQuizIds = quizSubmissions.map(sub => new mongoose.Types.ObjectId(sub.questionId));
+        const recentWindow = cycleSize;
+        student.recentQuizIds = [...newQuizIds, ...(student.recentQuizIds || [])].slice(0, recentWindow);
         const cycleComplete = cycleSize && quizSession.questionsCompletedCount >= cycleSize;
 
         if (cycleComplete) {
@@ -3076,6 +3099,8 @@ app.post('/student/quizzes/submit', authenticateToken, [
             await newQuizSession.save({ session });
             student.currentQuizSessionId = newQuizSession._id;
             student.contingencyRepeatCount = 0;
+            // Clear the exclusion window so the new cycle draws from the full pool
+            student.recentQuizIds = [];
             await student.save({ session });
         }
 
