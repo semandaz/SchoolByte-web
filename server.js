@@ -113,6 +113,7 @@ const PersonalMessage = require('./models/PersonalMessage');
 const DiscussionGroup = require('./models/DiscussionGroup');
 const Team = require('./models/Team');
 const GroupMessage = require('./models/GroupMessage');
+const DailyQuote = require('./models/DailyQuote');
 const UnebProject = require('./models/UnebProject');
 
 // --- Socket.io Chat Management ---
@@ -2037,6 +2038,281 @@ app.get('/student/dashboard', authenticateToken, async (req, res) => {
     }
 });
 
+
+// ─── Daily Quote System ────────────────────────────────────────────────────────
+const SEED_QUOTES = [
+    {
+        text: "A leader is one who knows the way, goes the way, and shows the way.",
+        author: "John C. Maxwell",
+        category: "Leadership",
+        context: "John C. Maxwell is one of the world's most influential leadership experts, having written over 80 books on the subject. This quote encapsulates his core philosophy: true leadership is not about position or title, but about example and service. A leader cannot simply point the direction — they must walk it themselves, demonstrating courage, commitment, and integrity in every step. For students, this is a powerful reminder that leadership begins in the classroom: the student who chooses to study when others choose comfort, who lifts a struggling peer, who speaks truth when it costs something — that student is already leading. Leadership is a daily practice, not a destination."
+    },
+    {
+        text: "Education is the most powerful weapon which you can use to change the world.",
+        author: "Nelson Mandela",
+        category: "Education",
+        context: "Nelson Mandela — the anti-apartheid revolutionary, political prisoner of 27 years, and first democratically elected President of South Africa — understood better than almost anyone that oppression thrives in ignorance and crumbles before knowledge. He experienced firsthand how systems of power sought to deny Black South Africans education precisely because the powerful feared what educated people could achieve. This quote is not merely inspirational — it is a strategic truth. Education sharpens critical thinking, unlocks economic opportunity, builds bridges across communities, and equips individuals to challenge injustice with facts and reason. Every lesson you master, every book you read, every concept you truly understand is adding to the most powerful arsenal the world has ever known."
+    },
+    {
+        text: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+        author: "Winston Churchill",
+        category: "Perseverance",
+        context: "Winston Churchill led Britain through its darkest hours during World War II, when defeat seemed not just possible but likely. His nation was bombed nightly, its allies were falling, and the odds were staggering. Yet Churchill refused to surrender — not because he was invincible, but because he understood that resilience is a choice made moment by moment. This quote carries a double truth: first, that even the greatest success does not secure your future (so never become complacent), and second, that even the most crushing failure does not end your story (so never give up). For students facing examinations, setbacks, and difficult chapters, the question is never whether you stumbled — it is whether you had the courage to rise again and keep moving."
+    },
+    {
+        text: "The roots of education are bitter, but the fruit is sweet.",
+        author: "Aristotle",
+        category: "Education",
+        context: "Aristotle, one of history's greatest philosophers and a student of Plato who himself taught Alexander the Great, spent his life pursuing and teaching knowledge across virtually every field of human inquiry — from biology to ethics to politics. He understood deeply that learning is rarely comfortable. The early morning study sessions, the concepts that refuse to make sense at first, the long hours before examinations — these are the bitter roots. But the fruit: the ability to think clearly, to speak with authority, to solve problems that others cannot, to earn a livelihood, to contribute something meaningful to the world — this fruit is incomparably sweet. Aristotle's wisdom reminds us that the discomfort of study is not a sign that something has gone wrong; it is the very proof that you are growing."
+    },
+    {
+        text: "The secret of getting ahead is getting started.",
+        author: "Mark Twain",
+        category: "Initiative",
+        context: "Samuel Langhorne Clemens, known to the world as Mark Twain, was not only America's greatest humorist and satirist but also one of its most practical observers of human nature. He watched people spend enormous energy worrying about tasks they had not yet begun, paralyzed by the gap between where they were and where they wanted to be. His insight is deceptively simple but psychologically profound: the most important step in any journey is the first one. Neuroscience supports this — once we begin a task, our brains activate what is called the Zeigarnik effect, a cognitive pull toward completing what we have started. Procrastination feeds on the gap between thinking about a task and doing it. The moment you open your book, pick up your pen, or write the first sentence, you have already defeated the hardest enemy: inertia."
+    },
+    {
+        text: "It does not matter how slowly you go as long as you do not stop.",
+        author: "Confucius",
+        category: "Perseverance",
+        context: "Confucius, the ancient Chinese philosopher whose teachings shaped East Asian civilization for over two millennia, was a man who faced repeated rejection and failure throughout his life. He traveled from state to state for years seeking a ruler who would implement his principles of moral governance, rarely finding one. Yet he continued to teach, to learn, and to refine his ideas. His insight about pace is liberating: in a world that glorifies speed and instant results, he reminds us that direction and persistence matter far more than velocity. A student who studies one hour every day without fail will surpass one who studies for twelve hours in a panic the night before an examination. Steady, consistent progress — no matter how humble — compounds over time into extraordinary results."
+    },
+    {
+        text: "The beautiful thing about learning is that no one can take it away from you.",
+        author: "B.B. King",
+        category: "Education",
+        context: "Riley B. King, known as B.B. King, was born into sharecropping poverty in rural Mississippi at a time when Black Americans faced violent and systematic oppression. He had limited formal education, yet through relentless self-teaching, he mastered the guitar and became the undisputed King of Blues, influencing virtually every rock and blues musician who came after him. His observation about learning carries a weight born from lived experience: possessions can be stolen, jobs can be lost, circumstances can change overnight — but the knowledge and skills embedded in your mind through genuine learning are yours forever. No flood, no fire, no political upheaval, no economic collapse can reach inside your mind and extract what you have genuinely understood and internalized. Education is the most durable form of wealth."
+    },
+    {
+        text: "Try not to become a man of success but rather try to become a man of value.",
+        author: "Albert Einstein",
+        category: "Character",
+        context: "Albert Einstein, whose name has become synonymous with genius itself, offered this profound distinction late in his life, having witnessed both the triumphs and the catastrophic failures of human civilization, including two world wars and the birth of nuclear weapons — technologies partly derived from his own equations. He understood that success, defined as fame, wealth, or achievement, is hollow without the substance of genuine contribution. A person of value asks: What do I give to the world? What problems do I help solve? Whom do I lift up? A person merely chasing success asks: What can I take? What recognition can I accumulate? For students building their futures, Einstein's challenge is to focus not just on getting high marks or landing prestigious positions, but on developing the character and capabilities that make your presence in the world genuinely better for those around you."
+    },
+    {
+        text: "The mind is not a vessel to be filled but a fire to be kindled.",
+        author: "Plutarch",
+        category: "Education",
+        context: "Plutarch, the Greek biographer and essayist of the first century, understood something that many educational systems have forgotten: learning is not the passive reception of information but the active ignition of curiosity, reasoning, and imagination. A vessel that is merely filled remains dependent on whoever fills it; but a fire, once kindled, generates its own heat and light, spreads to others, and transforms everything it touches. Education that merely transmits facts produces students who can answer questions they have already been asked. Education that kindles the fire of genuine inquiry produces students who can answer questions that have never yet been asked. The goal of your schooling is not to store information — it is to develop the burning desire to keep learning, questioning, and discovering long after your formal studies are complete."
+    },
+    {
+        text: "In the middle of every difficulty lies opportunity.",
+        author: "Albert Einstein",
+        category: "Resilience",
+        context: "Einstein was no stranger to difficulty. He failed his university entrance examination on the first attempt, was rejected for academic positions after graduating, and spent years working in a patent office largely overlooked by the scientific establishment — all while developing the theory of relativity in his spare time. His insight about difficulty and opportunity is not merely optimistic philosophy; it is an observation rooted in how human creativity and problem-solving actually function. Difficulty forces us to look harder, think differently, and question assumptions. The student who struggles with mathematics and refuses to give up often develops a depth of understanding that students who found it easy never achieve. Every hard problem you face is an invitation to become more capable than you were before. The opportunity is not in spite of the difficulty — it is embedded within it."
+    },
+    {
+        text: "You have brains in your head. You have feet in your shoes. You can steer yourself any direction you choose.",
+        author: "Dr. Seuss",
+        category: "Self-Determination",
+        context: "Theodor Seuss Geisel, writing under the pen name Dr. Seuss, created deceptively simple books that carried profoundly serious messages about individuality, courage, and the power of the human mind. This line from 'Oh, the Places You'll Go!' is both a celebration and a responsibility: you possess everything you need to navigate your own life. The 'brains in your head' represent your intellect, curiosity, and capacity to learn and reason — these are always with you. The 'feet in your shoes' represent your agency, your ability to take action, to move, to choose a different path when the current one is not working. The emphasis on steering is crucial: life will present crossroads constantly, and the quality of your choices determines the quality of your journey. Your circumstances, your neighborhood, your background — none of these remove your steering wheel."
+    },
+    {
+        text: "What you get by achieving your goals is not as important as what you become by achieving your goals.",
+        author: "Henry David Thoreau",
+        category: "Character",
+        context: "Henry David Thoreau, the nineteenth-century American philosopher who famously withdrew to Walden Pond to live deliberately and examine the essentials of human existence, was deeply concerned with authenticity — with the question of whether people were truly living their values or merely performing them. His observation about goals redirects our attention from the external reward (the certificate, the grade, the position) to the internal transformation (the discipline built, the resilience forged, the habits of mind developed). When a student pushes through a difficult course, they do not merely receive a qualification — they become someone who can push through difficulty. When a student sets a goal and refuses to abandon it through setbacks, they do not merely reach the goal — they become someone who finishes what they start. The person you are becoming through the pursuit matters infinitely more than the prize at the end."
+    },
+    {
+        text: "Our greatest glory is not in never falling, but in rising every time we fall.",
+        author: "Confucius",
+        category: "Resilience",
+        context: "This principle from Confucius strikes at the heart of what separates those who ultimately succeed from those who do not — and it is not talent, not intelligence, not circumstance. It is the capacity to recover. Confucius observed human nature across decades of teaching and public life, watching brilliant people give up at the first sign of real resistance and watching seemingly ordinary people accomplish extraordinary things through sheer refusal to stay down. Modern research in psychology vindicates this ancient wisdom: the concept of 'grit,' studied extensively by psychologist Angela Duckworth, shows that perseverance and passion for long-term goals predicts achievement far better than talent alone. Every examination you fail and retake, every concept that confuses you before it finally clicks, every goal that required multiple attempts — these are not marks of inadequacy. They are the making of your character."
+    },
+    {
+        text: "The function of education is to teach one to think intensively and to think critically. Intelligence plus character — that is the goal of true education.",
+        author: "Martin Luther King Jr.",
+        category: "Education",
+        context: "Dr. Martin Luther King Jr. delivered this vision of education early in his career, and it stands as one of the most complete and challenging definitions ever offered. He distinguished sharply between intelligence — the capacity to think, reason, and process information — and character — the moral compass that determines how that intelligence is used. History is full of highly intelligent people who used their gifts for destruction, manipulation, and oppression. What education must do, King argued, is not merely sharpen the mind but also cultivate the conscience: the deep sense of right and wrong, the commitment to justice, the empathy for those who suffer, the courage to speak and act truthfully even when silence would be more comfortable. A student who leaves school with top marks but no integrity has received only half an education."
+    },
+    {
+        text: "I have not failed. I've just found 10,000 ways that won't work.",
+        author: "Thomas Edison",
+        category: "Perseverance",
+        context: "Thomas Edison, who held more patents than virtually any inventor in history and whose work gave the world the practical electric light bulb, the phonograph, and hundreds of other transformative technologies, is one of history's most compelling examples of perseverance. The popular story is that he failed thousands of times before inventing the working light bulb — but Edison's own frame for this is what matters most: he did not experience these attempts as failures. Each one was data. Each one narrowed the field of remaining possibilities. Each one made the eventual solution more inevitable. This reframing of failure as information rather than verdict is one of the most powerful mental shifts available to a student. When a technique for solving a problem does not work, you have not failed — you have successfully identified something that does not work, and that is genuine progress."
+    },
+    {
+        text: "The only way to do great work is to love what you do.",
+        author: "Steve Jobs",
+        category: "Excellence",
+        context: "Steve Jobs, who co-founded Apple and presided over some of the most influential product designs in modern history — the Macintosh, the iPod, the iPhone — believed with fierce conviction that passion was not a luxury in the pursuit of excellence but an absolute requirement. His insight is not simply motivational; it is practical. The level of care, detail-orientation, creative problem-solving, and willingness to iterate relentlessly that great work demands is simply not sustainable without genuine love for the work. This does not mean every task in school will fill you with joy — it rarely does. But it does mean that finding the subjects, problems, and ideas that genuinely ignite your curiosity and then pursuing them with everything you have is not indulgence. It is the foundation of meaningful, excellent work. The quality of your attention is highest when your heart is engaged."
+    },
+    {
+        text: "Knowledge is power.",
+        author: "Sir Francis Bacon",
+        category: "Education",
+        context: "Sir Francis Bacon, the sixteenth-century English philosopher and statesman often called the father of empiricism and the scientific method, understood power not as military force or political authority but as the human capacity to understand and therefore shape the natural world. His famous phrase 'scientia potentia est' — knowledge is power — was a revolutionary declaration in an age when most people accepted the world as fixed, mysterious, and beyond human influence. Bacon's philosophy gave birth to the scientific revolution and, eventually, to everything from modern medicine to space exploration to the smartphone in your pocket. For students, his insight operates at both the personal and collective levels: the person who understands how things work has power over their circumstances that the ignorant person lacks. And the society that invests in knowledge production — in schools, in universities, in research — grows stronger, healthier, and more free."
+    },
+    {
+        text: "Strive not to be a success, but rather to be of value.",
+        author: "Albert Einstein",
+        category: "Purpose",
+        context: "Einstein returned to this theme repeatedly because he had watched firsthand how the pursuit of success for its own sake could corrupt both individuals and civilizations. He had seen brilliant scientists place their gifts in service of political ideologies that brought catastrophe to millions. His reminder to strive for value rather than success is a call to orient your life around contribution — around the fundamental question: What does the world need, and what can I offer it? This reorientation has a practical dimension as well: people who are genuinely useful tend to attract opportunities, earn respect, and build lasting careers, while those who chase success for its own sake often find it hollow even when they achieve it. Being of value means asking not 'How do I look?' but 'What do I solve?' — not 'Am I impressive?' but 'Am I helpful?'"
+    },
+    {
+        text: "An investment in knowledge pays the best interest.",
+        author: "Benjamin Franklin",
+        category: "Education",
+        context: "Benjamin Franklin — who was simultaneously a printer, author, inventor, scientist, diplomat, and Founding Father of the United States — was profoundly self-educated, having left formal school at age ten and taught himself almost everything he knew through voracious reading, deliberate practice, and relentless intellectual curiosity. His financial metaphor for education is precise: unlike money invested in stocks or property, which can be lost to market crashes, theft, or bad luck, knowledge invested in your mind compounds continuously and cannot be taken from you. Franklin's own life was the proof: his self-education in science led to the discovery of electricity's nature; his mastery of writing built his printing empire; his study of diplomacy made him the most effective American statesman of his era. Every hour you invest in genuine learning earns dividends across your entire lifetime."
+    },
+    {
+        text: "The future belongs to those who believe in the beauty of their dreams.",
+        author: "Eleanor Roosevelt",
+        category: "Vision",
+        context: "Eleanor Roosevelt, who transformed the role of First Lady from a ceremonial position into a platform for human rights advocacy, championed the Universal Declaration of Human Rights and spoke truth to power throughout her decades of public life, understood that social change begins with people who dare to imagine a world different from the one they inhabit. Her insight about dreams is not wishful thinking — it is a description of how all human progress begins: with the conviction that what does not yet exist can exist. Scientists dream of cures before they find them; architects dream of buildings before they design them; leaders dream of justice before they can deliver it. For students, believing in the beauty of your dreams means refusing to let limited circumstances set the ceiling of your ambitions. The future is genuinely open, and it is shaped by those with the courage and belief to envision it differently."
+    },
+    {
+        text: "Hard work beats talent when talent doesn't work hard.",
+        author: "Tim Notke",
+        category: "Work Ethic",
+        context: "Basketball coach Tim Notke coined this phrase, later popularized by NBA legend Kevin Durant, in the context of athletic competition — but its truth extends to virtually every domain of human endeavor. The research of psychologist K. Anders Ericsson into expert performance found that world-class mastery in any field — music, chess, sports, science — is achieved through approximately 10,000 hours of deliberate, focused practice. Talent provides an initial advantage in learning speed, but it is not self-sustaining. Without the discipline of sustained effort, even the most gifted individuals plateau and are eventually overtaken by those who outwork them. History is full of extraordinarily talented people who never reached their potential because they relied on natural ability rather than developing the habits of deliberate, consistent, focused work. Every student who lacks 'natural talent' but refuses to stop improving has a secret weapon: effort."
+    },
+    {
+        text: "The more that you read, the more things you will know. The more that you learn, the more places you'll go.",
+        author: "Dr. Seuss",
+        category: "Learning",
+        context: "Dr. Seuss distilled in a single couplet what cognitive scientists have spent decades documenting: reading is the single most powerful habit available to any learner. Each book you read expands your vocabulary, which sharpens your ability to think and communicate with precision. Each new subject you explore creates neural pathways that connect with existing knowledge, making future learning faster and richer. The 'places you'll go' are not only metaphorical — readers statistically earn more, rise to leadership more often, adapt to change more effectively, and report higher life satisfaction than non-readers. But the most profound benefit of reading is internal: it colonizes your imagination with other lives, other worlds, and other ways of thinking, making you more empathetic, more creative, and more capable of understanding complex situations. A student who reads widely for pleasure, not just for examinations, is building the greatest possible foundation for their future."
+    },
+    {
+        text: "You must be the change you wish to see in the world.",
+        author: "Mahatma Gandhi",
+        category: "Leadership",
+        context: "Mohandas Karamchand Gandhi, who led India's nonviolent independence movement against the British Empire through decades of personal sacrifice, imprisonment, fasting, and moral courage, understood that political and social transformation cannot be separated from personal transformation. This quote is often treated as a soft inspirational message, but in Gandhi's hands it was a radical political philosophy: systemic change requires individuals who embody the values they seek to institutionalize. A society cannot become more honest if its members will not be honest in small things. A community cannot become more just if its individuals will not treat those around them justly. For students, this means that the work of changing Uganda, of improving your community, of contributing to Africa's future, does not begin in parliament or boardrooms — it begins in how you treat the student sitting next to you, whether you choose integrity over convenience, and whether your daily actions reflect your stated values."
+    },
+    {
+        text: "I am not afraid of storms, for I am learning how to sail my ship.",
+        author: "Louisa May Alcott",
+        category: "Resilience",
+        context: "Louisa May Alcott, the nineteenth-century American author who wrote 'Little Women' while supporting her family financially through her writing, lived a life that demanded constant navigation of hardship — poverty, illness, the demands of caring for others while pursuing her own artistic ambitions. Her sailing metaphor is instructive: she does not say the storms are not real, or that they do not matter, or that she wishes them away. She says she is learning to sail through them. This distinction is everything. Resilience is not the absence of fear or difficulty; it is the gradual accumulation of skills, confidence, and experience in navigating difficulty. Every challenge you face in school — the subject that refuses to make sense, the examination that humbles you, the teacher whose standards feel impossibly high — is a storm through which you are developing your sailing ability. The difficulty is the training."
+    },
+    {
+        text: "It always seems impossible until it's done.",
+        author: "Nelson Mandela",
+        category: "Determination",
+        context: "Mandela spoke these words with the authority of someone who had pursued the end of apartheid for decades while imprisoned, watching his cause appear hopeless to the outside world. He spent 27 years on Robben Island — 27 years when the overthrow of apartheid must have seemed not just impossible but fantastical. Yet it was done. This quote is not an assertion that everything is achievable — it is an observation about human psychology and the nature of undertaking genuinely hard things. Before we begin, our imagination runs ahead to all the obstacles, the failures, the ways the task exceeds our current capabilities — and this preview of difficulty makes the goal seem impossible. But the person who begins anyway, who acts on the belief that it can be done even when the evidence is not yet available, is the person who eventually creates the evidence. Doing begins before certainty."
+    },
+    {
+        text: "The expert in anything was once a beginner.",
+        author: "Helen Hayes",
+        category: "Growth",
+        context: "Helen Hayes, known as the 'First Lady of American Theatre' and one of only a handful of entertainers ever to achieve the EGOT (Emmy, Grammy, Oscar, and Tony), began her career as a child performer making countless mistakes before an audience. Her reminder about expertise and beginnings is both humbling and liberating. Every person you admire for their mastery — your most brilliant teacher, the scientist whose discovery you are studying, the leader whose biography inspires you — was once exactly where you are now: uncertain, unskilled, making errors, feeling overwhelmed by how much there was to learn. The difference between them and someone who never achieved mastery is not initial talent but the willingness to endure the beginner stage without quitting. Expertise is accumulated through thousands of hours of being imperfect at something you care about enough to keep trying. You are not behind — you are in the process."
+    },
+    {
+        text: "Live as if you were to die tomorrow. Learn as if you were to live forever.",
+        author: "Mahatma Gandhi",
+        category: "Learning",
+        context: "Gandhi's dual imperative captures two equally important but seemingly contradictory orientations toward time. 'Live as if you were to die tomorrow' is a call to presence, urgency, and priority: do not postpone kindness, do not defer your values, do not wait until circumstances are perfect to begin living with intention. 'Learn as if you were to live forever' is an equally urgent call in the opposite direction: invest in knowledge and growth with the long-term vision of someone who understands that wisdom compounds over a lifetime. Together, these two imperatives create the posture of a fully engaged life: present in each day's choices and conversations, while simultaneously building the depth of understanding that will serve you across decades. For students, this means bringing full attention to today's studies while maintaining the long-term perspective that each lesson learned is a brick in the structure of your life's contribution."
+    },
+    {
+        text: "In learning you will teach, and in teaching you will learn.",
+        author: "Phil Collins",
+        category: "Education",
+        context: "Phil Collins, the legendary British musician, captured in this lyric a feedback loop that educators and cognitive scientists have studied extensively. Research on the 'Protégé Effect' demonstrates that people learn material significantly better when they know they will have to teach it to someone else — the anticipation of teaching forces deeper engagement, more complete organization of information, and the identification of gaps in understanding. Conversely, teachers consistently report that their own understanding of their subjects deepens through the act of explaining, answering student questions, and encountering the unexpected angles from which learners approach material. For students, this insight has immediate practical value: the most powerful study technique available is to take what you have learned and attempt to teach it — to a study group, to a younger sibling, to an imaginary student. Where your explanation falters, your understanding has faltered too. Fix the explanation, and you fix the understanding."
+    },
+    {
+        text: "Courage is not the absence of fear, but the triumph over it.",
+        author: "Nelson Mandela",
+        category: "Courage",
+        context: "Mandela's definition of courage corrects a widespread misunderstanding that creates unnecessary shame and self-doubt: many people assume that fear means they lack courage, and that the courageous person simply does not feel afraid. But Mandela — who was genuinely afraid during his years of resistance, imprisonment, and the constant threat of violence — understood that courage is not a feeling but a decision. It is the choice to act rightly, speak truthfully, or persevere faithfully in the presence of fear rather than in its absence. This reframes every difficult moment in a student's life: the fear before an important examination is not weakness — acting despite it is courage. The anxiety before speaking in public is not inadequacy — speaking anyway is courage. The uncertainty before attempting a difficult problem is not incompetence — beginning despite the uncertainty is courage. Fear confirms that what you are doing matters. Courage is what you do next."
+    },
+    {
+        text: "Talent wins games, but teamwork and intelligence win championships.",
+        author: "Michael Jordan",
+        category: "Collaboration",
+        context: "Michael Jordan, widely regarded as the greatest basketball player in history, delivered this insight after experiencing it directly. In his early career, Jordan was so transcendently talented that he could dominate individual games through sheer personal brilliance — yet his teams consistently fell short of championships. It was only when he learned to trust, elevate, and coordinate with his teammates that the Chicago Bulls built their dynasty of six NBA titles. The lesson scales far beyond sport: virtually every significant human achievement — scientific breakthroughs, great art, thriving communities, successful nations — is a product of coordinated human effort, not individual brilliance acting alone. The school environment is a training ground not just for knowledge but for the collaborative intelligence needed to solve problems too complex for any single mind. Learn to work with others, listen genuinely, contribute your strengths, and honor others' contributions."
+    }
+];
+
+// Seed the quote pool if empty
+async function seedQuotesIfEmpty() {
+    try {
+        const count = await DailyQuote.countDocuments();
+        if (count === 0) {
+            await DailyQuote.insertMany(SEED_QUOTES.map(q => ({ ...q, seenBy: [], aiGenerated: false })));
+            console.log(`✓ Seeded ${SEED_QUOTES.length} daily quotes into the pool.`);
+        }
+    } catch (e) {
+        console.warn('Quote seed error:', e.message);
+    }
+}
+// Trigger seed after DB connects (mongoose emits 'connected')
+mongoose.connection.once('open', seedQuotesIfEmpty);
+
+// GET /student/daily-quote — return an unseen quote; AI-generate if pool exhausted
+app.get('/student/daily-quote', authenticateToken, async (req, res) => {
+    try {
+        const studentId = req.student.id;
+
+        // Find a random quote the student has NOT seen
+        const unseen = await DailyQuote.aggregate([
+            { $match: { seenBy: { $nin: [new mongoose.Types.ObjectId(studentId)] } } },
+            { $sample: { size: 1 } }
+        ]);
+
+        if (unseen.length > 0) {
+            const quote = unseen[0];
+            // Mark as seen
+            await DailyQuote.updateOne({ _id: quote._id }, { $addToSet: { seenBy: studentId } });
+            return res.json({
+                _id: quote._id,
+                text: quote.text,
+                author: quote.author,
+                category: quote.category,
+                context: quote.context
+            });
+        }
+
+        // Pool exhausted for this student — generate a fresh one via Groq
+        const systemPrompt = `You are a motivational quote curator for SchoolByte, an educational platform serving Ugandan secondary school students (ages 13-19, Senior 1 to Senior 6). Your task is to generate an original, deeply meaningful motivational or educational quote with rich context. The quote must be suitable for young African students navigating academic challenges, personal growth, and building their futures.`;
+
+        const userPrompt = `Generate a unique motivational quote for a secondary school student. Return ONLY a valid JSON object (no markdown, no code fences) with exactly these fields:
+{
+  "text": "the quote text itself (original or attributed to a real person)",
+  "author": "the person who said it (use a real historical or contemporary figure, or 'Unknown')",
+  "category": "one of: Leadership, Education, Perseverance, Character, Resilience, Excellence, Wisdom, Courage, Vision, Growth, Determination",
+  "context": "a deeply detailed, 5-8 sentence explanation of: who the author is and their background, what the quote means philosophically and practically, why it is particularly relevant to students, and how a student can apply this wisdom in their daily academic and personal life. Be rich, specific, and engaging."
+}`;
+
+        let raw = '';
+        try {
+            raw = await callGroqAI(userPrompt, systemPrompt, { max_tokens: 900, temperature: 0.85, retries: 2 });
+            // Strip markdown fences if present
+            raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+            const parsed = JSON.parse(raw);
+            if (!parsed.text || !parsed.author) throw new Error('Missing fields');
+
+            const newQuote = await DailyQuote.create({
+                text: parsed.text,
+                author: parsed.author,
+                category: parsed.category || 'Motivation',
+                context: parsed.context || '',
+                seenBy: [studentId],
+                aiGenerated: true
+            });
+
+            return res.json({
+                _id: newQuote._id,
+                text: newQuote.text,
+                author: newQuote.author,
+                category: newQuote.category,
+                context: newQuote.context
+            });
+        } catch (aiError) {
+            console.error('AI quote generation failed:', aiError.message, '| raw:', raw.slice(0, 200));
+            // Fallback: reset seen list for this student and return the first quote
+            const fallback = await DailyQuote.findOne({}).sort({ createdAt: 1 });
+            if (fallback) {
+                await DailyQuote.updateOne({ _id: fallback._id }, { $addToSet: { seenBy: studentId } });
+                return res.json({ _id: fallback._id, text: fallback.text, author: fallback.author, category: fallback.category, context: fallback.context });
+            }
+            return res.status(503).json({ message: 'Quote service temporarily unavailable.' });
+        }
+
+    } catch (error) {
+        console.error('Daily quote error:', error);
+        res.status(500).json({ message: 'Failed to fetch daily quote.' });
+    }
+});
 
 // Enhanced Quiz Generation Endpoint
 app.get('/student/quizzes/generate', authenticateToken, async (req, res) => {

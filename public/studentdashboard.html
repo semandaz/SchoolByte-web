@@ -180,9 +180,170 @@
                 z-index: 1;
             }
 
+
+            /* ── Welcome Hero & Daily Quote Card ───────────────────────── */
+            .welcome-hero {
+                position: relative;
+                margin-bottom: 3rem;
+            }
+
             .welcome-section {
                 text-align: center;
-                margin-bottom: 3rem;
+                margin-bottom: 1.6rem;
+            }
+
+            .daily-quote-card {
+                background: linear-gradient(135deg, #0f1f5c 0%, #1a2a6c 45%, #23134a 100%);
+                border-radius: 20px;
+                padding: 2.2rem 2.5rem 1.8rem;
+                box-shadow: 0 8px 32px rgba(26,42,108,0.28), 0 2px 8px rgba(0,0,0,0.14);
+                position: relative;
+                overflow: hidden;
+                border: 1px solid rgba(255,215,0,0.13);
+            }
+
+            .daily-quote-card::before {
+                content: '\201C';
+                position: absolute;
+                top: -1.2rem;
+                left: 1.5rem;
+                font-size: 10rem;
+                line-height: 1;
+                color: rgba(255,215,0,0.07);
+                font-family: Georgia, serif;
+                pointer-events: none;
+                user-select: none;
+            }
+
+            .quote-category-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+                background: rgba(255,215,0,0.13);
+                border: 1px solid rgba(255,215,0,0.3);
+                color: #ffd700;
+                font-size: 0.7rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                padding: 0.28rem 0.8rem;
+                border-radius: 50px;
+                margin-bottom: 1.1rem;
+            }
+
+            .quote-text-main {
+                font-size: clamp(1rem, 2.2vw, 1.28rem);
+                font-weight: 600;
+                color: #ffffff;
+                line-height: 1.7;
+                margin-bottom: 1rem;
+                font-style: italic;
+                position: relative;
+                z-index: 1;
+            }
+
+            .quote-author-line {
+                display: flex;
+                align-items: center;
+                gap: 0.65rem;
+                margin-bottom: 1.2rem;
+            }
+
+            .quote-author-dash {
+                width: 28px;
+                height: 2px;
+                background: linear-gradient(to right, #ffd700, transparent);
+                border-radius: 2px;
+                flex-shrink: 0;
+            }
+
+            .quote-author-name {
+                font-size: 0.88rem;
+                font-weight: 700;
+                color: #ffd700;
+                letter-spacing: 0.04em;
+                font-style: normal;
+            }
+
+            .quote-divider {
+                height: 1px;
+                background: rgba(255,255,255,0.09);
+                margin-bottom: 1rem;
+            }
+
+            .quote-context-toggle {
+                background: none;
+                border: none;
+                color: rgba(255,255,255,0.45);
+                font-size: 0.78rem;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+                padding: 0;
+                transition: color 0.2s;
+                font-family: inherit;
+                letter-spacing: 0.01em;
+            }
+
+            .quote-context-toggle:hover { color: rgba(255,255,255,0.82); }
+
+            .quote-context-text {
+                display: none;
+                font-size: 0.86rem;
+                color: rgba(255,255,255,0.7);
+                line-height: 1.8;
+                border-left: 3px solid rgba(255,215,0,0.32);
+                padding-left: 1.1rem;
+                margin-top: 0.85rem;
+            }
+
+            .quote-context-text.open { display: block; }
+
+            .quote-card-footer {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 1.1rem;
+            }
+
+            .quote-seen-label {
+                font-size: 0.72rem;
+                color: rgba(255,255,255,0.3);
+                font-style: italic;
+            }
+
+            .quote-next-btn {
+                background: rgba(255,215,0,0.11);
+                border: 1px solid rgba(255,215,0,0.28);
+                color: #ffd700;
+                padding: 0.45rem 1.1rem;
+                border-radius: 50px;
+                font-size: 0.76rem;
+                font-weight: 700;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+                transition: background 0.2s, transform 0.15s;
+                font-family: inherit;
+                letter-spacing: 0.03em;
+            }
+
+            .quote-next-btn:hover:not(:disabled) {
+                background: rgba(255,215,0,0.22);
+                transform: translateY(-1px);
+            }
+
+            .quote-next-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+            .quote-loading-state {
+                display: flex;
+                align-items: center;
+                gap: 0.8rem;
+                color: rgba(255,255,255,0.45);
+                font-size: 0.88rem;
+                padding: 0.4rem 0;
             }
 
             .welcome-message {
@@ -762,10 +923,18 @@
             </div>
 
             <div id="mainContent" class="hidden">
-                <div class="welcome-section">
-                    <h1 class="welcome-message" id="welcomeMessage">
-                        Hello Student, what do you want to dive into today?
-                    </h1>
+                <div class="welcome-hero">
+                    <div class="welcome-section">
+                        <h1 class="welcome-message" id="welcomeMessage">Hello Student, what do you want to dive into today?</h1>
+                    </div>
+
+                    <!-- Daily Quote Card -->
+                    <div class="daily-quote-card" id="dailyQuoteCard">
+                        <div class="quote-loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>Loading your daily quote...</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="activity-cards">
@@ -1271,6 +1440,86 @@
                 fetchStudentData();
                 createParticles();
             });
+        
+            // ── Daily Quote ──────────────────────────────────────────────────
+            async function loadDailyQuote() {
+                const card = document.getElementById('dailyQuoteCard');
+                if (!card) return;
+                const tok = localStorage.getItem('token');
+                if (!tok) { card.innerHTML = ''; return; }
+                try {
+                    const r = await fetch('/student/daily-quote', { headers: { 'Authorization': 'Bearer ' + tok } });
+                    if (!r.ok) throw new Error('fetch failed');
+                    const q = await r.json();
+                    renderQuoteCard(card, q);
+                } catch(e) {
+                    card.innerHTML = '';
+                }
+            }
+
+            function renderQuoteCard(card, q) {
+                const ctxId = 'qctx-' + Date.now();
+                const togId = 'qtog-' + Date.now();
+                card.innerHTML =
+                    '<div class="quote-category-badge"><i class="fas fa-star" style="font-size:0.65rem;"></i>&nbsp;' + (q.category || 'Wisdom') + '</div>' +
+                    '<p class="quote-text-main">' + escQ(q.text) + '</p>' +
+                    '<div class="quote-author-line">' +
+                        '<div class="quote-author-dash"></div>' +
+                        '<span class="quote-author-name">' + escQ(q.author) + '</span>' +
+                    '</div>' +
+                    (q.context ?
+                        '<div class="quote-divider"></div>' +
+                        '<button class="quote-context-toggle" id="' + togId + '" data-ctxid="' + ctxId + '">' +
+                            '<i class="fas fa-book-open" style="font-size:0.72rem;"></i> Read the story behind this quote' +
+                        '</button>' +
+                        '<div class="quote-context-text" id="' + ctxId + '">' + escQ(q.context) + '</div>'
+                    : '') +
+                    '<div class="quote-card-footer">' +
+                        '<span class="quote-seen-label">New quote every visit</span>' +
+                        '<button class="quote-next-btn" data-action="next">' +
+                            '<i class="fas fa-arrow-right" style="font-size:0.7rem;"></i> Next Quote' +
+                        '</button>' +
+                    '</div>';
+
+                // Wire up toggle
+                var togBtn = document.getElementById(togId);
+                if (togBtn) togBtn.addEventListener('click', function() { toggleCtx(ctxId, togId); });
+
+                // Wire up next button
+                var nextBtn = card.querySelector('[data-action="next"]');
+                if (nextBtn) nextBtn.addEventListener('click', function() { fetchNextQuote(nextBtn); });
+            }
+
+            function toggleCtx(ctxId, togId) {
+                const el = document.getElementById(ctxId);
+                const btn = document.getElementById(togId);
+                if (!el) return;
+                el.classList.toggle('open');
+                if (btn) btn.innerHTML = el.classList.contains('open')
+                    ? '<i class="fas fa-chevron-up" style="font-size:0.72rem;"></i> Hide context'
+                    : '<i class="fas fa-book-open" style="font-size:0.72rem;"></i> Read the story behind this quote';
+            }
+
+            async function fetchNextQuote(btn) {
+                if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:0.7rem;"></i> Loading...'; }
+                const card = document.getElementById('dailyQuoteCard');
+                const tok = localStorage.getItem('token');
+                if (!tok || !card) return;
+                try {
+                    const r = await fetch('/student/daily-quote', { headers: { 'Authorization': 'Bearer ' + tok } });
+                    if (!r.ok) throw new Error('fetch');
+                    const q = await r.json();
+                    renderQuoteCard(card, q);
+                } catch(e) {
+                    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-redo" style="font-size:0.7rem;"></i> Retry'; }
+                }
+            }
+
+            function escQ(str) {
+                if (!str) return '';
+                return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+            }
+
+            loadDailyQuote();
+
         </script>
-    </body>
-</html>
