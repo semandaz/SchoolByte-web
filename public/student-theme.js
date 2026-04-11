@@ -81,6 +81,22 @@
             secondary: '#FB7185',
             gold: '#2DD4BF',
             orange: '#F0ABFC'
+        },
+        executive: {
+            name: 'Executive',
+            description: 'Deep midnight navy with royal blue & antique gold',
+            primary: '#0A0F1E',
+            secondary: '#2563EB',
+            gold: '#C9A84C',
+            orange: '#1E2A45'
+        },
+        parchment: {
+            name: 'Parchment',
+            description: 'Charcoal & warm cognac on a cream academic base',
+            primary: '#1F2937',
+            secondary: '#9D6B3E',
+            gold: '#B5873F',
+            orange: '#F9F4EE'
         }
     };
 
