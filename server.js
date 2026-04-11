@@ -3075,20 +3075,27 @@ app.post('/student/quizzes/submit', authenticateToken, [
         // Award achievements in-memory (modifies student.achievements / notifications)
         await checkAndAwardAchievements(student);
 
-        await student.save({ session });
-
-        // Update quiz session
+        // Update quiz session counters first so cycleComplete can be evaluated
         quizSession.questionsCompletedCount += quizSubmissions.length;
         quizSession.updatedAt = new Date();
 
         const division = getDivision(student.class);
         const cycleSize = division ? CYCLE_SIZES[division] : 120;
-
-        // Update recent quiz IDs (sliding window — sized to one full cycle for this division)
-        const newQuizIds = quizSubmissions.map(sub => new mongoose.Types.ObjectId(sub.questionId));
-        const recentWindow = cycleSize;
-        student.recentQuizIds = [...newQuizIds, ...(student.recentQuizIds || [])].slice(0, recentWindow);
         const cycleComplete = cycleSize && quizSession.questionsCompletedCount >= cycleSize;
+
+        if (cycleComplete) {
+            // Cycle finished — clear the exclusion window so the new cycle draws from the full pool
+            student.recentQuizIds = [];
+        } else {
+            // Update recent quiz IDs (sliding window — sized to one full cycle for this division)
+            // This MUST be set before student.save() so the window is actually persisted.
+            const newQuizIds = quizSubmissions.map(sub => new mongoose.Types.ObjectId(sub.questionId));
+            const recentWindow = cycleSize;
+            student.recentQuizIds = [...newQuizIds, ...(student.recentQuizIds || [])].slice(0, recentWindow);
+        }
+
+        // Single save captures bytes, achievements, and the updated recentQuizIds together
+        await student.save({ session });
 
         if (cycleComplete) {
             quizSession.completedAt = new Date();
@@ -3099,8 +3106,6 @@ app.post('/student/quizzes/submit', authenticateToken, [
             await newQuizSession.save({ session });
             student.currentQuizSessionId = newQuizSession._id;
             student.contingencyRepeatCount = 0;
-            // Clear the exclusion window so the new cycle draws from the full pool
-            student.recentQuizIds = [];
             await student.save({ session });
         }
 
