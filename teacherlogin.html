@@ -701,6 +701,7 @@
 
                         // ✨ KEY FIX: Save the token and user data IMMEDIATELY after a successful login.
                         localStorage.setItem('token', data.token);
+                        localStorage.setItem('teacherToken', data.token);
                         localStorage.setItem('userData', JSON.stringify(data.teacher));
 
                         // NOW, check if the password needs to be set.

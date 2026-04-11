@@ -436,7 +436,6 @@
             font-size: 13px;
             color: #374151;
             line-height: 1.9;
-            white-space: pre-wrap;
             word-break: break-word;
         }
 
@@ -671,6 +670,7 @@ async function generateScenarios() {
         });
         if (!r.ok) { const d = await r.json(); throw new Error(d.error || 'Generation failed'); }
         const { activity } = await r.json();
+        _actStore[activity._id] = activity;
 
         resultEl.innerHTML = `
             <div class="result-card">
@@ -688,6 +688,8 @@ async function generateScenarios() {
                 </div>
             </div>`;
         resultEl.style.display = 'block';
+        const genContentEl = document.getElementById('generatedContent');
+        if (genContentEl) genContentEl.innerHTML = renderMarkdown(activity.scenariosContent || '');
         showToast('Scenarios generated and saved to library!', 'success');
     } catch (e) {
         showToast(e.message || 'Generation failed. Please try again.', 'error');
@@ -732,7 +734,7 @@ function renderLibCard(a) {
     const helpfulIcon = a.markedHelpfulByMe ? 'fas fa-thumbs-up' : 'far fa-thumbs-up';
     const createdDate = a.createdAt ? new Date(a.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '';
     const byLabel = a.createdByType === 'teacher' ? '<i class="fas fa-chalkboard-teacher"></i>' : '<i class="fas fa-robot"></i>';
-    const contentJson = JSON.stringify(a.scenariosContent || '');
+    _actStore[a._id] = a;
     return `<div class="activity-card" id="card-${a._id}">
         <div class="activity-card-title">${esc(a.title)}</div>
         <div class="activity-badge-row">
@@ -748,7 +750,7 @@ function renderLibCard(a) {
                 <i class="${helpfulIcon}" id="helpful-icon-${a._id}"></i>
                 <span id="helpful-count-${a._id}">${a.helpfulCount || 0}</span> Helpful
             </button>
-            <button class="view-btn" onclick="viewActivity(${JSON.stringify(esc(a.title))},${JSON.stringify(esc(a.subject) + ' · ' + esc(a.seniorClass))},${contentJson})">
+            <button class="view-btn" onclick="viewActivity('${a._id}')">
                 <i class="fas fa-eye"></i> View
             </button>
         </div>
@@ -771,10 +773,32 @@ async function toggleHelpful(id) {
     } catch { showToast('Failed to update.', 'error'); }
 }
 
-function viewActivity(title, badges, content) {
-    document.getElementById('viewModalTitle').textContent = title;
-    document.getElementById('viewModalBadges').innerHTML = badges.split(' · ').map(b => '<span class="badge badge-gray">' + b + '</span>').join('');
-    document.getElementById('viewModalContent').textContent = content;
+// Activity data store
+const _actStore = {};
+
+function renderMarkdown(text) {
+    if (!text) return '';
+    let s = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    s = s.replace(/**([^*
+]+)**/g, '<strong>$1</strong>');
+    s = s.replace(/__([^_
+]+)__/g, '<strong>$1</strong>');
+    s = s.replace(/*([^*
+]+)*/g, '<em>$1</em>');
+    s = s.replace(/_([^_
+]+)_/g, '<em>$1</em>');
+    s = s.replace(/
+/g, '<br>');
+    return s;
+}
+
+function viewActivity(id) {
+    const a = _actStore[id];
+    if (!a) return;
+    document.getElementById('viewModalTitle').textContent = a.title;
+    const subj = (a.subject || '') + ' · ' + (a.seniorClass || '');
+    document.getElementById('viewModalBadges').innerHTML = subj.split(' · ').map(b => '<span class="badge badge-gray">' + b + '</span>').join('');
+    document.getElementById('viewModalContent').innerHTML = renderMarkdown(a.scenariosContent || '');
     document.getElementById('viewModal').classList.add('open');
 }
 function closeViewModal() { document.getElementById('viewModal').classList.remove('open'); }
