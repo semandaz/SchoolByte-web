@@ -122,7 +122,7 @@
         .modal-box { background:#1a2535;border:1px solid var(--border);border-radius:16px;padding:26px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 24px 60px rgba(0,0,0,0.5); }
         .modal-close { position:absolute;top:14px;right:18px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer; }
         .modal-title { font-size:16px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border); }
-        .modal-content-text { font-size:13px;color:var(--text);line-height:1.9;white-space:pre-wrap;word-break:break-word; }
+        .modal-content-text { font-size:13px;color:var(--text);line-height:1.9;word-break:break-word; }
 
         .construct-toggle { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
         .construct-option { border:1.5px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;transition:all 0.2s;display:flex;gap:10px;align-items:flex-start; }
@@ -260,7 +260,7 @@
 <div id="toastContainer"></div>
 
 <script>
-const token = () => localStorage.getItem('token');
+const token = () => localStorage.getItem('teacherToken') || localStorage.getItem('token');
 
 function showToast(msg, type='success') {
     const icons = { success:'fa-check-circle', error:'fa-exclamation-circle', info:'fa-info-circle' };
@@ -327,6 +327,7 @@ async function loadLibrary() {
 }
 
 function renderCard(a) {
+    _actStore[a._id] = a;
     const approvedStatus = a.isApproved
         ? '<span class="approved-tick"><i class="fas fa-check-circle"></i> Approved</span>'
         : '<span class="not-approved">Not yet Approved</span>';
@@ -350,7 +351,7 @@ function renderCard(a) {
         <div class="activity-preview">${esc(preview)}${a.scenariosContent&&a.scenariosContent.length>200?'…':''}</div>
         <div class="activity-meta">${byLabel} ${esc(a.createdByName)} · ${createdDate} · <i class="fas fa-thumbs-up"></i> ${a.helpfulCount||0}</div>
         <div class="activity-footer">
-            <button class="btn btn-sm" style="background:rgba(255,255,255,0.06);color:var(--text);border:1px solid var(--border);" onclick="viewActivity(${JSON.stringify(esc(a.title))},${JSON.stringify(esc(a.subject)+' · '+esc(a.seniorClass))},${JSON.stringify(a.scenariosContent||'')})">
+            <button class="btn btn-sm" style="background:rgba(255,255,255,0.06);color:var(--text);border:1px solid var(--border);" onclick="viewActivity('${a._id}')">
                 <i class="fas fa-eye"></i> View
             </button>
             ${approveBtn}
@@ -406,10 +407,36 @@ async function uploadActivity() {
     finally { btn.disabled=false; btn.innerHTML='<i class="fas fa-upload"></i> Upload Activity'; }
 }
 
-function viewActivity(title, badges, content) {
-    document.getElementById('viewModalTitle').textContent = title;
-    document.getElementById('viewModalBadges').innerHTML = badges.split(' · ').map(b => '<span class="badge badge-gray">' + b + '</span>').join('');
-    document.getElementById('viewModalContent').textContent = content;
+// Activity data store — avoids broken onclick attribute escaping
+const _actStore = {};
+
+function renderMarkdown(text) {
+    if (!text) return '';
+    // Escape HTML first
+    let s = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // Bold **text** and __text__
+    s = s.replace(/**([^*
+]+)**/g, '<strong>$1</strong>');
+    s = s.replace(/__([^_
+]+)__/g, '<strong>$1</strong>');
+    // Italic *text* and _text_
+    s = s.replace(/*([^*
+]+)*/g, '<em>$1</em>');
+    s = s.replace(/_([^_
+]+)_/g, '<em>$1</em>');
+    // Preserve line breaks
+    s = s.replace(/
+/g, '<br>');
+    return s;
+}
+
+function viewActivity(id) {
+    const a = _actStore[id];
+    if (!a) return;
+    document.getElementById('viewModalTitle').textContent = a.title;
+    const subj = (a.subject || '') + ' · ' + (a.seniorClass || '');
+    document.getElementById('viewModalBadges').innerHTML = subj.split(' · ').map(b => '<span class="badge badge-gray">' + b + '</span>').join('');
+    document.getElementById('viewModalContent').innerHTML = renderMarkdown(a.scenariosContent || '');
     document.getElementById('viewModal').classList.add('open');
 }
 function closeViewModal() { document.getElementById('viewModal').classList.remove('open'); }

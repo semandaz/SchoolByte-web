@@ -525,6 +525,15 @@
             </div>
         </div>
 
+
+        <!-- View Activity of Integration Modal (Admin) -->
+        <div id="viewAIModal" class="modal-overlay">
+            <div class="modal-box" style="max-width:720px;">
+                <button class="modal-close" onclick="closeModal('viewAIModal')">&times;</button>
+                <h3 id="viewAIModalTitle" style="font-size:16px;font-weight:700;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);"></h3>
+                <div id="viewAIModalContent" style="font-size:13px;color:var(--text);line-height:1.9;"></div>
+            </div>
+        </div>
     </div><!-- /content -->
 </div><!-- /main -->
 
@@ -1782,6 +1791,21 @@ function escHtml(str) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// ACTIVITY OF INTEGRATION — shared data store + markdown renderer
+// ─────────────────────────────────────────────────────────────────────────────
+const _aiActStore = {};
+
+function renderMarkdownAI(text) {
+    if (!text) return '';
+    let s = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/__([^_\n]+)__/g, '<strong>$1</strong>');
+    s = s.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+    s = s.replace(/_([^_\n]+)_/g, '<em>$1</em>');
+    s = s.replace(/\n/g, '<br>');
+    return s;
+}
 // ACTIVITY OF INTEGRATION LIBRARY
 // ─────────────────────────────────────────────────────────────────────────────
 async function loadActivityIntegration() {
@@ -1805,6 +1829,7 @@ async function loadActivityIntegration() {
 }
 
 function renderAICard(a) {
+    _aiActStore[a._id] = a;
     const approvedBadge = a.isApproved
         ? `<span style="color:#2ecc71;font-weight:700;font-size:12px;"><i class="fas fa-check-circle"></i> Approved</span>`
         : `<span style="color:#e74c3c;font-weight:700;font-size:12px;">Not yet Approved</span>`;
@@ -1827,6 +1852,9 @@ function renderAICard(a) {
             <span><i class="fas fa-thumbs-up"></i> ${a.helpfulCount || 0} helpful</span>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:4px;border-top:1px solid var(--border);">
+            <button class="btn btn-sm" style="background:rgba(255,255,255,0.07);border:1px solid var(--border);color:var(--text);" onclick="viewAIActivity('${a._id}')">
+                <i class="fas fa-eye"></i> View
+            </button>
             <button class="btn btn-sm ${a.isApproved ? 'btn-warning' : 'btn-success'}" onclick="toggleAIApprove('${a._id}')">
                 <i class="fas fa-${a.isApproved ? 'times-circle' : 'check-circle'}"></i> ${a.isApproved ? 'Revoke Approval' : 'Approve'}
             </button>
@@ -1851,12 +1879,23 @@ async function toggleAIApprove(id) {
     } catch { showToast('Failed to update approval.', 'error'); }
 }
 
-function openEditAI(id, title, topic, content) {
+function openEditAI(id) {
+    const a = _aiActStore[id] || {};
     document.getElementById('editAIId').value = id;
-    document.getElementById('editAITitle').value = title;
-    document.getElementById('editAITopic').value = topic;
-    document.getElementById('editAIContent').value = content;
+    document.getElementById('editAITitle').value = a.title || '';
+    document.getElementById('editAITopic').value = a.topic || '';
+    document.getElementById('editAIContent').value = a.scenariosContent || '';
     openModal('editAIModal');
+}
+
+function viewAIActivity(id) {
+    const a = _aiActStore[id];
+    if (!a) return;
+    const modal = document.getElementById('viewAIModal');
+    if (!modal) return;
+    document.getElementById('viewAIModalTitle').textContent = a.title || '';
+    document.getElementById('viewAIModalContent').innerHTML = renderMarkdownAI(a.scenariosContent || '');
+    openModal('viewAIModal');
 }
 
 async function saveAIEdit() {
