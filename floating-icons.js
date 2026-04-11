@@ -50,6 +50,35 @@
         .fi-icon.fi-counselling   { background: linear-gradient(135deg,#10b981,#059669); }
         .fi-icon.fi-career        { background: linear-gradient(135deg,#ffd700,#ffa500); }
         .fi-icon.fi-bytenexus     { background: linear-gradient(135deg,#b21f1f,#7f1313); }
+        .fi-icon.fi-themes        { background: linear-gradient(135deg,#7c3aed,#f59e0b); }
+
+        /* ── Theme picker grid (inside modal) ── */
+        .fi-theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
+            gap: 10px;
+            margin-top: 6px;
+        }
+        .fi-theme-swatch {
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: border-color .2s, transform .2s, box-shadow .2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,.10);
+        }
+        .fi-theme-swatch:hover  { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,.15); }
+        .fi-theme-swatch.active { border-color: #f59e0b; }
+        .fi-theme-preview {
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+        }
+        .fi-theme-info { background: #fff; padding: 8px 10px; }
+        .fi-theme-name { font-size: .78rem; font-weight: 700; color: #1f2937; margin-bottom: 2px; }
+        .fi-theme-desc { font-size: .68rem; color: #6b7280; line-height: 1.3; }
 
         /* notification badge */
         .fi-icon.fi-notifications.has-notifs::after {
@@ -418,7 +447,8 @@
         { id: 'fi-ai-buddy',      cls: 'fi-ai-buddy',      icon: 'fas fa-robot',    tip: 'AI Study Buddy',   defaultLeft: 18, defaultTop: 196 },
         { id: 'fi-counselling',   cls: 'fi-counselling',   icon: 'fas fa-heart',    tip: 'Counselling',      defaultLeft: 18, defaultTop: 272 },
         { id: 'fi-career',        cls: 'fi-career',        icon: 'fas fa-briefcase',tip: 'Career Guidance',  defaultLeft: 18, defaultTop: 348 },
-        { id: 'fi-bytenexus',     cls: 'fi-bytenexus',     icon: 'fas fa-comments', tip: 'ByteNexus Chat',   defaultLeft: 18, defaultTop: 424 }
+        { id: 'fi-bytenexus',     cls: 'fi-bytenexus',     icon: 'fas fa-comments', tip: 'ByteNexus Chat',   defaultLeft: 18, defaultTop: 424 },
+        { id: 'fi-themes',        cls: 'fi-themes',        icon: 'fas fa-palette',  tip: 'Change Theme',     defaultLeft: 18, defaultTop: 500 }
     ];
 
     const savedPositions = (() => {
@@ -914,6 +944,90 @@
                 const frame = document.getElementById('bn-pip-frame');
                 if (!frame.src || frame.src === 'about:blank') frame.src = 'bytenexus-chat.html';
             }
+        });
+    })();
+
+    /* ── Theme Picker modal ──────────────────────────────────────────────── */
+    (function initThemePicker() {
+        const themeModal = document.createElement('div');
+        themeModal.className = 'fi-modal';
+        themeModal.id = 'fi-theme-modal';
+        themeModal.style.width = 'min(94vw, 560px)';
+        themeModal.innerHTML = `
+            <div class="fi-modal-header" style="position:relative;background:linear-gradient(135deg,#7c3aed,#f59e0b);">
+                <h3><i class="fas fa-palette"></i> Choose a Theme</h3>
+                <button class="fi-close-btn"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="fi-modal-body" id="fi-theme-modal-body" style="padding:16px;">
+                <p style="color:#6b7280;font-size:.85rem;margin:0 0 12px;">Pick a colour palette — it applies instantly across all pages.</p>
+                <div class="fi-theme-grid" id="fi-theme-grid"></div>
+            </div>
+        `;
+        themeModal.querySelector('.fi-close-btn').addEventListener('click', closeModal);
+        document.body.appendChild(themeModal);
+
+        function buildThemeGrid() {
+            const grid = document.getElementById('fi-theme-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const sbTheme = window.SchoolByteTheme;
+            if (!sbTheme) {
+                grid.innerHTML = '<p style="color:#9ca3af;font-size:.85rem;">Theme engine not loaded on this page.</p>';
+                return;
+            }
+
+            const themes  = sbTheme.themes;
+            const current = sbTheme.getCurrent();
+
+            Object.keys(themes).forEach(function (key) {
+                var t = themes[key];
+                var swatch = document.createElement('div');
+                swatch.className = 'fi-theme-swatch' + (key === current ? ' active' : '');
+                swatch.dataset.key = key;
+
+                var preview = document.createElement('div');
+                preview.className = 'fi-theme-preview';
+                preview.style.background = 'linear-gradient(135deg,' + t.primary + ',' + t.secondary + ')';
+
+                var dot1 = document.createElement('span');
+                dot1.style.cssText = 'width:14px;height:14px;border-radius:50%;background:' + t.gold + ';display:inline-block;';
+                var dot2 = document.createElement('span');
+                dot2.style.cssText = 'width:14px;height:14px;border-radius:50%;background:' + t.orange + ';display:inline-block;';
+                preview.appendChild(dot1);
+                preview.appendChild(dot2);
+
+                var info = document.createElement('div');
+                info.className = 'fi-theme-info';
+                info.innerHTML = '<div class="fi-theme-name">' + t.name + '</div><div class="fi-theme-desc">' + t.description + '</div>';
+
+                swatch.appendChild(preview);
+                swatch.appendChild(info);
+
+                swatch.addEventListener('click', function () {
+                    sbTheme.apply(key);
+                    grid.querySelectorAll('.fi-theme-swatch').forEach(function (s) { s.classList.remove('active'); });
+                    swatch.classList.add('active');
+
+                    // Persist to server if possible
+                    var tok = localStorage.getItem('token');
+                    if (tok) {
+                        fetch('/student/preferences', {
+                            method: 'PUT',
+                            headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ theme: key })
+                        }).catch(function () {});
+                    }
+                });
+
+                grid.appendChild(swatch);
+            });
+        }
+
+        document.getElementById('fi-themes').addEventListener('click', function (e) {
+            if (e.currentTarget.classList.contains('dragging')) return;
+            buildThemeGrid();
+            openModal(themeModal);
         });
     })();
 
