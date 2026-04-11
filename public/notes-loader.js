@@ -154,11 +154,15 @@
     window.notesDownload = downloadWorkFile;
 
     document.addEventListener('DOMContentLoaded', function () {
-        // Override the old placeholder - runs after the page's own DOMContentLoaded handlers
-        window.downloadResource = function (filename) {
-            showToast('This is a sample preview card. Scroll up for real teacher-uploaded files.', false);
-            return false;
-        };
+        // Only override downloadResource if the page hasn't defined its own real implementation.
+        // Notes-specific dashboards (notes*studentdashboard.html) define a real downloadResource
+        // that hits the API — we must not clobber it with the stub message.
+        if (typeof window.downloadResource !== 'function') {
+            window.downloadResource = function (filename) {
+                showToast('This is a sample preview card. Scroll up for real teacher-uploaded files.', false);
+                return false;
+            };
+        }
 
         var subject = window.NOTES_SUBJECT || document.body.dataset.subject;
         syncBytesFromServer();
