@@ -406,6 +406,7 @@
             }
         }
     </style>
+    <script src="student-theme.js"></script>
     <script src="apply-font.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -637,6 +638,22 @@
 
             <!-- Settings Tab -->
             <div id="settings" class="tab-content">
+                <!-- Theme Picker Card -->
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-palette"></i> Colour Theme
+                        </h3>
+                    </div>
+                    <div class="card-content">
+                        <p style="color: var(--color-neutral-dark); font-size: 0.92rem; margin-bottom: 1.25rem;">Choose a colour theme that will be applied across your entire SchoolByte experience.</p>
+                        <div id="theme-picker-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;"></div>
+                        <p id="theme-saved-msg" style="margin-top: 1rem; font-size: 0.9rem; color: var(--color-success-green); font-weight: 600; display: none;">
+                            <i class="fas fa-check-circle"></i> Theme saved!
+                        </p>
+                    </div>
+                </div>
+
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
@@ -1214,6 +1231,130 @@
         // Load achievements on page load
         loadAchievements();
         updateActiveTimeDisplay();
+
+        // ────────────────────────────────────────────────────────────────────
+        // Theme Picker
+        (function initThemePicker() {
+            var grid = document.getElementById('theme-picker-grid');
+            var savedMsg = document.getElementById('theme-saved-msg');
+            if (!grid || !window.SchoolByteTheme) return;
+
+            var themes = window.SchoolByteTheme.themes;
+            var current = window.SchoolByteTheme.getCurrent();
+
+            Object.keys(themes).forEach(function(key) {
+                var t = themes[key];
+                var isActive = key === current;
+
+                var card = document.createElement('div');
+                card.setAttribute('data-theme-key', key);
+                card.style.cssText = [
+                    'border-radius: 12px',
+                    'overflow: hidden',
+                    'cursor: pointer',
+                    'border: 3px solid ' + (isActive ? t.gold : 'transparent'),
+                    'box-shadow: 0 2px 12px rgba(0,0,0,0.12)',
+                    'transition: border-color 0.25s, transform 0.2s',
+                    'position: relative'
+                ].join(';');
+
+                var preview = document.createElement('div');
+                preview.style.cssText = [
+                    'background: linear-gradient(135deg, ' + t.primary + ', ' + t.secondary + ')',
+                    'height: 80px',
+                    'display: flex',
+                    'align-items: center',
+                    'justify-content: center',
+                    'gap: 8px'
+                ].join(';');
+
+                var dot1 = document.createElement('span');
+                dot1.style.cssText = 'width:18px;height:18px;border-radius:50%;background:' + t.gold + ';display:inline-block;';
+                var dot2 = document.createElement('span');
+                dot2.style.cssText = 'width:18px;height:18px;border-radius:50%;background:' + t.orange + ';display:inline-block;';
+                preview.appendChild(dot1);
+                preview.appendChild(dot2);
+
+                if (isActive) {
+                    var badge = document.createElement('span');
+                    badge.id = 'theme-active-badge-' + key;
+                    badge.style.cssText = [
+                        'position:absolute',
+                        'top:8px',
+                        'right:8px',
+                        'background:' + t.gold,
+                        'color:#000',
+                        'font-size:0.7rem',
+                        'font-weight:700',
+                        'padding:2px 8px',
+                        'border-radius:20px'
+                    ].join(';');
+                    badge.textContent = 'Active';
+                    card.appendChild(badge);
+                }
+
+                var info = document.createElement('div');
+                info.style.cssText = 'padding: 0.75rem 1rem; background: #fff;';
+
+                var title = document.createElement('div');
+                title.style.cssText = 'font-weight: 700; font-size: 0.95rem; color: #1a1a2e;';
+                title.textContent = t.name;
+
+                var desc = document.createElement('div');
+                desc.style.cssText = 'font-size: 0.78rem; color: #6b7280; margin-top: 3px;';
+                desc.textContent = t.description;
+
+                info.appendChild(title);
+                info.appendChild(desc);
+                card.appendChild(preview);
+                card.appendChild(info);
+
+                card.addEventListener('mouseenter', function() {
+                    card.style.transform = 'translateY(-3px)';
+                });
+                card.addEventListener('mouseleave', function() {
+                    card.style.transform = 'translateY(0)';
+                });
+
+                card.addEventListener('click', function() {
+                    window.SchoolByteTheme.apply(key);
+
+                    // Update borders & badges
+                    grid.querySelectorAll('[data-theme-key]').forEach(function(c) {
+                        var k = c.getAttribute('data-theme-key');
+                        var th = themes[k];
+                        c.style.borderColor = (k === key) ? th.gold : 'transparent';
+                        var existing = c.querySelector('[id^="theme-active-badge-"]');
+                        if (existing) existing.remove();
+                        if (k === key) {
+                            var b = document.createElement('span');
+                            b.id = 'theme-active-badge-' + k;
+                            b.style.cssText = [
+                                'position:absolute',
+                                'top:8px',
+                                'right:8px',
+                                'background:' + th.gold,
+                                'color:#000',
+                                'font-size:0.7rem',
+                                'font-weight:700',
+                                'padding:2px 8px',
+                                'border-radius:20px'
+                            ].join(';');
+                            b.textContent = 'Active';
+                            c.appendChild(b);
+                        }
+                    });
+
+                    if (savedMsg) {
+                        savedMsg.style.display = 'block';
+                        clearTimeout(savedMsg._timer);
+                        savedMsg._timer = setTimeout(function() { savedMsg.style.display = 'none'; }, 2500);
+                    }
+                });
+
+                grid.appendChild(card);
+            });
+        })();
 
     </script>
 
