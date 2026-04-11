@@ -3808,14 +3808,24 @@ app.post('/api/workfiles/:workFileId/download', authenticateToken, async (req, r
         await session.commitTransaction();
 
         // Final URL Construction (Custom Filename Fix)
-        let publicIdPath = workFile.fileUrl.split('/upload/')[1]; 
+        // Fix duplicate folder segments that can be stored in the DB
+        // e.g. .../schoolbyte/workfiles/ID/schoolbyte/workfiles/ID/file.pdf → .../schoolbyte/workfiles/ID/file.pdf
+        let cleanFileUrl = workFile.fileUrl;
+        const doublePathRegex = /(schoolbyte\/workfiles\/[^/]+\/)schoolbyte\/workfiles\/[^/]+\//;
+        if (doublePathRegex.test(cleanFileUrl)) {
+            cleanFileUrl = cleanFileUrl.replace(doublePathRegex, '$1');
+        }
+
+        let publicIdPath = cleanFileUrl.split('/upload/')[1]; 
         const publicIdWithoutVersion = publicIdPath.replace(/^v\d+\//, ''); 
         const publicIdWithExtension = publicIdWithoutVersion; 
 
         // We use fl_attachment:filename and the Public ID that still contains the .pdf extension.
         const downloadUrl = `https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/fl_attachment:${encodedFilename}/${publicIdWithExtension}`;
 
-        console.log(`Final Custom Download URL: ${downloadUrl}`);
+        console.log(`[workfile-download] raw fileUrl: ${workFile.fileUrl}`);
+        console.log(`[workfile-download] clean fileUrl: ${cleanFileUrl}`);
+        console.log(`[workfile-download] Final Download URL: ${downloadUrl}`);
 
         // Notify student of successful download
         createNotification(
