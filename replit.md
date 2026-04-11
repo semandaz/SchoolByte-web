@@ -64,6 +64,13 @@ Full-stack educational platform with student dashboards, teacher portals, quiz/a
 - **Byte-Sudoku**: `games/byte-sudoku/byte-sudoku.html`
 - **Geography Quiz**: `games/geography quiz/geoquiz.html`
 
+## Student Themes
+- File: `public/student-theme.js` — shared script that reads `schoolbyte_student_theme` from localStorage and sets CSS variables (`--color-brand-primary`, `--color-brand-secondary`, `--color-brand-gold`, `--color-brand-orange`) on `document.documentElement` immediately on load (prevents flash of default colours).
+- Four themes: **SchoolByte Classic** (default blue/maroon), **Cyber Scholar** (dark slate/cyan), **Botanical Mind** (forest green/amber), **Supernova** (indigo/coral).
+- Theme picker UI lives in the **Settings** tab of `public/studentprofile.html` — visual swatches with gradient preview, dot accents, and an "Active" badge.
+- `student-theme.js` is injected into all 50 student-facing HTML pages (all `*studentdashboard.html`, notes pages, games, bytenexus-chat, leaderboard, career-guidance, xp-to-bytes, activity-questions, etc.).
+- `window.SchoolByteTheme.apply(key)` can be called from any page to switch themes programmatically.
+
 ## CRLF Note
 `server.js` and some frontend files have Windows CRLF line endings. Always use Node.js scripts (not `sed`) for multi-line replacements in these files.
 
