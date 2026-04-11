@@ -33,6 +33,10 @@
 
         if (!confirm('Download "' + title + '"?\n\nCost: ' + cost + ' Bytes\nYour balance: ' + currentBytes + ' Bytes')) return;
 
+        // Open the target window NOW while the click is still a trusted user gesture,
+        // so popup blockers do not interfere with the eventual redirect.
+        var downloadWin = window.open('', '_blank');
+
         try {
             var res = await fetch('/student/download-workfile/' + workFileId, {
                 method: 'POST',
@@ -45,17 +49,17 @@
                 if (bytesEl) bytesEl.textContent = data.remainingBytes;
                 localStorage.setItem('bytesCount', data.remainingBytes);
                 showToast('Download started! ' + data.bytesDeducted + ' Bytes deducted.', true);
-                var a = document.createElement('a');
-                a.href = data.downloadUrl;
-                a.target = '_blank';
-                a.rel = 'noopener';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
+                if (downloadWin) {
+                    downloadWin.location.href = data.downloadUrl;
+                } else {
+                    window.location.href = data.downloadUrl;
+                }
             } else {
+                if (downloadWin) downloadWin.close();
                 showToast(data.message || 'Download failed. Please try again.', false);
             }
         } catch (e) {
+            if (downloadWin) downloadWin.close();
             console.error('Download error:', e);
             showToast('Connection error. Please try again.', false);
         }
