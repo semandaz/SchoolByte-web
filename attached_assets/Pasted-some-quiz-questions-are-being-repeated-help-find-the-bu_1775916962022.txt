@@ -1,0 +1,61 @@
+some quiz questions are being repeated. help find the bug in the fats and beef schema
+
+2 days ago
+
+2 actions
+Let me dig into the quiz question selection logic:
+
+
+5 actions
+Now let me look at the full quiz generation block and how recentQuizIds is saved after completion:
+
+
+8 actions
+Let me check the Student model schema definition for recentQuizIds and the QuizQuestion model:
+
+
+8 actions
+Let me check how AI-generated gap questions are handled in quiz submission:
+
+
+6 actions
+Let me look at the quiz request handler that triggers question generation:
+
+
+4 actions
+I have a comprehensive picture now. Let me trace through all the logic carefully before writing any fixes:
+
+
+3 actions
+I found the bugs. There are three compounding issues in the Fats & Beef system:
+
+Window too large for cycles — the recentQuizIds window is a flat 200, but upper school's entire cycle is only 40 questions. After just one cycle, all 40 are in the window and every slot triggers contingency.
+
+Window never clears between cycles — when a new cycle starts, all questions from the finished cycle stay in recentQuizIds, so the new cycle begins with all questions already excluded.
+
+Contingency is a sledgehammer — when ONE slot has no question, it aborts the entire quiz and clears 10–20 recently-answered questions globally, which immediately re-exposes them.
+
+Let me fix all three:
+
+
+2 actions
+Now fix the window size (scale to cycle, not flat 200) and clear it at cycle boundary:
+
+
+2 actions
+Now clear recentQuizIds when a cycle completes so the new cycle starts fresh:
+
+
+2 actions
+Let me verify the division variable is definitely available at the point where we use it for the window:
+
+
+2 actions
+The division constant is declared at line 3089, but I'm using it at line 3080 — that's a temporal dead zone error. I need to fix the ordering:
+
+
+2 actions
+Wait — I need to check: is there a student.save() that persists the updated recentQuizIds when the cycle is NOT complete?
+
+
+Opened server.js
