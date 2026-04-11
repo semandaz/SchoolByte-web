@@ -1,0 +1,38 @@
+Theme 1: Cyber Scholar
+This theme leans heavily into the "Byte" aspect of your name, offering a modern, futuristic dark mode that feels like a sleek tech platform.
+
+Suggested Name: Cyber Scholar (or Neon Matrix)
+
+Primary Color (--color-brand-primary): #0f172a (Deep Slate/Midnight) - Provides a very dark, sleek backdrop that is easier on the eyes than pure black.
+
+Secondary Color (--color-brand-secondary): #8b5cf6 (Vibrant Purple) - Replaces the maroon with a tech-forward purple.
+
+Accent Color (--color-brand-gold): #06b6d4 (Electric Cyan) - Replaces the gold with a bright neon blue/cyan for buttons, bytes, and highlights, making them pop against the dark slate.
+
+Gradient Orange (--color-brand-orange): #3b82f6 (Bright Royal Blue) - Used to create a cool cyan-to-blue gradient for your active buttons.
+
+Theme 2: Botanical Mind
+This theme is designed for deep focus and calmness. Green hues are scientifically proven to be restful for the eyes, making this an excellent choice for a study platform where students spend a lot of time.
+
+Suggested Name: Botanical Mind (or Zen Grove)
+
+Primary Color (--color-brand-primary): #14532d (Deep Forest Green) - A rich, grounding color that feels traditional yet organic.
+
+Secondary Color (--color-brand-secondary): #4ade80 (Bright Mint/Sage) - A lively, fresh green for accents and hover states.
+
+Accent Color (--color-brand-gold): #fbbf24 (Warm Amber) - Keeps a golden hue but warms it up slightly to mimic sunlight, perfect for your coins and streaks.
+
+Gradient Orange (--color-brand-orange): #d97706 (Burnt Orange) - Pairs with the amber to create rich, warm, inviting gradients.
+
+Theme 3: Supernova
+This theme emphasizes the gamification of your platform (quizzes, games, streaks). It is high-energy, vibrant, and appeals to a younger demographic looking for a fun learning environment.
+
+Suggested Name: Supernova (or Daybreak)
+
+Primary Color (--color-brand-primary): #6366f1 (Vibrant Indigo) - A modern, friendly, and energetic blue-purple.
+
+Secondary Color (--color-brand-secondary): #f43f5e (Bright Rose/Coral) - A punchy, exciting color that contrasts beautifully with indigo.
+
+Accent Color (--color-brand-gold): #fde047 (Bright Lemon Yellow) - A highly luminous yellow that makes your byte counters and floating particles feel like high-score elements.
+
+Gradient Orange (--color-brand-orange): #f97316 (Vibrant Orange) - Already matches your streak counter icon and creates a fiery, gamified button gradient.
