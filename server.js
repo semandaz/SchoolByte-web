@@ -3807,27 +3807,17 @@ app.post('/api/workfiles/:workFileId/download', authenticateToken, async (req, r
 
         await session.commitTransaction();
 
-        // Final URL Construction (Custom Filename Fix)
         // Fix duplicate folder segments that can be stored in the DB
-        // e.g. .../schoolbyte/workfiles/ID/schoolbyte/workfiles/ID/file.pdf → .../schoolbyte/workfiles/ID/file.pdf
         let cleanFileUrl = workFile.fileUrl;
         const doublePathRegex = /(schoolbyte\/workfiles\/[^/]+\/)schoolbyte\/workfiles\/[^/]+\//;
         if (doublePathRegex.test(cleanFileUrl)) {
             cleanFileUrl = cleanFileUrl.replace(doublePathRegex, '$1');
         }
 
-        let publicIdPath = cleanFileUrl.split('/upload/')[1]; 
-        const publicIdWithoutVersion = publicIdPath.replace(/^v\d+\//, ''); 
-        const publicIdWithExtension = publicIdWithoutVersion; 
-
-        // We use fl_attachment:filename and the Public ID that still contains the .pdf extension.
-        const downloadUrl = `https://res.cloudinary.com/${CLOUD_NAME}/raw/upload/fl_attachment:${encodedFilename}/${publicIdWithExtension}`;
-
         console.log(`[workfile-download] raw fileUrl: ${workFile.fileUrl}`);
         console.log(`[workfile-download] clean fileUrl: ${cleanFileUrl}`);
-        console.log(`[workfile-download] Final Download URL: ${downloadUrl}`);
 
-        // Notify student of successful download
+        // Notify student (fire-and-forget)
         createNotification(
             studentId, 'download_success',
             'Download Successful',
@@ -3835,13 +3825,34 @@ app.post('/api/workfiles/:workFileId/download', authenticateToken, async (req, r
             { workFileId, workFileTitle: workFile.title, bytesDeducted: workFile.costBytes, remainingBytes: student.bytes }
         ).catch(() => {});
 
-        // Send the URL back to the frontend
-        res.status(200).json({
-            success: true,
-            message: 'File access granted. Redirecting for download.',
-            downloadUrl: downloadUrl,
-            bytesDeducted: workFile.costBytes,
-            remainingBytes: student.bytes
+        // Proxy the file through the server so we can set a clean download filename.
+        // fl_attachment on Cloudinary raw resources doesn't work reliably — streaming here is the safe fix.
+        const https = require('https');
+        res.setHeader('Content-Disposition', `attachment; filename="${finalFilename}"`);
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('X-Bytes-Deducted', workFile.costBytes);
+        res.setHeader('X-Remaining-Bytes', student.bytes);
+
+        https.get(cleanFileUrl, (cloudRes) => {
+            if (cloudRes.statusCode !== 200) {
+                console.error(`[workfile-download] Cloudinary returned ${cloudRes.statusCode} for ${cleanFileUrl}`);
+                if (!res.headersSent) {
+                    res.status(502).json({ message: 'File could not be retrieved from storage. Please contact support.' });
+                }
+                return;
+            }
+            if (cloudRes.headers['content-type']) {
+                res.setHeader('Content-Type', cloudRes.headers['content-type']);
+            }
+            if (cloudRes.headers['content-length']) {
+                res.setHeader('Content-Length', cloudRes.headers['content-length']);
+            }
+            cloudRes.pipe(res);
+        }).on('error', (err) => {
+            console.error('[workfile-download] Proxy stream error:', err.message);
+            if (!res.headersSent) {
+                res.status(502).json({ message: 'Failed to stream file. Please try again.' });
+            }
         });
 
     } catch (error) {

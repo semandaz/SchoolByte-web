@@ -783,7 +783,7 @@
                     }
                 });
 
-                if (response.ok && response.headers.get('content-type') === 'application/pdf') {
+                if (response.ok && !response.headers.get('content-type')?.startsWith('application/json')) {
                     const blob = await response.blob();
 
                     if (blob.size === 0) {
@@ -803,7 +803,13 @@
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(url);
 
-                    alert(`Download complete! ${costBytes} bytes deducted. Your file has been saved.`);
+                    const remainingBytes = response.headers.get('X-Remaining-Bytes');
+                    if (remainingBytes !== null) {
+                        const bytesEl = document.getElementById('bytesCount');
+                        if (bytesEl) bytesEl.textContent = remainingBytes;
+                        localStorage.setItem('bytesCount', remainingBytes);
+                    }
+                    alert('Download complete! Bytes deducted. Your file has been saved.');
                     await loadStudentData();
                 } else if (response.status === 401 || response.status === 403) {
                     alert('Session expired. Please log in again.');
