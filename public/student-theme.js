@@ -33,6 +33,54 @@
             secondary: '#f43f5e',
             gold: '#fde047',
             orange: '#f97316'
+        },
+        midnightAcademy: {
+            name: 'Midnight Academy',
+            description: 'Deep slate with indigo & amber highlights',
+            primary: '#0F172A',
+            secondary: '#4F46E5',
+            gold: '#F59E0B',
+            orange: '#1E293B'
+        },
+        freshMint: {
+            name: 'Fresh Mint',
+            description: 'Calm emerald greens for long study sessions',
+            primary: '#334155',
+            secondary: '#059669',
+            gold: '#6366F1',
+            orange: '#10B981'
+        },
+        kineticStealth: {
+            name: 'Kinetic Stealth',
+            description: 'Dark obsidian with electric blue & neo-green',
+            primary: '#111827',
+            secondary: '#3B82F6',
+            gold: '#22C55E',
+            orange: '#16A34A'
+        },
+        deepOrbit: {
+            name: 'Deep Orbit',
+            description: 'Cosmic midnight navy with solar yellow accents',
+            primary: '#0F172A',
+            secondary: '#64748B',
+            gold: '#FACC15',
+            orange: '#F59E0B'
+        },
+        pastelAcademy: {
+            name: 'Pastel Academy',
+            description: 'Soft blush & lavender for a calm study vibe',
+            primary: '#F472B6',
+            secondary: '#A78BFA',
+            gold: '#FDE68A',
+            orange: '#FDF2F8'
+        },
+        sunsetOrchid: {
+            name: 'Sunset Orchid',
+            description: 'Rich royal violet with watermelon & turquoise',
+            primary: '#7C3AED',
+            secondary: '#FB7185',
+            gold: '#2DD4BF',
+            orange: '#F0ABFC'
         }
     };
 
