@@ -1387,7 +1387,7 @@
 
     <script src="api-config.js"></script>
     <script src="e2e-crypto.js"></script>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script>
         // Create floating particles
         function createParticles() {
@@ -1472,7 +1472,13 @@
             clearReplyPreview();
         });
 
-        async function initByteNexusSession() {
+
+        function showConnectionError(msg) {
+            const banner = document.getElementById('connectionErrorBanner');
+            if (banner) { banner.textContent = msg; banner.style.display = 'block'; }
+        }
+
+                async function initByteNexusSession() {
             const contactsList = document.getElementById('contactsList');
 
             var _inPiP = window !== window.top;
@@ -1515,7 +1521,7 @@
 
                 await E2E_Crypto.init(currentUser.id, API_URL, token);
 
-                initSocket();
+                try { initSocket(); } catch(sockErr) { console.error('Socket init failed:', sockErr); }
                 loadContacts();
             } catch (error) {
                 console.error('ByteNexus initialization error:', error);
@@ -2483,7 +2489,8 @@
 
             if (!socket || !socket.connected) {
                 console.error('Socket not connected. Cannot send message.');
-                alert('Connection lost. Please refresh the page.');
+                showConnectionError('Connection lost. Attempting to reconnect...');
+                setTimeout(() => { window.location.reload(); }, 3000);
                 return;
             }
 
