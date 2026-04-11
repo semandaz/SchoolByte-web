@@ -115,6 +115,7 @@ const Team = require('./models/Team');
 const GroupMessage = require('./models/GroupMessage');
 const DailyQuote = require('./models/DailyQuote');
 const UnebProject = require('./models/UnebProject');
+const ActivityOfIntegration = require('./models/ActivityOfIntegration');
 
 // --- Socket.io Chat Management ---
 const authenticatedSockets = new Map();
@@ -6895,15 +6896,44 @@ app.get('/admin/quiz-questions', authenticateAdminToken, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Admin: edit a quiz question (text + keywords)
+// Admin: get a single quiz question (full details for editing)
+app.get('/admin/quiz-questions/:id', authenticateAdminToken, async (req, res) => {
+  try {
+    const question = await QuizQuestion.findById(req.params.id).lean();
+    if (!question) return res.status(404).json({ error: 'Question not found' });
+    res.json({ question });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Admin: edit a quiz question (all fields, triggers pre-save hook for hash update)
 app.put('/admin/quiz-questions/:id', authenticateAdminToken, async (req, res) => {
   try {
-    const { questionText, keywordsForGrading } = req.body;
-    const update = {};
-    if (questionText !== undefined) update.questionText = questionText;
-    if (keywordsForGrading !== undefined) update.keywordsForGrading = keywordsForGrading;
-    const question = await QuizQuestion.findByIdAndUpdate(req.params.id, update, { new: true });
+    const {
+      questionText, keywordsForGrading, negativeKeywords,
+      options, correctAnswers, matchingPairs, orderedItems,
+      instructions, hint, explanation, maxBytesRewardPerQuestion,
+      isActive, topic, subTopic
+    } = req.body;
+
+    const question = await QuizQuestion.findById(req.params.id);
     if (!question) return res.status(404).json({ error: 'Question not found' });
+
+    if (questionText !== undefined) question.questionText = questionText.trim();
+    if (keywordsForGrading !== undefined) question.keywordsForGrading = keywordsForGrading;
+    if (negativeKeywords !== undefined) question.negativeKeywords = negativeKeywords;
+    if (options !== undefined) question.options = options;
+    if (correctAnswers !== undefined) question.correctAnswers = correctAnswers;
+    if (matchingPairs !== undefined) question.matchingPairs = matchingPairs;
+    if (orderedItems !== undefined) question.orderedItems = orderedItems;
+    if (instructions !== undefined) question.instructions = instructions;
+    if (hint !== undefined) question.hint = hint;
+    if (explanation !== undefined) question.explanation = explanation;
+    if (maxBytesRewardPerQuestion !== undefined) question.maxBytesRewardPerQuestion = Number(maxBytesRewardPerQuestion);
+    if (isActive !== undefined) question.isActive = Boolean(isActive);
+    if (topic !== undefined) question.topic = topic;
+    if (subTopic !== undefined) question.subTopic = subTopic;
+
+    await question.save();
     res.json({ question });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -7762,6 +7792,256 @@ app.post('/student/activities/submit', authenticateToken, [
     } finally {
         session.endSession();
     }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ACTIVITY OF INTEGRATION
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CURRICULUM_SYSTEM_PROMPT = `You are an expert CBC (Competency-Based Curriculum) scenario designer for Ugandan secondary schools (S1–S6), trained on official NCDC syllabi (2024 CBC O-Level S1–S4; 2025 Abridged A-Level S5–S6).
+
+CORE RULES:
+1. Every scenario must tie directly to a real NCDC competency/Learning Outcome for the specified class and subject.
+2. Use authentic Ugandan real-life contexts (agriculture, health, environment, entrepreneurship, gender equity, patriotism, poverty alleviation, etc.).
+3. Embed generic skills: critical thinking, problem-solving, cooperation, creativity, ICT proficiency, communication.
+4. Weave in cross-cutting issues: environment, health/HIV, inclusion/gender, socio-economic, citizenship, life skills.
+5. Include CBC values: respect, honesty, justice, hard work, integrity, creativity, social responsibility, national unity.
+
+CURRICULUM STRUCTURE (use as backbone):
+- S1–S4: Competency → Learning Outcomes (k/u/s/v,a) → Suggested Activities (group/investigation/ICT/project) → Assessment (0–3 rubric: observation/product/conversation)
+- S5–S6: Abridged 2025 A-Level — link back to O-Level competencies where possible; emphasis on projects and generic skills.
+
+SCENARIO OUTPUT FORMAT (strictly follow for EACH scenario):
+---SCENARIO [N]---
+**Title:** [engaging title]
+**Linked Competency:** [exact competency from syllabus]
+**Learning Outcomes:** [list specific LOs: k/u/s/v]
+**Scenario Description:** [2–3 paragraphs; real Ugandan context; project-based; learner-centred]
+**Suggested Activities:**
+- [Activity 1: group/investigation/ICT/project]
+- [Activity 2]
+- [Activity 3]
+**Assessment Rubric (0–3):**
+- 3 (Excellent): [descriptor]
+- 2 (Good): [descriptor]
+- 1 (Developing): [descriptor]
+- 0 (Not Yet): [descriptor]
+**Extension Ideas:** [differentiation/inclusion suggestion]
+---END SCENARIO [N]---
+
+Generate exactly the number of scenarios requested. Be thorough, accurate, and locally relevant. Never invent topics not in the NCDC syllabus.`;
+
+// Student: generate AI scenarios
+app.post('/student/activities-of-integration/generate', authenticateToken, async (req, res) => {
+    try {
+        const student = await Student.findById(req.student.id);
+        if (!student) return res.status(404).json({ error: 'Student not found' });
+
+        const { subject, topic, numberOfScenarios, elementOfConstruct } = req.body;
+        if (!subject || !topic || !numberOfScenarios || !elementOfConstruct) {
+            return res.status(400).json({ error: 'subject, topic, numberOfScenarios, and elementOfConstruct are required.' });
+        }
+        const count = Math.min(Math.max(parseInt(numberOfScenarios) || 1, 1), 10);
+        const construct = elementOfConstruct === 'many-topics' ? 'many-topics' : 'one-topic';
+
+        const userPrompt = construct === 'many-topics'
+            ? `Generate ${count} Activity of Integration scenario(s) for ${student.class} ${subject}. Each scenario should integrate MULTIPLE related topics/themes from the ${subject} syllabus, centred around the theme of "${topic}". Show cross-topic integration and holistic learning.`
+            : `Generate ${count} Activity of Integration scenario(s) for ${student.class} ${subject}, Topic: "${topic}". Each scenario should deeply explore this single topic through real-life Ugandan contexts and project-based activities.`;
+
+        if (!process.env.GROQ_API_KEY) return res.status(503).json({ error: 'AI service not configured.' });
+
+        const content = await callGroqAI(userPrompt, CURRICULUM_SYSTEM_PROMPT, {
+            max_tokens: Math.min(count * 800, 4000),
+            temperature: 0.75
+        });
+
+        const activity = new ActivityOfIntegration({
+            title: `${subject} – ${topic} (${student.class})`,
+            subject,
+            seniorClass: student.class,
+            topic,
+            elementOfConstruct: construct,
+            numberOfScenarios: count,
+            scenariosContent: content,
+            isApproved: false,
+            createdByType: 'ai',
+            createdByStudentId: student._id,
+            createdByName: student.studentName || 'Student'
+        });
+        await activity.save();
+
+        res.json({ activity });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Shared: library endpoint (student/teacher/admin — auth handled per role)
+async function getActivityLibrary(sortBy, filterApproved) {
+    const query = {};
+    if (filterApproved === 'approved') query.isApproved = true;
+    let sort = { createdAt: -1 };
+    if (sortBy === 'approved') sort = { isApproved: -1, createdAt: -1 };
+    if (sortBy === 'helpful') sort = { helpfulCount: -1, createdAt: -1 };
+    if (sortBy === 'date') sort = { createdAt: -1 };
+    return ActivityOfIntegration.find(query).sort(sort).lean();
+}
+
+// Student: library
+app.get('/student/activities-of-integration/library', authenticateToken, async (req, res) => {
+    try {
+        const { sort, filter } = req.query;
+        const activities = await getActivityLibrary(sort || 'date', filter);
+        const studentId = req.student.id;
+        const enriched = activities.map(a => ({
+            ...a,
+            markedHelpfulByMe: a.helpfulMarkedBy.some(id => id.toString() === studentId)
+        }));
+        res.json({ activities: enriched });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Student: toggle helpful
+app.post('/student/activities-of-integration/:id/helpful', authenticateToken, async (req, res) => {
+    try {
+        const activity = await ActivityOfIntegration.findById(req.params.id);
+        if (!activity) return res.status(404).json({ error: 'Activity not found' });
+        const studentId = req.student.id;
+        const alreadyMarked = activity.helpfulMarkedBy.some(id => id.toString() === studentId);
+        if (alreadyMarked) {
+            activity.helpfulMarkedBy = activity.helpfulMarkedBy.filter(id => id.toString() !== studentId);
+            activity.helpfulCount = Math.max(0, activity.helpfulCount - 1);
+        } else {
+            activity.helpfulMarkedBy.push(studentId);
+            activity.helpfulCount += 1;
+        }
+        await activity.save();
+        res.json({ helpfulCount: activity.helpfulCount, markedHelpfulByMe: !alreadyMarked });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Teacher: upload scenario (auto-approved)
+app.post('/teacher/activities-of-integration/upload', authenticateTeacherToken, async (req, res) => {
+    try {
+        const teacher = await Teacher.findById(req.teacher.id);
+        if (!teacher) return res.status(404).json({ error: 'Teacher not found' });
+
+        const { title, subject, seniorClass, topic, elementOfConstruct, numberOfScenarios, scenariosContent } = req.body;
+        if (!title || !subject || !seniorClass || !topic || !elementOfConstruct || !scenariosContent) {
+            return res.status(400).json({ error: 'All fields are required.' });
+        }
+
+        const activity = new ActivityOfIntegration({
+            title,
+            subject,
+            seniorClass,
+            topic,
+            elementOfConstruct: elementOfConstruct === 'many-topics' ? 'many-topics' : 'one-topic',
+            numberOfScenarios: parseInt(numberOfScenarios) || 1,
+            scenariosContent,
+            isApproved: true,
+            approvedBy: { name: teacher.name, role: 'teacher', id: teacher._id },
+            approvedAt: new Date(),
+            createdByType: 'teacher',
+            createdByTeacherId: teacher._id,
+            createdByName: teacher.name
+        });
+        await activity.save();
+        res.json({ activity });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Teacher: library (same as student)
+app.get('/teacher/activities-of-integration/library', authenticateTeacherToken, async (req, res) => {
+    try {
+        const { sort, filter } = req.query;
+        const activities = await getActivityLibrary(sort || 'date', filter);
+        res.json({ activities });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Teacher: approve a scenario
+app.put('/teacher/activities-of-integration/:id/approve', authenticateTeacherToken, async (req, res) => {
+    try {
+        const teacher = await Teacher.findById(req.teacher.id);
+        if (!teacher) return res.status(404).json({ error: 'Teacher not found' });
+        const activity = await ActivityOfIntegration.findById(req.params.id);
+        if (!activity) return res.status(404).json({ error: 'Activity not found' });
+        activity.isApproved = true;
+        activity.approvedBy = { name: teacher.name, role: 'teacher', id: teacher._id };
+        activity.approvedAt = new Date();
+        await activity.save();
+        res.json({ activity });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Teacher: edit own upload
+app.put('/teacher/activities-of-integration/:id', authenticateTeacherToken, async (req, res) => {
+    try {
+        const teacher = await Teacher.findById(req.teacher.id);
+        if (!teacher) return res.status(404).json({ error: 'Teacher not found' });
+        const activity = await ActivityOfIntegration.findById(req.params.id);
+        if (!activity) return res.status(404).json({ error: 'Activity not found' });
+        if (!activity.createdByTeacherId || activity.createdByTeacherId.toString() !== teacher._id.toString()) {
+            return res.status(403).json({ error: 'You can only edit your own uploads.' });
+        }
+        const { title, topic, scenariosContent } = req.body;
+        if (title) activity.title = title;
+        if (topic) activity.topic = topic;
+        if (scenariosContent) activity.scenariosContent = scenariosContent;
+        await activity.save();
+        res.json({ activity });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Admin: library
+app.get('/admin/activities-of-integration', authenticateAdminToken, async (req, res) => {
+    try {
+        const { sort, filter } = req.query;
+        const activities = await getActivityLibrary(sort || 'date', filter);
+        res.json({ activities });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Admin: approve
+app.put('/admin/activities-of-integration/:id/approve', authenticateAdminToken, async (req, res) => {
+    try {
+        const admin = await Administrator.findById(req.admin.id);
+        if (!admin) return res.status(404).json({ error: 'Admin not found' });
+        const activity = await ActivityOfIntegration.findById(req.params.id);
+        if (!activity) return res.status(404).json({ error: 'Activity not found' });
+        activity.isApproved = !activity.isApproved;
+        if (activity.isApproved) {
+            activity.approvedBy = { name: admin.name || admin.email, role: 'admin', id: admin._id };
+            activity.approvedAt = new Date();
+        } else {
+            activity.approvedBy = { name: null, role: null, id: null };
+            activity.approvedAt = null;
+        }
+        await activity.save();
+        res.json({ activity });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Admin: delete
+app.delete('/admin/activities-of-integration/:id', authenticateAdminToken, async (req, res) => {
+    try {
+        const activity = await ActivityOfIntegration.findByIdAndDelete(req.params.id);
+        if (!activity) return res.status(404).json({ error: 'Activity not found' });
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Admin: edit any activity
+app.put('/admin/activities-of-integration/:id', authenticateAdminToken, async (req, res) => {
+    try {
+        const activity = await ActivityOfIntegration.findById(req.params.id);
+        if (!activity) return res.status(404).json({ error: 'Activity not found' });
+        const { title, topic, scenariosContent } = req.body;
+        if (title) activity.title = title;
+        if (topic) activity.topic = topic;
+        if (scenariosContent) activity.scenariosContent = scenariosContent;
+        await activity.save();
+        res.json({ activity });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 httpServer.listen(PORT, '0.0.0.0', () => {

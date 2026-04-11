@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolByte – Activity of Integration</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand-primary: #1a2a6c;
+            --brand-secondary: #b21f1f;
+            --brand-gold: #ffd700;
+            --brand-orange: #ffa500;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --muted: #6b7280;
+            --card-bg: rgba(255,255,255,0.97);
+            --border: rgba(26,42,108,0.12);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            min-height: 100vh;
+            color: #1f2937;
+        }
+
+        /* HEADER */
+        header {
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+            color: #fff;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+        .btn-back:hover { opacity: 0.88; }
+        #studentGreeting { font-weight: 600; color: #1a2a6c; font-size: 14px; }
+
+        /* MAIN */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* PAGE TITLE */
+        .page-hero {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            color: #fff;
+        }
+        .page-hero h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .page-hero p { font-size: 14px; opacity: 0.85; }
+        .gold-line {
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(to right, #ffd700, #ffa500);
+            margin: 12px auto 0;
+            border-radius: 2px;
+        }
+
+        /* TABS */
+        .tab-bar {
+            display: flex;
+            gap: 0;
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 4px;
+            width: fit-content;
+            margin: 0 auto 2rem;
+        }
+        .tab-btn {
+            padding: 10px 28px;
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.75);
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 9px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: #fff;
+            color: #1a2a6c;
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* CARD */
+        .card {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            padding: 28px;
+            margin-bottom: 24px;
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a2a6c;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-title i { color: #b21f1f; }
+
+        /* FORM */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group.full { grid-column: 1 / -1; }
+        label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #4b5563;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        input, select, textarea {
+            padding: 10px 14px;
+            border: 1.5px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #1f2937;
+            background: #f9fafb;
+            font-family: inherit;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+        input:focus, select:focus, textarea:focus { border-color: #1a2a6c; background: #fff; }
+
+        /* CONSTRUCT TOGGLE */
+        .construct-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .construct-option {
+            border: 2px solid #d1d5db;
+            border-radius: 12px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .construct-option:hover { border-color: #1a2a6c; }
+        .construct-option.selected {
+            border-color: #1a2a6c;
+            background: #eef2ff;
+        }
+        .construct-option input[type=radio] { margin-top: 2px; accent-color: #1a2a6c; }
+        .construct-option .opt-label { font-weight: 700; font-size: 13px; color: #1f2937; }
+        .construct-option .opt-desc { font-size: 12px; color: #6b7280; margin-top: 3px; }
+
+        /* GENERATE BUTTON */
+        .btn-generate {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            transition: opacity 0.2s;
+        }
+        .btn-generate:hover { opacity: 0.9; }
+        .btn-generate:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* RESULT CARD */
+        .result-card {
+            background: linear-gradient(135deg, #eef2ff, #fff5f5);
+            border: 1.5px solid #d1d5db;
+            border-radius: 14px;
+            padding: 24px;
+            margin-top: 20px;
+        }
+        .result-card .result-title {
+            font-weight: 700;
+            font-size: 15px;
+            color: #1a2a6c;
+            margin-bottom: 14px;
+        }
+        .result-card .result-content {
+            font-size: 13px;
+            color: #374151;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .result-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+        .btn-sm {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: opacity 0.2s;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid #1a2a6c;
+            color: #1a2a6c;
+        }
+        .btn-outline:hover { background: #eef2ff; }
+
+        /* LIBRARY */
+        .library-toolbar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .lib-sort-select {
+            padding: 9px 14px;
+            border: 1.5px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #1f2937;
+            background: #fff;
+            outline: none;
+            cursor: pointer;
+        }
+        .lib-count {
+            margin-left: auto;
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        /* ACTIVITY CARDS */
+        .activity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 18px;
+        }
+        .activity-card {
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border: 1.5px solid transparent;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .activity-card:hover { border-color: #1a2a6c; transform: translateY(-2px); }
+        .activity-card-title {
+            font-weight: 700;
+            font-size: 14px;
+            color: #1f2937;
+            line-height: 1.4;
+        }
+        .activity-badge-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .badge-blue { background: #dbeafe; color: #1d4ed8; }
+        .badge-gray { background: #f3f4f6; color: #4b5563; }
+        .badge-approved { background: #dcfce7; color: #16a34a; }
+        .badge-pending { background: #fee2e2; color: #dc2626; }
+        .activity-preview {
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.6;
+            border-top: 1px solid #f3f4f6;
+            padding-top: 10px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+        }
+        .activity-meta {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+        .activity-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid #f3f4f6;
+            padding-top: 10px;
+        }
+        .helpful-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: 1.5px solid #d1d5db;
+            background: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .helpful-btn.marked {
+            border-color: #1a2a6c;
+            background: #eef2ff;
+            color: #1a2a6c;
+        }
+        .helpful-btn:hover { border-color: #1a2a6c; }
+        .view-btn {
+            padding: 6px 14px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+            color: #fff;
+            border: none;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .view-btn:hover { opacity: 0.88; }
+
+        /* MODAL */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: #fff;
+            border-radius: 18px;
+            padding: 28px;
+            width: 100%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+        }
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: #9ca3af;
+            line-height: 1;
+        }
+        .modal-close:hover { color: #374151; }
+        .modal-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a2a6c;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .modal-content-text {
+            font-size: 13px;
+            color: #374151;
+            line-height: 1.9;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* SPINNER */
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(255,255,255,0.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        .spinner-dark {
+            border-color: rgba(26,42,108,0.2);
+            border-top-color: #1a2a6c;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* TOAST */
+        #toastContainer {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: slideIn 0.3s ease;
+        }
+        .toast.success { background: #16a34a; }
+        .toast.error { background: #dc2626; }
+        .toast.info { background: #1d4ed8; }
+        @keyframes slideIn { from { transform: translateX(60px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: #6b7280;
+        }
+        .empty-state i { font-size: 36px; margin-bottom: 12px; display: block; opacity: 0.5; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-inner">
+        <span class="logo">SchoolByte</span>
+        <div class="header-right">
+            <span id="studentGreeting"></span>
+            <a href="studentdashboard.html" class="btn-back"><i class="fas fa-arrow-left"></i> Dashboard</a>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <div class="page-hero">
+        <h1><i class="fas fa-project-diagram" style="margin-right:10px;color:#ffd700;"></i>Activity of Integration</h1>
+        <p>Generate CBC-aligned scenario activities with AI, or browse the shared library</p>
+        <div class="gold-line"></div>
+    </div>
+
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('generate-tab', this)"><i class="fas fa-robot"></i> Generate with AI</button>
+        <button class="tab-btn" onclick="switchTab('library-tab', this)"><i class="fas fa-book-open"></i> Library</button>
+    </div>
+
+    <!-- ── GENERATE TAB ── -->
+    <div id="generate-tab" class="tab-panel active">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-magic"></i> Create Scenarios with AI</div>
+            <p style="font-size:13px;color:#6b7280;margin-bottom:20px;line-height:1.7;">
+                Fill in the details below and the AI will generate CBC-aligned Activity of Integration scenarios using the official NCDC curriculum framework, with real Ugandan contexts, competencies, learning outcomes, and assessment rubrics.
+            </p>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Subject *</label>
+                    <input type="text" id="genSubject" placeholder="e.g. Mathematics, Biology, Physics...">
+                </div>
+                <div class="form-group">
+                    <label>Topic / Theme *</label>
+                    <input type="text" id="genTopic" placeholder="e.g. Transformations, Nutrition, Electricity...">
+                </div>
+                <div class="form-group">
+                    <label>Number of Scenarios (1–10)</label>
+                    <input type="number" id="genCount" value="2" min="1" max="10">
+                </div>
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <p style="font-size:12px;color:#6b7280;padding-top:10px;">Your class is loaded automatically from your profile.</p>
+                </div>
+                <div class="form-group full">
+                    <label>Element of Construct</label>
+                    <div class="construct-toggle">
+                        <label class="construct-option selected" id="opt-one">
+                            <input type="radio" name="construct" value="one-topic" checked onchange="selectConstruct(this)">
+                            <div>
+                                <div class="opt-label"><i class="fas fa-bullseye"></i> One Topic</div>
+                                <div class="opt-desc">Deep dive into a single topic with real-life scenario activities and a focused rubric.</div>
+                            </div>
+                        </label>
+                        <label class="construct-option" id="opt-many">
+                            <input type="radio" name="construct" value="many-topics" onchange="selectConstruct(this)">
+                            <div>
+                                <div class="opt-label"><i class="fas fa-layer-group"></i> Element of Construct (Many Topics)</div>
+                                <div class="opt-desc">Integrate multiple related topics or themes around a central concept for holistic learning.</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-generate" id="generateBtn" onclick="generateScenarios()">
+                <i class="fas fa-wand-magic-sparkles"></i> Generate Scenarios
+            </button>
+        </div>
+
+        <!-- Result appears here -->
+        <div id="generateResult" style="display:none;"></div>
+    </div>
+
+    <!-- ── LIBRARY TAB ── -->
+    <div id="library-tab" class="tab-panel">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-book-open"></i> Activity Library</div>
+            <div class="library-toolbar">
+                <select class="lib-sort-select" id="libSort" onchange="loadLibrary()">
+                    <option value="date">Newest First</option>
+                    <option value="approved">Approved First</option>
+                    <option value="helpful">Most Helpful</option>
+                </select>
+                <button class="btn-sm btn-outline" onclick="loadLibrary()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                <span class="lib-count" id="libCount"></span>
+            </div>
+            <div id="libraryContent">
+                <div class="empty-state"><span class="spinner spinner-dark"></span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- VIEW MODAL -->
+<div id="viewModal" class="modal-overlay">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeViewModal()">&times;</button>
+        <div class="modal-title" id="viewModalTitle"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;" id="viewModalBadges"></div>
+        <div class="modal-content-text" id="viewModalContent"></div>
+    </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<script>
+const token = () => localStorage.getItem('token');
+
+function showToast(msg, type='success') {
+    const icons = { success:'fa-check-circle', error:'fa-exclamation-circle', info:'fa-info-circle' };
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.innerHTML = '<i class="fas ' + (icons[type]||'fa-circle') + '"></i> ' + msg;
+    document.getElementById('toastContainer').appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.4s'; setTimeout(() => t.remove(), 400); }, 4000);
+}
+function esc(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Auth check
+(async function init() {
+    const t = token();
+    if (!t) { window.location.href = 'studentlogin.html'; return; }
+    try {
+        const r = await fetch('/student/dashboard', { headers: { Authorization: 'Bearer ' + t } });
+        if (!r.ok) { window.location.href = 'studentlogin.html'; return; }
+        const d = await r.json();
+        const name = d.student?.studentName || d.studentName || 'Student';
+        document.getElementById('studentGreeting').textContent = 'Hi, ' + name;
+    } catch { window.location.href = 'studentlogin.html'; }
+})();
+
+function switchTab(id, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (id === 'library-tab') loadLibrary();
+}
+
+function selectConstruct(radio) {
+    document.getElementById('opt-one').classList.remove('selected');
+    document.getElementById('opt-many').classList.remove('selected');
+    if (radio.value === 'one-topic') document.getElementById('opt-one').classList.add('selected');
+    else document.getElementById('opt-many').classList.add('selected');
+}
+
+async function generateScenarios() {
+    const subject = document.getElementById('genSubject').value.trim();
+    const topic = document.getElementById('genTopic').value.trim();
+    const count = parseInt(document.getElementById('genCount').value) || 1;
+    const construct = document.querySelector('input[name=construct]:checked')?.value || 'one-topic';
+    if (!subject) { showToast('Please enter a subject.', 'error'); return; }
+    if (!topic) { showToast('Please enter a topic.', 'error'); return; }
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Generating scenarios… this may take a moment';
+
+    const resultEl = document.getElementById('generateResult');
+    resultEl.style.display = 'none';
+
+    try {
+        const r = await fetch('/student/activities-of-integration/generate', {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + token(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ subject, topic, numberOfScenarios: count, elementOfConstruct: construct })
+        });
+        if (!r.ok) { const d = await r.json(); throw new Error(d.error || 'Generation failed'); }
+        const { activity } = await r.json();
+
+        resultEl.innerHTML = `
+            <div class="result-card">
+                <div class="result-title"><i class="fas fa-check-circle" style="color:#16a34a;margin-right:6px;"></i> ${esc(activity.title)}</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+                    <span class="badge badge-blue">${esc(activity.subject)}</span>
+                    <span class="badge badge-gray">${esc(activity.seniorClass)}</span>
+                    <span class="badge badge-gray">${activity.elementOfConstruct === 'many-topics' ? 'Many Topics' : 'One Topic'}</span>
+                    <span class="badge badge-pending">Not yet Approved</span>
+                </div>
+                <div class="result-content">${esc(activity.scenariosContent)}</div>
+                <div class="result-actions">
+                    <button class="btn-sm btn-outline" onclick="switchTab('library-tab', document.querySelectorAll('.tab-btn')[1])"><i class="fas fa-book-open"></i> View in Library</button>
+                    <button class="btn-sm" style="background:#f3f4f6;color:#374151;border:none;" onclick="copyToClipboard(${JSON.stringify(activity.scenariosContent)})"><i class="fas fa-copy"></i> Copy</button>
+                </div>
+            </div>`;
+        resultEl.style.display = 'block';
+        showToast('Scenarios generated and saved to library!', 'success');
+    } catch (e) {
+        showToast(e.message || 'Generation failed. Please try again.', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generate Scenarios';
+    }
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!', 'info')).catch(() => showToast('Copy failed.', 'error'));
+}
+
+async function loadLibrary() {
+    const sort = document.getElementById('libSort').value;
+    const content = document.getElementById('libraryContent');
+    content.innerHTML = '<div class="empty-state"><span class="spinner spinner-dark"></span></div>';
+    try {
+        const r = await fetch('/student/activities-of-integration/library?sort=' + sort, {
+            headers: { Authorization: 'Bearer ' + token() }
+        });
+        if (!r.ok) throw new Error();
+        const { activities } = await r.json();
+        const countEl = document.getElementById('libCount');
+        if (countEl) countEl.textContent = activities.length + ' activit' + (activities.length === 1 ? 'y' : 'ies');
+        if (!activities.length) {
+            content.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>No activities yet. Be the first to generate one!</div>';
+            return;
+        }
+        content.innerHTML = '<div class="activity-grid">' + activities.map(a => renderLibCard(a)).join('') + '</div>';
+    } catch {
+        content.innerHTML = '<div class="empty-state" style="color:#dc2626;"><i class="fas fa-exclamation-triangle"></i>Failed to load library.</div>';
+    }
+}
+
+function renderLibCard(a) {
+    const approvedBadge = a.isApproved
+        ? '<span class="badge badge-approved"><i class="fas fa-check-circle"></i> Approved</span>'
+        : '<span class="badge badge-pending">Not yet Approved</span>';
+    const preview = (a.scenariosContent || '').slice(0, 220).replace(/\n/g, ' ');
+    const helpfulClass = a.markedHelpfulByMe ? 'helpful-btn marked' : 'helpful-btn';
+    const helpfulIcon = a.markedHelpfulByMe ? 'fas fa-thumbs-up' : 'far fa-thumbs-up';
+    const createdDate = a.createdAt ? new Date(a.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '';
+    const byLabel = a.createdByType === 'teacher' ? '<i class="fas fa-chalkboard-teacher"></i>' : '<i class="fas fa-robot"></i>';
+    const contentJson = JSON.stringify(a.scenariosContent || '');
+    return `<div class="activity-card" id="card-${a._id}">
+        <div class="activity-card-title">${esc(a.title)}</div>
+        <div class="activity-badge-row">
+            <span class="badge badge-blue">${esc(a.subject)}</span>
+            <span class="badge badge-gray">${esc(a.seniorClass)}</span>
+            ${approvedBadge}
+        </div>
+        <div style="font-size:12px;color:#6b7280;">Topic: ${esc(a.topic)} · ${a.elementOfConstruct === 'many-topics' ? 'Many Topics' : 'One Topic'}</div>
+        <div class="activity-preview">${esc(preview)}${a.scenariosContent && a.scenariosContent.length > 220 ? '…' : ''}</div>
+        <div class="activity-meta">${byLabel} ${esc(a.createdByName)} · ${createdDate}</div>
+        <div class="activity-footer">
+            <button class="${helpfulClass}" id="helpful-${a._id}" onclick="toggleHelpful('${a._id}')">
+                <i class="${helpfulIcon}" id="helpful-icon-${a._id}"></i>
+                <span id="helpful-count-${a._id}">${a.helpfulCount || 0}</span> Helpful
+            </button>
+            <button class="view-btn" onclick="viewActivity(${JSON.stringify(esc(a.title))},${JSON.stringify(esc(a.subject) + ' · ' + esc(a.seniorClass))},${contentJson})">
+                <i class="fas fa-eye"></i> View
+            </button>
+        </div>
+    </div>`;
+}
+
+async function toggleHelpful(id) {
+    try {
+        const r = await fetch('/student/activities-of-integration/' + id + '/helpful', {
+            method: 'POST', headers: { Authorization: 'Bearer ' + token() }
+        });
+        if (!r.ok) throw new Error();
+        const { helpfulCount, markedHelpfulByMe } = await r.json();
+        const btn = document.getElementById('helpful-' + id);
+        const icon = document.getElementById('helpful-icon-' + id);
+        const countEl = document.getElementById('helpful-count-' + id);
+        if (btn) { btn.className = markedHelpfulByMe ? 'helpful-btn marked' : 'helpful-btn'; }
+        if (icon) { icon.className = markedHelpfulByMe ? 'fas fa-thumbs-up' : 'far fa-thumbs-up'; }
+        if (countEl) countEl.textContent = helpfulCount;
+    } catch { showToast('Failed to update.', 'error'); }
+}
+
+function viewActivity(title, badges, content) {
+    document.getElementById('viewModalTitle').textContent = title;
+    document.getElementById('viewModalBadges').innerHTML = badges.split(' · ').map(b => '<span class="badge badge-gray">' + b + '</span>').join('');
+    document.getElementById('viewModalContent').textContent = content;
+    document.getElementById('viewModal').classList.add('open');
+}
+function closeViewModal() { document.getElementById('viewModal').classList.remove('open'); }
+document.getElementById('viewModal').addEventListener('click', function(e) {
+    if (e.target === this) closeViewModal();
+});
+</script>
+</body>
+</html>

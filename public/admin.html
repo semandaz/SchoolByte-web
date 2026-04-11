@@ -190,6 +190,7 @@
         <li><a href="#" data-tab="reporting-analytics-tab"><i class="fas fa-chart-line"></i> Analytics</a></li>
         <li><a href="#" data-tab="project-gallery-tab"><i class="fas fa-images"></i> Project Gallery</a></li>
         <li><a href="#" data-tab="admin-management-tab"><i class="fas fa-user-shield"></i> Admin Management</a></li>
+        <li><a href="#" data-tab="activity-integration-tab"><i class="fas fa-project-diagram"></i> Activity Library</a></li>
     </ul>
     <div class="sidebar-footer">
         <div class="admin-avatar" id="adminAvatarInitial">A</div>
@@ -477,6 +478,53 @@
             </div>
         </div>
 
+        <!-- ACTIVITY OF INTEGRATION TAB -->
+        <div id="activity-integration-tab" class="tab-pane">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+                <div class="section-title" style="margin:0;"><i class="fas fa-project-diagram" style="color:var(--primary);"></i> Activity of Integration Library</div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                    <select id="aiSortSelect" style="background:rgba(255,255,255,0.07);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:8px;font-size:13px;">
+                        <option value="date">Sort: Date (newest)</option>
+                        <option value="approved">Sort: Approved First</option>
+                        <option value="helpful">Sort: Most Helpful</option>
+                    </select>
+                    <select id="aiFilterSelect" style="background:rgba(255,255,255,0.07);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:8px;font-size:13px;">
+                        <option value="">All Activities</option>
+                        <option value="approved">Approved Only</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" onclick="loadActivityIntegration()"><i class="fas fa-sync-alt"></i> Refresh</button>
+                </div>
+            </div>
+            <div id="aiLibraryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px;">
+                <div style="text-align:center;padding:40px;color:var(--muted);grid-column:1/-1;"><span class="spinner"></span> Loading library...</div>
+            </div>
+        </div>
+
+        <!-- Edit Activity of Integration Modal (Admin) -->
+        <div id="editAIModal" class="modal-overlay">
+            <div class="modal-box" style="max-width:680px;">
+                <button class="modal-close" onclick="closeModal('editAIModal')">&times;</button>
+                <h3><i class="fas fa-edit" style="color:var(--warning);margin-right:8px;"></i> Edit Activity of Integration</h3>
+                <input type="hidden" id="editAIId">
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label style="font-size:12px;color:var(--muted);font-weight:600;">Title</label>
+                    <input type="text" id="editAITitle" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:13px;">
+                </div>
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label style="font-size:12px;color:var(--muted);font-weight:600;">Topic</label>
+                    <input type="text" id="editAITopic" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:13px;">
+                </div>
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label style="font-size:12px;color:var(--muted);font-weight:600;">Scenarios Content</label>
+                    <textarea id="editAIContent" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:13px;min-height:200px;resize:vertical;font-family:inherit;"></textarea>
+                </div>
+                <div style="display:flex;gap:12px;justify-content:flex-end;">
+                    <button class="btn" style="background:rgba(255,255,255,0.06);color:var(--muted);border:1px solid var(--border);" onclick="closeModal('editAIModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveAIEdit()"><i class="fas fa-save"></i> Save</button>
+                </div>
+            </div>
+        </div>
+
     </div><!-- /content -->
 </div><!-- /main -->
 
@@ -522,21 +570,90 @@
 
 <!-- Edit Quiz Question Modal -->
 <div id="editQuizModal" class="modal-overlay">
-    <div class="modal-box" style="max-width:600px;">
+    <div class="modal-box" style="max-width:720px;">
         <button class="modal-close" onclick="closeModal('editQuizModal')">&times;</button>
         <h3><i class="fas fa-edit" style="color:var(--warning);margin-right:8px;"></i> Edit Quiz Question</h3>
         <input type="hidden" id="editQuizId">
-        <div class="form-group">
-            <label>Question Text</label>
-            <textarea id="editQTextarea" class="form-group" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:14px;min-height:80px;resize:vertical;font-family:inherit;" placeholder="Enter question text..."></textarea>
+        <div id="editQuizLoadingMsg" style="text-align:center;padding:20px;"><span class="spinner"></span> Loading question details...</div>
+        <div id="editQuizForm" style="display:none;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+                <div class="form-group">
+                    <label style="font-size:12px;color:var(--muted);font-weight:600;">Subject</label>
+                    <input type="text" id="eqSubject" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:13px;" readonly>
+                </div>
+                <div class="form-group">
+                    <label style="font-size:12px;color:var(--muted);font-weight:600;">Class / Type</label>
+                    <input type="text" id="eqTypeSummary" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--muted);font-size:13px;" readonly>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label style="font-size:12px;color:var(--muted);font-weight:600;">Question Text</label>
+                <textarea id="editQTextarea" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:14px;min-height:80px;resize:vertical;font-family:inherit;"></textarea>
+            </div>
+
+            <!-- MCQ Options (single/multi) -->
+            <div id="eqOptionsSection" style="display:none;margin-bottom:14px;">
+                <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:8px;">Answer Options <span style="font-size:11px;">(check = correct)</span></label>
+                <div id="eqOptionsList"></div>
+                <button type="button" onclick="eqAddOption()" class="btn btn-sm" style="margin-top:8px;background:rgba(52,152,219,0.15);color:var(--primary);border:1px solid rgba(52,152,219,0.3);"><i class="fas fa-plus"></i> Add Option</button>
+            </div>
+
+            <!-- Short-answer / True-False / Fill-in / Numeric / Problem-solving correctAnswers -->
+            <div id="eqCorrectAnswersSection" style="display:none;margin-bottom:14px;">
+                <label style="font-size:12px;color:var(--muted);font-weight:600;">Correct Answer(s) <span style="font-size:11px;color:var(--muted);">(one per line)</span></label>
+                <textarea id="eqCorrectAnswers" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:13px;min-height:60px;resize:vertical;font-family:monospace;"></textarea>
+            </div>
+
+            <!-- Matching pairs -->
+            <div id="eqMatchingSection" style="display:none;margin-bottom:14px;">
+                <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:8px;">Matching Pairs (Item A → Item B)</label>
+                <div id="eqMatchingList"></div>
+                <button type="button" onclick="eqAddPair()" class="btn btn-sm" style="margin-top:8px;background:rgba(52,152,219,0.15);color:var(--primary);border:1px solid rgba(52,152,219,0.3);"><i class="fas fa-plus"></i> Add Pair</button>
+            </div>
+
+            <!-- Ordering -->
+            <div id="eqOrderingSection" style="display:none;margin-bottom:14px;">
+                <label style="font-size:12px;color:var(--muted);font-weight:600;">Ordered Items <span style="font-size:11px;color:var(--muted);">(one per line, in correct order)</span></label>
+                <textarea id="eqOrderedItems" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:13px;min-height:80px;resize:vertical;font-family:monospace;"></textarea>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+                <div>
+                    <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px;">Topic</label>
+                    <input type="text" id="eqTopic" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:13px;">
+                </div>
+                <div>
+                    <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px;">Sub-topic</label>
+                    <input type="text" id="eqSubTopic" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:13px;">
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label style="font-size:12px;color:var(--muted);font-weight:600;">Keywords for Grading <span style="font-size:11px;">(comma-separated)</span></label>
+                <input type="text" id="editKeywordsInput" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:13px;font-family:monospace;">
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label style="font-size:12px;color:var(--muted);font-weight:600;">Hint</label>
+                <input type="text" id="eqHint" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:13px;">
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label style="font-size:12px;color:var(--muted);font-weight:600;">Explanation</label>
+                <textarea id="eqExplanation" style="width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:13px;min-height:50px;resize:vertical;font-family:inherit;"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+                <div>
+                    <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px;">Max Bytes Reward</label>
+                    <input type="number" id="eqMaxBytes" min="0" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:13px;">
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding-top:22px;">
+                    <input type="checkbox" id="eqIsActive" style="width:16px;height:16px;cursor:pointer;">
+                    <label for="eqIsActive" style="font-size:13px;color:var(--text);cursor:pointer;">Active (served to students)</label>
+                </div>
+            </div>
         </div>
-        <div class="form-group">
-            <label>Keywords for Grading <span style="font-size:11px;color:var(--muted);">(comma-separated)</span></label>
-            <input type="text" id="editKeywordsInput" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:13px;font-family:monospace;" placeholder="keyword1, keyword2, keyword3...">
-        </div>
+        <div id="editQuizErrorMsg" style="display:none;color:var(--danger);font-size:13px;margin-bottom:12px;"></div>
         <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;">
             <button class="btn" style="background:rgba(255,255,255,0.06);color:var(--muted);border:1px solid var(--border);" onclick="closeModal('editQuizModal')">Cancel</button>
-            <button class="btn btn-primary" onclick="saveQuizEdit()"><i class="fas fa-save"></i> Save Changes</button>
+            <button class="btn btn-primary" id="saveQuizEditBtn" onclick="saveQuizEdit()"><i class="fas fa-save"></i> Save Changes</button>
         </div>
     </div>
 </div>
@@ -649,7 +766,8 @@ const tabTitles = {
     'content-management-tab': ['Content Management', 'All uploaded notes, activities and quiz questions'],
     'reporting-analytics-tab': ['Analytics & Reporting', 'Growth charts and online activity'],
     'project-gallery-tab': ['Project Gallery', 'UNEB student project submissions'],
-    'admin-management-tab': ['Admin Management', 'Create, manage and delete administrator accounts.']
+    'admin-management-tab': ['Admin Management', 'Create, manage and delete administrator accounts.'],
+    'activity-integration-tab': ['Activity of Integration Library', 'Browse, approve, edit and delete all CBC scenario activities']
 };
 
 function setupNavigation() {
@@ -678,6 +796,7 @@ function switchTab(tabId) {
     if (tabId === 'reporting-analytics-tab') loadAnalytics();
     if (tabId === 'project-gallery-tab') loadGallery();
     if (tabId === 'admin-management-tab') loadAdminManagement();
+    if (tabId === 'activity-integration-tab') loadActivityIntegration();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -971,7 +1090,7 @@ async function loadQuizQuestions() {
                 <td style="font-size:12px;color:var(--muted);">${fmt(q.createdAt)}</td>
                 <td>
                     <div style="display:flex;gap:6px;">
-                        <button class="btn btn-warning btn-sm btn-icon" onclick="openEditQuiz('${q._id}',${JSON.stringify(q.questionText).replace(/'/g,"&apos;")},${JSON.stringify((q.keywordsForGrading||[]).join(', '))})" title="Edit"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-warning btn-sm btn-icon" onclick="openEditQuiz('${q._id}')" title="Edit"><i class="fas fa-edit"></i></button>
                         <button class="btn btn-danger btn-sm btn-icon" onclick="openDeleteQuiz('${q._id}')" title="Delete"><i class="fas fa-trash-alt"></i></button>
                     </div>
                 </td>
@@ -1008,29 +1127,133 @@ async function deleteActivity(id) {
     } catch { showToast('Failed to delete activity.', 'error'); }
 }
 
-function openEditQuiz(id, questionText, keywordsStr) {
+let _editQuizType = '';
+
+async function openEditQuiz(id) {
     document.getElementById('editQuizId').value = id;
-    document.getElementById('editQTextarea').value = questionText;
-    document.getElementById('editKeywordsInput').value = keywordsStr;
+    document.getElementById('editQuizLoadingMsg').style.display = 'block';
+    document.getElementById('editQuizForm').style.display = 'none';
+    document.getElementById('editQuizErrorMsg').style.display = 'none';
     openModal('editQuizModal');
+    try {
+        const r = await fetch('/admin/quiz-questions/' + id, { headers: { Authorization: 'Bearer ' + token() } });
+        if (!r.ok) throw new Error('Failed to load question');
+        const { question: q } = await r.json();
+        _editQuizType = q.type || '';
+        document.getElementById('eqSubject').value = q.subject || '';
+        document.getElementById('eqTypeSummary').value = (q.intendedClass || '') + ' · ' + (q.type || '');
+        document.getElementById('editQTextarea').value = q.questionText || '';
+        document.getElementById('eqTopic').value = q.topic || '';
+        document.getElementById('eqSubTopic').value = q.subTopic || '';
+        document.getElementById('editKeywordsInput').value = (q.keywordsForGrading || []).join(', ');
+        document.getElementById('eqHint').value = q.hint || '';
+        document.getElementById('eqExplanation').value = q.explanation || '';
+        document.getElementById('eqMaxBytes').value = q.maxBytesRewardPerQuestion ?? 1;
+        document.getElementById('eqIsActive').checked = q.isActive !== false;
+
+        const optSec = document.getElementById('eqOptionsSection');
+        const caSec = document.getElementById('eqCorrectAnswersSection');
+        const matchSec = document.getElementById('eqMatchingSection');
+        const ordSec = document.getElementById('eqOrderingSection');
+        optSec.style.display = 'none'; caSec.style.display = 'none';
+        matchSec.style.display = 'none'; ordSec.style.display = 'none';
+
+        if (['multiple-choice-single', 'multiple-choice-multi', 'true-false'].includes(q.type)) {
+            optSec.style.display = 'block';
+            const list = document.getElementById('eqOptionsList');
+            list.innerHTML = (q.options || []).map((o, i) => eqOptionRow(o.text, o.isCorrect, i)).join('');
+        } else if (q.type === 'matching') {
+            matchSec.style.display = 'block';
+            const ml = document.getElementById('eqMatchingList');
+            ml.innerHTML = (q.matchingPairs || []).map((p, i) => eqPairRow(p.itemA, p.itemB, i)).join('');
+        } else if (q.type === 'ordering') {
+            ordSec.style.display = 'block';
+            document.getElementById('eqOrderedItems').value = (q.orderedItems || []).join('\n');
+        } else {
+            caSec.style.display = 'block';
+            document.getElementById('eqCorrectAnswers').value = (q.correctAnswers || []).join('\n');
+        }
+
+        document.getElementById('editQuizLoadingMsg').style.display = 'none';
+        document.getElementById('editQuizForm').style.display = 'block';
+    } catch (e) {
+        document.getElementById('editQuizLoadingMsg').style.display = 'none';
+        document.getElementById('editQuizErrorMsg').style.display = 'block';
+        document.getElementById('editQuizErrorMsg').textContent = 'Failed to load question details. Please try again.';
+    }
+}
+
+function eqOptionRow(text, isCorrect, idx) {
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;" data-idx="${idx}">
+        <input type="checkbox" ${isCorrect ? 'checked' : ''} style="width:15px;height:15px;cursor:pointer;">
+        <input type="text" value="${esc(text)}" style="flex:1;padding:7px 10px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:13px;">
+        <button type="button" onclick="this.closest('[data-idx]').remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px;"><i class="fas fa-times"></i></button>
+    </div>`;
+}
+function eqAddOption() {
+    const list = document.getElementById('eqOptionsList');
+    const idx = list.children.length;
+    list.insertAdjacentHTML('beforeend', eqOptionRow('', false, idx));
+}
+function eqPairRow(a, b, idx) {
+    return `<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:6px;align-items:center;" data-pair-idx="${idx}">
+        <input type="text" value="${esc(a)}" placeholder="Item A" style="padding:7px 10px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:13px;">
+        <input type="text" value="${esc(b)}" placeholder="Item B" style="padding:7px 10px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,0.06);color:var(--text);font-size:13px;">
+        <button type="button" onclick="this.closest('[data-pair-idx]').remove()" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:4px;"><i class="fas fa-times"></i></button>
+    </div>`;
+}
+function eqAddPair() {
+    const ml = document.getElementById('eqMatchingList');
+    const idx = ml.children.length;
+    ml.insertAdjacentHTML('beforeend', eqPairRow('', '', idx));
 }
 
 async function saveQuizEdit() {
     const id = document.getElementById('editQuizId').value;
     const questionText = document.getElementById('editQTextarea').value.trim();
+    if (!questionText) { showToast('Question text is required.', 'error'); return; }
     const kwRaw = document.getElementById('editKeywordsInput').value;
     const keywordsForGrading = kwRaw.split(',').map(k => k.trim()).filter(Boolean);
-    if (!questionText) { showToast('Question text is required.', 'error'); return; }
+    const body = {
+        questionText,
+        keywordsForGrading,
+        topic: document.getElementById('eqTopic').value.trim(),
+        subTopic: document.getElementById('eqSubTopic').value.trim(),
+        hint: document.getElementById('eqHint').value.trim(),
+        explanation: document.getElementById('eqExplanation').value.trim(),
+        maxBytesRewardPerQuestion: Number(document.getElementById('eqMaxBytes').value) || 1,
+        isActive: document.getElementById('eqIsActive').checked
+    };
+    if (['multiple-choice-single', 'multiple-choice-multi', 'true-false'].includes(_editQuizType)) {
+        const rows = document.getElementById('eqOptionsList').querySelectorAll('[data-idx]');
+        body.options = Array.from(rows).map(row => ({
+            text: row.querySelector('input[type=text]').value.trim(),
+            isCorrect: row.querySelector('input[type=checkbox]').checked
+        })).filter(o => o.text);
+    } else if (_editQuizType === 'matching') {
+        const rows = document.getElementById('eqMatchingList').querySelectorAll('[data-pair-idx]');
+        body.matchingPairs = Array.from(rows).map(row => {
+            const inputs = row.querySelectorAll('input[type=text]');
+            return { itemA: inputs[0].value.trim(), itemB: inputs[1].value.trim() };
+        }).filter(p => p.itemA && p.itemB);
+    } else if (_editQuizType === 'ordering') {
+        body.orderedItems = document.getElementById('eqOrderedItems').value.split('\n').map(s => s.trim()).filter(Boolean);
+    } else {
+        body.correctAnswers = document.getElementById('eqCorrectAnswers').value.split('\n').map(s => s.trim()).filter(Boolean);
+    }
+    const btn = document.getElementById('saveQuizEditBtn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving...';
     try {
-        const r = await fetch('/admin/quiz-questions/'+id, {
-            method:'PUT', headers:{'Authorization':'Bearer '+token(),'Content-Type':'application/json'},
-            body: JSON.stringify({ questionText, keywordsForGrading })
+        const r = await fetch('/admin/quiz-questions/' + id, {
+            method: 'PUT', headers: { 'Authorization': 'Bearer ' + token(), 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
         });
-        if (!r.ok) throw new Error();
+        if (!r.ok) { const d = await r.json(); throw new Error(d.error || 'Failed'); }
         showToast('Question updated successfully.', 'success');
         closeModal('editQuizModal');
         loadQuizQuestions();
-    } catch { showToast('Failed to update question.', 'error'); }
+    } catch (e) { showToast(e.message || 'Failed to update question.', 'error'); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Changes'; }
 }
 
 function openDeleteQuiz(id) {
@@ -1556,6 +1779,114 @@ document.getElementById('messageTeacherForm').addEventListener('submit', async (
 function escHtml(str) {
     if (!str) return '';
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ACTIVITY OF INTEGRATION LIBRARY
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadActivityIntegration() {
+    const grid = document.getElementById('aiLibraryGrid');
+    if (!grid) return;
+    const sort = document.getElementById('aiSortSelect').value;
+    const filter = document.getElementById('aiFilterSelect').value;
+    grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);grid-column:1/-1;"><span class="spinner"></span> Loading library...</div>';
+    try {
+        let url = '/admin/activities-of-integration?sort=' + sort;
+        if (filter) url += '&filter=' + filter;
+        const r = await fetch(url, { headers: { Authorization: 'Bearer ' + token() } });
+        if (!r.ok) throw new Error('Failed to load');
+        const { activities } = await r.json();
+        if (!activities.length) {
+            grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);grid-column:1/-1;"><i class="fas fa-inbox" style="font-size:28px;margin-bottom:12px;display:block;"></i>No activities found.</div>';
+            return;
+        }
+        grid.innerHTML = activities.map(a => renderAICard(a)).join('');
+    } catch { grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--danger);grid-column:1/-1;">Failed to load library.</div>'; }
+}
+
+function renderAICard(a) {
+    const approvedBadge = a.isApproved
+        ? `<span style="color:#2ecc71;font-weight:700;font-size:12px;"><i class="fas fa-check-circle"></i> Approved</span>`
+        : `<span style="color:#e74c3c;font-weight:700;font-size:12px;">Not yet Approved</span>`;
+    const creatorLabel = a.createdByType === 'teacher' ? '<i class="fas fa-chalkboard-teacher"></i> Teacher upload' : '<i class="fas fa-robot"></i> AI-generated';
+    const preview = (a.scenariosContent || '').slice(0, 180).replace(/\n/g, ' ');
+    return `<div style="background:rgba(30,42,60,0.85);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div style="font-weight:700;font-size:14px;color:var(--text);line-height:1.4;">${esc(a.title)}</div>
+            ${approvedBadge}
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="badge badge-blue">${esc(a.subject)}</span>
+            <span class="badge badge-muted">${esc(a.seniorClass)}</span>
+            <span class="badge badge-muted" style="font-size:10px;">${esc(a.elementOfConstruct === 'many-topics' ? 'Many Topics' : 'One Topic')}</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);">Topic: ${esc(a.topic)}</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:8px;">${esc(preview)}${a.scenariosContent && a.scenariosContent.length > 180 ? '...' : ''}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted);flex-wrap:wrap;gap:4px;">
+            <span>${creatorLabel} · ${esc(a.createdByName)}</span>
+            <span><i class="fas fa-thumbs-up"></i> ${a.helpfulCount || 0} helpful</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:4px;border-top:1px solid var(--border);">
+            <button class="btn btn-sm ${a.isApproved ? 'btn-warning' : 'btn-success'}" onclick="toggleAIApprove('${a._id}')">
+                <i class="fas fa-${a.isApproved ? 'times-circle' : 'check-circle'}"></i> ${a.isApproved ? 'Revoke Approval' : 'Approve'}
+            </button>
+            <button class="btn btn-warning btn-sm" onclick="openEditAI('${a._id}','${esc(a.title).replace(/'/g,"\\'")}','${esc(a.topic).replace(/'/g,"\\'")}',${JSON.stringify(a.scenariosContent||'')})">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteAI('${a._id}')">
+                <i class="fas fa-trash-alt"></i> Delete
+            </button>
+        </div>
+    </div>`;
+}
+
+async function toggleAIApprove(id) {
+    try {
+        const r = await fetch('/admin/activities-of-integration/' + id + '/approve', {
+            method: 'PUT', headers: { Authorization: 'Bearer ' + token() }
+        });
+        if (!r.ok) throw new Error();
+        showToast('Approval status updated.', 'success');
+        loadActivityIntegration();
+    } catch { showToast('Failed to update approval.', 'error'); }
+}
+
+function openEditAI(id, title, topic, content) {
+    document.getElementById('editAIId').value = id;
+    document.getElementById('editAITitle').value = title;
+    document.getElementById('editAITopic').value = topic;
+    document.getElementById('editAIContent').value = content;
+    openModal('editAIModal');
+}
+
+async function saveAIEdit() {
+    const id = document.getElementById('editAIId').value;
+    const title = document.getElementById('editAITitle').value.trim();
+    const topic = document.getElementById('editAITopic').value.trim();
+    const scenariosContent = document.getElementById('editAIContent').value.trim();
+    if (!title || !scenariosContent) { showToast('Title and content are required.', 'error'); return; }
+    try {
+        const r = await fetch('/admin/activities-of-integration/' + id, {
+            method: 'PUT', headers: { Authorization: 'Bearer ' + token(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, topic, scenariosContent })
+        });
+        if (!r.ok) throw new Error();
+        showToast('Activity updated.', 'success');
+        closeModal('editAIModal');
+        loadActivityIntegration();
+    } catch { showToast('Failed to update activity.', 'error'); }
+}
+
+async function deleteAI(id) {
+    if (!confirm('Permanently delete this activity? This cannot be undone.')) return;
+    try {
+        const r = await fetch('/admin/activities-of-integration/' + id, {
+            method: 'DELETE', headers: { Authorization: 'Bearer ' + token() }
+        });
+        if (!r.ok) throw new Error();
+        showToast('Activity deleted.', 'success');
+        loadActivityIntegration();
+    } catch { showToast('Failed to delete activity.', 'error'); }
 }
 </script>
 </body>
