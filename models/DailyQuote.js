@@ -26,6 +26,11 @@ const dailyQuoteSchema = new mongoose.Schema({
         default: [],
         ref: 'Student'
     },
+    likedBy: {
+        type: [mongoose.Schema.Types.ObjectId],
+        default: [],
+        ref: 'Student'
+    },
     aiGenerated: {
         type: Boolean,
         default: false

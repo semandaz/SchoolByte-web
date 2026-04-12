@@ -2266,10 +2266,12 @@ app.get('/student/daily-quote', authenticateToken, async (req, res) => {
     try {
         const studentId = req.student.id;
 
-        // Find a random quote the student has NOT seen
+        // Find the most-liked unseen quote first
         const unseen = await DailyQuote.aggregate([
             { $match: { seenBy: { $nin: [new mongoose.Types.ObjectId(studentId)] } } },
-            { $sample: { size: 1 } }
+            { $addFields: { likeCount: { $size: { $ifNull: ['$likedBy', []] } } } },
+            { $sort: { likeCount: -1, createdAt: 1 } },
+            { $limit: 1 }
         ]);
 
         if (unseen.length > 0) {
@@ -2281,7 +2283,9 @@ app.get('/student/daily-quote', authenticateToken, async (req, res) => {
                 text: quote.text,
                 author: quote.author,
                 category: quote.category,
-                context: quote.context
+                context: quote.context,
+                likeCount: quote.likeCount || 0,
+                likedByMe: (quote.likedBy || []).some(id => id.toString() === studentId)
             });
         }
 
@@ -2318,7 +2322,9 @@ app.get('/student/daily-quote', authenticateToken, async (req, res) => {
                 text: newQuote.text,
                 author: newQuote.author,
                 category: newQuote.category,
-                context: newQuote.context
+                context: newQuote.context,
+                likeCount: 0,
+                likedByMe: false
             });
         } catch (aiError) {
             console.error('AI quote generation failed:', aiError.message, '| raw:', raw.slice(0, 200));
@@ -2326,7 +2332,15 @@ app.get('/student/daily-quote', authenticateToken, async (req, res) => {
             const fallback = await DailyQuote.findOne({}).sort({ createdAt: 1 });
             if (fallback) {
                 await DailyQuote.updateOne({ _id: fallback._id }, { $addToSet: { seenBy: studentId } });
-                return res.json({ _id: fallback._id, text: fallback.text, author: fallback.author, category: fallback.category, context: fallback.context });
+                return res.json({
+                    _id: fallback._id,
+                    text: fallback.text,
+                    author: fallback.author,
+                    category: fallback.category,
+                    context: fallback.context,
+                    likeCount: (fallback.likedBy || []).length,
+                    likedByMe: (fallback.likedBy || []).some(id => id.toString() === studentId)
+                });
             }
             return res.status(503).json({ message: 'Quote service temporarily unavailable.' });
         }
@@ -2334,6 +2348,29 @@ app.get('/student/daily-quote', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Daily quote error:', error);
         res.status(500).json({ message: 'Failed to fetch daily quote.' });
+    }
+});
+
+// POST /student/daily-quote/:id/like — toggle like on a quote
+app.post('/student/daily-quote/:id/like', authenticateToken, async (req, res) => {
+    try {
+        const studentId = req.student.id;
+        const quote = await DailyQuote.findById(req.params.id);
+        if (!quote) return res.status(404).json({ error: 'Quote not found' });
+
+        const alreadyLiked = (quote.likedBy || []).some(id => id.toString() === studentId);
+        if (alreadyLiked) {
+            await DailyQuote.updateOne({ _id: quote._id }, { $pull: { likedBy: new mongoose.Types.ObjectId(studentId) } });
+        } else {
+            await DailyQuote.updateOne({ _id: quote._id }, { $addToSet: { likedBy: new mongoose.Types.ObjectId(studentId) } });
+        }
+        const updated = await DailyQuote.findById(req.params.id, { likedBy: 1 });
+        res.json({
+            likeCount: (updated.likedBy || []).length,
+            likedByMe: !alreadyLiked
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 

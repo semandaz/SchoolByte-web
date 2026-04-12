@@ -337,6 +337,33 @@
 
             .quote-next-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
+            .quote-like-btn {
+                background: none;
+                border: 1px solid rgba(255,255,255,0.15);
+                border-radius: 50px;
+                color: rgba(255,255,255,0.45);
+                font-size: 0.76rem;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 0.38rem;
+                padding: 0.38rem 0.9rem;
+                transition: all 0.2s;
+                font-family: inherit;
+                font-weight: 600;
+            }
+            .quote-like-btn:hover {
+                background: rgba(255, 90, 90, 0.12);
+                border-color: rgba(255, 110, 110, 0.38);
+                color: #ff8080;
+            }
+            .quote-like-btn.liked {
+                background: rgba(255, 70, 70, 0.18);
+                border-color: rgba(255, 100, 100, 0.5);
+                color: #ff6b6b;
+            }
+            .quote-like-btn:disabled { opacity: 0.5; cursor: default; }
+
             .quote-loading-state {
                 display: flex;
                 align-items: center;
@@ -1477,7 +1504,10 @@
                         '<div class="quote-context-text" id="' + ctxId + '">' + escQ(q.context) + '</div>'
                     : '') +
                     '<div class="quote-card-footer">' +
-                        '<span class="quote-seen-label">New quote every visit</span>' +
+                        '<button class="quote-like-btn' + (q.likedByMe ? ' liked' : '') + '" id="qlb-' + q._id + '" data-qid="' + q._id + '">' +
+                            '<i class="' + (q.likedByMe ? 'fas' : 'far') + ' fa-heart"></i>' +
+                            '<span id="qlc-' + q._id + '">' + (q.likeCount || 0) + '</span>' +
+                        '</button>' +
                         '<button class="quote-next-btn" data-action="next">' +
                             '<i class="fas fa-arrow-right" style="font-size:0.7rem;"></i> Next Quote' +
                         '</button>' +
@@ -1490,6 +1520,9 @@
                 // Wire up next button
                 var nextBtn = card.querySelector('[data-action="next"]');
                 if (nextBtn) nextBtn.addEventListener('click', function() { fetchNextQuote(nextBtn); });
+                // Wire up like button
+                var likeBtn = document.getElementById('qlb-' + q._id);
+                if (likeBtn) likeBtn.addEventListener('click', function() { toggleQuoteLike(q._id); });
             }
 
             function toggleCtx(ctxId, togId) {
@@ -1500,6 +1533,27 @@
                 if (btn) btn.innerHTML = el.classList.contains('open')
                     ? '<i class="fas fa-chevron-up" style="font-size:0.72rem;"></i> Hide context'
                     : '<i class="fas fa-book-open" style="font-size:0.72rem;"></i> Read the story behind this quote';
+            }
+
+            async function toggleQuoteLike(id) {
+                const tok = localStorage.getItem('token');
+                if (!tok) return;
+                const btn = document.getElementById('qlb-' + id);
+                if (!btn || btn.disabled) return;
+                btn.disabled = true;
+                try {
+                    const r = await fetch('/student/daily-quote/' + id + '/like', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + tok }
+                    });
+                    if (!r.ok) throw new Error();
+                    const d = await r.json();
+                    btn.className = 'quote-like-btn' + (d.likedByMe ? ' liked' : '');
+                    const icon = btn.querySelector('i');
+                    if (icon) icon.className = (d.likedByMe ? 'fas' : 'far') + ' fa-heart';
+                    const countEl = document.getElementById('qlc-' + id);
+                    if (countEl) countEl.textContent = d.likeCount;
+                } catch(e) {} finally { btn.disabled = false; }
             }
 
             async function fetchNextQuote(btn) {
