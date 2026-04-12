@@ -11,6 +11,6 @@ const playerLevelSchema = new mongoose.Schema({
     levelUpByteReward: { type: Number, required: true, min: 0 }
 }, { timestamps: true });
 
-playerLevelSchema.index({ tier: 1 }, { unique: true });
+// tier unique index is defined on the field above
 
 module.exports = mongoose.model('PlayerLevel', playerLevelSchema);

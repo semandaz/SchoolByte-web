@@ -13,7 +13,7 @@ const subjectSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
 });
 
-subjectSchema.index({ name: 1 }, { unique: true });
+// name unique index is defined on the field above
 subjectSchema.pre('save', function (next) {
     this.updatedAt = Date.now();
     next();

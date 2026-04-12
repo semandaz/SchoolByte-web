@@ -13,6 +13,6 @@ const adminSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-adminSchema.index({ email: 1 }, { unique: true });
+// email unique index is defined on the field above
 
 module.exports = mongoose.model('Administrator', adminSchema);

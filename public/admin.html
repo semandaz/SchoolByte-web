@@ -1823,7 +1823,7 @@ async function confirmResetAdminPassword() {
         const data = await r.json();
         const sel = document.getElementById('msgTeacherId');
         sel.innerHTML = '<option value="">-- Select a teacher --</option>' +
-            (data.teachers || []).map(t => '<option value="' + t._id + '">' + escHtml(t.teacherName) + ' (' + escHtml(t.email) + ')</option>').join('');
+            (Array.isArray(data) ? data : (data.teachers || [])).map(t => '<option value="' + t._id + '">' + escHtml(t.teacherName) + ' (' + escHtml(t.email) + ')</option>').join('');
     } catch {}
 })();
 

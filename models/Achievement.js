@@ -12,6 +12,6 @@ const achievementSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
-achievementSchema.index({ achievementId: 1 }, { unique: true });
+// achievementId unique index is defined on the field above
 
 module.exports = mongoose.model('Achievement', achievementSchema);

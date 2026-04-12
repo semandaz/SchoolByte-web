@@ -24,6 +24,6 @@ const teacherSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-teacherSchema.index({ email: 1 }, { unique: true });
+// email unique index is defined on the field above
 
 module.exports = mongoose.model('Teacher', teacherSchema);

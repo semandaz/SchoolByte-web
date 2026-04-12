@@ -7,6 +7,6 @@ const verificationCodeSchema = new mongoose.Schema({
     lastSentAt: { type: Date, default: Date.now }
 });
 
-verificationCodeSchema.index({ email: 1 }, { unique: true });
+// email unique index is defined on the field above
 
 module.exports = mongoose.model('VerificationCode', verificationCodeSchema);

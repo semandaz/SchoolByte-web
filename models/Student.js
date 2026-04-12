@@ -117,8 +117,7 @@ const studentSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
 });
 
-studentSchema.index({ email: 1 }, { unique: true });
-studentSchema.index({ indexNumber: 1 }, { unique: true });
+// email and indexNumber unique indexes are defined on the fields above
 studentSchema.index({ class: 1 });
 studentSchema.index({ subjectsEnrolled: 1 });
 studentSchema.pre('save', function (next) {

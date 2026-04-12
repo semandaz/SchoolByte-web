@@ -12,7 +12,7 @@ const teamSchema = new mongoose.Schema({
     created_at: { type: Date, default: Date.now }
 }, { timestamps: true });
 
-teamSchema.index({ share_token: 1 });
+// share_token unique index is defined on the field above
 teamSchema.index({ user_id: 1 });
 
 module.exports = mongoose.model('Team', teamSchema);

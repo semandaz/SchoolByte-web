@@ -39,7 +39,7 @@ activitySchema.virtual('attemptCount', {
 });
 activitySchema.set('toJSON', { virtuals: true });
 activitySchema.set('toObject', { virtuals: true });
-activitySchema.index({ associatedWorkFile: 1 }, { unique: true });
+// associatedWorkFile unique index is defined on the field above
 activitySchema.index({ subject: 1 });
 activitySchema.index({ intendedClass: 1 });
 

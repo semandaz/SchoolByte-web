@@ -93,7 +93,7 @@ quizQuestionSchema.index({ intendedClass: 1 });
 quizQuestionSchema.index({ isActive: 1 });
 quizQuestionSchema.index({ timesServedOverall: 1 });
 quizQuestionSchema.index({ lastServedTimestamp: 1 });
-quizQuestionSchema.index({ questionHash: 1 }, { sparse: true, unique: true });
+// questionHash unique sparse index is defined on the field above
 quizQuestionSchema.index({ topic: 1 });
 
 quizQuestionSchema.pre('save', function (next) {
