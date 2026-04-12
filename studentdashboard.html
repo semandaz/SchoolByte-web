@@ -12,6 +12,7 @@
             href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
             rel="stylesheet"
         />
+        <script src="lottie-loader.js"></script>
         <style>
             /* Global CSS Variables for Unified Color Palette */
             :root {
@@ -1120,9 +1121,7 @@
         <!-- REMOVED: All old fixed floating icons and notifications -->
 
         <div class="container">
-            <div class="message-container" id="loadingMessage">
-                <div class="loading-message">Loading student dashboard...</div>
-            </div>
+            <div class="message-container hidden" id="loadingMessage"></div>
             <div class="message-container hidden" id="errorMessage">
                 <div class="error-message"></div>
             </div>
@@ -1470,6 +1469,7 @@
 
                             // Hide loading and show content
                             loadingMessage.classList.add("hidden");
+                            if (window.LottieLoader) LottieLoader.hide(300);
                             mainContent.classList.remove("hidden");
                         } else if (
                             response.status === 401 ||
@@ -1495,6 +1495,7 @@
                             ".error-message",
                         ).textContent = errorMessageText;
                         loadingMessage.classList.add("hidden");
+                        if (window.LottieLoader) LottieLoader.hide(300);
                         errorMessage.classList.remove("hidden");
                         mainContent.classList.add("hidden");
                     }
