@@ -1581,20 +1581,50 @@ function esc(str) {
 
 <!-- Admin Management Modals -->
 <div id="createAdminModal" class="modal-overlay">
-    <div class="modal-box">
+    <div class="modal-box" style="max-width:460px;">
         <button class="modal-close" onclick="closeModal('createAdminModal')">&times;</button>
-        <h3><i class="fas fa-user-shield" style="color:var(--primary);margin-right:8px;"></i> Create New Admin</h3>
-        <form id="createAdminForm">
-            <div class="form-group"><label>Full Name *</label><input type="text" id="newAdminName" required placeholder="e.g. Jane Admin"></div>
-            <div class="form-group"><label>Email *</label><input type="email" id="newAdminEmail" required placeholder="admin@school.ac.ug"></div>
-            <div class="form-group"><label>Role</label>
-                <select id="newAdminRole">
-                    <option value="admin">Admin</option>
-                    <option value="super_admin">Super Admin</option>
-                </select>
+
+        <!-- Modal header -->
+        <div style="text-align:center;padding:4px 0 22px;">
+            <div style="width:58px;height:58px;background:linear-gradient(135deg,var(--primary) 0%,#1abc9c 100%);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 6px 20px rgba(52,152,219,0.35);">
+                <i class="fas fa-user-shield" style="font-size:24px;color:#fff;"></i>
             </div>
-            <p style="font-size:0.8rem;color:rgba(255,255,255,0.5);margin-bottom:14px;"><i class="fas fa-info-circle"></i> A temporary password will be generated and emailed to the admin. They will be prompted to set a permanent password on first login.</p>
-            <button type="submit" class="btn-primary" style="width:100%;" id="createAdminBtn"><i class="fas fa-plus"></i> Create Admin</button>
+            <h3 style="font-size:19px;font-weight:800;margin-bottom:4px;border-bottom:none;padding-bottom:0;color:#ecf0f1;">Create New Admin</h3>
+            <p style="font-size:12.5px;color:var(--muted);margin:0;">Add a new administrator to the portal.</p>
+        </div>
+
+        <form id="createAdminForm" autocomplete="off">
+            <!-- Full Name -->
+            <div class="form-group">
+                <label style="font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);font-weight:700;">Full Name <span style="color:var(--danger);">*</span></label>
+                <div style="position:relative;">
+                    <i class="fas fa-user" style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px;pointer-events:none;"></i>
+                    <input type="text" id="newAdminName" required placeholder="e.g. Jane Nakato" style="padding-left:36px;">
+                </div>
+            </div>
+
+            <!-- Email -->
+            <div class="form-group">
+                <label style="font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);font-weight:700;">Email Address <span style="color:var(--danger);">*</span></label>
+                <div style="position:relative;">
+                    <i class="fas fa-envelope" style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px;pointer-events:none;"></i>
+                    <input type="email" id="newAdminEmail" required placeholder="admin@school.ac.ug" style="padding-left:36px;">
+                </div>
+            </div>
+
+            <!-- Info notice -->
+            <div style="background:rgba(52,152,219,0.09);border:1px solid rgba(52,152,219,0.22);border-radius:10px;padding:11px 14px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;">
+                <i class="fas fa-key" style="color:var(--primary);font-size:13px;margin-top:2px;flex-shrink:0;"></i>
+                <p style="font-size:12px;color:rgba(236,240,241,0.6);margin:0;line-height:1.55;">A secure temporary password will be auto-generated and emailed to the admin. They will be required to set a permanent password on first login.</p>
+            </div>
+
+            <!-- Action buttons -->
+            <div style="display:flex;gap:10px;">
+                <button type="button" onclick="closeModal('createAdminModal')" style="flex:1;padding:11px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.05);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;transition:background 0.2s;">Cancel</button>
+                <button type="submit" id="createAdminBtn" style="flex:2;padding:11px;border-radius:8px;border:none;background:var(--primary);color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s;">
+                    <i class="fas fa-user-plus"></i> Create Admin
+                </button>
+            </div>
         </form>
     </div>
 </div>
@@ -1657,7 +1687,7 @@ async function loadAdminManagement() {
     document.getElementById('adminTableWrapper').style.display = 'none';
     document.getElementById('adminListError').style.display = 'none';
     try {
-        const r = await fetchAdmin('/admin/admins');
+        const r = await fetch('/admin/admins', { headers: { Authorization: 'Bearer ' + token() } });
         if (!r.ok) throw new Error((await r.json()).message || 'Failed to load admins');
         const data = await r.json();
         renderAdminTable(data.admins || []);
@@ -1698,20 +1728,22 @@ function renderAdminTable(admins) {
 document.getElementById('createAdminForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('createAdminBtn');
-    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+    const emailVal = document.getElementById('newAdminEmail').value.trim();
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+    btn.style.opacity = '0.8';
     try {
-        const r = await fetchAdmin('/admin/admins', {
+        const r = await fetch('/admin/admins', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token() },
             body: JSON.stringify({
                 adminName: document.getElementById('newAdminName').value.trim(),
-                email: document.getElementById('newAdminEmail').value.trim(),
-                role: document.getElementById('newAdminRole').value
+                email: emailVal
             })
         });
         const data = await r.json();
         if (!r.ok) throw new Error(data.message || 'Failed to create admin');
-        showToast('Admin created! Temporary password sent to their email.', 'success');
+        showToast('Admin created! Login credentials sent to ' + emailVal, 'success');
         closeModal('createAdminModal');
         document.getElementById('createAdminForm').reset();
         adminMgmtLoaded = false;
@@ -1719,7 +1751,9 @@ document.getElementById('createAdminForm').addEventListener('submit', async (e) 
     } catch (err) {
         showToast(err.message, 'error');
     } finally {
-        btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus"></i> Create Admin';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-user-plus"></i> Create Admin';
+        btn.style.opacity = '';
     }
 });
 
@@ -1736,9 +1770,9 @@ async function confirmDeleteAdmin() {
     const btn = document.getElementById('confirmDeleteAdminBtn');
     btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
     try {
-        const r = await fetchAdmin('/admin/admins/' + selectedDeleteAdminId, {
+        const r = await fetch('/admin/admins/' + selectedDeleteAdminId, {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token() },
             body: JSON.stringify({ reason })
         });
         const data = await r.json();
@@ -1764,9 +1798,9 @@ async function confirmResetAdminPassword() {
     const btn = document.getElementById('confirmResetAdminBtn');
     btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
     try {
-        const r = await fetchAdmin('/admin/admins/' + selectedResetAdminId + '/reset-password', {
+        const r = await fetch('/admin/admins/' + selectedResetAdminId + '/reset-password', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token() }
         });
         const data = await r.json();
         if (!r.ok) throw new Error(data.message || 'Failed to reset password');
@@ -1784,7 +1818,7 @@ async function confirmResetAdminPassword() {
 // Message Teacher
 (async function populateTeacherSelect() {
     try {
-        const r = await fetchAdmin('/admin/teachers');
+        const r = await fetch('/admin/teachers', { headers: { Authorization: 'Bearer ' + token() } });
         if (!r.ok) return;
         const data = await r.json();
         const sel = document.getElementById('msgTeacherId');
@@ -1798,9 +1832,9 @@ document.getElementById('messageTeacherForm').addEventListener('submit', async (
     const btn = document.getElementById('sendMsgBtn');
     btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
     try {
-        const r = await fetchAdmin('/admin/message-teachers', {
+        const r = await fetch('/admin/message-teachers', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token() },
             body: JSON.stringify({
                 teacherId: document.getElementById('msgTeacherId').value,
                 subject: document.getElementById('msgTeacherSubject').value.trim(),
