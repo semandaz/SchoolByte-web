@@ -527,6 +527,8 @@
             margin-left: 12px;
             background: var(--gradient-background-primary);
         }
+        .message-avatar svg, .message-avatar img { width: 100%; height: 100%; border-radius: 50%; }
+        .avatar svg, .avatar img { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; }
 
         .message-bubble {
             padding: 12px 18px;
@@ -1230,6 +1232,7 @@
     </style>
     <script src="student-theme.js"></script>
     <script src="apply-font.js"></script>
+    <script src="avatars.js"></script>
 </head>
 <body>
     <!-- Floating Particles -->
@@ -1515,7 +1518,11 @@
                 };
 
                 const initials = currentUser.username.split(' ').map(n => n[0]).join('').toUpperCase();
-                document.getElementById('currentUserAvatar').textContent = initials;
+                const _savedAvId = localStorage.getItem('schoolbyte_avatar');
+                const _avData = (typeof SCHOOLBYTE_AVATARS !== 'undefined' && _savedAvId) ? SCHOOLBYTE_AVATARS.find(a => a.id === _savedAvId) : null;
+                const _avatarEl = document.getElementById('currentUserAvatar');
+                if (_avData) { _avatarEl.innerHTML = _avData.svg; } else { _avatarEl.textContent = initials; }
+                currentUser.avatarSvg = _avData ? _avData.svg : null;
                 document.getElementById('currentUserName').textContent = currentUser.username;
 
                 console.log('ByteNexus initialized for:', currentUser.username);
@@ -2190,7 +2197,7 @@
                          onmousedown="handleMouseDown(event, '${msg._id || msg.id}')"
                          onmousemove="handleMouseMove(event, '${msg._id || msg.id}')"
                          onmouseup="handleMouseUp(event, '${msg._id || msg.id}')">
-                        <div class="message-avatar">${isSent ? currentUserInitials : contactInitials}</div>
+                        <div class="message-avatar">${isSent && currentUser.avatarSvg ? currentUser.avatarSvg : (isSent ? currentUserInitials : contactInitials)}</div>
                         <div class="message-bubble">
                             ${replyHTML}
                             <div class="message-content">${sanitizedContent}</div>

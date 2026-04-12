@@ -148,24 +148,6 @@
                 gap: 1rem;
             }
 
-            .avatar {
-                width: 50px;
-                height: 50px;
-                border-radius: 50%;
-                background: var(--gradient-background-primary);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: var(--color-neutral-white);
-                font-size: 1.5rem;
-                cursor: pointer;
-                transition: transform 0.2s ease-in-out;
-            }
-
-            .avatar:hover {
-                transform: scale(1.1);
-            }
-
             .student-name {
                 font-weight: 600;
                 color: var(--color-brand-primary);
@@ -917,6 +899,180 @@
             }
 
             /* REMOVED: All old fixed floating icons styles, notifications, and activity feed styles */
+
+            /* ── Avatar System ──────────────────────────────────────────── */
+            .avatar {
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                background: var(--gradient-background-primary);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--color-neutral-white);
+                font-size: 1.5rem;
+                cursor: pointer;
+                transition: transform 0.2s ease-in-out, box-shadow 0.2s ease;
+                overflow: hidden;
+                border: 2px solid transparent;
+                position: relative;
+            }
+            .avatar:hover {
+                transform: scale(1.1);
+                box-shadow: 0 4px 16px rgba(26,42,108,0.3);
+                border-color: var(--color-brand-gold);
+            }
+            .avatar svg, .avatar img { width: 100%; height: 100%; border-radius: 50%; }
+            .avatar-change-hint {
+                position: absolute;
+                bottom: -22px;
+                left: 50%;
+                transform: translateX(-50%);
+                font-size: 10px;
+                color: var(--color-brand-primary);
+                white-space: nowrap;
+                opacity: 0;
+                transition: opacity 0.2s;
+                font-weight: 600;
+                pointer-events: none;
+            }
+            .profile-section:hover .avatar-change-hint { opacity: 1; }
+
+            /* Avatar Picker Modal */
+            .avatar-modal-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.6);
+                backdrop-filter: blur(4px);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.25s ease;
+            }
+            .avatar-modal-overlay.open {
+                opacity: 1;
+                pointer-events: all;
+            }
+            .avatar-modal {
+                background: #fff;
+                border-radius: 20px;
+                padding: 2rem;
+                width: min(92vw, 560px);
+                max-height: 88vh;
+                overflow-y: auto;
+                box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+                transform: translateY(30px) scale(0.95);
+                transition: transform 0.25s ease;
+                position: relative;
+            }
+            .avatar-modal-overlay.open .avatar-modal {
+                transform: translateY(0) scale(1);
+            }
+            .avatar-modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1.5rem;
+            }
+            .avatar-modal-title {
+                font-size: 1.3rem;
+                font-weight: 800;
+                background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+            }
+            .avatar-modal-close {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                border: none;
+                background: #f0f0f0;
+                font-size: 1.1rem;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background 0.2s;
+                color: #555;
+            }
+            .avatar-modal-close:hover { background: #e0e0e0; }
+
+            .avatar-tier-label {
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin: 1rem 0 0.6rem;
+                padding: 4px 10px;
+                border-radius: 20px;
+                display: inline-block;
+            }
+            .tier-1-label { background: #f0f0f0; color: #888; }
+            .tier-2-label { background: #e8f4fd; color: #2980b9; }
+            .tier-3-label { background: #fef9e7; color: #d4ac0d; }
+            .tier-4-label { background: linear-gradient(to right, #1a2a6c, #b21f1f); color: #fff; }
+
+            .avatar-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1rem;
+                margin-bottom: 0.5rem;
+            }
+            .avatar-option {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 6px;
+                cursor: pointer;
+                padding: 10px 6px;
+                border-radius: 14px;
+                border: 2.5px solid transparent;
+                transition: all 0.2s ease;
+                background: #fafafa;
+            }
+            .avatar-option:hover {
+                background: #f0f4ff;
+                border-color: #aabbff;
+                transform: translateY(-2px);
+            }
+            .avatar-option.selected {
+                border-color: var(--color-brand-primary);
+                background: #eef1ff;
+                box-shadow: 0 4px 12px rgba(26,42,108,0.18);
+            }
+            .avatar-option svg {
+                width: 72px;
+                height: 72px;
+                border-radius: 50%;
+            }
+            .avatar-option-name {
+                font-size: 12px;
+                font-weight: 600;
+                color: #555;
+                text-align: center;
+            }
+            .avatar-option.selected .avatar-option-name { color: var(--color-brand-primary); }
+
+            .avatar-modal-footer {
+                margin-top: 1.5rem;
+                text-align: center;
+            }
+            .avatar-save-btn {
+                padding: 12px 36px;
+                background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+                color: #fff;
+                border: none;
+                border-radius: 50px;
+                font-size: 0.95rem;
+                font-weight: 700;
+                cursor: pointer;
+                transition: opacity 0.2s, transform 0.2s;
+            }
+            .avatar-save-btn:hover { opacity: 0.9; transform: scale(1.03); }
         </style>
     </head>
     <body>
@@ -927,15 +1083,11 @@
             <div class="header-container">
                 <a href="studentdashboard.html" class="logo">SchoolByte</a>
                 <div class="profile-section">
-                    <div
-                        class="avatar"
-                        onclick="window.location.href='studentprofile.html'"
-                    >
-                        <i class="fas fa-user-graduate"></i>
+                    <div class="avatar" id="headerAvatar" onclick="openAvatarPicker()" title="Change your avatar">
+                        <i class="fas fa-user-graduate" id="avatarFallbackIcon"></i>
                     </div>
-                    <span class="student-name" id="studentNameDisplay"
-                        >Student</span
-                    >
+                    <span class="avatar-change-hint">Change Avatar</span>
+                    <span class="student-name" id="studentNameDisplay">Student</span>
                 </div>
             </div>
         </header>
@@ -1055,6 +1207,23 @@
         <div class="bytes-counter">
             <i class="fas fa-coins bytes-icon"></i>
             <span id="bytesCount">0</span> Bytes
+        </div>
+
+        <!-- Avatar System -->
+        <script src="avatars.js"></script>
+
+        <!-- Avatar Picker Modal -->
+        <div class="avatar-modal-overlay" id="avatarModalOverlay">
+            <div class="avatar-modal">
+                <div class="avatar-modal-header">
+                    <span class="avatar-modal-title">Choose Your Avatar</span>
+                    <button class="avatar-modal-close" onclick="closeAvatarPicker()"><i class="fas fa-times"></i></button>
+                </div>
+                <div id="avatarPickerContent"></div>
+                <div class="avatar-modal-footer">
+                    <button class="avatar-save-btn" onclick="saveSelectedAvatar()">Save Avatar</button>
+                </div>
+            </div>
         </div>
 
         <!-- Floating icons with drag functionality -->
@@ -1591,4 +1760,85 @@
 
             loadDailyQuote();
 
+        </script>
+
+        <script>
+            // ── Avatar System ─────────────────────────────────────────────
+            let _pickerSelectedId = null;
+
+            function getAvatarSvg(avatarId) {
+                if (typeof SCHOOLBYTE_AVATARS === 'undefined') return null;
+                const av = SCHOOLBYTE_AVATARS.find(a => a.id === avatarId);
+                return av ? av.svg : null;
+            }
+
+            function applyAvatarToHeader(avatarId) {
+                const container = document.getElementById('headerAvatar');
+                if (!container) return;
+                const svg = getAvatarSvg(avatarId);
+                if (svg) {
+                    container.innerHTML = svg;
+                } else {
+                    container.innerHTML = '<i class="fas fa-user-graduate" id="avatarFallbackIcon"></i>';
+                }
+            }
+
+            function initAvatar() {
+                const saved = localStorage.getItem('schoolbyte_avatar');
+                if (saved) applyAvatarToHeader(saved);
+            }
+
+            function openAvatarPicker() {
+                const saved = localStorage.getItem('schoolbyte_avatar');
+                _pickerSelectedId = saved || null;
+                const content = document.getElementById('avatarPickerContent');
+                if (!content || typeof SCHOOLBYTE_AVATARS === 'undefined') return;
+                const tiers = [
+                    { num: 1, label: 'Starter', cls: 'tier-1-label' },
+                    { num: 2, label: 'Rising', cls: 'tier-2-label' },
+                    { num: 3, label: 'Advanced', cls: 'tier-3-label' },
+                    { num: 4, label: 'Elite', cls: 'tier-4-label' }
+                ];
+                let html = '';
+                tiers.forEach(t => {
+                    const avs = SCHOOLBYTE_AVATARS.filter(a => a.tier === t.num);
+                    html += `<span class="avatar-tier-label ${t.cls}">Tier ${t.num} — ${t.label}</span>`;
+                    html += `<div class="avatar-grid">`;
+                    avs.forEach(av => {
+                        const sel = av.id === _pickerSelectedId ? 'selected' : '';
+                        html += `<div class="avatar-option ${sel}" data-id="${av.id}" onclick="selectAvatarOption(this, '${av.id}')">
+                            ${av.svg}
+                            <span class="avatar-option-name">${av.name}</span>
+                        </div>`;
+                    });
+                    html += `</div>`;
+                });
+                content.innerHTML = html;
+                document.getElementById('avatarModalOverlay').classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function selectAvatarOption(el, id) {
+                _pickerSelectedId = id;
+                document.querySelectorAll('.avatar-option').forEach(o => o.classList.remove('selected'));
+                el.classList.add('selected');
+            }
+
+            function saveSelectedAvatar() {
+                if (!_pickerSelectedId) { closeAvatarPicker(); return; }
+                localStorage.setItem('schoolbyte_avatar', _pickerSelectedId);
+                applyAvatarToHeader(_pickerSelectedId);
+                closeAvatarPicker();
+            }
+
+            function closeAvatarPicker() {
+                document.getElementById('avatarModalOverlay').classList.remove('open');
+                document.body.style.overflow = '';
+            }
+
+            document.getElementById('avatarModalOverlay').addEventListener('click', function(e) {
+                if (e.target === this) closeAvatarPicker();
+            });
+
+            initAvatar();
         </script>
