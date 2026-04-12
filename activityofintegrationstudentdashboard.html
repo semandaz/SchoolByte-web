@@ -6,6 +6,7 @@
     <title>SchoolByte – Activity of Integration</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="api-config.js"></script>
     <script src="lottie-loader.js"></script>
     <style>
         :root {
@@ -492,6 +493,7 @@
         .empty-state i { font-size: 36px; margin-bottom: 12px; display: block; opacity: 0.5; }
     </style>
     <script src="student-theme.js"></script>
+    <script src="apply-font.js"></script>
 </head>
 <body>
 
@@ -528,7 +530,8 @@
             <div class="form-grid">
                 <div class="form-group">
                     <label>Subject *</label>
-                    <input type="text" id="genSubject" placeholder="e.g. Mathematics, Biology, Physics...">
+                    <input type="text" id="genSubject" list="subjectDatalist" placeholder="e.g. Mathematics, Biology, Physics..." autocomplete="off">
+                    <datalist id="subjectDatalist"></datalist>
                 </div>
                 <div class="form-group">
                     <label>Topic / Theme *</label>
@@ -577,6 +580,7 @@
         <div class="card">
             <div class="card-title"><i class="fas fa-book-open"></i> Activity Library</div>
             <div class="library-toolbar">
+                <input type="text" id="libSearch" placeholder="Search by subject, topic or title…" style="padding:9px 14px;border:1.5px solid #d1d5db;border-radius:10px;font-size:13px;color:#1f2937;background:#fff;outline:none;flex:1;min-width:160px;" oninput="renderLibrary(this.value.toLowerCase())">
                 <select class="lib-sort-select" id="libSort" onchange="loadLibrary()">
                     <option value="date">Newest First</option>
                     <option value="approved">Approved First</option>
@@ -606,6 +610,9 @@
 
 <script>
 const token = () => localStorage.getItem('token');
+let _student = {};
+const _actStore = {};
+let _libCache = [];
 
 function showToast(msg, type='success') {
     const icons = { success:'fa-check-circle', error:'fa-exclamation-circle', info:'fa-info-circle' };
@@ -615,12 +622,24 @@ function showToast(msg, type='success') {
     document.getElementById('toastContainer').appendChild(t);
     setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.4s'; setTimeout(() => t.remove(), 400); }, 4000);
 }
+
 function esc(s) {
     if (!s) return '';
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Auth check
+function renderMarkdown(text) {
+    if (!text) return '';
+    let s = String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/__([^_\n]+)__/g, '<strong>$1</strong>');
+    s = s.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+    s = s.replace(/_([^_\n]+)_/g, '<em>$1</em>');
+    s = s.replace(/\n/g, '<br>');
+    return s;
+}
+
+// Auth + profile init
 (async function init() {
     const t = token();
     if (!t) { window.location.href = 'studentlogin.html'; return; }
@@ -628,15 +647,29 @@ function esc(s) {
         const r = await fetch('/student/dashboard', { headers: { Authorization: 'Bearer ' + t } });
         if (!r.ok) { window.location.href = 'studentlogin.html'; return; }
         const d = await r.json();
-        const name = d.student?.studentName || d.studentName || 'Student';
-        document.getElementById('studentGreeting').textContent = 'Hi, ' + name;
-    } catch { window.location.href = 'studentlogin.html'; }
-})();
+        _student = d.student || {};
+        const name = _student.preferredName || _student.studentName || 'Student';
+        const cls = _student.class || '';
+        document.getElementById('studentGreeting').textContent = 'Hi, ' + name + (cls ? '  ·  ' + cls : '');
 
-// Pre-fill subject from URL param when coming from subject dashboard
-(function() {
-    const subjectParam = new URLSearchParams(window.location.search).get('subject');
-    if (subjectParam) document.getElementById('genSubject').value = subjectParam;
+        // Populate subject datalist from enrolled subjects
+        const subjects = _student.subjectsEnrolled || [];
+        const dl = document.getElementById('subjectDatalist');
+        if (dl && subjects.length) {
+            subjects.forEach(sub => {
+                const opt = document.createElement('option');
+                opt.value = sub;
+                dl.appendChild(opt);
+            });
+        }
+
+        // Pre-fill subject from URL param
+        const subjectParam = new URLSearchParams(window.location.search).get('subject');
+        if (subjectParam) document.getElementById('genSubject').value = subjectParam;
+
+        // Silently pre-load library so it's ready when the tab is switched
+        loadLibrary(true);
+    } catch { window.location.href = 'studentlogin.html'; }
 })();
 
 function switchTab(id, btn) {
