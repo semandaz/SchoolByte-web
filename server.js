@@ -7914,7 +7914,7 @@ app.get('/student/activities-of-integration/library', authenticateToken, async (
         const studentId = req.student.id;
         const enriched = activities.map(a => ({
             ...a,
-            markedHelpfulByMe: a.helpfulMarkedBy.some(id => id.toString() === studentId)
+            markedHelpfulByMe: (a.helpfulMarkedBy || []).some(id => id.toString() === studentId)
         }));
         res.json({ activities: enriched });
     } catch (err) { res.status(500).json({ error: err.message }); }

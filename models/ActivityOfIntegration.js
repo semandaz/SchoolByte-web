@@ -6,7 +6,7 @@ const activityOfIntegrationSchema = new mongoose.Schema({
     seniorClass: {
         type: String,
         required: true,
-        enum: ['S.1', 'S.2', 'S.3', 'S.4', 'S.5', 'S.6']
+        trim: true
     },
     topic: { type: String, required: true, trim: true },
     elementOfConstruct: {

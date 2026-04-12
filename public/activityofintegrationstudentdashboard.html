@@ -632,6 +632,12 @@ function esc(s) {
     } catch { window.location.href = 'studentlogin.html'; }
 })();
 
+// Pre-fill subject from URL param when coming from subject dashboard
+(function() {
+    const subjectParam = new URLSearchParams(window.location.search).get('subject');
+    if (subjectParam) document.getElementById('genSubject').value = subjectParam;
+})();
+
 function switchTab(id, btn) {
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
