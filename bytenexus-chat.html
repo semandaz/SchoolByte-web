@@ -1521,8 +1521,8 @@
                 const _savedAvId = localStorage.getItem('schoolbyte_avatar');
                 const _avData = (typeof SCHOOLBYTE_AVATARS !== 'undefined' && _savedAvId) ? SCHOOLBYTE_AVATARS.find(a => a.id === _savedAvId) : null;
                 const _avatarEl = document.getElementById('currentUserAvatar');
-                if (_avData) { _avatarEl.innerHTML = _avData.svg; } else { _avatarEl.textContent = initials; }
-                currentUser.avatarSvg = _avData ? _avData.svg : null;
+                if (_avData) { _avatarEl.innerHTML = _avData.html; _avatarEl.style.background = (_avData.id === 'classic' || _avData.isIcon) ? '' : 'transparent'; } else { _avatarEl.textContent = initials; }
+                currentUser.avatarHtml = _avData ? _avData.html : null;
                 document.getElementById('currentUserName').textContent = currentUser.username;
 
                 console.log('ByteNexus initialized for:', currentUser.username);
@@ -2197,7 +2197,7 @@
                          onmousedown="handleMouseDown(event, '${msg._id || msg.id}')"
                          onmousemove="handleMouseMove(event, '${msg._id || msg.id}')"
                          onmouseup="handleMouseUp(event, '${msg._id || msg.id}')">
-                        <div class="message-avatar">${isSent && currentUser.avatarSvg ? currentUser.avatarSvg : (isSent ? currentUserInitials : contactInitials)}</div>
+                        <div class="message-avatar">${isSent && currentUser.avatarHtml ? currentUser.avatarHtml : (isSent ? currentUserInitials : contactInitials)}</div>
                         <div class="message-bubble">
                             ${replyHTML}
                             <div class="message-content">${sanitizedContent}</div>

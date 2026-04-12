@@ -1049,6 +1049,31 @@
                 height: 72px;
                 border-radius: 50%;
             }
+            .avatar-img-wrap {
+                width: 72px;
+                height: 72px;
+                border-radius: 50%;
+                overflow: hidden;
+                flex-shrink: 0;
+            }
+            .avatar-img-wrap img {
+                width: 100% !important;
+                height: 100% !important;
+                border-radius: 50%;
+                object-fit: cover;
+                display: block;
+            }
+            .avatar-icon-preview {
+                width: 72px;
+                height: 72px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.8rem;
+                color: white;
+            }
             .avatar-option-name {
                 font-size: 12px;
                 font-weight: 600;
@@ -1766,20 +1791,22 @@
             // ── Avatar System ─────────────────────────────────────────────
             let _pickerSelectedId = null;
 
-            function getAvatarSvg(avatarId) {
+            function getAvatarHtml(avatarId) {
                 if (typeof SCHOOLBYTE_AVATARS === 'undefined') return null;
                 const av = SCHOOLBYTE_AVATARS.find(a => a.id === avatarId);
-                return av ? av.svg : null;
+                return av ? av.html : null;
             }
 
             function applyAvatarToHeader(avatarId) {
                 const container = document.getElementById('headerAvatar');
                 if (!container) return;
-                const svg = getAvatarSvg(avatarId);
-                if (svg) {
-                    container.innerHTML = svg;
+                const html = getAvatarHtml(avatarId);
+                if (html) {
+                    container.innerHTML = html;
+                    container.style.background = (avatarId === 'classic') ? '' : 'transparent';
                 } else {
-                    container.innerHTML = '<i class="fas fa-user-graduate" id="avatarFallbackIcon"></i>';
+                    container.innerHTML = '<i class="fas fa-user-graduate" style="font-size:1.4rem;color:white;"></i>';
+                    container.style.background = '';
                 }
             }
 
@@ -1793,21 +1820,24 @@
                 _pickerSelectedId = saved || null;
                 const content = document.getElementById('avatarPickerContent');
                 if (!content || typeof SCHOOLBYTE_AVATARS === 'undefined') return;
-                const tiers = [
-                    { num: 1, label: 'Starter', cls: 'tier-1-label' },
-                    { num: 2, label: 'Rising', cls: 'tier-2-label' },
-                    { num: 3, label: 'Advanced', cls: 'tier-3-label' },
-                    { num: 4, label: 'Elite', cls: 'tier-4-label' }
+
+                const sections = [
+                    { tierNum: 0, label: 'Classic', cls: 'tier-4-label' },
+                    { tierNum: 1, label: 'Adventurer Collection', cls: 'tier-3-label' }
                 ];
                 let html = '';
-                tiers.forEach(t => {
-                    const avs = SCHOOLBYTE_AVATARS.filter(a => a.tier === t.num);
-                    html += `<span class="avatar-tier-label ${t.cls}">Tier ${t.num} — ${t.label}</span>`;
+                sections.forEach(s => {
+                    const avs = SCHOOLBYTE_AVATARS.filter(a => a.tier === s.tierNum);
+                    if (!avs.length) return;
+                    html += `<span class="avatar-tier-label ${s.cls}">${s.label}</span>`;
                     html += `<div class="avatar-grid">`;
                     avs.forEach(av => {
                         const sel = av.id === _pickerSelectedId ? 'selected' : '';
+                        const preview = av.isIcon
+                            ? `<div class="avatar-icon-preview">${av.html}</div>`
+                            : `<div class="avatar-img-wrap">${av.html}</div>`;
                         html += `<div class="avatar-option ${sel}" data-id="${av.id}" onclick="selectAvatarOption(this, '${av.id}')">
-                            ${av.svg}
+                            ${preview}
                             <span class="avatar-option-name">${av.name}</span>
                         </div>`;
                     });
