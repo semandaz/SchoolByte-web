@@ -1109,10 +1109,10 @@
             <div class="header-container">
                 <a href="studentdashboard.html" class="logo">SchoolByte</a>
                 <div class="profile-section">
-                    <div class="avatar" id="headerAvatar" onclick="openAvatarPicker()" title="Change your avatar">
+                    <div class="avatar" id="headerAvatar" onclick="window.location.href='studentprofile.html'" title="View your profile">
                         <i class="fas fa-user-graduate" id="avatarFallbackIcon"></i>
                     </div>
-                    <span class="avatar-change-hint">Change Avatar</span>
+                    <span class="avatar-change-hint" onclick="openAvatarPicker()" style="cursor:pointer;">Change Avatar</span>
                     <span class="student-name" id="studentNameDisplay">Student</span>
                 </div>
             </div>
