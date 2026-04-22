@@ -1450,8 +1450,8 @@
                         // Find right item text
                         const rightEl = document.querySelector(`#matchingRight .matching-item[data-orig='${rightOrig2}']`);
                         if (rightEl) {
-                            const leftText = el.dataset.origText || el.querySelector('span') ? el.textContent.replace(/^s*d+s*/, '').trim() : el.textContent.trim();
-                            const rightText = rightEl.dataset.origText || rightEl.querySelector('span') ? rightEl.textContent.replace(/^s*d+s*/, '').trim() : rightEl.textContent.trim();
+                            const leftText = (el.dataset.origText || el.textContent.replace(/^\s*\d+\s*/, '')).trim();
+                            const rightText = (rightEl.dataset.origText || rightEl.textContent.replace(/^\s*\d+\s*/, '')).trim();
                             pairs.push({ itemA: leftText, itemB: rightText });
                         }
                     });
