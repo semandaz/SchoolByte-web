@@ -690,7 +690,7 @@ function selectConstruct(radio) {
 async function generateScenarios() {
     const subject = document.getElementById('genSubject').value.trim();
     const topic = document.getElementById('genTopic').value.trim();
-    const count = parseInt(document.getElementById('genCount').value) || 1;
+    const count = Math.min(Math.max(parseInt(document.getElementById('genCount').value) || 1, 1), 10);
     const construct = document.querySelector('input[name=construct]:checked')?.value || 'one-topic';
     if (!subject) { showToast('Please enter a subject.', 'error'); return; }
     if (!topic) { showToast('Please enter a topic.', 'error'); return; }
@@ -708,9 +708,13 @@ async function generateScenarios() {
             headers: { Authorization: 'Bearer ' + token(), 'Content-Type': 'application/json' },
             body: JSON.stringify({ subject, topic, numberOfScenarios: count, elementOfConstruct: construct })
         });
-        if (!r.ok) { const d = await r.json(); throw new Error(d.error || 'Generation failed'); }
+        if (!r.ok) {
+            const d = await r.json().catch(() => ({}));
+            throw new Error(d.error || 'Generation failed');
+        }
         const { activity } = await r.json();
         _actStore[activity._id] = activity;
+        _libCache.unshift(activity);
 
         resultEl.innerHTML = `
             <div class="result-card">
@@ -719,17 +723,20 @@ async function generateScenarios() {
                     <span class="badge badge-blue">${esc(activity.subject)}</span>
                     <span class="badge badge-gray">${esc(activity.seniorClass)}</span>
                     <span class="badge badge-gray">${activity.elementOfConstruct === 'many-topics' ? 'Many Topics' : 'One Topic'}</span>
-                    <span class="badge badge-pending">Not yet Approved</span>
+                    <span class="badge badge-pending">Pending Approval</span>
                 </div>
-                <div class="result-content">${esc(activity.scenariosContent)}</div>
+                <div class="result-content">${renderMarkdown(activity.scenariosContent)}</div>
                 <div class="result-actions">
-                    <button class="btn-sm btn-outline" onclick="switchTab('library-tab', document.querySelectorAll('.tab-btn')[1])"><i class="fas fa-book-open"></i> View in Library</button>
-                    <button class="btn-sm" style="background:#f3f4f6;color:#374151;border:none;" onclick="copyToClipboard(${JSON.stringify(activity.scenariosContent)})"><i class="fas fa-copy"></i> Copy</button>
+                    <button class="btn-sm btn-outline" onclick="switchTab('library-tab', document.querySelectorAll('.tab-btn')[1]);loadLibrary();"><i class="fas fa-book-open"></i> View in Library</button>
+                    <button class="btn-sm btn-copy" style="background:#f3f4f6;color:#374151;border:none;"><i class="fas fa-copy"></i> Copy</button>
                 </div>
             </div>`;
+        const copyBtn = resultEl.querySelector('.btn-copy');
+        if (copyBtn) {
+            copyBtn.dataset.text = activity.scenariosContent || '';
+            copyBtn.addEventListener('click', () => copyText(copyBtn.dataset.text));
+        }
         resultEl.style.display = 'block';
-        const genContentEl = document.getElementById('generatedContent');
-        if (genContentEl) genContentEl.innerHTML = renderMarkdown(activity.scenariosContent || '');
         showToast('Scenarios generated and saved to library!', 'success');
     } catch (e) {
         showToast(e.message || 'Generation failed. Please try again.', 'error');
@@ -739,42 +746,58 @@ async function generateScenarios() {
     }
 }
 
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!', 'info')).catch(() => showToast('Copy failed.', 'error'));
+function copyText(text) {
+    navigator.clipboard.writeText(text || '').then(() => showToast('Copied to clipboard!', 'info')).catch(() => showToast('Copy failed.', 'error'));
 }
 
-async function loadLibrary() {
-    const sort = document.getElementById('libSort').value;
+async function loadLibrary(silent = false) {
+    const sort = document.getElementById('libSort')?.value || 'date';
     const content = document.getElementById('libraryContent');
-    content.innerHTML = '<div class="empty-state"><span class="spinner spinner-dark"></span></div>';
+    if (!silent) content.innerHTML = '<div class="empty-state"><span class="spinner spinner-dark"></span></div>';
     try {
         const r = await fetch('/student/activities-of-integration/library?sort=' + sort, {
             headers: { Authorization: 'Bearer ' + token() }
         });
         if (!r.ok) throw new Error();
         const { activities } = await r.json();
-        const countEl = document.getElementById('libCount');
-        if (countEl) countEl.textContent = activities.length + ' activit' + (activities.length === 1 ? 'y' : 'ies');
-        if (!activities.length) {
-            content.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>No activities yet. Be the first to generate one!</div>';
-            return;
-        }
-        content.innerHTML = '<div class="activity-grid">' + activities.map(a => renderLibCard(a)).join('') + '</div>';
+        _libCache = activities || [];
+        const search = (document.getElementById('libSearch')?.value || '').toLowerCase().trim();
+        renderLibrary(search);
     } catch {
-        content.innerHTML = '<div class="empty-state" style="color:#dc2626;"><i class="fas fa-exclamation-triangle"></i>Failed to load library.</div>';
+        if (!silent) content.innerHTML = '<div class="empty-state" style="color:#dc2626;"><i class="fas fa-exclamation-triangle"></i>Failed to load library.</div>';
     }
+}
+
+function renderLibrary(search = '') {
+    const content = document.getElementById('libraryContent');
+    const countEl = document.getElementById('libCount');
+    let list = _libCache;
+    if (search) {
+        list = list.filter(a =>
+            (a.title || '').toLowerCase().includes(search) ||
+            (a.subject || '').toLowerCase().includes(search) ||
+            (a.topic || '').toLowerCase().includes(search) ||
+            (a.seniorClass || '').toLowerCase().includes(search)
+        );
+    }
+    if (countEl) countEl.textContent = list.length + ' activit' + (list.length === 1 ? 'y' : 'ies');
+    if (!list.length) {
+        content.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i>' + (search ? 'No results for &quot;' + esc(search) + '&quot;.' : 'No activities yet. Be the first to generate one!') + '</div>';
+        return;
+    }
+    list.forEach(a => { _actStore[a._id] = a; });
+    content.innerHTML = '<div class="activity-grid">' + list.map(a => renderLibCard(a)).join('') + '</div>';
 }
 
 function renderLibCard(a) {
     const approvedBadge = a.isApproved
         ? '<span class="badge badge-approved"><i class="fas fa-check-circle"></i> Approved</span>'
-        : '<span class="badge badge-pending">Not yet Approved</span>';
-    const preview = (a.scenariosContent || '').slice(0, 220).replace(/\n/g, ' ');
+        : '<span class="badge badge-pending">Pending Approval</span>';
+    const preview = esc((a.scenariosContent || '').slice(0, 220).replace(/\n/g, ' '));
     const helpfulClass = a.markedHelpfulByMe ? 'helpful-btn marked' : 'helpful-btn';
     const helpfulIcon = a.markedHelpfulByMe ? 'fas fa-thumbs-up' : 'far fa-thumbs-up';
     const createdDate = a.createdAt ? new Date(a.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '';
-    const byLabel = a.createdByType === 'teacher' ? '<i class="fas fa-chalkboard-teacher"></i>' : '<i class="fas fa-robot"></i>';
-    _actStore[a._id] = a;
+    const byLabel = a.createdByType === 'teacher' ? '<i class="fas fa-chalkboard-teacher" title="Teacher upload"></i>' : '<i class="fas fa-robot" title="AI generated"></i>';
     return `<div class="activity-card" id="card-${a._id}">
         <div class="activity-card-title">${esc(a.title)}</div>
         <div class="activity-badge-row">
@@ -783,8 +806,8 @@ function renderLibCard(a) {
             ${approvedBadge}
         </div>
         <div style="font-size:12px;color:#6b7280;">Topic: ${esc(a.topic)} · ${a.elementOfConstruct === 'many-topics' ? 'Many Topics' : 'One Topic'}</div>
-        <div class="activity-preview">${esc(preview)}${a.scenariosContent && a.scenariosContent.length > 220 ? '…' : ''}</div>
-        <div class="activity-meta">${byLabel} ${esc(a.createdByName)} · ${createdDate}</div>
+        <div class="activity-preview">${preview}${(a.scenariosContent || '').length > 220 ? '…' : ''}</div>
+        <div class="activity-meta">${byLabel} ${esc(a.createdByName || 'Unknown')} · ${createdDate}</div>
         <div class="activity-footer">
             <button class="${helpfulClass}" id="helpful-${a._id}" onclick="toggleHelpful('${a._id}')">
                 <i class="${helpfulIcon}" id="helpful-icon-${a._id}"></i>
@@ -807,40 +830,24 @@ async function toggleHelpful(id) {
         const btn = document.getElementById('helpful-' + id);
         const icon = document.getElementById('helpful-icon-' + id);
         const countEl = document.getElementById('helpful-count-' + id);
-        if (btn) { btn.className = markedHelpfulByMe ? 'helpful-btn marked' : 'helpful-btn'; }
-        if (icon) { icon.className = markedHelpfulByMe ? 'fas fa-thumbs-up' : 'far fa-thumbs-up'; }
+        if (btn) btn.className = markedHelpfulByMe ? 'helpful-btn marked' : 'helpful-btn';
+        if (icon) icon.className = markedHelpfulByMe ? 'fas fa-thumbs-up' : 'far fa-thumbs-up';
         if (countEl) countEl.textContent = helpfulCount;
+        const cached = _libCache.find(a => String(a._id) === String(id));
+        if (cached) { cached.helpfulCount = helpfulCount; cached.markedHelpfulByMe = markedHelpfulByMe; }
     } catch { showToast('Failed to update.', 'error'); }
-}
-
-// Activity data store
-const _actStore = {};
-
-function renderMarkdown(text) {
-    if (!text) return '';
-    let s = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    s = s.replace(/**([^*
-]+)**/g, '<strong>$1</strong>');
-    s = s.replace(/__([^_
-]+)__/g, '<strong>$1</strong>');
-    s = s.replace(/*([^*
-]+)*/g, '<em>$1</em>');
-    s = s.replace(/_([^_
-]+)_/g, '<em>$1</em>');
-    s = s.replace(/
-/g, '<br>');
-    return s;
 }
 
 function viewActivity(id) {
     const a = _actStore[id];
     if (!a) return;
-    document.getElementById('viewModalTitle').textContent = a.title;
-    const subj = (a.subject || '') + ' · ' + (a.seniorClass || '');
-    document.getElementById('viewModalBadges').innerHTML = subj.split(' · ').map(b => '<span class="badge badge-gray">' + b + '</span>').join('');
+    document.getElementById('viewModalTitle').textContent = a.title || '';
+    const badges = [a.subject, a.seniorClass, a.topic].filter(Boolean);
+    document.getElementById('viewModalBadges').innerHTML = badges.map(b => '<span class="badge badge-gray">' + esc(b) + '</span>').join('');
     document.getElementById('viewModalContent').innerHTML = renderMarkdown(a.scenariosContent || '');
     document.getElementById('viewModal').classList.add('open');
 }
+
 function closeViewModal() { document.getElementById('viewModal').classList.remove('open'); }
 document.getElementById('viewModal').addEventListener('click', function(e) {
     if (e.target === this) closeViewModal();
