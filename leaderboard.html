@@ -205,9 +205,43 @@
         }
 
         .leaderboard-item.current-user {
-            background: linear-gradient(to right, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1));
+            background: linear-gradient(to right, rgba(255, 215, 0, 0.25), rgba(255, 165, 0, 0.12));
             border: 2px solid var(--color-brand-gold);
+            box-shadow: 0 4px 14px rgba(255, 165, 0, 0.25);
         }
+
+        .leaderboard-item.you-separator {
+            margin-top: 1.5rem;
+            position: relative;
+        }
+        .leaderboard-item.you-separator::before {
+            content: 'Your position';
+            position: absolute;
+            top: -10px;
+            left: 14px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--color-brand-secondary);
+            background: var(--color-neutral-white);
+            padding: 0 6px;
+        }
+
+        .podium-place.current-user .podium-avatar {
+            box-shadow: 0 0 0 4px var(--color-brand-gold), 0 6px 20px rgba(255, 165, 0, 0.45);
+        }
+        .podium-place.current-user .podium-name {
+            color: var(--color-brand-secondary);
+        }
+
+        .leaderboard-meta {
+            text-align: center;
+            color: var(--color-neutral-dark);
+            font-size: 0.92rem;
+            margin-top: 0.4rem;
+        }
+        .leaderboard-meta strong { color: var(--color-brand-primary); }
 
         .rank {
             font-weight: 700;
@@ -288,6 +322,7 @@
             <div class="leaderboard-header">
                 <h1 class="leaderboard-title"><i class="fas fa-trophy"></i> Leaderboard</h1>
                 <p class="leaderboard-subtitle">Top ByteScholars Ranked by Bytes Earned</p>
+                <p id="leaderboardMeta" class="leaderboard-meta" style="display:none;"></p>
             </div>
 
             <div id="errorMessage" class="error-message" style="display: none;"></div>
@@ -340,7 +375,7 @@
                 }
 
                 const data = await response.json();
-                displayLeaderboard(data.leaderboard);
+                displayLeaderboard(data);
                 
             } catch (error) {
                 console.error('Error loading leaderboard:', error);
@@ -380,7 +415,37 @@
             return tierNames[tier] || 'Unknown';
         }
 
-        function displayLeaderboard(leaderboard) {
+        function escapeHtml(str) {
+            return String(str || '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
+        function buildItemHTML(player, extraClass) {
+            const initials = escapeHtml(player.displayName.substring(0, 2).toUpperCase());
+            const name = escapeHtml(player.displayName);
+            const currentUserClass = player.isCurrentUser ? 'current-user' : '';
+            const youBadge = player.isCurrentUser ? ' <span style="color: var(--color-brand-gold); font-weight: 700;">(You)</span>' : '';
+            return `
+                <li class="leaderboard-item ${currentUserClass} ${extraClass || ''}" ${player.isCurrentUser ? 'id="yourRow"' : ''}>
+                    <span class="rank">#${player.rank}</span>
+                    <div class="user-info">
+                        <div class="user-avatar">${initials}</div>
+                        <div>
+                            <div class="user-name">${name}${youBadge}</div>
+                            <span class="user-tier">Tier ${player.tier || 1}: ${getTierName(player.tier || 1)}</span>
+                        </div>
+                    </div>
+                    <div class="bytes-count"><i class="fas fa-coins"></i> ${player.bytes || 0}</div>
+                </li>
+            `;
+        }
+
+        function displayLeaderboard(payload) {
+            const leaderboard = Array.isArray(payload) ? payload : (payload.leaderboard || []);
+            const totalPlayers = (typeof payload === 'object' && payload.totalPlayers) || leaderboard.length;
+            const currentUser = (typeof payload === 'object' && payload.currentUser) || leaderboard.find(p => p.isCurrentUser) || null;
+
             document.getElementById('loading').style.display = 'none';
             document.getElementById('errorMessage').style.display = 'none';
 
@@ -390,57 +455,61 @@
                 return;
             }
 
-            const top3 = leaderboard.slice(0, 3);
-            const rest = leaderboard.slice(3);
+            // Meta: total players + your rank
+            const metaEl = document.getElementById('leaderboardMeta');
+            const metaParts = [`<strong>${totalPlayers}</strong> ByteScholar${totalPlayers === 1 ? '' : 's'}`];
+            if (currentUser) metaParts.push(`Your rank: <strong>#${currentUser.rank}</strong> &middot; <strong>${currentUser.bytes || 0}</strong> bytes`);
+            metaEl.innerHTML = metaParts.join(' &nbsp;\u2022&nbsp; ');
+            metaEl.style.display = 'block';
+
+            // Top 3 from the actual ranked list (skip an outsideTop user appended at the end)
+            const ranked = leaderboard.filter(p => !p.outsideTop);
+            const top3 = ranked.slice(0, 3);
+            const rest = ranked.slice(3);
 
             const podiumEl = document.getElementById('podium');
             podiumEl.innerHTML = '';
-            podiumEl.style.display = 'flex';
-            
+            podiumEl.style.display = top3.length ? 'flex' : 'none';
+
             top3.forEach((player, index) => {
                 const position = index === 0 ? 'first' : index === 1 ? 'second' : 'third';
-                const initials = player.displayName.substring(0, 2).toUpperCase();
-                const currentUserBadge = player.isCurrentUser ? '<span style="color: var(--color-brand-gold); font-size: 0.85rem;"> (You)</span>' : '';
+                const initials = escapeHtml(player.displayName.substring(0, 2).toUpperCase());
+                const name = escapeHtml(player.displayName);
+                const currentUserBadge = player.isCurrentUser ? '<span style="color: var(--color-brand-secondary); font-size: 0.85rem; font-weight: 700;"> (You)</span>' : '';
                 const currentUserClass = player.isCurrentUser ? 'current-user' : '';
-                
-                const podiumHTML = `
+                podiumEl.innerHTML += `
                     <div class="podium-place ${position} ${currentUserClass}">
                         <div class="podium-avatar">
                             ${index === 0 ? '<i class="fas fa-crown crown-icon"></i>' : ''}
                             ${initials}
                         </div>
-                        <div class="podium-name">#${player.rank} ${player.displayName}${currentUserBadge}</div>
+                        <div class="podium-name">#${player.rank} ${name}${currentUserBadge}</div>
                         <div class="podium-bytes"><i class="fas fa-coins"></i> ${player.bytes || 0}</div>
                         <div class="podium-tier">Tier ${player.tier || 1}: ${getTierName(player.tier || 1)}</div>
                     </div>
                 `;
-                podiumEl.innerHTML += podiumHTML;
             });
 
             const listEl = document.getElementById('leaderboardList');
             listEl.innerHTML = '';
             listEl.style.display = 'block';
-            
-            rest.forEach(player => {
-                const initials = player.displayName.substring(0, 2).toUpperCase();
-                const currentUserClass = player.isCurrentUser ? 'current-user' : '';
-                const youBadge = player.isCurrentUser ? ' <span style="color: var(--color-brand-gold); font-weight: 700;">(You)</span>' : '';
-                
-                const itemHTML = `
-                    <li class="leaderboard-item ${currentUserClass}">
-                        <span class="rank">#${player.rank}</span>
-                        <div class="user-info">
-                            <div class="user-avatar">${initials}</div>
-                            <div>
-                                <div class="user-name">${player.displayName}${youBadge}</div>
-                                <span class="user-tier">Tier ${player.tier || 1}: ${getTierName(player.tier || 1)}</span>
-                            </div>
-                        </div>
-                        <div class="bytes-count"><i class="fas fa-coins"></i> ${player.bytes || 0}</div>
-                    </li>
-                `;
-                listEl.innerHTML += itemHTML;
-            });
+
+            rest.forEach(player => { listEl.innerHTML += buildItemHTML(player); });
+
+            // If the current user is outside the visible slice, append a separated row
+            const outside = leaderboard.find(p => p.outsideTop);
+            if (outside) {
+                listEl.innerHTML += buildItemHTML(outside, 'you-separator');
+            }
+
+            // Auto-scroll to the current user's row on first render only
+            if (!window._leaderboardScrolled) {
+                const yourRow = document.getElementById('yourRow');
+                if (yourRow) {
+                    setTimeout(() => yourRow.scrollIntoView({ behavior: 'smooth', block: 'center' }), 250);
+                }
+                window._leaderboardScrolled = true;
+            }
         }
 
         // Initial load
