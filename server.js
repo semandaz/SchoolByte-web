@@ -4094,6 +4094,10 @@ app.post('/api/games/start', authenticateToken, async (req, res) => {
     }
 });
 
+// Daily cap: a student can only earn at most 5 bytes from games every 24h
+const GAME_DAILY_BYTE_CAP = 5;
+const GAME_DAILY_RESET_MS = 24 * 60 * 60 * 1000;
+
 app.post('/api/games/award-bytes', authenticateToken, async (req, res) => {
     try {
         const { gameName, bytesEarned, ...gameData } = req.body;
@@ -4108,16 +4112,51 @@ app.post('/api/games/award-bytes', authenticateToken, async (req, res) => {
             return res.status(404).json({ message: 'Student not found' });
         }
 
-        let amount = Math.round(bytesEarned);
+        // Roll the daily window if 24h have passed since the last reset
+        const now = new Date();
+        const lastReset = student.gameBytesResetAt ? new Date(student.gameBytesResetAt) : null;
+        if (!lastReset || (now - lastReset) >= GAME_DAILY_RESET_MS) {
+            student.gameBytesEarnedToday = 0;
+            student.gameBytesResetAt = now;
+        }
+
+        let requested = Math.round(bytesEarned);
         const isByteGame = gameName && BYTE_GAME_NAMES.some(n => String(gameName).toLowerCase().includes(n.toLowerCase()));
-        if (isByteGame && amount > GAME_MAX_REWARD_BYTES) amount = GAME_MAX_REWARD_BYTES;
+        if (isByteGame && requested > GAME_MAX_REWARD_BYTES) requested = GAME_MAX_REWARD_BYTES;
+
+        const alreadyEarned = student.gameBytesEarnedToday || 0;
+        const remaining = Math.max(0, GAME_DAILY_BYTE_CAP - alreadyEarned);
+        const amount = Math.min(requested, remaining);
+
+        if (amount <= 0) {
+            const msUntilReset = GAME_DAILY_RESET_MS - (now - new Date(student.gameBytesResetAt));
+            const hoursLeft = Math.max(1, Math.ceil(msUntilReset / (60 * 60 * 1000)));
+            return res.status(200).json({
+                message: `You've already earned the daily maximum of ${GAME_DAILY_BYTE_CAP} bytes from games. Try again in about ${hoursLeft} hour${hoursLeft === 1 ? '' : 's'}.`,
+                bytesEarned: 0,
+                requestedBytes: requested,
+                cappedAtDailyLimit: true,
+                dailyLimit: GAME_DAILY_BYTE_CAP,
+                bytesEarnedToday: alreadyEarned,
+                totalBytes: student.bytes,
+                gameName: gameName
+            });
+        }
 
         student.bytes += amount;
+        student.gameBytesEarnedToday = alreadyEarned + amount;
         await student.save();
 
+        const cappedNow = (alreadyEarned + amount) >= GAME_DAILY_BYTE_CAP;
         res.status(200).json({
-            message: 'Bytes awarded successfully!',
+            message: cappedNow && requested > amount
+                ? `You earned ${amount} byte${amount === 1 ? '' : 's'} (daily ${GAME_DAILY_BYTE_CAP}-byte cap reached).`
+                : 'Bytes awarded successfully!',
             bytesEarned: amount,
+            requestedBytes: requested,
+            cappedAtDailyLimit: cappedNow && requested > amount,
+            dailyLimit: GAME_DAILY_BYTE_CAP,
+            bytesEarnedToday: student.gameBytesEarnedToday,
             totalBytes: student.bytes,
             gameName: gameName
         });

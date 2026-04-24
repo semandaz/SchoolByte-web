@@ -8,6 +8,8 @@ const studentSchema = new mongoose.Schema({
     isEmailVerified: { type: Boolean, default: false },
     bytes: { type: Number, default: 20 },
     peakBytes: { type: Number, default: 20 },
+    gameBytesEarnedToday: { type: Number, default: 0, min: 0 },
+    gameBytesResetAt: { type: Date, default: Date.now },
     energy: { type: Number, default: 25, min: 0 },
     lastEnergyRefillAt: { type: Date, default: Date.now },
 
