@@ -5136,14 +5136,18 @@ app.post('/admin/trigger-yearly-upgrade', authenticateAdminToken, async (req, re
 // Leaderboard: single handler, mounted on both paths to avoid duplicate logic
 async function getLeaderboardHandler(req, res) {
     try {
-        const { limit = 200 } = req.query;
+        const { limit = 500 } = req.query;
         const currentStudentId = req.student.id;
+        const cap = Math.min(parseInt(limit, 10) || 500, 1000);
 
-        const students = await Student.find({ isEmailVerified: true })
-            .sort({ bytes: -1 })
-            .select('preferredName studentName bytes xp currentTier')
-            .limit(Math.min(parseInt(limit, 10) || 200, 500))
-            .lean();
+        const [students, totalPlayers] = await Promise.all([
+            Student.find({ isEmailVerified: true })
+                .sort({ bytes: -1, _id: 1 })
+                .select('preferredName studentName bytes xp currentTier')
+                .limit(cap)
+                .lean(),
+            Student.countDocuments({ isEmailVerified: true })
+        ]);
 
         const leaderboard = students.map((student, index) => {
             const rank = index + 1;
@@ -5153,17 +5157,46 @@ async function getLeaderboardHandler(req, res) {
             return {
                 rank,
                 displayName,
-                bytes: rank <= 200 || isCurrentUser ? student.bytes : undefined,
+                bytes: student.bytes || 0,
                 xp: student.xp,
                 tier: student.currentTier || 1,
                 isCurrentUser
             };
         });
 
+        // If the current user is outside the returned slice, look them up and append
+        // so the frontend can always show "where you are".
+        let currentUserEntry = leaderboard.find(p => p.isCurrentUser) || null;
+        if (!currentUserEntry) {
+            const me = await Student.findById(currentStudentId)
+                .select('preferredName studentName bytes xp currentTier isEmailVerified')
+                .lean();
+            if (me && me.isEmailVerified) {
+                const ahead = await Student.countDocuments({
+                    isEmailVerified: true,
+                    $or: [
+                        { bytes: { $gt: me.bytes || 0 } },
+                        { bytes: me.bytes || 0, _id: { $lt: me._id } }
+                    ]
+                });
+                currentUserEntry = {
+                    rank: ahead + 1,
+                    displayName: me.preferredName || me.studentName,
+                    bytes: me.bytes || 0,
+                    xp: me.xp,
+                    tier: me.currentTier || 1,
+                    isCurrentUser: true,
+                    outsideTop: true
+                };
+                leaderboard.push(currentUserEntry);
+            }
+        }
+
         res.status(200).json({
             message: 'Leaderboard fetched successfully!',
             leaderboard,
-            totalPlayers: leaderboard.length
+            totalPlayers,
+            currentUser: currentUserEntry
         });
     } catch (error) {
         console.error('Error fetching leaderboard:', error);
