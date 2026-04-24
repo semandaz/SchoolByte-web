@@ -924,20 +924,72 @@
                 border-color: var(--color-brand-gold);
             }
             .avatar svg, .avatar img { width: 100%; height: 100%; border-radius: 50%; }
-            .avatar-change-hint {
+
+            /* Avatar dropdown menu */
+            .avatar-wrapper { position: relative; }
+            .avatar-menu {
                 position: absolute;
-                bottom: -22px;
-                left: 50%;
-                transform: translateX(-50%);
-                font-size: 10px;
-                color: var(--color-brand-primary);
-                white-space: nowrap;
+                top: calc(100% + 10px);
+                right: 0;
+                min-width: 200px;
+                background: #fff;
+                border-radius: 12px;
+                box-shadow: 0 10px 28px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.04);
+                padding: 6px;
+                z-index: 1000;
                 opacity: 0;
-                transition: opacity 0.2s;
-                font-weight: 600;
+                transform: translateY(-6px) scale(0.97);
                 pointer-events: none;
+                transition: opacity 0.15s ease, transform 0.15s ease;
             }
-            .profile-section:hover .avatar-change-hint { opacity: 1; }
+            .avatar-menu.open {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                pointer-events: auto;
+            }
+            .avatar-menu::before {
+                content: '';
+                position: absolute;
+                top: -6px;
+                right: 18px;
+                width: 12px;
+                height: 12px;
+                background: #fff;
+                transform: rotate(45deg);
+                box-shadow: -1px -1px 1px rgba(0,0,0,0.04);
+            }
+            .avatar-menu-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                width: 100%;
+                padding: 10px 12px;
+                background: none;
+                border: none;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 600;
+                color: #1f2937;
+                text-align: left;
+                cursor: pointer;
+                text-decoration: none;
+                font-family: inherit;
+                transition: background 0.15s;
+            }
+            .avatar-menu-item:hover {
+                background: linear-gradient(135deg, rgba(26,42,108,0.08), rgba(178,31,31,0.05));
+                color: var(--color-brand-primary);
+            }
+            .avatar-menu-item i {
+                width: 18px;
+                color: var(--color-brand-primary);
+                font-size: 14px;
+            }
+            .avatar-menu-divider {
+                height: 1px;
+                background: #f1f5f9;
+                margin: 4px 8px;
+            }
 
             /* Avatar Picker Modal */
             .avatar-modal-overlay {
@@ -1109,10 +1161,20 @@
             <div class="header-container">
                 <a href="studentdashboard.html" class="logo">SchoolByte</a>
                 <div class="profile-section">
-                    <div class="avatar" id="headerAvatar" onclick="window.location.href='studentprofile.html'" title="View your profile">
-                        <i class="fas fa-user-graduate" id="avatarFallbackIcon"></i>
+                    <div class="avatar-wrapper">
+                        <div class="avatar" id="headerAvatar" onclick="toggleAvatarMenu(event)" title="Account menu">
+                            <i class="fas fa-user-graduate" id="avatarFallbackIcon"></i>
+                        </div>
+                        <div class="avatar-menu" id="avatarMenu" role="menu" aria-label="Account menu">
+                            <a href="studentprofile.html" class="avatar-menu-item" role="menuitem">
+                                <i class="fas fa-user-circle"></i> View Profile
+                            </a>
+                            <div class="avatar-menu-divider"></div>
+                            <button type="button" class="avatar-menu-item" role="menuitem" onclick="closeAvatarMenu();openAvatarPicker();">
+                                <i class="fas fa-pen"></i> Change Avatar
+                            </button>
+                        </div>
                     </div>
-                    <span class="avatar-change-hint" onclick="openAvatarPicker()" style="cursor:pointer;">Change Avatar</span>
                     <span class="student-name" id="studentNameDisplay">Student</span>
                 </div>
             </div>
@@ -1869,6 +1931,27 @@
 
             document.getElementById('avatarModalOverlay').addEventListener('click', function(e) {
                 if (e.target === this) closeAvatarPicker();
+            });
+
+            // Avatar dropdown menu
+            function toggleAvatarMenu(evt) {
+                if (evt) evt.stopPropagation();
+                const menu = document.getElementById('avatarMenu');
+                menu.classList.toggle('open');
+            }
+            function closeAvatarMenu() {
+                const menu = document.getElementById('avatarMenu');
+                if (menu) menu.classList.remove('open');
+            }
+            document.addEventListener('click', function(e) {
+                const menu = document.getElementById('avatarMenu');
+                const wrapper = e.target.closest('.avatar-wrapper');
+                if (menu && menu.classList.contains('open') && !wrapper) {
+                    closeAvatarMenu();
+                }
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') closeAvatarMenu();
             });
 
             initAvatar();

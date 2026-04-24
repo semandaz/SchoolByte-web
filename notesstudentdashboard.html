@@ -640,7 +640,7 @@
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
                 btn.disabled = true;
 
-                const response = await fetch(`/api/workfiles/${workFileId}/download`, {
+                const response = await fetch(`/student/download-workfile/${workFileId}`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
