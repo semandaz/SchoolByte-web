@@ -19,7 +19,7 @@ const multer = require('multer');
 const Groq = require('groq-sdk');
 const crypto = require('crypto');
 const http = require('http');
-const { getDivision, getFixture, getQuizSerialNumber, getThreeQuartersCycle, CYCLE_SIZES, SLOT_CATEGORY, CLASS_ORDER } = require('./config/fatsAndBeef');
+const { getDivision, getFixture, getQuizSerialNumber, getThreeQuartersCycle, CYCLE_SIZES, SLOT_CATEGORY, CLASS_ORDER, normalizeClass } = require('./config/fatsAndBeef');
 const { Server } = require('socket.io');
 
 
@@ -731,6 +731,12 @@ async function generateQuizQuestions(student, requestedSubject = null, isRetry =
     const session = await mongoose.startSession();
     session.startTransaction();
 
+    // Helper: safely abort + end the session exactly once, regardless of where we throw.
+    const safeAbort = async () => {
+        try { if (session.inTransaction()) await session.abortTransaction(); } catch (_) {}
+        try { session.endSession(); } catch (_) {}
+    };
+
     try {
         let quizSession = await QuizSession.findById(student.currentQuizSessionId).session(session);
         if (!quizSession) {
@@ -745,9 +751,10 @@ async function generateQuizQuestions(student, requestedSubject = null, isRetry =
 
         const division = getDivision(student.class);
         if (!division) {
-            await session.abortTransaction();
-            session.endSession();
-            throw new Error('Invalid student class for quiz generation.');
+            const err = new Error('Invalid student class for quiz generation.');
+            err.userMessage = 'Your class is not set correctly. Please update your profile.';
+            err.statusCode = 400;
+            throw err;
         }
 
         // Upper school: only first 4 subjects (exclude General Paper / subject e)
@@ -755,23 +762,26 @@ async function generateQuizQuestions(student, requestedSubject = null, isRetry =
             ? (student.subjectsEnrolled || []).slice(0, 4)
             : (student.subjectsEnrolled || []);
         if (enrolledSubjects.length === 0) {
-            await session.abortTransaction();
-            session.endSession();
-            throw new Error('No subjects enrolled.');
+            const err = new Error('No subjects enrolled.');
+            err.userMessage = 'You have no subjects enrolled yet. Please add your subjects in your profile to start taking quizzes.';
+            err.statusCode = 400;
+            err.code = 'NO_SUBJECTS';
+            throw err;
         }
 
         const fixture = getFixture(division);
         if (!fixture) {
-            await session.abortTransaction();
-            session.endSession();
-            throw new Error('No fixture for division.');
+            const err = new Error('No fixture for division.');
+            err.userMessage = 'Quiz schedule could not be loaded for your class. Please try again later.';
+            err.statusCode = 500;
+            throw err;
         }
 
         const sn = getQuizSerialNumber(quizSession.questionsCompletedCount, division);
         const rowIndex = (sn - 1) % fixture.length;
         const fixtureRow = fixture[rowIndex];
 
-        const studentClass = student.class;
+        const studentClass = normalizeClass(student.class) || student.class;
         const classIndex = CLASS_ORDER.indexOf(studentClass);
         const ownClasses = [studentClass];
         const lowerClasses = classIndex > 0 ? CLASS_ORDER.slice(0, classIndex) : [];
@@ -837,8 +847,7 @@ async function generateQuizQuestions(student, requestedSubject = null, isRetry =
 
                 if (!isRetry) {
                     // Targeted fallback exhausted — run global contingency then retry
-                    await session.abortTransaction();
-                    session.endSession();
+                    await safeAbort();
                     const result = await runContingencyAndRetry(student, quizSession, division);
                     return result;
                 }
@@ -873,8 +882,7 @@ async function generateQuizQuestions(student, requestedSubject = null, isRetry =
         // Return partial result so endpoint can fill gaps with AI
         return { questions: foundQuestions, gaps, division, studentClass };
     } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
+        await safeAbort();
         throw error;
     }
 }
@@ -2614,7 +2622,12 @@ IMPORTANT: Respond ONLY with valid JSON. Start with { and end with }.`;
 
     } catch (error) {
         console.error('Error generating quiz questions:', error);
-        res.status(500).json({ message: 'Failed to generate quiz questions.', error: error.message });
+        const status = error.statusCode || 500;
+        res.status(status).json({
+            message: error.userMessage || 'Failed to generate quiz questions.',
+            code: error.code,
+            error: error.message
+        });
     }
 });
 

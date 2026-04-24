@@ -84,10 +84,19 @@ const UPPER_SCHOOL_FIXTURE = [
   [3, 1, 2, 3, 0, 1, 2, 3, 2, 3]
 ];
 
+/** Normalize class strings: 'S3', 's3', 'S.3 ' -> 'S.3'. Returns null if unrecognized. */
+function normalizeClass(studentClass) {
+  if (!studentClass) return null;
+  const m = String(studentClass).trim().toUpperCase().match(/^S\.?\s*([1-6])$/);
+  return m ? `S.${m[1]}` : null;
+}
+
 function getDivision(studentClass) {
-  if (DIVISIONS.LOWER.classes.includes(studentClass)) return 'lower';
-  if (DIVISIONS.MIDDLE.classes.includes(studentClass)) return 'middle';
-  if (DIVISIONS.UPPER.classes.includes(studentClass)) return 'upper';
+  const c = normalizeClass(studentClass);
+  if (!c) return null;
+  if (DIVISIONS.LOWER.classes.includes(c)) return 'lower';
+  if (DIVISIONS.MIDDLE.classes.includes(c)) return 'middle';
+  if (DIVISIONS.UPPER.classes.includes(c)) return 'upper';
   return null;
 }
 
@@ -114,6 +123,7 @@ function getThreeQuartersCycle(division) {
 
 module.exports = {
   CLASS_ORDER,
+  normalizeClass,
   DIVISIONS,
   CYCLE_SIZES,
   QUIZZES_PER_CYCLE,
