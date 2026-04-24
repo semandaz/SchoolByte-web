@@ -1008,8 +1008,16 @@
                     updateProgress();
                     localStorage.setItem('quiz_start_ms', Date.now());
                 } else {
-                    const errorData = await response.json();
-                    alert(errorData.message || 'Failed to generate quiz');
+                    const errorData = await response.json().catch(() => ({}));
+                    const msg = errorData.message || 'Failed to generate quiz';
+                    if (errorData.code === 'NO_SUBJECTS') {
+                        if (confirm(msg + '\n\nGo to your profile now?')) {
+                            window.location.href = 'studentprofile.html';
+                            return;
+                        }
+                    } else {
+                        alert(msg);
+                    }
                     window.location.href = 'studentdashboard.html';
                 }
             } catch (error) {
