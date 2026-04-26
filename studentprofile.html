@@ -468,6 +468,20 @@
 
             <!-- Profile Tab -->
             <div id="profile" class="tab-content active">
+                <!-- Banner shown when re-selection is required after promotion -->
+                <div id="subjectReselectBanner" style="display:none;background:linear-gradient(135deg,#ffd700,#ffa500);color:#1a2a6c;padding:1.25rem 1.5rem;border-radius:var(--radius-card);margin-bottom:1.5rem;box-shadow:0 5px 15px rgba(0,0,0,0.15);">
+                    <div style="display:flex;align-items:flex-start;gap:1rem;">
+                        <i class="fas fa-exclamation-triangle" style="font-size:1.75rem;margin-top:0.2rem;"></i>
+                        <div style="flex:1;">
+                            <h4 style="font-weight:800;margin-bottom:0.4rem;font-size:1.1rem;">Action required: choose your subjects</h4>
+                            <p id="subjectReselectMessage" style="margin-bottom:0.75rem;font-size:0.95rem;">You were just promoted to a new class. The subject structure has changed — pick your new subjects to continue taking quizzes.</p>
+                            <button class="btn btn-primary" type="button" onclick="openSubjectEditor()" style="background:#1a2a6c;color:#fff;">
+                                <i class="fas fa-pen"></i> Pick subjects now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
@@ -505,6 +519,57 @@
                             <p style="color: var(--color-neutral-dark); margin-top: 0.5rem; font-size: 0.9rem;">
                                 Class auto-updates annually. Account deletes after Senior 6.
                             </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subjects card -->
+                <div class="card">
+                    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+                        <h3 class="card-title" style="margin:0;">
+                            <i class="fas fa-book-open"></i> My Subjects
+                        </h3>
+                        <button id="editSubjectsBtn" class="btn btn-secondary" type="button" onclick="openSubjectEditor()">
+                            <i class="fas fa-pen"></i> Edit subjects
+                        </button>
+                    </div>
+                    <div class="card-content">
+                        <p id="subjectsRulesLine" style="color:var(--color-neutral-dark);font-size:0.95rem;margin-bottom:1rem;">Loading your subject list…</p>
+                        <div id="subjectsList" style="display:flex;flex-wrap:wrap;gap:0.5rem;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subject editor modal -->
+            <div id="subjectEditorOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;padding:1rem;">
+                <div style="background:#fff;border-radius:var(--radius-card);max-width:720px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                    <div style="padding:1.5rem 1.5rem 1rem;border-bottom:1px solid var(--color-neutral-light);display:flex;justify-content:space-between;align-items:center;gap:1rem;">
+                        <div>
+                            <h3 style="color:var(--color-brand-primary);font-weight:800;margin-bottom:0.25rem;">Choose your subjects</h3>
+                            <p id="subjectEditorClassLine" style="color:var(--color-neutral-dark);font-size:0.9rem;"></p>
+                        </div>
+                        <button type="button" onclick="closeSubjectEditor()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--color-neutral-dark);">&times;</button>
+                    </div>
+                    <div style="padding:1.5rem;">
+                        <div style="background:var(--color-neutral-lightest);border-left:4px solid var(--color-brand-gold);padding:0.75rem 1rem;border-radius:8px;margin-bottom:1rem;">
+                            <p id="subjectEditorRules" style="font-size:0.95rem;color:var(--color-neutral-darkest);"></p>
+                        </div>
+
+                        <h4 style="color:var(--color-brand-primary);margin-bottom:0.5rem;">Compulsory</h4>
+                        <div id="editorCompulsoryList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.5rem;margin-bottom:1.25rem;"></div>
+
+                        <h4 id="editorElectivesHeading" style="color:var(--color-brand-primary);margin-bottom:0.25rem;">Choose your additional subjects</h4>
+                        <p id="editorElectivesSub" style="color:var(--color-neutral-dark);font-size:0.85rem;margin-bottom:0.5rem;"></p>
+                        <div id="editorElectivesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.5rem;margin-bottom:1rem;"></div>
+
+                        <p id="subjectEditorError" style="color:var(--color-error-red);font-size:0.9rem;margin-bottom:0.75rem;display:none;"></p>
+
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+                            <span id="subjectEditorCounter" style="font-weight:600;color:var(--color-brand-primary);">0 / 0 selected</span>
+                            <div style="display:flex;gap:0.5rem;">
+                                <button type="button" class="btn btn-secondary" onclick="closeSubjectEditor()">Cancel</button>
+                                <button type="button" id="subjectEditorSaveBtn" class="btn btn-primary" onclick="saveSubjects()" disabled>Save subjects</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -879,9 +944,223 @@
             }
         }
 
+        // ─── Subject editor ──────────────────────────────────────────────
+        let subjectOptions = null; // { class, rules, currentSubjects, needsSubjectSelection, ... }
+        let editorSelected = new Set();
+
+        async function loadSubjectsCard() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                const res = await fetch('/student/subjects/options', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!res.ok) {
+                    document.getElementById('subjectsRulesLine').textContent =
+                        'Could not load your subject list. Please try again later.';
+                    return;
+                }
+                subjectOptions = await res.json();
+                renderSubjectsCard();
+            } catch (e) {
+                console.error('loadSubjectsCard failed:', e);
+            }
+        }
+
+        function renderSubjectsCard() {
+            if (!subjectOptions) return;
+            const banner = document.getElementById('subjectReselectBanner');
+            const bannerMsg = document.getElementById('subjectReselectMessage');
+            const rulesLine = document.getElementById('subjectsRulesLine');
+            const list = document.getElementById('subjectsList');
+
+            if (subjectOptions.needsSubjectSelection) {
+                banner.style.display = 'block';
+                const fromTo = subjectOptions.previousClass
+                    ? `from ${subjectOptions.previousClass} to ${subjectOptions.class}`
+                    : `to ${subjectOptions.class}`;
+                bannerMsg.textContent =
+                    `You were just promoted ${fromTo}. ${subjectOptions.class} requires ${subjectOptions.rules.expectedCount} subjects (${subjectOptions.rules.description}). Pick them now to continue taking quizzes.`;
+            } else {
+                banner.style.display = 'none';
+            }
+
+            rulesLine.textContent =
+                `${subjectOptions.class}: ${subjectOptions.rules.description}.`;
+
+            list.innerHTML = '';
+            const compulsorySet = new Set(subjectOptions.rules.compulsory || []);
+            const subjects = subjectOptions.currentSubjects || [];
+            if (!subjects.length) {
+                const empty = document.createElement('p');
+                empty.style.cssText = 'color:var(--color-neutral-dark);font-style:italic;';
+                empty.textContent = 'You have no subjects yet. Click "Edit subjects" to choose them.';
+                list.appendChild(empty);
+                return;
+            }
+            subjects.forEach(name => {
+                const isComp = compulsorySet.has(name);
+                const chip = document.createElement('span');
+                chip.style.cssText =
+                    'padding:0.4rem 0.8rem;border-radius:999px;font-size:0.85rem;font-weight:600;display:inline-flex;align-items:center;gap:0.4rem;'
+                    + (isComp
+                        ? 'background:linear-gradient(135deg,var(--color-brand-primary),var(--color-brand-secondary));color:#fff;'
+                        : 'background:var(--color-neutral-lightest);color:var(--color-brand-primary);border:1px solid var(--color-neutral-light);');
+                chip.innerHTML = (isComp ? '<i class="fas fa-lock" style="font-size:0.7rem;"></i> ' : '') + escapeHtml(name);
+                list.appendChild(chip);
+            });
+        }
+
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, c => (
+                { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+            ));
+        }
+
+        async function openSubjectEditor() {
+            if (!subjectOptions) await loadSubjectsCard();
+            if (!subjectOptions) {
+                alert('Could not load subject options. Please try again.');
+                return;
+            }
+            const overlay = document.getElementById('subjectEditorOverlay');
+            const classLine = document.getElementById('subjectEditorClassLine');
+            const rulesEl = document.getElementById('subjectEditorRules');
+            const compList = document.getElementById('editorCompulsoryList');
+            const electList = document.getElementById('editorElectivesList');
+            const electHeading = document.getElementById('editorElectivesHeading');
+            const electSub = document.getElementById('editorElectivesSub');
+            const errEl = document.getElementById('subjectEditorError');
+
+            errEl.style.display = 'none';
+            classLine.textContent = `Class: ${subjectOptions.class}`;
+            rulesEl.textContent = subjectOptions.rules.description
+                + ` — ${subjectOptions.rules.expectedCount} subjects total.`;
+
+            // Compulsory: locked-on
+            compList.innerHTML = '';
+            subjectOptions.rules.compulsory.forEach(name => {
+                compList.appendChild(buildSubjectRow(name, true, true));
+            });
+
+            // Electives: pre-check whichever the student already has
+            editorSelected = new Set();
+            subjectOptions.rules.compulsory.forEach(n => editorSelected.add(n));
+            const currentSet = new Set(subjectOptions.currentSubjects || []);
+            const compSet = new Set(subjectOptions.rules.compulsory);
+
+            electHeading.textContent = subjectOptions.rules.electivesLabel || 'Choose your additional subjects';
+            electSub.textContent = `Pick exactly ${subjectOptions.rules.electivesToPick} from the list below.`;
+
+            electList.innerHTML = '';
+            // Sort: those the student already had checked first, then the rest
+            const ordered = subjectOptions.rules.electives.slice().sort((a, b) => {
+                const aSel = currentSet.has(a) && !compSet.has(a);
+                const bSel = currentSet.has(b) && !compSet.has(b);
+                if (aSel === bSel) return a.localeCompare(b);
+                return aSel ? -1 : 1;
+            });
+            ordered.forEach(name => {
+                const checked = currentSet.has(name) && !compSet.has(name);
+                if (checked) editorSelected.add(name);
+                electList.appendChild(buildSubjectRow(name, checked, false));
+            });
+
+            updateEditorCounter();
+            overlay.style.display = 'flex';
+        }
+
+        function buildSubjectRow(name, checked, locked) {
+            const wrapper = document.createElement('label');
+            wrapper.style.cssText = 'display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.8rem;border:1px solid var(--color-neutral-light);border-radius:8px;cursor:'
+                + (locked ? 'not-allowed' : 'pointer') + ';background:'
+                + (locked ? 'var(--color-neutral-lightest)' : '#fff') + ';';
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.checked = checked;
+            cb.disabled = locked;
+            cb.dataset.subject = name;
+            cb.style.cssText = 'width:18px;height:18px;accent-color:var(--color-brand-gold);';
+            const span = document.createElement('span');
+            span.textContent = name + (locked ? ' (compulsory)' : '');
+            span.style.cssText = 'font-size:0.95rem;color:var(--color-neutral-darkest);';
+            cb.addEventListener('change', () => {
+                if (cb.checked) editorSelected.add(name);
+                else editorSelected.delete(name);
+                updateEditorCounter();
+            });
+            wrapper.appendChild(cb);
+            wrapper.appendChild(span);
+            return wrapper;
+        }
+
+        function updateEditorCounter() {
+            if (!subjectOptions) return;
+            const expected = subjectOptions.rules.expectedCount;
+            const current = editorSelected.size;
+            const counter = document.getElementById('subjectEditorCounter');
+            const saveBtn = document.getElementById('subjectEditorSaveBtn');
+            counter.textContent = `${current} / ${expected} selected`;
+            const ok = current === expected;
+            saveBtn.disabled = !ok;
+            counter.style.color = ok ? 'var(--color-success-green)' : 'var(--color-brand-primary)';
+        }
+
+        function closeSubjectEditor() {
+            document.getElementById('subjectEditorOverlay').style.display = 'none';
+        }
+
+        async function saveSubjects() {
+            const errEl = document.getElementById('subjectEditorError');
+            const saveBtn = document.getElementById('subjectEditorSaveBtn');
+            errEl.style.display = 'none';
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving…';
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch('/student/subjects', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ subjects: Array.from(editorSelected) })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    errEl.textContent = data.message || 'Failed to save subjects.';
+                    errEl.style.display = 'block';
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Save subjects';
+                    return;
+                }
+                // Refresh the card and close
+                if (subjectOptions) {
+                    subjectOptions.currentSubjects = data.subjects || Array.from(editorSelected);
+                    subjectOptions.needsSubjectSelection = false;
+                }
+                renderSubjectsCard();
+                closeSubjectEditor();
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save subjects';
+            } catch (e) {
+                console.error('saveSubjects failed:', e);
+                errEl.textContent = 'Network error. Please try again.';
+                errEl.style.display = 'block';
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save subjects';
+            }
+        }
+
+        // Close modal when clicking the overlay backdrop
+        document.getElementById('subjectEditorOverlay').addEventListener('click', (e) => {
+            if (e.target.id === 'subjectEditorOverlay') closeSubjectEditor();
+        });
+
         // Load student data and leaderboard on page load
         fetchStudentData();
         fetchLeaderboard();
+        loadSubjectsCard();
 
         // Tab functionality
         document.querySelectorAll('.tabs-trigger').forEach(tab => {
