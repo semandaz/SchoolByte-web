@@ -1010,7 +1010,7 @@
                 } else {
                     const errorData = await response.json().catch(() => ({}));
                     const msg = errorData.message || 'Failed to generate quiz';
-                    if (errorData.code === 'NO_SUBJECTS') {
+                    if (errorData.code === 'NO_SUBJECTS' || errorData.code === 'NEEDS_SUBJECT_SELECTION') {
                         if (confirm(msg + '\n\nGo to your profile now?')) {
                             window.location.href = 'studentprofile.html';
                             return;

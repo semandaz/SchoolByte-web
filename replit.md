@@ -30,7 +30,8 @@ Full-stack educational platform with student dashboards, teacher portals, quiz/a
 | `server.js` | Main Express server (6500+ lines), all API routes |
 | `models/Student.js` | Student schema (bytes, energy, achievements, etc.) |
 | `models/UnebProject.js` | UNEB project gallery schema |
-| `config/fatsAndBeef.js` | Fixture tables for quiz generation |
+| `config/fatsAndBeef.js` | Fixture tables for quiz generation; `normalizeClass` helper |
+| `config/subjectRules.js` | Single source of truth for subject-selection rules per division (lower 12, middle 9, upper 5 with GP compulsory) |
 | `public/floating-icons.js` | Floating AI buddy, counselling, career widgets |
 | `public/quizzesstudentdashboard.html` | Quiz page (energy-gated) |
 | `public/unebprojectgallery.html` | Student-facing project gallery |
@@ -78,3 +79,13 @@ Full-stack educational platform with student dashboards, teacher portals, quiz/a
 - Admin middleware: `authenticateAdminToken` at server.js line ~908
 - Admin routes use `/admin/` prefix
 - Admin gallery: `/admin/uneb-projects` (GET, DELETE)
+- `POST /admin/trigger-yearly-upgrade` — bumps every student's class. When a student crosses a division boundary (S.2→S.3 or S.4→S.5) it sets `needsSubjectSelection: true`, clears `subjectsEnrolled`, and stores the old class in `previousClass`. Within-division promotions only update `class`/`previousClass`/`lastPromotedAt`.
+
+## Subject Selection (post-promotion re-pick)
+- Source of truth: `config/subjectRules.js` exports `RULES`, `validateSubjectSelection`, `getCycleSubjects`, `subjectsMatchClass`, `getDivisionForClass`, `getRulesForClass`.
+- Division rules: lower (S.1/S.2) 7 compulsory + 5 electives = 12; middle (S.3/S.4) 7 compulsory + 2 electives = 9; upper (S.5/S.6) General Paper compulsory + 4 chosen = 5.
+- Student model fields: `needsSubjectSelection: Boolean`, `previousClass: String`, `lastPromotedAt: Date`.
+- Endpoints: `GET /student/subjects/options` (returns rules + current selection), `PUT /student/subjects` body `{ subjects: [...] }` (validates, saves, clears flag, deletes any active QuizSession so cycle indices reset).
+- Quiz endpoint (`/student/quizzes/generate`) blocks with `code: 'NEEDS_SUBJECT_SELECTION'` when the flag is set OR the stored subjects don't match the current class. Frontend (`quizzesstudentdashboard.html`) handles both `NO_SUBJECTS` and `NEEDS_SUBJECT_SELECTION` by offering a redirect to the profile.
+- Upper-school quiz cycle uses `getCycleSubjects(class, enrolled)` which filters out "General Paper" by name (case-insensitive) — replaces the old fragile `slice(0, 4)`.
+- Profile UI (`public/studentprofile.html`): "My Subjects" card lists current subjects (compulsory pinned with lock icon), banner appears at top when `needsSubjectSelection=true`, modal editor enforces compulsory + exact elective count before enabling Save.

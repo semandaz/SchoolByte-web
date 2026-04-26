@@ -757,10 +757,31 @@ async function generateQuizQuestions(student, requestedSubject = null, isRetry =
             throw err;
         }
 
-        // Upper school: only first 4 subjects (exclude General Paper / subject e)
-        const enrolledSubjects = division === 'upper'
-            ? (student.subjectsEnrolled || []).slice(0, 4)
-            : (student.subjectsEnrolled || []);
+        // If the student was just promoted across a division boundary, force
+        // them to re-pick their subjects before any quiz can run.
+        if (student.needsSubjectSelection) {
+            const err = new Error('Student must re-select subjects after promotion.');
+            err.userMessage = `You were just promoted to ${student.class}. The subject structure has changed — please pick your new subjects in your profile before taking another quiz.`;
+            err.statusCode = 400;
+            err.code = 'NEEDS_SUBJECT_SELECTION';
+            throw err;
+        }
+
+        // Validate that the stored subjects fit the current class. If not, ask
+        // the student to re-select rather than silently truncating with slice.
+        const { subjectsMatchClass: _matches, getCycleSubjects } = require('./config/subjectRules');
+        if (!_matches(student.class, student.subjectsEnrolled)) {
+            const err = new Error('Enrolled subjects do not match current class.');
+            err.userMessage = `Your enrolled subjects do not match the structure for ${student.class}. Please update your subject list in your profile.`;
+            err.statusCode = 400;
+            err.code = 'NEEDS_SUBJECT_SELECTION';
+            throw err;
+        }
+
+        // Build the cycle subject list. For upper school this excludes
+        // "General Paper" by name (case-insensitive) instead of the brittle
+        // slice(0, 4) that depended on enrolment order.
+        const enrolledSubjects = getCycleSubjects(student.class, student.subjectsEnrolled);
         if (enrolledSubjects.length === 0) {
             const err = new Error('No subjects enrolled.');
             err.userMessage = 'You have no subjects enrolled yet. Please add your subjects in your profile to start taking quizzes.';
@@ -2049,6 +2070,9 @@ app.get('/student/dashboard', authenticateToken, async (req, res) => {
                 stream: studentData.stream,
                 classTeacher: studentData.classTeacher,
                 subjectsEnrolled: studentData.subjectsEnrolled,
+                needsSubjectSelection: !!studentData.needsSubjectSelection,
+                previousClass: studentData.previousClass || null,
+                lastPromotedAt: studentData.lastPromotedAt || null,
                 firstNameDisplay: studentData.firstNameDisplay,
                 preferredName: studentData.preferredName,
                 preferences: studentData.preferences,
@@ -2069,6 +2093,96 @@ app.get('/student/dashboard', authenticateToken, async (req, res) => {
     }
 });
 
+
+// ─── Subject Selection (Profile editor) ───────────────────────────────────────
+
+/**
+ * GET /student/subjects/options
+ * Returns the subject rules for the student's current class so the profile UI
+ * can render the right pickers (compulsory vs elective, expected count, etc.).
+ */
+app.get('/student/subjects/options', authenticateToken, async (req, res) => {
+    try {
+        const { getRulesForClass } = require('./config/subjectRules');
+        const student = await Student.findById(req.student.id).select(
+            'class subjectsEnrolled needsSubjectSelection previousClass lastPromotedAt'
+        );
+        if (!student) return res.status(404).json({ message: 'Student not found.' });
+
+        const rules = getRulesForClass(student.class);
+        if (!rules) {
+            return res.status(400).json({
+                message: `Your class "${student.class}" is not recognised. Contact your administrator.`
+            });
+        }
+
+        res.json({
+            class: student.class,
+            previousClass: student.previousClass || null,
+            lastPromotedAt: student.lastPromotedAt || null,
+            needsSubjectSelection: !!student.needsSubjectSelection,
+            currentSubjects: student.subjectsEnrolled || [],
+            rules: {
+                division: rules.division,
+                expectedCount: rules.expectedCount,
+                description: rules.description,
+                compulsory: rules.compulsory,
+                electives: rules.electives,
+                electivesToPick: rules.electivesToPick,
+                electivesLabel: rules.electivesLabel
+            }
+        });
+    } catch (err) {
+        console.error('GET /student/subjects/options failed:', err);
+        res.status(500).json({ message: 'Failed to load subject options.', error: err.message });
+    }
+});
+
+/**
+ * PUT /student/subjects
+ * Body: { subjects: [string, ...] }
+ * Validates the new selection against the rules for the student's class and
+ * saves it. Clears the needsSubjectSelection flag on success.
+ */
+app.put('/student/subjects', authenticateToken, async (req, res) => {
+    try {
+        const { validateSubjectSelection } = require('./config/subjectRules');
+        const { subjects } = req.body || {};
+        const student = await Student.findById(req.student.id);
+        if (!student) return res.status(404).json({ message: 'Student not found.' });
+
+        const result = validateSubjectSelection(student.class, subjects);
+        if (!result.ok) {
+            return res.status(400).json({ message: result.message, code: 'INVALID_SUBJECTS' });
+        }
+
+        student.subjectsEnrolled = result.subjects;
+        student.needsSubjectSelection = false;
+
+        // Reset the active quiz session: cycle indices etc. are tied to the
+        // old subject layout and would point to the wrong subjects after a
+        // re-pick. The next quiz request creates a fresh session.
+        if (student.currentQuizSessionId) {
+            try {
+                await QuizSession.deleteOne({ _id: student.currentQuizSessionId });
+            } catch (e) {
+                console.warn('Could not delete old quiz session on subject change:', e.message);
+            }
+            student.currentQuizSessionId = null;
+        }
+
+        await student.save();
+
+        res.json({
+            message: 'Subjects updated successfully.',
+            subjects: student.subjectsEnrolled,
+            needsSubjectSelection: false
+        });
+    } catch (err) {
+        console.error('PUT /student/subjects failed:', err);
+        res.status(500).json({ message: 'Failed to update subjects.', error: err.message });
+    }
+});
 
 // ─── Daily Quote System ────────────────────────────────────────────────────────
 const SEED_QUOTES = [
@@ -5100,15 +5214,20 @@ app.delete('/admin/teachers/:id', authenticateAdminToken, async (req, res) => {
 
 app.post('/admin/trigger-yearly-upgrade', authenticateAdminToken, async (req, res) => {
     try {
+        const { getDivisionForClass, subjectsMatchClass } = require('./config/subjectRules');
+        const { normalizeClass } = require('./config/fatsAndBeef');
         const students = await Student.find({});
 
 
         let upgradedCount = 0;
         let deletedCount = 0;
+        let flaggedForReselection = 0;
 
 
         for (const student of students) {
-            const currentClass = student.class.toUpperCase();
+            // Use normalizeClass so 'S3', 's.3 ', 'Senior 3' all resolve correctly.
+            const normalized = normalizeClass(student.class);
+            const currentClass = normalized || (student.class || '').toUpperCase();
 
 
             if (currentClass === 'S.6' || currentClass === 'SENIOR 6') {
@@ -5116,15 +5235,44 @@ app.post('/admin/trigger-yearly-upgrade', authenticateAdminToken, async (req, re
                 deletedCount++;
                 console.log(`Deleted S.6 student: ${student.studentName} (Email: ${student.email})`);
             } else {
-                let newClass;
-                const classNumber = parseInt(currentClass.replace('S.', '').replace('SENIOR ', ''));
+                const classNumber = normalized
+                    ? parseInt(normalized.replace('S.', ''))
+                    : parseInt(currentClass.replace('S.', '').replace('SENIOR ', ''));
 
 
                 if (!isNaN(classNumber) && classNumber >= 1 && classNumber <= 5) {
-                    newClass = `S.${classNumber + 1}`;
-                    await Student.updateOne({ _id: student._id }, { class: newClass });
+                    const oldClass = `S.${classNumber}`;
+                    const newClass = `S.${classNumber + 1}`;
+
+                    const oldDivision = getDivisionForClass(oldClass);
+                    const newDivision = getDivisionForClass(newClass);
+
+                    const update = {
+                        class: newClass,
+                        previousClass: oldClass,
+                        lastPromotedAt: new Date()
+                    };
+
+                    // Cross-division promotion (S.2 -> S.3 or S.4 -> S.5):
+                    // the new class has a different subject structure, so the
+                    // student must re-select. We also clear their old
+                    // subjects so stale enrolment can't drive quiz selection.
+                    let crossedDivision = false;
+                    if (oldDivision && newDivision && oldDivision !== newDivision) {
+                        crossedDivision = true;
+                        update.needsSubjectSelection = true;
+                        update.subjectsEnrolled = [];
+                    } else if (!subjectsMatchClass(newClass, student.subjectsEnrolled)) {
+                        // Same division but subjects don't fit — also flag.
+                        update.needsSubjectSelection = true;
+                    }
+
+                    await Student.updateOne({ _id: student._id }, update);
                     upgradedCount++;
-                    console.log(`Upgraded student ${student.studentName} from ${currentClass} to ${newClass}`);
+                    if (crossedDivision || update.needsSubjectSelection) flaggedForReselection++;
+
+                    console.log(`Upgraded ${student.studentName} from ${oldClass} to ${newClass}` +
+                        (crossedDivision ? ' (crossed division — flagged for re-selection)' : ''));
                 } else {
                     console.warn(`Skipping student ${student.studentName} with unrecognized class format: ${student.class}`);
                 }
@@ -5135,7 +5283,8 @@ app.post('/admin/trigger-yearly-upgrade', authenticateAdminToken, async (req, re
         res.status(200).json({
             message: 'Yearly student upgrade and deletion process completed.',
             upgradedStudents: upgradedCount,
-            deletedStudents: deletedCount
+            deletedStudents: deletedCount,
+            flaggedForSubjectReselection: flaggedForReselection
         });
 
 

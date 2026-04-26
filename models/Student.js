@@ -21,6 +21,14 @@ const studentSchema = new mongoose.Schema({
         required: true,
         default: []
     },
+    // Set to true when a student crosses a division boundary during the
+    // yearly promotion (S.2 -> S.3, S.4 -> S.5) so the new class's subject
+    // structure (9-subject middle school, 5-subject A-level) takes effect.
+    // The student must re-pick their subjects in the profile before they
+    // can take any quizzes again.
+    needsSubjectSelection: { type: Boolean, default: false },
+    lastPromotedAt: { type: Date, default: null },
+    previousClass: { type: String, default: null, trim: true },
 
     quizzesCompletedThisWeek: { type: Number, default: 0, min: 0 },
     lastQuizResetDate: { type: Date, default: Date.now },
