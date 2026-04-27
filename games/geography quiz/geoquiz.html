@@ -542,6 +542,24 @@
             'za': ['south africa', 'za'],
             'zm': ['zambia', 'zm'],
             'zw': ['zimbabwe', 'zw'],
+            // Middle East / neighbours that appear in the Africa map
+            'ae': ['united arab emirates', 'uae', 'emirates', 'ae'],
+            'om': ['oman', 'om'],
+            'qa': ['qatar', 'qa'],
+            'sa': ['saudi arabia', 'ksa', 'sa'],
+            'sy': ['syria', 'sy'],
+            'ye': ['yemen', 'ye'],
+            'ps': ['palestine', 'palestinian territories', 'state of palestine', 'ps'],
+            'cm': ['cameroon', 'cm'],
+            'bj': ['benin', 'bj'],
+            'mg': ['madagascar', 'mg'],
+            'ml': ['mali', 'ml'],
+            'sc': ['seychelles', 'sc'],
+            'st': ['sao tome and principe', 'são tomé and príncipe', 'sao tome', 'st'],
+            'gi': ['gibraltar', 'gi'],
+            're': ['reunion', 'réunion', 're'],
+            'sh': ['saint helena', 'st helena', 'sh'],
+            'yt': ['mayotte', 'yt'],
             // South America
             'ar': ['argentina', 'ar'],
             'bo': ['bolivia', 'bo'],
@@ -649,16 +667,28 @@
                 let countryCode = null;
 
                 // Try different ways to find the country name
-                // 1. Check for title element (common in Wikimedia SVGs)
-                const titleEl = el.querySelector('title');
-                if (titleEl) {
-                    const titleText = titleEl.textContent.trim().toLowerCase();
-                    // Check if title is a country code and convert to full name
+                // 1a. Check title attribute (used by Wikimedia/MapSVG-style SVGs like our africa.svg)
+                const titleAttr = el.getAttribute('title');
+                if (titleAttr && titleAttr.trim()) {
+                    const titleText = titleAttr.trim().toLowerCase();
                     if (COUNTRY_ALIASES[titleText]) {
-                        countryName = COUNTRY_ALIASES[titleText][0]; // Use full name
+                        countryName = COUNTRY_ALIASES[titleText][0];
                         countryCode = titleText;
                     } else {
-                        countryName = titleEl.textContent.trim();
+                        countryName = titleAttr.trim();
+                    }
+                }
+                // 1b. Check for <title> child element (common in some Wikimedia SVGs)
+                if (!countryName) {
+                    const titleEl = el.querySelector('title');
+                    if (titleEl) {
+                        const titleText = titleEl.textContent.trim().toLowerCase();
+                        if (COUNTRY_ALIASES[titleText]) {
+                            countryName = COUNTRY_ALIASES[titleText][0];
+                            countryCode = titleText;
+                        } else {
+                            countryName = titleEl.textContent.trim();
+                        }
                     }
                 }
 
