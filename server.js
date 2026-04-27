@@ -50,21 +50,25 @@ const PORT = process.env.PORT || 3002;
 // ═══════════════════════════════════════════════════════════════════════════
 
 function generateRandomPassword(length = 10) {
+    // Use crypto.randomInt for unbiased, cryptographically-strong picks instead of Math.random,
+    // which is predictable and unsafe for credential generation.
     const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
     const lower = 'abcdefghjkmnpqrstuvwxyz';
     const digits = '23456789';
     const special = '!@#$%^&*';
     const all = upper + lower + digits + special;
-    let pass = [
-        upper[Math.floor(Math.random()*upper.length)],
-        lower[Math.floor(Math.random()*lower.length)],
-        digits[Math.floor(Math.random()*digits.length)],
-        special[Math.floor(Math.random()*special.length)]
-    ];
+    const pick = (set) => set[crypto.randomInt(set.length)];
+    const pass = [pick(upper), pick(lower), pick(digits), pick(special)];
     for (let i = pass.length; i < length; i++) {
-        pass.push(all[Math.floor(Math.random()*all.length)]);
+        pass.push(pick(all));
     }
-    return pass.sort(() => Math.random() - 0.5).join('');
+    // Cryptographically-shuffle (Fisher–Yates) so the position of each guaranteed-class
+    // character is not biased — sort with Math.random returns biased orderings.
+    for (let i = pass.length - 1; i > 0; i--) {
+        const j = crypto.randomInt(i + 1);
+        [pass[i], pass[j]] = [pass[j], pass[i]];
+    }
+    return pass.join('');
 }
 
 // --- MongoDB Connection ---
@@ -687,13 +691,25 @@ async function gradeNLPAnswer(studentAnswer, quizQuestion) {
 // Energy: refill 1 per hour, cap 25
 function refillEnergy(student) {
     const now = Date.now();
-    const last = (student.lastEnergyRefillAt && new Date(student.lastEnergyRefillAt).getTime()) || now;
+    // Initialise lastEnergyRefillAt on first read so the timer starts ticking.
+    if (!student.lastEnergyRefillAt) {
+        student.lastEnergyRefillAt = new Date(now);
+        return;
+    }
+    const last = new Date(student.lastEnergyRefillAt).getTime();
     const hoursElapsed = Math.floor((now - last) / (60 * 60 * 1000));
     if (hoursElapsed <= 0) return;
-    const added = Math.min(hoursElapsed, 25 - (student.energy || 0));
+    // Use ?? not || so an energy of 0 is respected (|| treats 0 as missing → would jump to 25).
+    const currentEnergy = (student.energy ?? 25);
+    const added = Math.min(hoursElapsed, 25 - currentEnergy);
     if (added <= 0) return;
-    student.energy = Math.min(25, (student.energy || 25) + hoursElapsed);
-    student.lastEnergyRefillAt = new Date(last + hoursElapsed * 60 * 60 * 1000);
+    student.energy = Math.min(25, currentEnergy + added);
+    // Only advance the timer by the hours we actually applied — overflow time is discarded
+    // because energy is capped, but advancing by the full hoursElapsed loses no real credit
+    // either (player was idle past cap). We move forward by `added` so the next 1-energy
+    // refill happens 1 hour after the most recent applied refill, which is the conventional
+    // behaviour for a regenerating energy meter.
+    student.lastEnergyRefillAt = new Date(last + added * 60 * 60 * 1000);
 }
 
 // Weekly reset checker for students
@@ -4045,14 +4061,14 @@ app.get('/teacher/quiz-questions', authenticateTeacherToken, async (req, res) =>
 
 
     try {
-        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
 
         const [questions, total] = await Promise.all([
             QuizQuestion.find(query)
                 .sort({ createdAt: -1 })
                 .skip(skip)
-                .limit(parseInt(limit)),
+                .limit(parseInt(limit, 10)),
             QuizQuestion.countDocuments(query)
         ]);
 
@@ -4066,8 +4082,8 @@ app.get('/teacher/quiz-questions', authenticateTeacherToken, async (req, res) =>
             message: 'Quiz questions fetched successfully.',
             questions: questions,
             pagination: {
-                current: parseInt(page),
-                total: Math.ceil(total / parseInt(limit)),
+                current: parseInt(page, 10),
+                total: Math.ceil(total / parseInt(limit, 10)),
                 count: questions.length,
                 totalQuestions: total
             },
@@ -4091,7 +4107,7 @@ app.get('/student/analytics/quiz-performance', authenticateToken, async (req, re
 
 
         const startDate = new Date();
-        startDate.setDate(startDate.getDate() - parseInt(timeframe));
+        startDate.setDate(startDate.getDate() - parseInt(timeframe, 10));
 
 
         let matchCriteria = {
@@ -4149,7 +4165,7 @@ app.get('/student/analytics/quiz-performance', authenticateToken, async (req, re
 
         res.status(200).json({
             message: 'Quiz performance analytics fetched successfully.',
-            timeframe: parseInt(timeframe),
+            timeframe: parseInt(timeframe, 10),
             analytics: analytics
         });
 
@@ -5810,7 +5826,7 @@ app.get('/api/student/notifications', authenticateToken, async (req, res) => {
 
         const notifications = await Notification.find(query)
             .sort({ createdAt: -1 })
-            .limit(parseInt(limit));
+            .limit(parseInt(limit, 10));
 
         const unreadCount = await Notification.countDocuments({ 
             student: studentId, 
@@ -6762,7 +6778,7 @@ app.get('/api/messages/personal/:conversationId', authenticateToken, async (req,
       .populate('sender_id', 'studentName email')
       .populate('recipient_id', 'studentName email')
       .sort({ created_at: -1 }) // Fetch newest messages first
-      .limit(parseInt(limit));
+      .limit(parseInt(limit, 10));
 
     // If 'before' is provided, fetch messages created before that timestamp
     if (before) {
@@ -6901,8 +6917,8 @@ app.get('/api/uneb-projects', authenticateToken, async (req, res) => {
     });
     else projects.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    const skipN = parseInt(skip) || 0;
-    const limitN = parseInt(limit) || 20;
+    const skipN = parseInt(skip, 10) || 0;
+    const limitN = parseInt(limit, 10) || 20;
     projects = projects.slice(skipN, skipN + limitN);
 
     const formatted = projects.map(p => formatUnebProjectLean(p, req.student.id));
@@ -7418,8 +7434,8 @@ app.get('/api/student/activity-stats', authenticateToken, async (req, res) => {
       startDate.setDate(startDate.getDate() + 1);
     } else if (range.match(/^d{4}$/)) {
       // specific year like '2024'
-      startDate = new Date(parseInt(range), 0, 1);
-      const endDate = new Date(parseInt(range), 11, 31);
+      startDate = new Date(parseInt(range, 10), 0, 1);
+      const endDate = new Date(parseInt(range, 10), 11, 31);
       // filter to that year
       const yearData = (student.dailyActivity || []).filter(d => d.date.startsWith(range));
       const peakEntry = yearData.reduce((max, d) => d.minutes > (max ? max.minutes : 0) ? d : max, null);
@@ -8133,7 +8149,7 @@ app.post('/student/activities-of-integration/generate', authenticateToken, async
         if (!subject || !topic || !numberOfScenarios || !elementOfConstruct) {
             return res.status(400).json({ error: 'subject, topic, numberOfScenarios, and elementOfConstruct are required.' });
         }
-        const count = Math.min(Math.max(parseInt(numberOfScenarios) || 1, 1), 10);
+        const count = Math.min(Math.max(parseInt(numberOfScenarios, 10) || 1, 1), 10);
         const construct = elementOfConstruct === 'many-topics' ? 'many-topics' : 'one-topic';
 
         const userPrompt = construct === 'many-topics'
@@ -8194,19 +8210,32 @@ app.get('/student/activities-of-integration/library', authenticateToken, async (
 // Student: toggle helpful
 app.post('/student/activities-of-integration/:id/helpful', authenticateToken, async (req, res) => {
     try {
-        const activity = await ActivityOfIntegration.findById(req.params.id);
-        if (!activity) return res.status(404).json({ error: 'Activity not found' });
         const studentId = req.student.id;
-        const alreadyMarked = activity.helpfulMarkedBy.some(id => id.toString() === studentId);
-        if (alreadyMarked) {
-            activity.helpfulMarkedBy = activity.helpfulMarkedBy.filter(id => id.toString() !== studentId);
-            activity.helpfulCount = Math.max(0, activity.helpfulCount - 1);
+        // Use atomic conditional updates so two students tapping "helpful" at the same time
+        // can't desynchronise helpfulCount from helpfulMarkedBy. We try the "add" first; if the
+        // student is already in the array MongoDB updates 0 docs and we toggle to "remove".
+        const addResult = await ActivityOfIntegration.updateOne(
+            { _id: req.params.id, helpfulMarkedBy: { $ne: studentId } },
+            { $addToSet: { helpfulMarkedBy: studentId }, $inc: { helpfulCount: 1 } }
+        );
+        let markedHelpfulByMe;
+        if (addResult.matchedCount === 1) {
+            markedHelpfulByMe = true;
         } else {
-            activity.helpfulMarkedBy.push(studentId);
-            activity.helpfulCount += 1;
+            const remResult = await ActivityOfIntegration.updateOne(
+                { _id: req.params.id, helpfulMarkedBy: studentId },
+                { $pull: { helpfulMarkedBy: studentId }, $inc: { helpfulCount: -1 } }
+            );
+            if (remResult.matchedCount === 0) {
+                return res.status(404).json({ error: 'Activity not found' });
+            }
+            markedHelpfulByMe = false;
         }
-        await activity.save();
-        res.json({ helpfulCount: activity.helpfulCount, markedHelpfulByMe: !alreadyMarked });
+        // Re-read with a tiny projection so we can return the freshly-correct count.
+        const updated = await ActivityOfIntegration.findById(req.params.id).select('helpfulCount').lean();
+        // Floor at 0 in case any pre-existing data had a negative count.
+        const safeCount = Math.max(0, updated?.helpfulCount || 0);
+        res.json({ helpfulCount: safeCount, markedHelpfulByMe });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -8227,7 +8256,7 @@ app.post('/teacher/activities-of-integration/upload', authenticateTeacherToken, 
             seniorClass,
             topic,
             elementOfConstruct: elementOfConstruct === 'many-topics' ? 'many-topics' : 'one-topic',
-            numberOfScenarios: parseInt(numberOfScenarios) || 1,
+            numberOfScenarios: parseInt(numberOfScenarios, 10) || 1,
             scenariosContent,
             isApproved: true,
             approvedBy: { name: teacher.name, role: 'teacher', id: teacher._id },
