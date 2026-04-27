@@ -1052,7 +1052,7 @@ app.get(
         .populate("sender_id", "username avatar_url")
         .populate("recipient_id", "username avatar_url")
         .sort({ created_at: -1 })
-        .limit(parseInt(limit));
+        .limit(parseInt(limit, 10));
 
       if (before) {
         query = query.where("created_at").lt(new Date(before));
@@ -1109,7 +1109,7 @@ app.get(
       let query = GroupMessage.find({ group_id: groupId })
         .populate("sender_id", "username avatar_url")
         .sort({ created_at: -1 })
-        .limit(parseInt(limit));
+        .limit(parseInt(limit, 10));
 
       if (before) {
         query = query.where("created_at").lt(new Date(before));
