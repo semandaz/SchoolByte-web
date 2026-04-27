@@ -461,57 +461,93 @@
     }
 
     /* ── Drag logic ──────────────────────────────────────────────────────── */
+    const DRAG_THRESHOLD = 8; // px the finger/mouse must travel before we treat it as a drag (not a tap)
+
     function makeDraggable(el) {
         let startX, startY, origLeft, origTop;
         let dragging = false;
-        let dragTimer;
+        let moved = false;
 
         function onDown(cx, cy) {
             startX = cx; startY = cy;
             origLeft = el.offsetLeft;
             origTop  = el.offsetTop;
             dragging = false;
-            dragTimer = setTimeout(() => { dragging = true; el.classList.add('dragging'); }, 120);
+            moved = false;
         }
         function onMove(cx, cy) {
-            if (!dragging) return;
-            const nx = origLeft + (cx - startX);
-            const ny = origTop  + (cy - startY);
+            const dx = cx - startX;
+            const dy = cy - startY;
+            if (!dragging) {
+                if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return false;
+                dragging = true;
+                moved = true;
+                el.classList.add('dragging');
+            }
+            const nx = origLeft + dx;
+            const ny = origTop  + dy;
             const maxX = window.innerWidth  - el.offsetWidth;
             const maxY = window.innerHeight - el.offsetHeight;
             el.style.left = Math.max(0, Math.min(nx, maxX)) + 'px';
             el.style.top  = Math.max(0, Math.min(ny, maxY)) + 'px';
             el.style.right = 'auto';
+            return true;
         }
         function onUp() {
-            clearTimeout(dragTimer);
             el.classList.remove('dragging');
             if (dragging) {
                 savedPositions[el.id] = { x: el.offsetLeft, y: el.offsetTop };
                 savePositions();
             }
+            const wasTap = !moved;
             dragging = false;
+            moved = false;
+            return wasTap;
         }
 
         el.addEventListener('mousedown', e => {
             if (e.button !== 0) return;
-            e.preventDefault();
             onDown(e.clientX, e.clientY);
-            const mm = e2 => onMove(e2.clientX, e2.clientY);
-            const mu = () => { onUp(); document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); };
+            const mm = e2 => {
+                if (onMove(e2.clientX, e2.clientY)) e2.preventDefault();
+            };
+            const mu = () => {
+                onUp();
+                document.removeEventListener('mousemove', mm);
+                document.removeEventListener('mouseup', mu);
+            };
             document.addEventListener('mousemove', mm);
             document.addEventListener('mouseup', mu);
         });
 
+        // Touch: don't preventDefault on touchstart (that suppresses the synthesized
+        // click on smart boards / tablets). Only preventDefault once we know it's a drag,
+        // and synthesize a click on tap so the icon's click handler fires.
         el.addEventListener('touchstart', e => {
-            e.preventDefault();
+            if (e.touches.length !== 1) return;
             const t = e.touches[0];
             onDown(t.clientX, t.clientY);
-            const tm = e2 => { const t2 = e2.touches[0]; onMove(t2.clientX, t2.clientY); };
-            const tu = () => { onUp(); document.removeEventListener('touchmove', tm); document.removeEventListener('touchend', tu); };
+            const tm = e2 => {
+                const t2 = e2.touches[0];
+                if (onMove(t2.clientX, t2.clientY)) {
+                    e2.preventDefault(); // stop page scroll while dragging
+                }
+            };
+            const tu = e2 => {
+                const wasTap = onUp();
+                document.removeEventListener('touchmove', tm);
+                document.removeEventListener('touchend', tu);
+                document.removeEventListener('touchcancel', tu);
+                if (wasTap) {
+                    // Some smart-board browsers don't synthesize click reliably; do it ourselves.
+                    e2.preventDefault();
+                    el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                }
+            };
             document.addEventListener('touchmove', tm, { passive: false });
             document.addEventListener('touchend', tu);
-        }, { passive: false });
+            document.addEventListener('touchcancel', tu);
+        }, { passive: true });
     }
 
     /* ── Build icons ─────────────────────────────────────────────────────── */
