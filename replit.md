@@ -27,7 +27,7 @@ Full-stack educational platform with student dashboards, teacher portals, quiz/a
 ## Important Files
 | File | Purpose |
 |------|---------|
-| `server.js` | Main Express entrypoint, ~7,360 lines, all API route handlers |
+| `server.js` | Main Express entrypoint, ~5,150 lines (was 8,372). Hosts the bulk of routes still being extracted; mounts the routers below. |
 | `src/config/env.js` | Centralised env-var access (`JWT_SECRET`, etc.) |
 | `src/middleware/auth.js` | `authenticateToken`, `authenticateTeacherToken`, `authenticateAdminToken` + `signStudentToken/signTeacherToken/signAdminToken` helpers |
 | `src/middleware/upload.js` | Multer in-memory `upload` (10 MB) + `uploadImage` (5 MB) |
@@ -38,9 +38,21 @@ Full-stack educational platform with student dashboards, teacher portals, quiz/a
 | `src/services/achievements.js` | `awardAchievement`, `createNotification`, `checkAndUpdateTier` |
 | `src/services/quiz-generation.js` | `generateQuizQuestions`, `gradeNLPAnswer`, slot/category helpers |
 | `src/services/leaderboard.js` | `getLeaderboardHandler` route handler |
+| `src/services/student-progression.js` | `checkAndAwardAchievements`, `updateStudentStreak` (called from quiz submit) |
 | `src/sockets/chat.js` | `setupChatSockets(io)` — all socket.io chat/presence logic |
 | `src/utils/password.js` | `generateRandomPassword` (crypto-safe) |
-| `tests/` | Jest test suite — pure-function coverage of extracted modules |
+| `src/routes/health.js` | `GET /api/health` |
+| `src/routes/admin-management.js` | Admin CRUD, set-password, signup-admin, login-admin, 2FA verify, message-teachers, `/admin-login.html` |
+| `src/routes/teacher-notifications.js` | `/teacher/notifications` (list, mark-read, unread-count) |
+| `src/routes/ai-chat.js` | `/api/ai-buddy/chat` (SSE), `/api/career-guidance/chat`, `/api/bytenexus-support/chat`, `/api/counselling/chat` |
+| `src/routes/daily-quote.js` | `/student/daily-quote` (with seed kept in `server.js` startup) |
+| `src/routes/games.js` | `/api/games/start`, `/api/games/award-bytes`, `/api/games/geoquiz/submit-answer`, `/api/games/sudoku/submit-result` |
+| `src/routes/leaderboard-extra.js` | `/leaderboard`, `/api/leaderboard`, `/teacher/leaderboard` |
+| `src/routes/student-achievements.js` | `/api/admin/initialize-achievements`, `/api/student/achievements`, `/api/student/convert-xp-to-bytes` |
+| `src/routes/notifications.js` | Student notification endpoints (both Notification model and embedded student.notifications) |
+| `src/routes/uneb-projects.js` | `/api/uneb-projects` (CRUD, like, helpful) + `/admin/uneb-projects` |
+| `src/routes/teams.js` | `/api/teams` (create/join/list/leave) |
+| `tests/` | Jest test suite — pure-function coverage of extracted modules (30 tests, all green) |
 | `models/Student.js` | Student schema (bytes, energy, achievements, etc.) |
 | `models/UnebProject.js` | UNEB project gallery schema |
 | `config/fatsAndBeef.js` | Fixture tables for quiz generation; `normalizeClass` helper |
