@@ -1,0 +1,30 @@
+Architecture / maintainability
+
+Split server.js — at ~8,300 lines it's a "god file." Break it into routes/{auth,quiz,admin,games,chat,...}.js plus middleware/ and services/. Future bugs will be much easier to find.
+Centralise auth middleware payloads. You have a comment "manual fix for inconsistent JWT payloads" (decoded.id || decoded.studentId) — pick one shape, sign all new tokens that way, and remove the fallback.
+Unify the two HTML entrypoints (server.js vs start.js). Right now .replit runs server.js directly while start.js exists as a "fast-start shim" — they're divergent and start.js isn't actually used.
+Security hardening
+
+Lock down CORS. app.use(cors()) and Socket.io origin: '*' allow any site to talk to your API. Restrict to your real domain(s).
+Add rate limiting on /login-*, /send-verification-code, /student/send-password-reset-code, and the AI endpoints (express-rate-limit). Right now an attacker can brute-force 6-digit codes or burn your Groq quota.
+Tighten Helmet CSP. Default Helmet leaves CSP off; configure it for your inline scripts.
+Validate / cap file uploads in Multer (size + mime allowlist) — prevents users from filling Cloudinary with junk.
+Rotate JWT_SECRET if any of the unprotected admin signup URL was ever public, and audit your Administrator collection for unexpected accounts.
+Performance
+
+Add MongoDB indexes for the high-traffic queries: Student.email, QuizQuestion.{subject, intendedClass, type}, PersonalMessage.conversationId + createdAt, Notification.studentId + createdAt.
+Cache subject/achievement lookups in memory — they barely change.
+Avoid await student.save() on every /api/student/energy call when nothing actually changed; only save if refillEnergy mutated the doc.
+Frontend
+
+38k lines of vanilla HTML across 50+ pages duplicate enormous amounts of markup. Even without going to React, extract a shared header/sidebar/footer partial loaded via fetch to cut maintenance.
+Consider a small build step (esbuild/Vite) to bundle and minify floating-icons.js, student-theme.js, etc.
+Testing & ops
+
+There are zero tests ("test": "exit 1"). Add a Jest/Supertest suite for at least: login flows, quiz submit, energy refill math, and admin auth.
+Add /api/health checks for Mongo + Groq + Cloudinary into your deployment health probe.
+Pipe morgan to a log file (or a service) instead of just stdout so you can debug production issues.
+Product / gameplay balance
+
+Games charge 2 bytes and pay 7 — students can farm bytes infinitely, bypassing the energy gate that limits quizzes. Either make the payout depend on a daily/weekly cap, or make games also consume energy.
+Several routes return raw error.message to the client (e.g. /signup-admin used to, plus admin and quiz routes) — that leaks stack/Mongo internals. Strip error.message from 500 responses outside development.
