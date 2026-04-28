@@ -27,7 +27,20 @@ Full-stack educational platform with student dashboards, teacher portals, quiz/a
 ## Important Files
 | File | Purpose |
 |------|---------|
-| `server.js` | Main Express server (6500+ lines), all API routes |
+| `server.js` | Main Express entrypoint, ~7,360 lines, all API route handlers |
+| `src/config/env.js` | Centralised env-var access (`JWT_SECRET`, etc.) |
+| `src/middleware/auth.js` | `authenticateToken`, `authenticateTeacherToken`, `authenticateAdminToken` + `signStudentToken/signTeacherToken/signAdminToken` helpers |
+| `src/middleware/upload.js` | Multer in-memory `upload` (10 MB) + `uploadImage` (5 MB) |
+| `src/services/email.js` | Nodemailer Gmail transporter |
+| `src/services/cloudinary.js` | Cloudinary `.config()` side-effect on import |
+| `src/services/ai.js` | Groq client + `callGroqAI` + `extractJSON` |
+| `src/services/energy.js` | `refillEnergy`, weekly counter resets |
+| `src/services/achievements.js` | `awardAchievement`, `createNotification`, `checkAndUpdateTier` |
+| `src/services/quiz-generation.js` | `generateQuizQuestions`, `gradeNLPAnswer`, slot/category helpers |
+| `src/services/leaderboard.js` | `getLeaderboardHandler` route handler |
+| `src/sockets/chat.js` | `setupChatSockets(io)` — all socket.io chat/presence logic |
+| `src/utils/password.js` | `generateRandomPassword` (crypto-safe) |
+| `tests/` | Jest test suite — pure-function coverage of extracted modules |
 | `models/Student.js` | Student schema (bytes, energy, achievements, etc.) |
 | `models/UnebProject.js` | UNEB project gallery schema |
 | `config/fatsAndBeef.js` | Fixture tables for quiz generation; `normalizeClass` helper |

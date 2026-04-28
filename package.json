@@ -4,7 +4,15 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "<rootDir>/tests/**/*.test.js"
+    ],
+    "verbose": true
   },
   "keywords": [],
   "author": "",
@@ -33,7 +41,9 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",
+    "jest": "^30.3.0",
     "postcss": "^8.5.6",
+    "supertest": "^7.2.2",
     "tailwindcss": "^4.1.11"
   },
   "description": ""

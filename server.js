@@ -14,9 +14,7 @@ const { body, validationResult } = require('express-validator');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const cloudinary = require('cloudinary').v2;
-const multer = require('multer');
-// Removed Gemini AI - now using TinyLlama via Ollama for all AI features
-const Groq = require('groq-sdk');
+// multer / groq are consumed via src/middleware/upload.js and src/services/ai.js.
 const crypto = require('crypto');
 const http = require('http');
 const { getDivision, getFixture, getQuizSerialNumber, getThreeQuartersCycle, CYCLE_SIZES, SLOT_CATEGORY, CLASS_ORDER, normalizeClass } = require('./config/fatsAndBeef');
@@ -45,32 +43,6 @@ app.use(morgan('dev'));
 // Start listening immediately so Replit detects the port before routes finish loading
 const PORT = process.env.PORT || 3002;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// ADMIN MANAGEMENT: List, Create, Delete, Reset Password
-// ═══════════════════════════════════════════════════════════════════════════
-
-function generateRandomPassword(length = 10) {
-    // Use crypto.randomInt for unbiased, cryptographically-strong picks instead of Math.random,
-    // which is predictable and unsafe for credential generation.
-    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-    const lower = 'abcdefghjkmnpqrstuvwxyz';
-    const digits = '23456789';
-    const special = '!@#$%^&*';
-    const all = upper + lower + digits + special;
-    const pick = (set) => set[crypto.randomInt(set.length)];
-    const pass = [pick(upper), pick(lower), pick(digits), pick(special)];
-    for (let i = pass.length; i < length; i++) {
-        pass.push(pick(all));
-    }
-    // Cryptographically-shuffle (Fisher–Yates) so the position of each guaranteed-class
-    // character is not biased — sort with Math.random returns biased orderings.
-    for (let i = pass.length - 1; i > 0; i--) {
-        const j = crypto.randomInt(i + 1);
-        [pass[i], pass[j]] = [pass[j], pass[i]];
-    }
-    return pass.join('');
-}
-
 // --- MongoDB Connection ---
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -89,12 +61,6 @@ mongoose.connect(MONGODB_URI)
     });
 
 
-// --- JWT Secret ---
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-    console.error('FATAL ERROR: JWT_SECRET is not defined. Please set it in Replit Secrets.');
-    process.exit(1);
-}
 
 // --- Models (schemas live in /models) ---
 const VerificationCode = require('./models/VerificationCode');
@@ -121,305 +87,48 @@ const DailyQuote = require('./models/DailyQuote');
 const UnebProject = require('./models/UnebProject');
 const ActivityOfIntegration = require('./models/ActivityOfIntegration');
 
-// --- Socket.io Chat Management ---
-const authenticatedSockets = new Map();
+// ═══════════════════════════════════════════════════════════════════════════
+// MODULAR SUBSYSTEMS — extracted from this file in the src/ tree.
+// New code should live in src/{config,middleware,services,sockets,utils}.
+// ═══════════════════════════════════════════════════════════════════════════
+const { JWT_SECRET } = require('./src/config/env');
+const { generateRandomPassword } = require('./src/utils/password');
+const { transporter } = require('./src/services/email');
+require('./src/services/cloudinary'); // side-effect: cloudinary.config()
+const { groq, GROQ_MODEL, extractJSON, callGroqAI } = require('./src/services/ai');
+const {
+    authenticateToken,
+    authenticateTeacherToken,
+    authenticateAdminToken,
+    signStudentToken,
+    signTeacherToken,
+    signAdminToken,
+} = require('./src/middleware/auth');
+const { upload, uploadImage } = require('./src/middleware/upload');
+const {
+    refillEnergy,
+    checkAndResetWeeklyCounters,
+    checkAndResetTeacherWeeklyCounters,
+} = require('./src/services/energy');
+const {
+    awardAchievement,
+    createNotification,
+    checkAndUpdateTier,
+} = require('./src/services/achievements');
+const {
+    gradeNLPAnswer,
+    shuffleArray,
+    findUnderrepresentedSlots,
+    determineQuestionCategory,
+    generateQuizQuestions,
+    runContingencyAndRetry,
+} = require('./src/services/quiz-generation');
+const { getLeaderboardHandler } = require('./src/services/leaderboard');
+const { setupChatSockets, authenticatedSockets } = require('./src/sockets/chat');
 
-io.use(async (socket, next) => {
-  const token = socket.handshake.auth.token;
+// Wire socket.io chat handlers onto the io instance created above.
+setupChatSockets(io);
 
-  if (!token) {
-    return next(new Error('Authentication token required'));
-  }
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    // Ensure the token payload contains studentId, not just id
-    const studentId = decoded.id || decoded.studentId; 
-    if (!studentId) {
-        return next(new Error('Invalid token payload: student ID missing'));
-    }
-    const student = await Student.findById(studentId);
-
-    if (!student) {
-      return next(new Error('Invalid authentication token: student not found'));
-    }
-
-    socket.userId = student._id.toString();
-    socket.userEmail = student.email;
-    socket.username = student.studentName;
-    next();
-  } catch (error) {
-    console.error('Socket authentication error:', error.message);
-    next(new Error('Invalid authentication token'));
-  }
-});
-
-io.on('connection', (socket) => {
-  console.log(`Student connected to chat: ${socket.userId} (${socket.username})`);
-  authenticatedSockets.set(socket.userId, socket);
-
-  // Broadcast to all users that this user is online
-  io.emit('user_online', { userId: socket.userId, username: socket.username });
-
-  // Send current online users list to newly connected user
-  socket.on('get_online_users', () => {
-    const onlineUsers = Array.from(authenticatedSockets.keys());
-    socket.emit('online_users_list', onlineUsers);
-  });
-
-  socket.on('join_personal_room', ({ conversationId }) => {
-    const userIds = conversationId.split('_');
-    if (!userIds.includes(socket.userId)) {
-      socket.emit('error', { message: 'Unauthorized to join this conversation' });
-      return;
-    }
-    socket.join(`personal_${conversationId}`);
-    console.log(`Student ${socket.userId} joined personal room: ${conversationId}`);
-  });
-
-  socket.on('send_personal_message', async (data) => {
-    try {
-      const { recipientId, content, tempId, replyTo, quoteProject } = data;
-
-      // Deduct 0.2 bytes per personal message sent
-      await Student.updateOne(
-        { _id: socket.userId, bytes: { $gte: 0.2 } },
-        { $inc: { bytes: -0.2 } }
-      ).catch(() => {});
-
-      const newMessage = new PersonalMessage({
-        sender_id: socket.userId,
-        recipient_id: recipientId,
-        content: content,
-        read: false,
-        delivered: false,
-        replyTo: replyTo || null,
-        quoteProject: quoteProject || null
-      });
-
-      await newMessage.save();
-
-      const messageWithSender = await PersonalMessage.findById(newMessage._id)
-        .populate('sender_id', 'studentName email')
-        .populate('recipient_id', 'studentName email')
-        .lean();
-
-      const formattedMessage = {
-        _id: messageWithSender._id.toString(),
-        id: messageWithSender._id.toString(),
-        sender_id: messageWithSender.sender_id._id.toString(),
-        recipient_id: messageWithSender.recipient_id._id.toString(),
-        content: messageWithSender.content,
-        read: messageWithSender.read,
-        delivered: messageWithSender.delivered,
-        created_at: messageWithSender.created_at,
-        tempId: tempId,
-        replyTo: messageWithSender.replyTo ? {
-          id: messageWithSender.replyTo.id?.toString(),
-          content: messageWithSender.replyTo.content,
-          sender_id: messageWithSender.replyTo.sender_id?.toString()
-        } : null,
-        quoteProject: messageWithSender.quoteProject ? {
-          id: messageWithSender.quoteProject.id?.toString(),
-          photoUrl: messageWithSender.quoteProject.photoUrl,
-          title: messageWithSender.quoteProject.title
-        } : null,
-        sender: {
-          id: messageWithSender.sender_id._id.toString(),
-          username: messageWithSender.sender_id.studentName,
-          avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${messageWithSender.sender_id.studentName}`
-        },
-        recipient: {
-          id: messageWithSender.recipient_id._id.toString(),
-          username: messageWithSender.recipient_id.studentName,
-          avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${messageWithSender.recipient_id.studentName}`
-        }
-      };
-
-      const conversationId = [socket.userId, recipientId].sort().join('_');
-
-      // Send confirmation to sender with the full message
-      socket.emit('message_sent_confirmation', {
-        tempId: tempId,
-        messageId: formattedMessage._id,
-        status: 'sent',
-        message: formattedMessage
-      });
-
-      // Broadcast to conversation room (excluding sender to prevent duplication)
-      socket.to(`personal_${conversationId}`).emit('new_personal_message', formattedMessage);
-
-      // Always save persistent notification for the recipient (whether online or offline)
-      createNotification(
-          recipientId, 'new_chat_message',
-          'New Message from ' + socket.username,
-          socket.username + ' sent you a message on ByteNexus.',
-          { senderId: socket.userId, senderName: socket.username, conversationId }
-      ).catch(() => {});
-
-      // Check if recipient is online
-      const recipientSocket = authenticatedSockets.get(recipientId);
-      if (recipientSocket) {
-        // Mark as delivered since recipient is online
-        await PersonalMessage.updateOne(
-          { _id: formattedMessage._id },
-          { delivered: true }
-        );
-
-        socket.emit('message_status_update', {
-          messageId: formattedMessage._id,
-          status: 'delivered'
-        });
-
-        recipientSocket.emit('new_message_notification', {
-          type: 'personal',
-          senderId: socket.userId,
-          senderName: socket.username,
-          conversationId: conversationId,
-          messageId: formattedMessage._id
-        });
-      }
-    } catch (error) {
-      console.error('Error sending personal message:', error);
-      socket.emit('message_error', { error: 'Failed to send message' });
-    }
-  });
-
-  socket.on('mark_message_read', async (data) => {
-    try {
-      const { messageId } = data;
-
-      await PersonalMessage.updateOne(
-        { _id: messageId, recipient_id: socket.userId },
-        { read: true }
-      );
-
-      const message = await PersonalMessage.findById(messageId).lean();
-      if (message) {
-        const senderSocket = authenticatedSockets.get(message.sender_id.toString());
-        if (senderSocket) {
-          senderSocket.emit('message_read_receipt', {
-            messageId: messageId
-          });
-        }
-      }
-
-      socket.emit('message_marked_read', { messageId });
-    } catch (error) {
-      console.error('Error marking message as read:', error);
-    }
-  });
-
-  socket.on('join_group_room', async (data) => {
-    try {
-      const { groupId } = data;
-
-      // Verify user is a member of this group
-      const group = await DiscussionGroup.findById(groupId);
-      if (!group) {
-        socket.emit('error', { message: 'Group not found' });
-        return;
-      }
-
-      const isMember = group.members.some(memberId => memberId.toString() === socket.userId);
-      if (!isMember) {
-        socket.emit('error', { message: 'Not a member of this group' });
-        return;
-      }
-
-      socket.join(`group_${groupId}`);
-      console.log(`Student ${socket.userId} joined group room: ${groupId}`);
-    } catch (error) {
-      console.error('Error joining group room:', error);
-      socket.emit('error', { message: 'Failed to join group room' });
-    }
-  });
-
-  socket.on('send_group_message', async (data) => {
-    try {
-      const { groupId, content, replyTo } = data;
-
-      // Verify membership
-      const group = await DiscussionGroup.findById(groupId);
-      if (!group) {
-        socket.emit('message_error', { error: 'Group not found' });
-        return;
-      }
-
-      const isMember = group.members.some(memberId => memberId.toString() === socket.userId);
-      if (!isMember) {
-        socket.emit('message_error', { error: 'Not a member of this group' });
-        return;
-      }
-
-      const newMessage = new GroupMessage({
-        group_id: groupId,
-        sender_id: socket.userId,
-        content: content,
-        replyTo: replyTo || null
-      });
-
-      await newMessage.save();
-
-      const messageWithSender = await GroupMessage.findById(newMessage._id)
-        .populate('sender_id', 'studentName email')
-        .lean();
-
-      const formattedMessage = {
-        id: messageWithSender._id.toString(),
-        group_id: messageWithSender.group_id.toString(),
-        sender_id: messageWithSender.sender_id._id.toString(),
-        content: messageWithSender.content,
-        created_at: messageWithSender.created_at,
-        replyTo: messageWithSender.replyTo ? {
-          id: messageWithSender.replyTo.id?.toString(),
-          content: messageWithSender.replyTo.content,
-          sender_id: messageWithSender.replyTo.sender_id?.toString()
-        } : null,
-        sender: {
-          id: messageWithSender.sender_id._id.toString(),
-          username: messageWithSender.sender_id.studentName,
-          avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${messageWithSender.sender_id.studentName}`
-        }
-      };
-
-      // Broadcast to all members in the group room
-      io.to(`group_${groupId}`).emit('new_group_message', formattedMessage);
-
-    } catch (error) {
-      console.error('Error sending group message:', error);
-      socket.emit('message_error', { error: 'Failed to send message' });
-    }
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`Student disconnected from chat: ${socket.userId}`);
-    authenticatedSockets.delete(socket.userId);
-
-    // Broadcast to all users that this user is offline
-    io.emit('user_offline', { userId: socket.userId, username: socket.username });
-  });
-});
-
-
-// --- Authentication Middleware ---
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) {
-        return res.status(401).json({ message: 'Access token required' });
-    }
-
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
-        if (err) {
-            return res.status(403).json({ message: 'Invalid or expired token' });
-        }
-        // Assuming the token payload contains 'id' which maps to student._id
-        req.student = { id: decoded.id || decoded.studentId }; // Use decoded.id or decoded.studentId
-        next();
-    });
-};
 
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -646,431 +355,10 @@ app.get('/api/workfiles/:subject', authenticateToken, async (req, res) => {
     }
 });
 
-// --- Utility Functions ---
 
 
-// Enhanced NLP grading function
-async function gradeNLPAnswer(studentAnswer, quizQuestion) {
-    if (!quizQuestion.keywordsForGrading || quizQuestion.keywordsForGrading.length === 0) {
-        return 1; // If no keywords, assume correct
-    }
 
 
-    let matchedKeywords = 0;
-    let negativeMatches = 0;
-    const normalizedAnswer = studentAnswer.toLowerCase().trim();
-
-
-    // Check positive keywords
-    for (const keyword of quizQuestion.keywordsForGrading) {
-        if (normalizedAnswer.includes(keyword.toLowerCase().trim())) {
-            matchedKeywords++;
-        }
-    }
-
-
-    // Check negative keywords
-    if (quizQuestion.negativeKeywords && quizQuestion.negativeKeywords.length > 0) {
-        for (const negKeyword of quizQuestion.negativeKeywords) {
-            if (normalizedAnswer.includes(negKeyword.toLowerCase().trim())) {
-                negativeMatches++;
-            }
-        }
-    }
-
-
-    // Calculate score with negative penalty
-    let score = matchedKeywords / quizQuestion.keywordsForGrading.length;
-    score = Math.max(0, score - (negativeMatches * 0.1)); // Deduct 0.1 per negative match
-
-
-    return Math.min(1, score);
-}
-
-
-// Energy: refill 1 per hour, cap 25
-function refillEnergy(student) {
-    const now = Date.now();
-    // Initialise lastEnergyRefillAt on first read so the timer starts ticking.
-    if (!student.lastEnergyRefillAt) {
-        student.lastEnergyRefillAt = new Date(now);
-        return;
-    }
-    const last = new Date(student.lastEnergyRefillAt).getTime();
-    const hoursElapsed = Math.floor((now - last) / (60 * 60 * 1000));
-    if (hoursElapsed <= 0) return;
-    // Use ?? not || so an energy of 0 is respected (|| treats 0 as missing → would jump to 25).
-    const currentEnergy = (student.energy ?? 25);
-    const added = Math.min(hoursElapsed, 25 - currentEnergy);
-    if (added <= 0) return;
-    student.energy = Math.min(25, currentEnergy + added);
-    // Only advance the timer by the hours we actually applied — overflow time is discarded
-    // because energy is capped, but advancing by the full hoursElapsed loses no real credit
-    // either (player was idle past cap). We move forward by `added` so the next 1-energy
-    // refill happens 1 hour after the most recent applied refill, which is the conventional
-    // behaviour for a regenerating energy meter.
-    student.lastEnergyRefillAt = new Date(last + added * 60 * 60 * 1000);
-}
-
-// Weekly reset checker for students
-async function checkAndResetWeeklyCounters(student) {
-    const now = new Date();
-    const lastReset = new Date(student.lastQuizResetDate);
-    const startOfThisWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
-
-
-    if (lastReset < startOfThisWeek) {
-        student.quizzesCompletedThisWeek = 0;
-        student.lastQuizResetDate = startOfThisWeek;
-        await student.save();
-    }
-}
-
-
-// Weekly reset checker for teachers
-async function checkAndResetTeacherWeeklyCounters(teacher) {
-    const now = new Date();
-    const lastReset = new Date(teacher.lastUploadResetDate);
-    const startOfThisWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
-
-
-    if (lastReset < startOfThisWeek) {
-        teacher.quizzesUploadedThisWeek = 0;
-        teacher.lastUploadResetDate = startOfThisWeek;
-        await teacher.save();
-    }
-}
-
-
-// Quiz generation: Fats and Beef schema with fixture tables (7 usual, 2 revision, 1 stretch)
-async function generateQuizQuestions(student, requestedSubject = null, isRetry = false) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    // Helper: safely abort + end the session exactly once, regardless of where we throw.
-    const safeAbort = async () => {
-        try { if (session.inTransaction()) await session.abortTransaction(); } catch (_) {}
-        try { session.endSession(); } catch (_) {}
-    };
-
-    try {
-        let quizSession = await QuizSession.findById(student.currentQuizSessionId).session(session);
-        if (!quizSession) {
-            quizSession = new QuizSession({
-                userId: student._id,
-                questionsCompletedCount: 0
-            });
-            await quizSession.save({ session });
-            student.currentQuizSessionId = quizSession._id;
-            await student.save({ session });
-        }
-
-        const division = getDivision(student.class);
-        if (!division) {
-            const err = new Error('Invalid student class for quiz generation.');
-            err.userMessage = 'Your class is not set correctly. Please update your profile.';
-            err.statusCode = 400;
-            throw err;
-        }
-
-        // If the student was just promoted across a division boundary, force
-        // them to re-pick their subjects before any quiz can run.
-        if (student.needsSubjectSelection) {
-            const err = new Error('Student must re-select subjects after promotion.');
-            err.userMessage = `You were just promoted to ${student.class}. The subject structure has changed — please pick your new subjects in your profile before taking another quiz.`;
-            err.statusCode = 400;
-            err.code = 'NEEDS_SUBJECT_SELECTION';
-            throw err;
-        }
-
-        // Validate that the stored subjects fit the current class. If not, ask
-        // the student to re-select rather than silently truncating with slice.
-        const { subjectsMatchClass: _matches, getCycleSubjects } = require('./config/subjectRules');
-        if (!_matches(student.class, student.subjectsEnrolled)) {
-            const err = new Error('Enrolled subjects do not match current class.');
-            err.userMessage = `Your enrolled subjects do not match the structure for ${student.class}. Please update your subject list in your profile.`;
-            err.statusCode = 400;
-            err.code = 'NEEDS_SUBJECT_SELECTION';
-            throw err;
-        }
-
-        // Build the cycle subject list. For upper school this excludes
-        // "General Paper" by name (case-insensitive) instead of the brittle
-        // slice(0, 4) that depended on enrolment order.
-        const enrolledSubjects = getCycleSubjects(student.class, student.subjectsEnrolled);
-        if (enrolledSubjects.length === 0) {
-            const err = new Error('No subjects enrolled.');
-            err.userMessage = 'You have no subjects enrolled yet. Please add your subjects in your profile to start taking quizzes.';
-            err.statusCode = 400;
-            err.code = 'NO_SUBJECTS';
-            throw err;
-        }
-
-        const fixture = getFixture(division);
-        if (!fixture) {
-            const err = new Error('No fixture for division.');
-            err.userMessage = 'Quiz schedule could not be loaded for your class. Please try again later.';
-            err.statusCode = 500;
-            throw err;
-        }
-
-        const sn = getQuizSerialNumber(quizSession.questionsCompletedCount, division);
-        const rowIndex = (sn - 1) % fixture.length;
-        const fixtureRow = fixture[rowIndex];
-
-        const studentClass = normalizeClass(student.class) || student.class;
-        const classIndex = CLASS_ORDER.indexOf(studentClass);
-        const ownClasses = [studentClass];
-        const lowerClasses = classIndex > 0 ? CLASS_ORDER.slice(0, classIndex) : [];
-        const upperClasses = classIndex < CLASS_ORDER.length - 1 ? CLASS_ORDER.slice(classIndex + 1) : [];
-
-        function getAllowedClasses(category) {
-            if (category === 'usual') return ownClasses;
-            if (category === 'revision') return lowerClasses;
-            if (category === 'stretch') return upperClasses;
-            return [];
-        }
-
-        const selectedQuestions = [];
-        const usedQuestionIds = new Set();
-        const gaps = []; // slots with no matching DB question
-
-        for (let slot = 1; slot <= 10; slot++) {
-            const subjectIndex = fixtureRow[slot - 1] % enrolledSubjects.length;
-            const subject = enrolledSubjects[subjectIndex];
-            const category = SLOT_CATEGORY[slot];
-            const allowedClasses = getAllowedClasses(category);
-
-            if (allowedClasses.length === 0) {
-                // e.g. revision slot for S.1 — no lower class exists
-                gaps.push({ slot, subject, intendedClasses: allowedClasses, category });
-                continue;
-            }
-
-            const excludeIds = [...(student.recentQuizIds || []), ...Array.from(usedQuestionIds)];
-            const questions = await QuizQuestion.find({
-                subject: subject,
-                intendedClass: { $in: allowedClasses },
-                isActive: true,
-                _id: excludeIds.length ? { $nin: excludeIds } : { $exists: true }
-            })
-                .sort({ timesServedOverall: 1, lastServedTimestamp: 1 })
-                .limit(20)
-                .session(session)
-                .lean();
-
-            if (questions.length === 0) {
-                // Targeted per-slot fallback: find the oldest recently-served question
-                // for THIS specific subject/class before triggering global contingency.
-                const usedIdsStr = new Set(Array.from(usedQuestionIds).map(id => id.toString()));
-                const recentCandidateIds = (student.recentQuizIds || []).filter(
-                    id => !usedIdsStr.has(id.toString())
-                );
-                const fallbackQs = recentCandidateIds.length
-                    ? await QuizQuestion.find({
-                        subject,
-                        intendedClass: { $in: allowedClasses },
-                        isActive: true,
-                        _id: { $in: recentCandidateIds }
-                    }).sort({ lastServedTimestamp: 1 }).limit(3).session(session).lean()
-                    : [];
-
-                if (fallbackQs.length > 0) {
-                    const chosen = fallbackQs[Math.floor(Math.random() * fallbackQs.length)];
-                    selectedQuestions.push({ question: chosen, slot });
-                    usedQuestionIds.add(chosen._id);
-                    continue;
-                }
-
-                if (!isRetry) {
-                    // Targeted fallback exhausted — run global contingency then retry
-                    await safeAbort();
-                    const result = await runContingencyAndRetry(student, quizSession, division);
-                    return result;
-                }
-                // Second pass (isRetry) — record gap and keep going; AI will fill it
-                gaps.push({ slot, subject, intendedClasses: allowedClasses, category });
-                continue;
-            }
-
-            const chosen = questions[Math.floor(Math.random() * questions.length)];
-            selectedQuestions.push({ question: chosen, slot });
-            usedQuestionIds.add(chosen._id);
-        }
-
-        shuffleArray(selectedQuestions);
-
-        setImmediate(async () => {
-            for (const { question } of selectedQuestions) {
-                await QuizQuestion.updateOne(
-                    { _id: question._id },
-                    { $inc: { timesServedOverall: 1 }, $set: { lastServedTimestamp: new Date() } }
-                );
-            }
-        });
-
-        await session.commitTransaction();
-        session.endSession();
-
-        const foundQuestions = selectedQuestions.map(sq => sq.question);
-        if (gaps.length === 0) {
-            return foundQuestions; // fully satisfied from DB — backward compatible
-        }
-        // Return partial result so endpoint can fill gaps with AI
-        return { questions: foundQuestions, gaps, division, studentClass };
-    } catch (error) {
-        await safeAbort();
-        throw error;
-    }
-}
-
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-}
-
-async function runContingencyAndRetry(student, quizSession, division) {
-    const studentId = student._id;
-    const currentSessionId = quizSession._id;
-    const questionsInCycle = quizSession.questionsCompletedCount;
-    const cycleSize = CYCLE_SIZES[division];
-    const threeQuarters = getThreeQuartersCycle(division);
-
-    const sessionsToUnflag = [];
-    if ((student.contingencyRepeatCount || 0) >= 10) {
-        const lastTwo = await QuizSession.find({ userId: studentId }).sort({ startedAt: -1 }).limit(2).lean();
-        sessionsToUnflag.push(...lastTwo.map(s => s._id));
-    } else if (questionsInCycle >= threeQuarters) {
-        sessionsToUnflag.push(currentSessionId);
-    } else {
-        sessionsToUnflag.push(currentSessionId);
-        const previous = await QuizSession.findOne({ userId: studentId, _id: { $ne: currentSessionId } }).sort({ startedAt: -1 }).lean();
-        if (previous) sessionsToUnflag.push(previous._id);
-    }
-
-    const attempts = await CompletedQuizAttempt.find({ quizSessionId: { $in: sessionsToUnflag } }).select('quizId').lean();
-    const idsToRestore = attempts.map(a => a.quizId);
-    const recentIds = (student.recentQuizIds || []).filter(id => !idsToRestore.some(rid => rid.equals(id)));
-    student.recentQuizIds = recentIds;
-    student.contingencyRepeatCount = (student.contingencyRepeatCount || 0) + 1;
-    await student.save();
-
-    const updatedStudent = await Student.findById(studentId);
-    return generateQuizQuestions(updatedStudent, null, true);
-}
-
-
-function findUnderrepresentedSlots(subjectProgress) {
-    const underrepresented = {};
-    const quotas = { ownClass: 5, lowerClass: 2, higherClass: 3 };
-
-
-    for (const subject in subjectProgress) {
-        underrepresented[subject] = {};
-        for (const category in quotas) {
-            const current = subjectProgress[subject][category] || 0;
-            const needed = quotas[category] - current;
-            if (needed > 0) {
-                underrepresented[subject][category] = needed;
-            }
-        }
-    }
-
-
-    return underrepresented;
-}
-
-
-// --- Email Configuration ---
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
-
-
-if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.warn('WARNING: EMAIL_USER or EMAIL_PASS not set. Email functionalities will not work.');
-}
-
-
-// --- Cloudinary Configuration ---
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-
-if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-    console.warn('WARNING: Cloudinary environment variables are not fully set. File uploads will not work.');
-} else {
-    console.log('Cloudinary configured successfully.');
-}
-
-
-
-// --- Authentication Middleware ---
-// authenticateToken is defined above
-
-const authenticateTeacherToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-
-    if (!token) {
-        console.error('No authentication token provided in teacher request');
-        return res.status(401).json({ message: 'Access Denied: No authentication token provided.' });
-    }
-
-
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
-        if (err) {
-            console.error('JWT verification error (Teacher):', {
-                error: err.message,
-                token: token.substring(0, 20) + '...',
-                headers: req.headers.authorization ? 'present' : 'missing'
-            });
-            return res.status(403).json({ message: 'Access Denied: Invalid or expired teacher token.' });
-        }
-
-
-        // Ensure the token is for a teacher
-        if (decoded.role !== 'teacher') {
-            console.error('Token role mismatch:', decoded.role);
-            return res.status(403).json({ message: 'Access Denied: Teacher access required.' });
-        }
-
-
-        req.teacher = decoded;
-        next();
-    });
-};
-
-
-const authenticateAdminToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-
-    if (!token) {
-        return res.status(401).json({ message: 'Access Denied: No authentication token provided.' });
-    }
-
-
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
-        if (err) {
-            console.error('JWT verification error (Admin):', err.message);
-            return res.status(403).json({ message: 'Access Denied: Invalid or expired admin token.' });
-        }
-        req.admin = decoded;
-        next();
-    });
-};
 
 // ─── Admin Management Routes ────────────────────────────────────────────────
 // GET all admins (excluding deleted)
@@ -1369,71 +657,6 @@ app.post('/admin/message-teachers', authenticateAdminToken, [
 
 
 
-// --- AI Service Configuration ---
-// Using TinyLlama via Ollama for all AI features
-const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || '' });
-
-// Test Groq connection on startup
-(async () => {
-    if (!process.env.GROQ_API_KEY) {
-        console.warn('\u26a0 GROQ_API_KEY not set. AI features will not work. Set GROQ_API_KEY in your environment.');
-        return;
-    }
-    try {
-        await groq.chat.completions.create({ model: GROQ_MODEL, messages: [{ role: 'user', content: 'hi' }], max_tokens: 1 });
-        console.log('\u2713 Groq AI service connected successfully.');
-    } catch (error) {
-        console.warn('\u26a0 Groq AI service not available:', error.message);
-    }
-})();
-
-// Helper function to extract JSON from AI response
-function extractJSON(text) {
-    try {
-        // Remove markdown code fences if present
-        let cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        
-        // Find JSON object boundaries
-        const jsonStart = cleaned.indexOf('{');
-        const jsonEnd = cleaned.lastIndexOf('}');
-        
-        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-            cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
-        }
-        
-        return JSON.parse(cleaned);
-    } catch (error) {
-        throw new Error(`Failed to extract valid JSON from AI response: ${error.message}`);
-    }
-}
-
-// Groq AI wrapper -- fast LLM inference
-async function callGroqAI(userPrompt, systemPrompt, options) {
-    systemPrompt = systemPrompt || '';
-    options = options || {};
-    if (!process.env.GROQ_API_KEY) throw new Error('GROQ_API_KEY not configured.');
-    const maxRetries = options.retries !== undefined ? options.retries : 1;
-    const maxTokens = options.max_tokens || options.num_predict || 350;
-    const temperature = options.temperature !== undefined ? options.temperature : 0.7;
-    const messages = [];
-    if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
-    messages.push({ role: 'user', content: userPrompt });
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-            const response = await groq.chat.completions.create({
-                model: GROQ_MODEL,
-                messages,
-                temperature,
-                max_tokens: maxTokens
-            });
-            return response.choices[0] && response.choices[0].message && response.choices[0].message.content || '';
-        } catch (error) {
-            if (attempt === maxRetries) throw new Error('Groq AI error: ' + error.message);
-            await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 500));
-        }
-    }
-}
 
 
 
@@ -3362,18 +2585,6 @@ app.post('/student/quizzes/submit', authenticateToken, [
 
 
 });
-// Helper function to determine question category
-function determineQuestionCategory(studentClass, questionClass) {
-    const classOrder = ['S.1', 'S.2', 'S.3', 'S.4', 'S.5', 'S.6'];
-    const studentIndex = classOrder.indexOf(studentClass);
-    const questionIndex = classOrder.indexOf(questionClass);
-
-
-    if (studentIndex === questionIndex) return 'ownClass';
-    if (questionIndex < studentIndex) return 'lowerClass';
-    if (questionIndex > studentIndex) return 'higherClass';
-    return null;
-}
 
 
 // Enhanced teacher quiz question management
@@ -4176,31 +3387,6 @@ app.get('/student/analytics/quiz-performance', authenticateToken, async (req, re
     }
 });
 
-// --- Multer Configuration for File Uploads ---
-const storage = multer.memoryStorage(); // Use memory storage for Cloudinary upload
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype === 'application/pdf') {
-        cb(null, true);
-    } else {
-        cb(new Error('Invalid file type. Only PDFs are allowed.'), false);
-    }
-};
-const upload = multer({
-    storage: storage,
-    fileFilter: fileFilter,
-    limits: { fileSize: 25 * 1024 * 1024 } // 25MB file size limit
-});
-
-const imageFilter = (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (allowed.includes(file.mimetype)) cb(null, true);
-    else cb(new Error('Invalid file type. Only JPEG, PNG, WebP allowed.'), false);
-};
-const uploadImage = multer({
-    storage: multer.memoryStorage(),
-    fileFilter: imageFilter,
-    limits: { fileSize: 8 * 1024 * 1024 } // 8MB
-});
 
 
 
@@ -5312,75 +4498,6 @@ app.post('/admin/trigger-yearly-upgrade', authenticateAdminToken, async (req, re
 
 
 // Leaderboard: single handler, mounted on both paths to avoid duplicate logic
-async function getLeaderboardHandler(req, res) {
-    try {
-        const { limit = 500 } = req.query;
-        const currentStudentId = req.student.id;
-        const cap = Math.min(parseInt(limit, 10) || 500, 1000);
-
-        const [students, totalPlayers] = await Promise.all([
-            Student.find({ isEmailVerified: true })
-                .sort({ bytes: -1, _id: 1 })
-                .select('preferredName studentName bytes xp currentTier')
-                .limit(cap)
-                .lean(),
-            Student.countDocuments({ isEmailVerified: true })
-        ]);
-
-        const leaderboard = students.map((student, index) => {
-            const rank = index + 1;
-            const isCurrentUser = student._id.toString() === currentStudentId;
-            const displayName = student.preferredName || student.studentName;
-
-            return {
-                rank,
-                displayName,
-                bytes: student.bytes || 0,
-                xp: student.xp,
-                tier: student.currentTier || 1,
-                isCurrentUser
-            };
-        });
-
-        // If the current user is outside the returned slice, look them up and append
-        // so the frontend can always show "where you are".
-        let currentUserEntry = leaderboard.find(p => p.isCurrentUser) || null;
-        if (!currentUserEntry) {
-            const me = await Student.findById(currentStudentId)
-                .select('preferredName studentName bytes xp currentTier isEmailVerified')
-                .lean();
-            if (me && me.isEmailVerified) {
-                const ahead = await Student.countDocuments({
-                    isEmailVerified: true,
-                    $or: [
-                        { bytes: { $gt: me.bytes || 0 } },
-                        { bytes: me.bytes || 0, _id: { $lt: me._id } }
-                    ]
-                });
-                currentUserEntry = {
-                    rank: ahead + 1,
-                    displayName: me.preferredName || me.studentName,
-                    bytes: me.bytes || 0,
-                    xp: me.xp,
-                    tier: me.currentTier || 1,
-                    isCurrentUser: true,
-                    outsideTop: true
-                };
-                leaderboard.push(currentUserEntry);
-            }
-        }
-
-        res.status(200).json({
-            message: 'Leaderboard fetched successfully!',
-            leaderboard,
-            totalPlayers,
-            currentUser: currentUserEntry
-        });
-    } catch (error) {
-        console.error('Error fetching leaderboard:', error);
-        res.status(500).json({ message: 'Server error fetching leaderboard.', error: error.message });
-    }
-}
 app.get('/leaderboard', authenticateToken, getLeaderboardHandler);
 app.get('/api/leaderboard', authenticateToken, getLeaderboardHandler);
 
@@ -5506,129 +4623,6 @@ app.get('/teacher/profile', authenticateTeacherToken, async (req, res) => {
 // ==================== ACHIEVEMENT AND XP SYSTEM API ENDPOINTS ====================
 
 // Helper Functions for Achievement System
-async function awardAchievement(studentId, achievementId, progress = 1, target = 1) {
-    try {
-        const student = await Student.findById(studentId);
-        if (!student) {
-            console.error('Student not found for achievement award:', studentId);
-            return null;
-        }
-
-        const achievement = await Achievement.findOne({ achievementId });
-        if (!achievement) {
-            console.error('Achievement not found:', achievementId);
-            return null;
-        }
-
-        let studentAchievement = await StudentAchievement.findOne({
-            student: studentId,
-            achievementId: achievementId
-        });
-
-        if (!studentAchievement) {
-            studentAchievement = new StudentAchievement({
-                student: studentId,
-                achievementId: achievementId,
-                achievement: achievement._id,
-                progress: 0,
-                target: target,
-                unlocked: false
-            });
-        }
-
-        if (studentAchievement.unlocked) {
-            return null;
-        }
-
-        studentAchievement.progress = Math.min(studentAchievement.progress + progress, target);
-
-        if (studentAchievement.progress >= target && !studentAchievement.unlocked) {
-            studentAchievement.unlocked = true;
-            studentAchievement.unlockedAt = new Date();
-
-            student.bytes += achievement.byteReward;
-            student.xp += achievement.xpReward;
-            await student.save();
-
-            await checkAndUpdateTier(studentId);
-
-            await createNotification(
-                studentId,
-                'achievement',
-                `Achievement Unlocked: ${achievement.name}!`,
-                `You've earned ${achievement.byteReward} bytes and ${achievement.xpReward} XP!`,
-                { 
-                    achievementId: achievement.achievementId,
-                    icon: achievement.icon,
-                    tier: achievement.tier
-                }
-            );
-
-            await studentAchievement.save();
-            return { achievement, newlyUnlocked: true };
-        }
-
-        await studentAchievement.save();
-        return { achievement, newlyUnlocked: false, progress: studentAchievement.progress, target: studentAchievement.target };
-
-    } catch (error) {
-        console.error('Error awarding achievement:', error);
-        return null;
-    }
-}
-
-async function createNotification(studentId, type, title, message, metadata = {}) {
-    try {
-        const notification = new Notification({
-            student: studentId,
-            type,
-            title,
-            message,
-            data: metadata,
-            read: false
-        });
-        await notification.save();
-        return notification;
-    } catch (error) {
-        console.error('Error creating notification:', error);
-        return null;
-    }
-}
-
-async function checkAndUpdateTier(studentId) {
-    try {
-        const student = await Student.findById(studentId);
-        if (!student) return null;
-
-        const nextTier = await PlayerLevel.findOne({ tier: student.currentTier + 1 });
-
-        if (nextTier && student.xp >= nextTier.totalXPRequired) {
-            const oldTier = student.currentTier;
-            student.currentTier = nextTier.tier;
-            student.bytes += nextTier.levelUpByteReward;
-            await student.save();
-
-            await createNotification(
-                studentId,
-                'level_up',
-                `Tier Up! You're now ${nextTier.name}!`,
-                `Congratulations! You've earned ${nextTier.levelUpByteReward} bonus bytes for reaching Tier ${nextTier.tier}.`,
-                { 
-                    oldTier: oldTier,
-                    newTier: nextTier.tier,
-                    tierName: nextTier.name,
-                    byteReward: nextTier.levelUpByteReward
-                }
-            );
-
-            return nextTier;
-        }
-        return null;
-    } catch (error) {
-        console.error('Error checking tier update:', error);
-        return null;
-    }
-}
 
 // Initialize Player Levels and Achievements (One-time seed - Admin only)
 app.post('/api/admin/initialize-achievements', async (req, res) => {
