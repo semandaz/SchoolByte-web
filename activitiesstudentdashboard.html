@@ -714,7 +714,7 @@
                     const data = await dashboardResponse.json();
                     const displayName = data.student.preferredName || data.student.studentName;
                     studentNameDisplay.textContent = displayName;
-                    bytesCountElement.textContent = data.student.bytes || 0;
+                    bytesCountElement.textContent = Math.round(data.student.bytes || 0);
                     studentClass = data.student.class;
                 } else if (dashboardResponse.status === 401 || dashboardResponse.status === 403) {
                     localStorage.removeItem('token');

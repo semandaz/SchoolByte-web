@@ -587,7 +587,7 @@
         const displayName = data.student.preferredName || data.student.studentName;
         studentNameDisplay.textContent = displayName;
         welcomeMessage.textContent = 'Hello ' + displayName + ', ready to explore ' + subject + '?';
-        bytesCountElement.textContent = data.student.bytes || 0;
+        bytesCountElement.textContent = Math.round(data.student.bytes || 0);
 
       } catch (error) {
         console.error('Error loading student data:', error);

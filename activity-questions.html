@@ -697,7 +697,7 @@
       if (dashResponse.ok) {
         const dashData = await dashResponse.json();
         studentName = dashData.student.preferredName || dashData.student.studentName || 'Student';
-        currentBytes = dashData.student.bytes || 0;
+        currentBytes = Math.round(dashData.student.bytes || 0);
         studentNameSpan.textContent = studentName;
         bytesSpan.textContent = currentBytes;
       } else if (dashResponse.status === 401 || dashResponse.status === 403) {

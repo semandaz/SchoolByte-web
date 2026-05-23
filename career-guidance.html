@@ -433,7 +433,7 @@
                 studentStats = {
                     tier: data.student.currentTier || 1,
                     xp: data.student.xp || 0,
-                    bytes: data.student.bytes || 0
+                    bytes: Math.round(data.student.bytes || 0)
                 };
 
                 document.getElementById('headerTier').textContent = studentStats.tier;

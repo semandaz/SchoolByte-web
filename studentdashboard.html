@@ -1488,8 +1488,8 @@
                                 student.preferredName || student.studentName;
                             studentNameDisplay.textContent = displayName;
                             welcomeMessage.textContent = `Hello ${displayName}, what do you want to dive into today?`;
-                            bytesCountElement.textContent = student.bytes || 0;
-                            bytesCount = student.bytes || 0;
+                            bytesCountElement.textContent = Math.round(student.bytes || 0);
+                            bytesCount = Math.round(student.bytes || 0);
 
                             // Update streak display
                             const streakEl = document.getElementById("streakCount");
