@@ -8,7 +8,7 @@ async function getLeaderboardHandler(req, res) {
 
         const [students, totalPlayers] = await Promise.all([
             Student.find({ isEmailVerified: true })
-                .sort({ bytes: -1, _id: 1 })
+                .sort({ xp: -1, _id: 1 })
                 .select('preferredName studentName bytes xp currentTier')
                 .limit(cap)
                 .lean(),
@@ -23,14 +23,13 @@ async function getLeaderboardHandler(req, res) {
                 rank,
                 displayName,
                 bytes: student.bytes || 0,
-                xp: student.xp,
+                xp: student.xp || 0,
                 tier: student.currentTier || 1,
                 isCurrentUser,
             };
         });
 
         // If the current user is outside the returned slice, look them up and append
-        // so the frontend can always show "where you are".
         let currentUserEntry = leaderboard.find((p) => p.isCurrentUser) || null;
         if (!currentUserEntry) {
             const me = await Student.findById(currentStudentId)
@@ -40,15 +39,15 @@ async function getLeaderboardHandler(req, res) {
                 const ahead = await Student.countDocuments({
                     isEmailVerified: true,
                     $or: [
-                        { bytes: { $gt: me.bytes || 0 } },
-                        { bytes: me.bytes || 0, _id: { $lt: me._id } },
+                        { xp: { $gt: me.xp || 0 } },
+                        { xp: me.xp || 0, _id: { $lt: me._id } },
                     ],
                 });
                 currentUserEntry = {
                     rank: ahead + 1,
                     displayName: me.preferredName || me.studentName,
                     bytes: me.bytes || 0,
-                    xp: me.xp,
+                    xp: me.xp || 0,
                     tier: me.currentTier || 1,
                     isCurrentUser: true,
                     outsideTop: true,

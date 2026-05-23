@@ -5,13 +5,15 @@ const achievementSchema = new mongoose.Schema({
     name: { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
     tier: { type: String, required: true, enum: ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'] },
-    category: { type: String, required: true, enum: ['GeoQuiz', 'ByteSudoku', 'General'] },
+    category: {
+        type: String,
+        required: true,
+        enum: ['GeoQuiz', 'ByteSudoku', 'General', 'Quiz', 'Activity', 'Gallery', 'Platform'],
+    },
     byteReward: { type: Number, required: true, min: 0 },
     xpReward: { type: Number, required: true, min: 0 },
     icon: { type: String, default: 'fa-trophy' },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
 }, { timestamps: true });
-
-// achievementId unique index is defined on the field above
 
 module.exports = mongoose.model('Achievement', achievementSchema);

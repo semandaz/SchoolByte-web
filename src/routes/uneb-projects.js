@@ -7,7 +7,7 @@ const UnebProject = require('../../models/UnebProject');
 const { authenticateToken, authenticateAdminToken } = require('../middleware/auth');
 const { uploadImage } = require('../middleware/upload');
 const cloudinary = require('../services/cloudinary');
-const { createNotification } = require('../services/achievements');
+const { createNotification, trackAchievementProgress } = require('../services/achievements');
 
 const router = express.Router();
 
@@ -99,9 +99,26 @@ router.post('/api/uneb-projects', authenticateToken, uploadImage.single('photo')
             keywords: (req.body.keywords || '').split(',').map(k => k.trim()).filter(Boolean),
         });
         await project.save();
+
+        // Award XP and increment counter
+        const uploadXP = student.totalProjectsUploaded === 0 ? 50 : 25;
+        student.xp = (student.xp || 0) + uploadXP;
+        student.totalProjectsUploaded = (student.totalProjectsUploaded || 0) + 1;
+        await student.save();
+
+        // Background gallery achievement checks
+        const projCount = student.totalProjectsUploaded;
+        const sid = req.student.id;
+        Promise.allSettled([
+            trackAchievementProgress(sid, 'gallery_first_upload', projCount, 1),
+            trackAchievementProgress(sid, 'gallery_5_uploads', projCount, 5),
+            trackAchievementProgress(sid, 'gallery_10_uploads', projCount, 10),
+        ]).catch(() => {});
+
         const populated = await UnebProject.findById(project._id).populate('student_id', 'studentName class stream');
         res.status(201).json({
             message: 'Project published successfully!',
+            xpEarned: uploadXP,
             project: formatUnebProject(populated, req.student.id),
         });
     } catch (err) {
@@ -119,12 +136,7 @@ router.get('/api/uneb-projects', authenticateToken, async (req, res) => {
         if (category) query.category = new RegExp(category, 'i');
         if (q && q.trim()) {
             const re = new RegExp(q.trim(), 'i');
-            query.$or = [
-                { title: re },
-                { methodology: re },
-                { abstract: re },
-                { keywords: re },
-            ];
+            query.$or = [{ title: re }, { methodology: re }, { abstract: re }, { keywords: re }];
         }
 
         let projects = await UnebProject.find(query).populate('student_id', 'studentName class stream').lean();
@@ -168,6 +180,20 @@ router.post('/api/uneb-projects/:id/like', authenticateToken, async (req, res) =
         if (idx >= 0) project.likes.splice(idx, 1);
         else project.likes.push(req.student.id);
         await project.save();
+
+        // Award like achievements to the project owner
+        if (idx < 0 && project.student_id) {
+            const ownerId = project.student_id.toString();
+            const allProjects = await UnebProject.find({ student_id: ownerId, deletedAt: null }).lean();
+            const totalLikes = allProjects.reduce((sum, p) => sum + (p.likes?.length || 0), 0);
+            const thisLikes = project.likes.length;
+            Promise.allSettled([
+                trackAchievementProgress(ownerId, 'gallery_first_like', totalLikes, 1),
+                trackAchievementProgress(ownerId, 'gallery_10_likes_single', thisLikes, 10),
+                trackAchievementProgress(ownerId, 'gallery_50_likes_total', totalLikes, 50),
+            ]).catch(() => {});
+        }
+
         res.json({ likedByMe: idx < 0, likesCount: project.likes.length });
     } catch (err) {
         res.status(500).json({ error: 'Failed to update like' });
@@ -185,8 +211,19 @@ router.post('/api/uneb-projects/:id/helpful', authenticateToken, async (req, res
         if (existing >= 0) project.helpfulVotes[existing].helpful = helpful;
         else project.helpfulVotes.push({ studentId: req.student.id, helpful });
         await project.save();
+
         const hCount = project.helpfulVotes.filter(v => v.helpful).length;
         const nCount = project.helpfulVotes.filter(v => !v.helpful).length;
+
+        // Award helpful achievements to the project owner
+        if (helpful && project.student_id) {
+            const ownerId = project.student_id.toString();
+            Promise.allSettled([
+                trackAchievementProgress(ownerId, 'gallery_helpful_1', hCount, 1),
+                trackAchievementProgress(ownerId, 'gallery_helpful_10', hCount, 10),
+            ]).catch(() => {});
+        }
+
         res.json({ myHelpfulVote: helpful, helpfulCount: hCount, notHelpfulCount: nCount });
     } catch (err) {
         res.status(500).json({ error: 'Failed to update helpful vote' });
@@ -216,7 +253,6 @@ router.get('/admin/uneb-projects', authenticateAdminToken, async (req, res) => {
         const projects = await UnebProject.find({ deletedAt: null })
             .populate('student_id', 'studentName class stream indexNumber')
             .lean();
-        // Sort by most "not helpful" votes (highest unhelpful count first)
         projects.sort((a, b) => {
             const aUnhelpful = (a.helpfulVotes || []).filter(v => !v.helpful).length;
             const bUnhelpful = (b.helpfulVotes || []).filter(v => !v.helpful).length;
@@ -248,27 +284,17 @@ router.delete('/admin/uneb-projects/:id', authenticateAdminToken, async (req, re
     try {
         const project = await UnebProject.findById(req.params.id).lean();
         if (!project) return res.status(404).json({ error: 'Project not found' });
-        // Hard delete from DB (admin has authority to fully remove)
         await UnebProject.deleteOne({ _id: req.params.id });
-        // Attempt Cloudinary photo removal — non-blocking
         if (project.photoPublicId) {
             cloudinary.uploader.destroy(project.photoPublicId).catch(e => console.warn('Cloudinary delete skipped:', e.message));
         } else if (project.photoUrl && project.photoUrl.includes('cloudinary')) {
-            // Extract public_id from URL as fallback
             const urlParts = project.photoUrl.split('/');
             const fileWithExt = urlParts[urlParts.length - 1];
             const publicId = 'schoolbyte/uneb-projects/' + fileWithExt.replace(/\.\w+$/, '');
-            cloudinary.uploader.destroy(publicId).catch(e => console.warn('Cloudinary fallback delete skipped:', e.message));
+            cloudinary.uploader.destroy(publicId).catch(() => {});
         }
-        // Notify the student whose project was deleted
         if (project.student_id) {
-            createNotification(
-                project.student_id,
-                'system',
-                'Project Removed',
-                `Your project ${project.title} has been removed from the gallery by an administrator.`,
-                { projectId: project._id },
-            ).catch(() => {});
+            createNotification(project.student_id, 'system', 'Project Removed', `Your project "${project.title}" has been removed from the gallery by an administrator.`, { projectId: project._id }).catch(() => {});
         }
         res.json({ message: 'Project deleted successfully' });
     } catch (err) {

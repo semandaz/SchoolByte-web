@@ -120,7 +120,7 @@ const {
     signAdminToken,
 } = require('./src/middleware/auth');
 const { upload, uploadImage } = require('./src/middleware/upload');
-const { checkAndAwardAchievements, updateStudentStreak } = require('./src/services/student-progression');
+const { checkAndAwardAchievements, checkAndAwardSystemAchievements, updateStudentStreak } = require('./src/services/student-progression');
 const {
     refillEnergy,
     checkAndResetWeeklyCounters,
@@ -2039,6 +2039,14 @@ app.post('/student/quizzes/submit', authenticateToken, [
         student.quizzesCompletedThisWeek += 1;
         student.totalQuizzesCompleted = (student.totalQuizzesCompleted || 0) + 1;
 
+        // Award XP based on quiz score (5–50 XP per quiz)
+        const _quizScore = gradedAnswers.length > 0
+            ? Math.round(gradedAnswers.filter(a => a.isCorrect).length / gradedAnswers.length * 100)
+            : 0;
+        const _quizXP = Math.max(5, Math.round(_quizScore * 0.5));
+        student.xp = (student.xp || 0) + _quizXP;
+        if (_quizScore === 100) student.perfectQuizScores = (student.perfectQuizScores || 0) + 1;
+
         // Award achievements in-memory (modifies student.achievements / notifications)
         await checkAndAwardAchievements(student);
 
@@ -2083,8 +2091,9 @@ app.post('/student/quizzes/submit', authenticateToken, [
             await session.commitTransaction();
             session.endSession();
 
-            // Update streak AFTER the transaction commits — prevents write conflict
+            // Update streak + system achievements AFTER the transaction commits — prevents write conflict
             updateStudentStreak(studentId).catch(e => console.warn('Streak update after quiz:', e));
+            checkAndAwardSystemAchievements(studentId).catch(e => console.warn('System achievements after quiz:', e));
 
             const scoreVal = gradedAnswers.length > 0
                 ? Math.round((gradedAnswers.filter(a => a.isCorrect).length / gradedAnswers.length) * 100)
@@ -4590,7 +4599,7 @@ app.get('/api/student/activity-stats', authenticateToken, async (req, res) => {
       startDate = new Date(now);
       startDate.setFullYear(startDate.getFullYear() - 1);
       startDate.setDate(startDate.getDate() + 1);
-    } else if (range.match(/^d{4}$/)) {
+    } else if (range.match(/^\d{4}$/)) {
       // specific year like '2024'
       startDate = new Date(parseInt(range, 10), 0, 1);
       const endDate = new Date(parseInt(range, 10), 11, 31);
@@ -4828,8 +4837,11 @@ app.post('/student/activities/submit', authenticateToken, [
         const scorePercentage = activity.questions.length > 0 ? totalScore / activity.questions.length : 0;
         const bytesEarned = Math.round(activity.maxBytesReward * Math.min(1, scorePercentage));
 
-        // Award bytes to student
+        // Award bytes + XP to student, and increment activity counter
         student.bytes += bytesEarned;
+        student.xp = (student.xp || 0) + Math.max(0, Math.round(scorePercentage * 40));
+        student.totalActivitiesCompleted = (student.totalActivitiesCompleted || 0) + 1;
+        if (scorePercentage >= 1.0) student.perfectActivityScores = (student.perfectActivityScores || 0) + 1;
         await student.save({ session });
 
         // Save submission record
@@ -4846,16 +4858,21 @@ app.post('/student/activities/submit', authenticateToken, [
 
         await session.commitTransaction();
 
+        const _activityXP = Math.max(0, Math.round(scorePercentage * 40));
         createNotification(
             studentId, 'activity_complete',
             'Activity Completed',
-            'You completed the activity and scored ' + Math.round(scorePercentage * 100) + '%. You earned ' + bytesEarned + ' bytes.',
-            { bytesEarned, scorePercentage: Math.round(scorePercentage * 100), activityId }
+            'You completed the activity and scored ' + Math.round(scorePercentage * 100) + '%. You earned ' + bytesEarned + ' bytes and ' + _activityXP + ' XP.',
+            { bytesEarned, xpEarned: _activityXP, scorePercentage: Math.round(scorePercentage * 100), activityId }
         ).catch(() => {});
+
+        // Check activity achievements in background
+        checkAndAwardSystemAchievements(studentId).catch(() => {});
 
         res.status(200).json({
             message: 'Activity submitted and graded successfully!',
             bytesEarned: bytesEarned,
+            xpEarned: _activityXP,
             studentCurrentBytes: student.bytes,
             scorePercentage: Math.round(scorePercentage * 100),
             gradedAnswers: gradedAnswers

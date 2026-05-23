@@ -321,7 +321,7 @@
         <div class="leaderboard-card">
             <div class="leaderboard-header">
                 <h1 class="leaderboard-title"><i class="fas fa-trophy"></i> Leaderboard</h1>
-                <p class="leaderboard-subtitle">Top ByteScholars Ranked by Bytes Earned</p>
+                <p class="leaderboard-subtitle">Top ByteScholars Ranked by XP Earned</p>
                 <p id="leaderboardMeta" class="leaderboard-meta" style="display:none;"></p>
             </div>
 
@@ -436,7 +436,7 @@
                             <span class="user-tier">Tier ${player.tier || 1}: ${getTierName(player.tier || 1)}</span>
                         </div>
                     </div>
-                    <div class="bytes-count"><i class="fas fa-coins"></i> ${player.bytes || 0}</div>
+                    <div class="bytes-count"><i class="fas fa-bolt"></i> ${(player.xp || 0).toLocaleString()} XP</div>
                 </li>
             `;
         }
@@ -458,7 +458,7 @@
             // Meta: total players + your rank
             const metaEl = document.getElementById('leaderboardMeta');
             const metaParts = [`<strong>${totalPlayers}</strong> ByteScholar${totalPlayers === 1 ? '' : 's'}`];
-            if (currentUser) metaParts.push(`Your rank: <strong>#${currentUser.rank}</strong> &middot; <strong>${currentUser.bytes || 0}</strong> bytes`);
+            if (currentUser) metaParts.push(`Your rank: <strong>#${currentUser.rank}</strong> &middot; <strong>${(currentUser.xp || 0).toLocaleString()}</strong> XP`);
             metaEl.innerHTML = metaParts.join(' &nbsp;\u2022&nbsp; ');
             metaEl.style.display = 'block';
 
@@ -484,7 +484,7 @@
                             ${initials}
                         </div>
                         <div class="podium-name">#${player.rank} ${name}${currentUserBadge}</div>
-                        <div class="podium-bytes"><i class="fas fa-coins"></i> ${player.bytes || 0}</div>
+                        <div class="podium-bytes"><i class="fas fa-bolt"></i> ${(player.xp || 0).toLocaleString()} XP</div>
                         <div class="podium-tier">Tier ${player.tier || 1}: ${getTierName(player.tier || 1)}</div>
                     </div>
                 `;

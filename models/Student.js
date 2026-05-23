@@ -59,6 +59,10 @@ const studentSchema = new mongoose.Schema({
     xp: { type: Number, default: 0, min: 0 },
     currentTier: { type: Number, default: 1, min: 1, max: 10 },
 
+    totalActivitiesCompleted: { type: Number, default: 0, min: 0 },
+    totalProjectsUploaded: { type: Number, default: 0, min: 0 },
+    perfectQuizScores: { type: Number, default: 0, min: 0 },
+    perfectActivityScores: { type: Number, default: 0, min: 0 },
     totalCountriesIdentified: { type: Number, default: 0, min: 0 },
     totalSudokuPuzzlesCompleted: { type: Number, default: 0, min: 0 },
     perfectNearnessStreak: { type: Number, default: 0, min: 0 },

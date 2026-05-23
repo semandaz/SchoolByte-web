@@ -64,21 +64,12 @@ async function checkAndUpdateTier(studentId) {
 async function awardAchievement(studentId, achievementId, progress = 1, target = 1) {
     try {
         const student = await Student.findById(studentId);
-        if (!student) {
-            console.error('Student not found for achievement award:', studentId);
-            return null;
-        }
+        if (!student) return null;
 
         const achievement = await Achievement.findOne({ achievementId });
-        if (!achievement) {
-            console.error('Achievement not found:', achievementId);
-            return null;
-        }
+        if (!achievement) return null;
 
-        let studentAchievement = await StudentAchievement.findOne({
-            student: studentId,
-            achievementId,
-        });
+        let studentAchievement = await StudentAchievement.findOne({ student: studentId, achievementId });
 
         if (!studentAchievement) {
             studentAchievement = new StudentAchievement({
@@ -91,20 +82,17 @@ async function awardAchievement(studentId, achievementId, progress = 1, target =
             });
         }
 
-        if (studentAchievement.unlocked) {
-            return null;
-        }
+        if (studentAchievement.unlocked) return null;
 
         studentAchievement.progress = Math.min(studentAchievement.progress + progress, target);
 
-        if (studentAchievement.progress >= target && !studentAchievement.unlocked) {
+        if (studentAchievement.progress >= target) {
             studentAchievement.unlocked = true;
             studentAchievement.unlockedAt = new Date();
 
             student.bytes += achievement.byteReward;
             student.xp += achievement.xpReward;
             await student.save();
-
             await checkAndUpdateTier(studentId);
 
             await createNotification(
@@ -112,11 +100,7 @@ async function awardAchievement(studentId, achievementId, progress = 1, target =
                 'achievement',
                 `Achievement Unlocked: ${achievement.name}!`,
                 `You've earned ${achievement.byteReward} bytes and ${achievement.xpReward} XP!`,
-                {
-                    achievementId: achievement.achievementId,
-                    icon: achievement.icon,
-                    tier: achievement.tier,
-                }
+                { achievementId: achievement.achievementId, icon: achievement.icon, tier: achievement.tier }
             );
 
             await studentAchievement.save();
@@ -124,20 +108,76 @@ async function awardAchievement(studentId, achievementId, progress = 1, target =
         }
 
         await studentAchievement.save();
-        return {
-            achievement,
-            newlyUnlocked: false,
-            progress: studentAchievement.progress,
-            target: studentAchievement.target,
-        };
+        return { achievement, newlyUnlocked: false, progress: studentAchievement.progress, target: studentAchievement.target };
     } catch (error) {
         console.error('Error awarding achievement:', error);
         return null;
     }
 }
 
+/**
+ * trackAchievementProgress — SET (not increment) progress to an absolute value.
+ * Use this for threshold-style achievements where you track "total quizzes = 47"
+ * and want the progress bar to reflect that towards a target of 50.
+ * Unlocks and rewards if currentValue >= target.
+ */
+async function trackAchievementProgress(studentId, achievementId, currentValue, target) {
+    try {
+        const achievement = await Achievement.findOne({ achievementId });
+        if (!achievement) return null;
+
+        let sa = await StudentAchievement.findOne({ student: studentId, achievementId });
+        if (sa && sa.unlocked) return null;
+
+        if (!sa) {
+            sa = new StudentAchievement({
+                student: studentId,
+                achievementId,
+                achievement: achievement._id,
+                progress: 0,
+                target,
+                unlocked: false,
+            });
+        }
+
+        sa.target = target;
+        sa.progress = Math.min(currentValue, target);
+
+        if (sa.progress >= target) {
+            sa.unlocked = true;
+            sa.unlockedAt = new Date();
+
+            const student = await Student.findById(studentId);
+            if (student) {
+                student.bytes += achievement.byteReward;
+                student.xp += achievement.xpReward;
+                await student.save();
+                await checkAndUpdateTier(studentId);
+            }
+
+            await createNotification(
+                studentId,
+                'achievement',
+                `Achievement Unlocked: ${achievement.name}!`,
+                `You've earned ${achievement.byteReward} bytes and ${achievement.xpReward} XP!`,
+                { achievementId: achievement.achievementId, icon: achievement.icon, tier: achievement.tier }
+            );
+
+            await sa.save();
+            return { achievement, newlyUnlocked: true };
+        }
+
+        await sa.save();
+        return { achievement, newlyUnlocked: false, progress: sa.progress, target: sa.target };
+    } catch (error) {
+        console.error('Error tracking achievement progress:', error);
+        return null;
+    }
+}
+
 module.exports = {
     awardAchievement,
+    trackAchievementProgress,
     createNotification,
     checkAndUpdateTier,
 };

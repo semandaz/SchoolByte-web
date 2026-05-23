@@ -1,5 +1,6 @@
 (function () {
     var THEME_KEY = 'schoolbyte_student_theme';
+    var DARK_KEY = 'schoolbyte_dark_mode';
 
     var THEMES = {
         default: {
@@ -100,6 +101,113 @@
         }
     };
 
+    // ── Dark-mode CSS injected once into every page ──────────────────────────
+    var DARK_STYLE_ID = 'sb-dark-mode-styles';
+    function injectDarkStyles() {
+        if (document.getElementById(DARK_STYLE_ID)) return;
+        var style = document.createElement('style');
+        style.id = DARK_STYLE_ID;
+        style.textContent = [
+            'html[data-sb-dark] {',
+            '  --color-neutral-white: #1e2235;',
+            '  --color-neutral-lightest: #252a40;',
+            '  --color-neutral-light: #3a3f5c;',
+            '  --color-neutral-medium: #7a80a0;',
+            '  --color-neutral-dark: #a8aecb;',
+            '  --color-neutral-darkest: #dde0ee;',
+            '  --color-success-green: #34d399;',
+            '  --color-info-blue: #60a5fa;',
+            '  --color-error-red: #f87171;',
+            '  color-scheme: dark;',
+            '}',
+            'html[data-sb-dark] body {',
+            '  background: linear-gradient(135deg,#12141f,#1a1f35,#12141f) !important;',
+            '  color: #dde0ee !important;',
+            '}',
+            'html[data-sb-dark] .card,',
+            'html[data-sb-dark] .card-content,',
+            'html[data-sb-dark] header,',
+            'html[data-sb-dark] .modal-content,',
+            'html[data-sb-dark] .dropdown-menu,',
+            'html[data-sb-dark] .sidebar,',
+            'html[data-sb-dark] .nav-panel,',
+            'html[data-sb-dark] [class*="panel"] {',
+            '  background-color: #1e2235 !important;',
+            '  border-color: #3a3f5c !important;',
+            '  color: #dde0ee !important;',
+            '}',
+            'html[data-sb-dark] input,',
+            'html[data-sb-dark] select,',
+            'html[data-sb-dark] textarea {',
+            '  background-color: #252a40 !important;',
+            '  color: #dde0ee !important;',
+            '  border-color: #3a3f5c !important;',
+            '}',
+            'html[data-sb-dark] input::placeholder,',
+            'html[data-sb-dark] textarea::placeholder { color: #7a80a0 !important; }',
+            'html[data-sb-dark] a { color: #93c5fd; }',
+            'html[data-sb-dark] a:hover { color: #bfdbfe; }',
+            'html[data-sb-dark] table th {',
+            '  background-color: #252a40 !important;',
+            '  color: #dde0ee !important;',
+            '}',
+            'html[data-sb-dark] table td {',
+            '  background-color: #1e2235 !important;',
+            '  color: #dde0ee !important;',
+            '  border-color: #3a3f5c !important;',
+            '}',
+            'html[data-sb-dark] table tr:hover td { background-color: #252a40 !important; }',
+            'html[data-sb-dark] .progress { background-color: #3a3f5c !important; }',
+            'html[data-sb-dark] .tabs-trigger:not(.active) {',
+            '  background-color: #252a40 !important;',
+            '  color: #a8aecb !important;',
+            '}',
+            'html[data-sb-dark] hr,',
+            'html[data-sb-dark] .divider { border-color: #3a3f5c !important; }',
+            'html[data-sb-dark] .btn-secondary {',
+            '  background-color: #252a40 !important;',
+            '  color: #dde0ee !important;',
+            '  border-color: #3a3f5c !important;',
+            '}',
+            'html[data-sb-dark] .btn-secondary:hover {',
+            '  background-color: #3a3f5c !important;',
+            '}',
+            'html[data-sb-dark] ::-webkit-scrollbar-track { background: #1e2235 !important; }',
+            'html[data-sb-dark] ::-webkit-scrollbar-thumb { background: #3a3f5c !important; }',
+        ].join('\n');
+        (document.head || document.documentElement).appendChild(style);
+    }
+
+    function applyDarkMode(enabled) {
+        injectDarkStyles();
+        if (enabled) {
+            document.documentElement.setAttribute('data-sb-dark', '1');
+        } else {
+            document.documentElement.removeAttribute('data-sb-dark');
+        }
+    }
+
+    function getDarkMode() {
+        return localStorage.getItem(DARK_KEY) === '1';
+    }
+
+    function setDarkMode(enabled) {
+        localStorage.setItem(DARK_KEY, enabled ? '1' : '0');
+        applyDarkMode(enabled);
+    }
+
+    function toggleDarkMode() {
+        var next = !getDarkMode();
+        setDarkMode(next);
+        return next;
+    }
+
+    // Apply dark mode immediately on page load (prevents flash)
+    if (getDarkMode()) {
+        injectDarkStyles();
+        document.documentElement.setAttribute('data-sb-dark', '1');
+    }
+
     function applyTheme(themeName) {
         var theme = THEMES[themeName] || THEMES['default'];
         var root = document.documentElement;
@@ -119,6 +227,9 @@
     window.SchoolByteTheme = {
         themes: THEMES,
         apply: applyTheme,
-        getCurrent: getCurrentTheme
+        getCurrent: getCurrentTheme,
+        getDarkMode: getDarkMode,
+        setDarkMode: setDarkMode,
+        toggleDarkMode: toggleDarkMode,
     };
 })();
