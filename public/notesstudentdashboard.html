@@ -516,7 +516,7 @@
                     const profileData = await profileResponse.json();
                     const student = profileData.student;
                     document.getElementById('studentNameDisplay').textContent = student.preferredName || student.studentName;
-                    document.getElementById('bytesCount').textContent = student.bytes || 0;
+                    document.getElementById('bytesCount').textContent = Math.round(student.bytes || 0);
                     studentClass = student.class;
                 } else if (profileResponse.status === 401 || profileResponse.status === 403) {
                     localStorage.removeItem('token');

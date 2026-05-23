@@ -839,17 +839,18 @@
                     document.getElementById('email').value = student.email;
                     document.getElementById('class').value = `${student.class} ${student.stream}`;
                     // Bytes counter (floating)
-                    document.getElementById('bytesCount').textContent = student.bytes || 0;
-                    document.getElementById('totalBytes').textContent = student.bytes || 0;
+                    const displayBytes = Math.round(student.bytes || 0);
+                    document.getElementById('bytesCount').textContent = displayBytes;
+                    document.getElementById('totalBytes').textContent = displayBytes;
                     // Learning Bytes card: X/max(peakBytes,20) format
                     const peak = Math.max(student.peakBytes || 20, 20);
-                    const bPct = Math.min(100, Math.round(((student.bytes || 0) / peak) * 100));
+                    const bPct = Math.min(100, Math.round((displayBytes / peak) * 100));
                     const bytesVal = document.getElementById('progressBytesValue');
                     const bytesBar = document.getElementById('progressBytesBar');
                     const bytesLbl = document.getElementById('progressBytesLabel');
-                    if (bytesVal) bytesVal.textContent = (student.bytes || 0) + ' / ' + peak;
+                    if (bytesVal) bytesVal.textContent = displayBytes + ' / ' + peak;
                     if (bytesBar) bytesBar.style.width = bPct + '%';
-                    if (bytesLbl) bytesLbl.textContent = (student.bytes || 0) + ' bytes earned';
+                    if (bytesLbl) bytesLbl.textContent = displayBytes + ' bytes earned';
                     // Study Hours card
                     const totalMins = student.studyMinutesThisMonth || 0;
                     const shEl = document.getElementById('progressStudyHours');

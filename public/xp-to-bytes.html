@@ -343,7 +343,7 @@
                 };
 
                 document.getElementById('currentXP').textContent = studentData.xp;
-                document.getElementById('currentBytes').textContent = studentData.bytes;
+                document.getElementById('currentBytes').textContent = Math.round(studentData.bytes || 0);
 
             } catch (error) {
                 console.error('Error loading student data:', error);
@@ -412,10 +412,10 @@
                 );
 
                 studentData.xp = data.remainingXP;
-                studentData.bytes = data.totalBytes;
+                studentData.bytes = Math.round(data.totalBytes || 0);
                 
                 document.getElementById('currentXP').textContent = studentData.xp;
-                document.getElementById('currentBytes').textContent = studentData.bytes;
+                document.getElementById('currentBytes').textContent = Math.round(studentData.bytes || 0);
                 document.getElementById('xpInput').value = '';
                 document.getElementById('previewBox').style.display = 'none';
 

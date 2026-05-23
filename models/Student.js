@@ -6,7 +6,7 @@ const studentSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true },
     isEmailVerified: { type: Boolean, default: false },
-    bytes: { type: Number, default: 20 },
+    bytes: { type: Number, default: 20, set: v => Math.round(v || 0) },
     peakBytes: { type: Number, default: 20 },
     gameBytesEarnedToday: { type: Number, default: 0, min: 0 },
     gameBytesResetAt: { type: Date, default: Date.now },
