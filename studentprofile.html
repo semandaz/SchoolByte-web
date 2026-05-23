@@ -3,51 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SchoolByte - Student Profile</title>
+    <title>SchoolByte — My Profile</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Lato:wght@400;700&family=Nunito+Sans:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600;700&family=Satisfy&family=Dancing+Script:wght@400;700&family=Ubuntu:wght@400;700&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&family=Oswald:wght@400;700&family=Lora:wght@400;700&family=PT+Sans:wght@400;700&family=Source+Sans+Pro:wght@400;700&family=Fira+Sans:wght@400;700&family=Quicksand:wght@400;700&family=Space+Mono&display=swap" rel="stylesheet">
     <script src="lottie-loader.js"></script>
     <style>
         :root {
-            /* Brand Colors */
-            --color-brand-primary: #1a2a6c;  /* Dark Blue - Main brand color */
-            --color-brand-secondary: #b21111; /* Deep Red/Maroon - Secondary brand color */
-            --color-brand-gold: #FFD700;    /* Gold - Accent for special elements */
-            --color-brand-orange: #FFA500;   /* Orange - Used in gradients with gold */
-
-            /* Neutral Palette */
+            --color-brand-primary: #1a2a6c;
+            --color-brand-secondary: #b21111;
+            --color-brand-gold: #FFD700;
+            --color-brand-orange: #FFA500;
             --color-neutral-white: #ffffff;
             --color-neutral-lightest: #f0f4f8;
             --color-neutral-light: #d1d5db;
             --color-neutral-medium: #9ca3af;
             --color-neutral-dark: #4b5563;
             --color-neutral-darkest: #333333;
-
-            /* Semantic Colors */
             --color-error-red: #e74c3c;
             --color-error-red-dark: #c0392b;
             --color-success-green: #2ecc71;
             --color-info-blue: #3498db;
-
-            /* Gradients */
             --gradient-background-primary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
             --gradient-background-secondary: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary), var(--color-brand-primary));
             --gradient-text-gold: linear-gradient(to right, var(--color-brand-gold), var(--color-neutral-white));
             --gradient-button-active: linear-gradient(to right, var(--color-brand-gold), var(--color-brand-orange));
             --gradient-button-active-hover: linear-gradient(to right, #FFC800, #FF8C00);
-
-            /* Common Radius */
             --radius-card: 15px;
             --radius-input: 8px;
             --radius-button: 50px;
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: var(--gradient-background-secondary);
             min-height: 100vh;
@@ -55,17 +40,14 @@
             font-family: 'Inter', sans-serif;
             transition: all 0.3s;
         }
-
-        /* Header Styles */
         header {
             background-color: var(--color-neutral-white);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             padding: 1rem 2rem;
             position: sticky;
             top: 0;
             z-index: 50;
         }
-
         .header-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -73,7 +55,6 @@
             justify-content: space-between;
             align-items: center;
         }
-
         .logo {
             font-size: 2rem;
             font-weight: 900;
@@ -83,328 +64,220 @@
             color: transparent;
             text-decoration: none;
         }
-
-        .profile-section {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
+        .profile-section { display: flex; align-items: center; gap: 1rem; }
         .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+            width: 40px; height: 40px; border-radius: 50%;
             background: var(--gradient-background-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--color-neutral-white);
-            font-size: 1.2rem;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--color-neutral-white); font-size: 1.2rem;
         }
+        .student-name-header { font-weight: 600; color: var(--color-brand-primary); }
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 2rem; }
 
-        .student-name-header {
-            font-weight: 600;
-            color: var(--color-brand-primary);
-        }
-
-        /* Main Content */
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 2rem;
-        }
-
-        /* Welcome Card */
+        /* ── Welcome Card ── */
         .welcome-card {
             background: var(--gradient-background-primary);
             color: var(--color-neutral-white);
             border-radius: var(--radius-card);
-            padding: 2rem;
+            padding: 1.75rem 2rem;
             margin-bottom: 2rem;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.25);
         }
-
-        .welcome-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
+        .welcome-title { font-size: 1.85rem; font-weight: 800; }
+        .tier-pill {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            background: rgba(255,215,0,0.22);
+            border: 1.5px solid rgba(255,215,0,0.55);
+            color: #fff; font-weight: 700; font-size: 0.82rem;
+            padding: 3px 12px; border-radius: 999px;
         }
-
-        .welcome-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
-            margin-top: 1.5rem;
+        .xp-track {
+            height: 10px; background: rgba(255,255,255,0.2);
+            border-radius: 999px; overflow: hidden; margin-top: 0.4rem;
         }
-
-        .stat-item {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: var(--radius-input);
-            padding: 1rem;
-            text-align: center;
+        .xp-fill {
+            height: 100%; width: 0%;
+            background: linear-gradient(to right, #FFD700, #FFA500);
+            border-radius: 999px;
+            transition: width 0.9s ease;
         }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
+        .welcome-pills {
+            display: flex; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap;
         }
-
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.9;
+        .welcome-pill {
+            background: rgba(255,255,255,0.18);
+            border-radius: 12px; padding: 0.7rem 1.1rem;
+            text-align: center; flex: 1; min-width: 85px;
         }
+        .welcome-pill .pill-val { font-size: 1.45rem; font-weight: 800; line-height: 1; }
+        .welcome-pill .pill-lbl { font-size: 0.75rem; opacity: 0.88; margin-top: 3px; }
 
-        /* Tabs */
-        .tabs {
-            margin-bottom: 2rem;
-        }
-
+        /* ── Tabs ── */
+        .tabs { margin-bottom: 2rem; }
         .tabs-list {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            overflow-x: auto;
-            padding-bottom: 0.5rem;
+            display: flex; gap: 0.5rem; margin-bottom: 1rem;
+            overflow-x: auto; padding-bottom: 0.5rem;
         }
-
         .tabs-trigger {
-            padding: 0.75rem 1.5rem;
+            padding: 0.7rem 1.4rem;
             border-radius: var(--radius-button);
             background-color: var(--color-neutral-light);
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s;
+            border: none; cursor: pointer; font-weight: 600;
+            display: flex; align-items: center; gap: 0.45rem;
+            transition: all 0.25s; white-space: nowrap; font-size: 0.95rem;
         }
+        .tabs-trigger.active { background: var(--gradient-button-active); color: var(--color-neutral-white); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
-        .tabs-trigger.active {
-            background: var(--gradient-button-active);
-            color: var(--color-neutral-white);
-        }
-
-        /* Cards */
+        /* ── Cards ── */
         .card {
             background-color: var(--color-neutral-white);
             border-radius: var(--radius-card);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-            overflow: hidden;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.09);
+            margin-bottom: 1.5rem; overflow: hidden;
         }
-
-        .card-header {
-            padding: 1.5rem 1.5rem 0;
-        }
-
+        .card-header { padding: 1.4rem 1.5rem 0; }
         .card-title {
-            font-size: 1.5rem;
-            font-weight: 700;
+            font-size: 1.15rem; font-weight: 700;
             color: var(--color-brand-primary);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            display: flex; align-items: center; gap: 0.5rem;
         }
+        .card-subtitle { font-size: 0.85rem; color: var(--color-neutral-dark); margin-top: 0.3rem; }
+        .card-content { padding: 1.25rem 1.5rem 1.5rem; }
 
-        .card-content {
-            padding: 1.5rem;
+        /* ── Info Rows (profile form) ── */
+        .info-row { margin-bottom: 1.1rem; }
+        .info-row label {
+            display: block; font-weight: 600; font-size: 0.88rem;
+            color: var(--color-neutral-dark); margin-bottom: 0.35rem;
+            text-transform: uppercase; letter-spacing: 0.03em;
         }
-
-        /* Form Elements */
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: var(--color-brand-primary);
-        }
-
-        input, select {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            border: 1px solid var(--color-neutral-light);
-            border-radius: var(--radius-input);
-            font-size: 1rem;
+        .info-row input, .info-row select {
+            width: 100%; padding: 0.75rem 1rem;
+            border: 1.5px solid var(--color-neutral-light);
+            border-radius: var(--radius-input); font-size: 0.97rem;
             background-color: var(--color-neutral-white);
-            transition: all 0.3s;
+            color: var(--color-neutral-darkest); transition: all 0.2s;
         }
+        .info-row input[readonly] {
+            background: var(--color-neutral-lightest);
+            color: var(--color-neutral-dark); cursor: default;
+        }
+        .info-row input:focus, .info-row select:focus {
+            outline: none; border-color: var(--color-brand-primary);
+            box-shadow: 0 0 0 3px rgba(26,42,108,0.1);
+        }
+        .tip-text {
+            font-size: 0.82rem; color: var(--color-neutral-medium);
+            margin-top: 0.35rem; display: flex; align-items: flex-start; gap: 0.4rem;
+        }
+        .tip-text i { margin-top: 2px; flex-shrink: 0; }
 
+        /* ── Stat Mini Cards (progress tab) ── */
+        .stat-mini-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem; margin-bottom: 1.5rem;
+        }
+        .stat-mini {
+            background: var(--color-neutral-white);
+            border-radius: var(--radius-card);
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+            padding: 1.25rem 1.4rem;
+            display: flex; align-items: center; gap: 1rem;
+        }
+        .stat-mini-icon {
+            width: 50px; height: 50px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; flex-shrink: 0;
+        }
+        .stat-mini-body { flex: 1; min-width: 0; }
+        .stat-mini-val { font-size: 1.75rem; font-weight: 800; line-height: 1; }
+        .stat-mini-lbl { font-size: 0.82rem; color: var(--color-neutral-dark); margin-top: 3px; font-weight: 500; }
+        .stat-mini-sub { font-size: 0.75rem; color: var(--color-neutral-medium); margin-top: 4px; }
+        .stat-mini-bar { height: 5px; background: var(--color-neutral-light); border-radius: 999px; overflow: hidden; margin-top: 6px; }
+        .stat-mini-bar-fill { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
+
+        /* ── Form Controls (kept for settings/font) ── */
+        .form-group { margin-bottom: 1.4rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--color-brand-primary); }
+        input, select {
+            width: 100%; padding: 0.8rem 1rem;
+            border: 1px solid var(--color-neutral-light);
+            border-radius: var(--radius-input); font-size: 1rem;
+            background-color: var(--color-neutral-white); transition: all 0.3s;
+        }
         input:focus, select:focus {
-            outline: none;
-            border-color: var(--color-brand-primary);
-            box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
+            outline: none; border-color: var(--color-brand-primary);
+            box-shadow: 0 0 0 3px rgba(26,42,108,0.1);
         }
 
-        /* Buttons */
+        /* ── Buttons ── */
         .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.8rem 1.5rem;
-            border-radius: var(--radius-button);
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s;
-            border: none;
-            cursor: pointer;
-            gap: 0.5rem;
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 0.8rem 1.5rem; border-radius: var(--radius-button);
+            font-weight: 600; text-decoration: none; transition: all 0.25s;
+            border: none; cursor: pointer; gap: 0.5rem; font-size: 0.95rem;
         }
+        .btn-primary { background: var(--gradient-button-active); color: var(--color-neutral-white); }
+        .btn-primary:hover { background: var(--gradient-button-active-hover); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .btn-secondary { background-color: var(--color-neutral-light); color: var(--color-neutral-darkest); }
+        .btn-secondary:hover { background-color: var(--color-neutral-medium); transform: translateY(-2px); box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+        .btn-danger { background-color: var(--color-error-red); color: var(--color-neutral-white); }
+        .btn-danger:hover { background-color: var(--color-error-red-dark); transform: translateY(-2px); }
 
-        .btn-primary {
-            background: var(--gradient-button-active);
-            color: var(--color-neutral-white);
-        }
+        /* ── Progress bars ── */
+        .progress { height: 8px; background-color: var(--color-neutral-light); border-radius: 4px; overflow: hidden; margin-bottom: 0.5rem; }
+        .progress-bar { height: 100%; background: var(--gradient-background-primary); }
 
-        .btn-primary:hover {
-            background: var(--gradient-button-active-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-secondary {
-            background-color: var(--color-neutral-light);
-            color: var(--color-neutral-darkest);
-        }
-
-        .btn-secondary:hover {
-            background-color: var(--color-neutral-medium);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-danger {
-            background-color: var(--color-error-red);
-            color: var(--color-neutral-white);
-        }
-
-        .btn-danger:hover {
-            background-color: var(--color-error-red-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Progress Bars */
-        .progress {
-            height: 8px;
-            background-color: var(--color-neutral-light);
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 0.5rem;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: var(--gradient-background-primary);
-        }
-
-        /* Leaderboard */
+        /* ── Leaderboard ── */
         .leaderboard-item {
-            display: flex;
-            align-items: center;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            background-color: var(--color-neutral-lightest);
-            border-radius: 10px;
+            display: flex; align-items: center; padding: 0.9rem 1rem;
+            margin-bottom: 0.6rem; background: var(--color-neutral-lightest);
+            border-radius: 10px; transition: background 0.2s;
         }
-
+        .leaderboard-item:hover { background: #e8edf5; }
         .rank {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            margin-right: 1rem;
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; margin-right: 0.9rem; font-size: 0.9rem;
+            background: var(--color-neutral-light); color: var(--color-neutral-darkest);
         }
+        .rank-1 { background: var(--color-brand-gold); color: #222; }
+        .rank-2 { background: #b8c0cc; color: #fff; }
+        .rank-3 { background: #cd7f32; color: #fff; }
+        .student-info { flex-grow: 1; }
+        .student-name { font-weight: 600; }
+        .student-bytes { font-weight: 700; color: var(--color-brand-primary); font-size: 0.9rem; }
 
-        .rank-1 {
-            background: var(--color-brand-gold);
-            color: var(--color-neutral-darkest);
-        }
-
-        .rank-2 {
-            background: var(--color-neutral-medium);
-            color: var(--color-neutral-white);
-        }
-
-        .rank-3 {
-            background: #cd7f32; /* Bronze */
-            color: var(--color-neutral-white);
-        }
-
-        .student-info {
-            flex-grow: 1;
-        }
-
-        .student-name {
-            font-weight: 500;
-        }
-
-        .student-bytes {
-            font-weight: 600;
-            color: var(--color-brand-primary);
-        }
-
-        /* Floating Bytes Counter */
+        /* ── Floating Bytes Counter ── */
         .bytes-counter {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
+            position: fixed; bottom: 2rem; right: 2rem;
             background: var(--gradient-background-primary);
             color: var(--color-neutral-white);
-            padding: 0.8rem 1.5rem;
-            border-radius: var(--radius-button);
-            font-weight: 600;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            z-index: 100;
+            padding: 0.7rem 1.4rem; border-radius: var(--radius-button);
+            font-weight: 700; box-shadow: 0 5px 18px rgba(0,0,0,0.25);
+            display: flex; align-items: center; gap: 0.5rem; z-index: 100;
+            font-size: 0.95rem;
         }
+        .bytes-icon { color: var(--color-brand-gold); }
 
-        .bytes-icon {
-            color: var(--color-brand-gold);
-        }
-
-        /* Coming Soon Badge */
+        /* ── Coming Soon Badge ── */
         .coming-soon {
             display: inline-block;
-            background-color: var(--color-brand-gold);
-            color: var(--color-neutral-darkest);
-            padding: 0.2rem 0.5rem;
-            border-radius: var(--radius-button);
-            font-size: 0.7rem;
-            font-weight: 600;
-            margin-left: 0.5rem;
+            background-color: var(--color-brand-gold); color: #222;
+            padding: 2px 8px; border-radius: 999px;
+            font-size: 0.68rem; font-weight: 700; margin-left: 0.4rem;
         }
 
-        /* Responsive Design */
+        /* ── Responsive ── */
         @media (max-width: 768px) {
-            .header-container {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .welcome-stats {
-                grid-template-columns: 1fr;
-            }
-
-            .tabs-list {
-                flex-wrap: wrap;
-            }
-
-            .bytes-counter {
-                bottom: 1rem;
-                right: 1rem;
-                padding: 0.6rem 1.2rem;
-                font-size: 0.9rem;
-            }
+            .header-container { flex-direction: column; gap: 1rem; }
+            .tabs-list { flex-wrap: wrap; }
+            .bytes-counter { bottom: 1rem; right: 1rem; padding: 0.6rem 1.1rem; font-size: 0.85rem; }
+            .welcome-title { font-size: 1.45rem; }
+            .container { padding: 0 1rem; }
         }
     </style>
     <script src="student-theme.js"></script>
@@ -412,1283 +285,1293 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-    <!-- Header -->
-    <header>
-        <div class="header-container">
-            <a href="studentdashboard.html" class="logo">SchoolByte</a>
-            <div class="profile-section">
-                <div class="avatar">
-                    <i class="fas fa-user-graduate"></i>
-                </div>
-                <span class="student-name-header" id="studentNameDisplay">John Doe</span>
-            </div>
-        </div>
-    </header>
 
-    <!-- Main Content -->
-    <div class="container">
-        <!-- Welcome Card -->
-        <div class="welcome-card">
-            <h2 class="welcome-title">Welcome back, <span id="welcomeName">...</span>!</h2>
-            <p>Continue your learning journey and earn more bytes</p>
-            
-            <div class="welcome-stats">
-                <div class="stat-item">
-                    <div class="stat-value" id="totalBytes">1.2 kB</div>
-                    <div class="stat-label">Total Bytes</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">15</div>
-                    <div class="stat-label">Achievements</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">28</div>
-                    <div class="stat-label">Quizzes Done</div>
+<!-- ── Header ── -->
+<header>
+    <div class="header-container">
+        <a href="studentdashboard.html" class="logo">SchoolByte</a>
+        <div class="profile-section">
+            <div class="avatar"><i class="fas fa-user-graduate"></i></div>
+            <span class="student-name-header" id="studentNameDisplay">Loading…</span>
+        </div>
+    </div>
+</header>
+
+<!-- ── Main ── -->
+<div class="container">
+
+    <!-- Welcome Card -->
+    <div class="welcome-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.75rem;">
+            <div>
+                <h2 class="welcome-title">Hey <span id="welcomeName">…</span>! 👋</h2>
+                <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.6rem;flex-wrap:wrap;">
+                    <span class="tier-pill">
+                        <i class="fas fa-shield-alt"></i>
+                        <span id="welcomeTier">Tier 1</span>
+                    </span>
+                    <span id="welcomeStreak" style="font-size:0.88rem;opacity:0.9;">⭐ Start your streak today!</span>
                 </div>
             </div>
+            <a href="studentdashboard.html" style="color:rgba(255,255,255,0.8);font-size:0.88rem;text-decoration:none;display:flex;align-items:center;gap:0.35rem;margin-top:0.2rem;">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
         </div>
 
-        <!-- Tabs -->
-        <div class="tabs">
-            <div class="tabs-list">
-                <button class="tabs-trigger active" data-tab="profile">
-                    <i class="fas fa-user"></i> Profile
-                </button>
-                <button class="tabs-trigger" data-tab="progress">
-                    <i class="fas fa-trophy"></i> Progress
-                </button>
-                <button class="tabs-trigger" data-tab="leaderboard">
-                    <i class="fas fa-award"></i> Leaderboard
-                </button>
-                
-                <button class="tabs-trigger" data-tab="settings">
-                    <i class="fas fa-cog"></i> Settings
-                </button>
+        <!-- XP bar -->
+        <div style="margin-top:1.1rem;">
+            <div style="display:flex;justify-content:space-between;font-size:0.78rem;opacity:0.82;margin-bottom:0.35rem;">
+                <span id="xpLabel">0 XP earned</span>
+                <span id="xpNextLabel">Keep going!</span>
             </div>
+            <div class="xp-track"><div class="xp-fill" id="xpBarFill"></div></div>
+        </div>
 
-            <!-- Profile Tab -->
-            <div id="profile" class="tab-content active">
-                <!-- Banner shown when re-selection is required after promotion -->
-                <div id="subjectReselectBanner" style="display:none;background:linear-gradient(135deg,#ffd700,#ffa500);color:#1a2a6c;padding:1.25rem 1.5rem;border-radius:var(--radius-card);margin-bottom:1.5rem;box-shadow:0 5px 15px rgba(0,0,0,0.15);">
-                    <div style="display:flex;align-items:flex-start;gap:1rem;">
-                        <i class="fas fa-exclamation-triangle" style="font-size:1.75rem;margin-top:0.2rem;"></i>
-                        <div style="flex:1;">
-                            <h4 style="font-weight:800;margin-bottom:0.4rem;font-size:1.1rem;">Action required: choose your subjects</h4>
-                            <p id="subjectReselectMessage" style="margin-bottom:0.75rem;font-size:0.95rem;">You were just promoted to a new class. The subject structure has changed — pick your new subjects to continue taking quizzes.</p>
-                            <button class="btn btn-primary" type="button" onclick="openSubjectEditor()" style="background:#1a2a6c;color:#fff;">
-                                <i class="fas fa-pen"></i> Pick subjects now
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-user"></i> Personal Information
-                        </h3>
-                    </div>
-                    <div class="card-content">
-                        <div class="form-group">
-                            <label for="name">Full Name</label>
-                            <input type="text" id="name" value="John Doe" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label for="index">Index Number</label>
-                            <input type="text" id="index" value="2024001" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label for="preferred-name">Preferred Name</label>
-                            <select id="preferred-name">
-                                <option value="John">John</option>
-                                <option value="Doe">Doe</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="email">Email Address</label>
-                            <div style="position: relative;">
-                                <input type="email" id="email" value="john.doe@schoolbyte.com" readonly>
-                                <button style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer;">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="class">Class/Grade</label>
-                            <input type="text" id="class" value="Grade 11" readonly>
-                            <p style="color: var(--color-neutral-dark); margin-top: 0.5rem; font-size: 0.9rem;">
-                                Class auto-updates annually. Account deletes after Senior 6.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Subjects card -->
-                <div class="card">
-                    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
-                        <h3 class="card-title" style="margin:0;">
-                            <i class="fas fa-book-open"></i> My Subjects
-                        </h3>
-                        <button id="editSubjectsBtn" class="btn btn-secondary" type="button" onclick="openSubjectEditor()">
-                            <i class="fas fa-pen"></i> Edit subjects
-                        </button>
-                    </div>
-                    <div class="card-content">
-                        <p id="subjectsRulesLine" style="color:var(--color-neutral-dark);font-size:0.95rem;margin-bottom:1rem;">Loading your subject list…</p>
-                        <div id="subjectsList" style="display:flex;flex-wrap:wrap;gap:0.5rem;"></div>
-                    </div>
-                </div>
+        <!-- Stat pills -->
+        <div class="welcome-pills">
+            <div class="welcome-pill">
+                <div class="pill-val" id="totalBytes">0</div>
+                <div class="pill-lbl">💰 Bytes</div>
             </div>
-
-            <!-- Subject editor modal -->
-            <div id="subjectEditorOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;padding:1rem;">
-                <div style="background:#fff;border-radius:var(--radius-card);max-width:720px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-                    <div style="padding:1.5rem 1.5rem 1rem;border-bottom:1px solid var(--color-neutral-light);display:flex;justify-content:space-between;align-items:center;gap:1rem;">
-                        <div>
-                            <h3 style="color:var(--color-brand-primary);font-weight:800;margin-bottom:0.25rem;">Choose your subjects</h3>
-                            <p id="subjectEditorClassLine" style="color:var(--color-neutral-dark);font-size:0.9rem;"></p>
-                        </div>
-                        <button type="button" onclick="closeSubjectEditor()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--color-neutral-dark);">&times;</button>
-                    </div>
-                    <div style="padding:1.5rem;">
-                        <div style="background:var(--color-neutral-lightest);border-left:4px solid var(--color-brand-gold);padding:0.75rem 1rem;border-radius:8px;margin-bottom:1rem;">
-                            <p id="subjectEditorRules" style="font-size:0.95rem;color:var(--color-neutral-darkest);"></p>
-                        </div>
-
-                        <h4 style="color:var(--color-brand-primary);margin-bottom:0.5rem;">Compulsory</h4>
-                        <div id="editorCompulsoryList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.5rem;margin-bottom:1.25rem;"></div>
-
-                        <h4 id="editorElectivesHeading" style="color:var(--color-brand-primary);margin-bottom:0.25rem;">Choose your additional subjects</h4>
-                        <p id="editorElectivesSub" style="color:var(--color-neutral-dark);font-size:0.85rem;margin-bottom:0.5rem;"></p>
-                        <div id="editorElectivesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.5rem;margin-bottom:1rem;"></div>
-
-                        <p id="subjectEditorError" style="color:var(--color-error-red);font-size:0.9rem;margin-bottom:0.75rem;display:none;"></p>
-
-                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
-                            <span id="subjectEditorCounter" style="font-weight:600;color:var(--color-brand-primary);">0 / 0 selected</span>
-                            <div style="display:flex;gap:0.5rem;">
-                                <button type="button" class="btn btn-secondary" onclick="closeSubjectEditor()">Cancel</button>
-                                <button type="button" id="subjectEditorSaveBtn" class="btn btn-primary" onclick="saveSubjects()" disabled>Save subjects</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="welcome-pill">
+                <div class="pill-val" id="welcomeQuizCount">0</div>
+                <div class="pill-lbl">✅ Quizzes Done</div>
             </div>
-
-            <!-- Progress Tab -->
-            <div id="progress" class="tab-content">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-                    <div class="card">
-                        <div class="card-content">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                                <h3 style="font-weight: 600;">Learning Bytes</h3>
-                                <i class="fas fa-coins" style="color: var(--color-brand-gold);"></i>
-                            </div>
-                            <div id="progressBytesValue" style="font-size: 2rem; font-weight: 700; color: var(--color-brand-primary); margin-bottom: 0.5rem;">0 / 20</div>
-                            <div class="progress">
-                                <div class="progress"><div class="progress-bar" id="progressBytesBar" style="width: 0%;"></div></div>
-                            </div>
-                            <p id="progressBytesLabel" style="color: var(--color-neutral-dark); font-size: 0.9rem;">0 bytes earned</p>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-content">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                                <h3 style="font-weight: 600;">Study Hours</h3>
-                                <i class="fas fa-clock" style="color: var(--color-success-green);"></i>
-                            </div>
-                            <div id="progressStudyHours" style="font-size: 2rem; font-weight: 700; color: var(--color-success-green); margin-bottom: 0.5rem;">0h 0m</div>
-                            <div class="progress">
-                                <div class="progress"><div class="progress-bar" id="progressStudyBar" style="width: 0%;"></div></div>
-                            </div>
-                            <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">This month</p>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-content">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                                <h3 style="font-weight: 600;">Achievements</h3>
-                                <i class="fas fa-trophy" style="color: var(--color-brand-secondary);"></i>
-                            </div>
-                            <div id="progressAchievements" style="font-size: 2rem; font-weight: 700; color: var(--color-brand-secondary); margin-bottom: 0.5rem;">0</div>
-                            <div class="progress">
-                                <div class="progress"><div class="progress-bar" id="progressAchBar" style="width: 0%;"></div></div>
-                            </div>
-                            <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">Unlocked</p>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-content">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                                <h3 style="font-weight: 600;">Total Quizzes</h3>
-                                <i class="fas fa-question-circle" style="color: var(--color-brand-primary);"></i>
-                            </div>
-                            <div id="progressQuizzesValue" style="font-size: 2rem; font-weight: 700; color: var(--color-brand-primary); margin-bottom: 0.5rem;">0</div>
-                            <div class="progress"><div class="progress-bar" id="progressQuizzesBar" style="width: 0%;"></div></div>
-                            <p style="color: var(--color-neutral-dark); font-size: 0.9rem;">Completed all time</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Activity Analytics Graph -->
-                <div class="card" style="margin-bottom: 2rem;">
-                    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
-                        <h3 class="card-title" style="margin:0;">
-                            <i class="fas fa-chart-area" style="color:var(--color-brand-primary);"></i> Activity Analytics
-                        </h3>
-                        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
-                            <select id="activityTimeUnit" style="padding:0.4rem 0.8rem;border:1px solid var(--color-neutral-light);border-radius:8px;font-size:0.9rem;background:#fff;cursor:pointer;">
-                                <option value="hours">Hours</option>
-                                <option value="minutes">Minutes</option>
-                                <option value="seconds">Seconds</option>
-                            </select>
-                            <select id="activityRange" style="padding:0.4rem 0.8rem;border:1px solid var(--color-neutral-light);border-radius:8px;font-size:0.9rem;background:#fff;cursor:pointer;">
-                                <option value="7days">Last 7 Days</option>
-                                <option value="month">Last Month</option>
-                                <option value="year">Last Year</option>
-                                <option value="2025">Year 2025</option>
-                                <option value="2024">Year 2024</option>
-                                <option value="2026">Year 2026</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="card-content">
-                        <div id="activityPeakInfo" style="background:linear-gradient(135deg,var(--color-brand-primary),var(--color-brand-secondary));color:#fff;border-radius:10px;padding:0.75rem 1.25rem;margin-bottom:1.25rem;font-size:0.95rem;display:none;">
-                            <i class="fas fa-star" style="margin-right:0.5rem;color:var(--color-brand-gold);"></i>
-                            <span id="activityPeakText">Peak day: –</span>
-                        </div>
-                        <div style="position:relative;height:320px;">
-                            <canvas id="activityChart"></canvas>
-                        </div>
-                        <p style="text-align:center;font-size:0.82rem;color:var(--color-neutral-medium);margin-top:0.75rem;">
-                            Time is logged automatically while you use SchoolByte.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-trophy"></i> Recent Achievements
-                        </h3>
-                    </div>
-                    <div class="card-content" id="achievementsContainer">
-                        <div style="display: flex; flex-direction: column; gap: 1rem;">
-                            <div style="text-align: center; padding: 2rem; color: var(--color-neutral-dark);">
-                                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                                <p>Loading achievements...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Leaderboard Tab -->
-            <div id="leaderboard" class="tab-content">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-award"></i> Leaderboard
-                        </h3>
-                    </div>
-                    <div class="card-content">
-                        <div id="leaderboardPreview" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                            <!-- Top 5 students will be loaded here dynamically -->
-                        </div>
-                        <button class="btn btn-secondary" style="width: 100%; margin-top: 1rem;" id="showMoreBtn">
-                            <i class="fas fa-trophy"></i> Show Full Leaderboard (Top 200)
-                        </button>
-                    </div>
-                </div>
-            </div></div>
-
-            <!-- Settings Tab -->
-            <div id="settings" class="tab-content">
-                <!-- Theme Picker Card -->
-                <div class="card" style="margin-bottom: 1.5rem;">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-palette"></i> Colour Theme
-                        </h3>
-                    </div>
-                    <div class="card-content">
-                        <p style="color: var(--color-neutral-dark); font-size: 0.92rem; margin-bottom: 1.25rem;">Choose a colour theme that will be applied across your entire SchoolByte experience.</p>
-                        <div id="theme-picker-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;"></div>
-                        <p id="theme-saved-msg" style="margin-top: 1rem; font-size: 0.9rem; color: var(--color-success-green); font-weight: 600; display: none;">
-                            <i class="fas fa-check-circle"></i> Theme saved!
-                        </p>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-cog"></i> Preferences
-                        </h3>
-                    </div>
-                    <div class="card-content">
-                        <div class="form-group">
-                            <label for="font-select">Preferred Font</label>
-                            <select id="font-select">
-                                <option value="Inter, sans-serif">Inter (Default)</option>
-                                <option value="Roboto, sans-serif">Roboto</option>
-                                <option value="Open Sans, sans-serif">Open Sans</option>
-                                <option value="Lato, sans-serif">Lato</option>
-                                <option value="Montserrat, sans-serif">Montserrat</option>
-                                <option value="Poppins, sans-serif">Poppins</option>
-                                <option value="Nunito Sans, sans-serif">Nunito Sans</option>
-                                <option value="Ubuntu, sans-serif">Ubuntu</option>
-                                <option value="Merriweather, serif">Merriweather (Serif)</option>
-                                <option value="Playfair Display, serif">Playfair Display (Serif)</option>
-                                <option value="Space Mono, monospace">Space Mono (Monospace)</option>
-                                <option value="Dancing Script, cursive">Dancing Script (Cursive)</option>
-                            </select>
-                        </div>
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0;">
-                            <div>
-                                <label>Dark Mode</label>
-                                <p style="color: var(--color-neutral-dark); font-size: 0.9rem; margin-top: 0.25rem;">Switch to a dark colour palette across all pages</p>
-                            </div>
-                            <button class="btn btn-secondary" id="toggleDarkMode" style="min-width:130px;">
-                                <i class="fas fa-moon" id="darkModeIcon"></i>
-                                <span id="darkModeLabel">Dark Mode</span>
-                            </button>
-                        </div>
-                        
-                        <div style="margin: 2rem 0;">
-                            <h4 style="font-weight: 600; margin-bottom: 1rem;">Social Features</h4>
-                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                                <button class="btn btn-secondary" disabled>
-                                    <i class="fas fa-comments"></i> Chat with Classmates
-                                    <span class="coming-soon">Coming Soon</span>
-                                </button>
-                                <button class="btn btn-secondary" disabled>
-                                    <i class="fas fa-users"></i> Study Groups
-                                    <span class="coming-soon">Coming Soon</span>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <button class="btn btn-danger" style="width: 100%;" id="signOutBtn">
-                            <i class="fas fa-sign-out-alt"></i> Sign Out
-                        </button>
-                    </div>
-                </div>
+            <div class="welcome-pill">
+                <div class="pill-val" id="welcomeAchCount">–</div>
+                <div class="pill-lbl">🏅 Badges</div>
             </div>
         </div>
     </div>
 
-    <!-- Floating Bytes Counter -->
-    <div class="bytes-counter">
-        <i class="fas fa-coins bytes-icon"></i>
-        <span id="bytesCount">1250</span> Bytes
-    </div>
+    <!-- Tabs -->
+    <div class="tabs">
+        <div class="tabs-list">
+            <button class="tabs-trigger active" data-tab="profile">
+                <i class="fas fa-user"></i> Me
+            </button>
+            <button class="tabs-trigger" data-tab="progress">
+                <i class="fas fa-chart-bar"></i> My Stats
+            </button>
+            <button class="tabs-trigger" data-tab="leaderboard">
+                <i class="fas fa-trophy"></i> Rankings
+            </button>
+            <button class="tabs-trigger" data-tab="settings">
+                <i class="fas fa-sliders-h"></i> Settings
+            </button>
+        </div>
 
-    <script>
-        // Active time helpers
-        function getActiveSeconds() {
-            return parseInt(localStorage.getItem('schoolbyte_active_seconds') || '0');
-        }
-        function formatActiveTime(seconds) {
-            const h = Math.floor(seconds / 3600);
-            const m = Math.floor((seconds % 3600) / 60);
-            if (h === 0) return m + 'm';
-            return h + 'h ' + m + 'm';
-        }
-        function updateActiveTimeDisplay() {
-            const secs = getActiveSeconds();
-            const display = formatActiveTime(secs);
-            const el = document.getElementById('activeHoursDisplay');
-            const el2 = document.getElementById('progressActiveHours');
-            const bar = document.getElementById('activeHoursBar');
-            if (el) el.textContent = display;
-            if (el2) el2.textContent = display;
-            const pct = Math.min(100, Math.round(secs / (20 * 3600) * 100));
-            if (bar) bar.style.width = pct + '%';
-        }
+        <!-- ═══ ME TAB ═══ -->
+        <div id="profile" class="tab-content active">
 
-        // Function to fetch and display student data
-        async function fetchStudentData() {
-            try {
-                // Check for token with backward compatibility
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    window.location.href = 'studentlogin.html';
-                    return;
-                }
+            <!-- Promotion alert -->
+            <div id="subjectReselectBanner" style="display:none;background:linear-gradient(135deg,#ffd700,#ffa500);color:#1a2a6c;padding:1.25rem 1.5rem;border-radius:var(--radius-card);margin-bottom:1.5rem;box-shadow:0 5px 15px rgba(0,0,0,0.15);">
+                <div style="display:flex;align-items:flex-start;gap:1rem;">
+                    <i class="fas fa-star" style="font-size:1.75rem;margin-top:0.2rem;flex-shrink:0;"></i>
+                    <div style="flex:1;">
+                        <h4 style="font-weight:800;margin-bottom:0.4rem;font-size:1.1rem;">🎉 You got promoted! Choose your new subjects</h4>
+                        <p id="subjectReselectMessage" style="margin-bottom:0.75rem;font-size:0.95rem;">You moved up to a new class! The subjects have changed — pick the ones you want to take quizzes on.</p>
+                        <button class="btn btn-primary" type="button" onclick="openSubjectEditor()" style="background:#1a2a6c;color:#fff;">
+                            <i class="fas fa-pen"></i> Pick my subjects now
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-                const response = await fetch(`${window.location.origin}/student/dashboard`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
+            <!-- About Me card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-id-card"></i> About Me</h3>
+                    <p class="card-subtitle">Your basic account info — most fields are set by your school.</p>
+                </div>
+                <div class="card-content">
+                    <div class="info-row">
+                        <label for="name">Full name</label>
+                        <input type="text" id="name" value="Loading…" readonly>
+                    </div>
+                    <div class="info-row">
+                        <label for="index">Student ID</label>
+                        <input type="text" id="index" value="—" readonly>
+                    </div>
+                    <div class="info-row">
+                        <label for="email">Email</label>
+                        <div style="position:relative;">
+                            <input type="email" id="email" value="—" readonly>
+                            <button style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--color-neutral-medium);" title="Edit email">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <label for="class">Your class</label>
+                        <input type="text" id="class" value="—" readonly>
+                        <p class="tip-text"><i class="fas fa-info-circle"></i> Your class updates automatically each year.</p>
+                    </div>
 
-                if (response.ok) {
-                    const data = await response.json();
-                    const student = data.student;
-                    
-                    // Update all the profile fields with real data
-                    const displayName = student.preferredName || student.studentName;
-                    document.getElementById('studentNameDisplay').textContent = displayName;
-                    document.querySelector('.welcome-title').textContent = `Welcome back, ${displayName}!`;
-                    document.getElementById('name').value = student.studentName;
-                    document.getElementById('index').value = student.indexNumber;
-                    document.getElementById('email').value = student.email;
-                    document.getElementById('class').value = `${student.class} ${student.stream}`;
-                    // Bytes counter (floating)
-                    document.getElementById('bytesCount').textContent = student.bytes || 0;
-                    document.getElementById('totalBytes').textContent = student.bytes || 0;
-                    // Learning Bytes card: X/max(peakBytes,20) format
-                    const peak = Math.max(student.peakBytes || 20, 20);
-                    const bPct = Math.min(100, Math.round(((student.bytes || 0) / peak) * 100));
-                    const bytesVal = document.getElementById('progressBytesValue');
-                    const bytesBar = document.getElementById('progressBytesBar');
-                    const bytesLbl = document.getElementById('progressBytesLabel');
-                    if (bytesVal) bytesVal.textContent = (student.bytes || 0) + ' / ' + peak;
-                    if (bytesBar) bytesBar.style.width = bPct + '%';
-                    if (bytesLbl) bytesLbl.textContent = (student.bytes || 0) + ' bytes earned';
-                    // Study Hours card
-                    const totalMins = student.studyMinutesThisMonth || 0;
-                    const shEl = document.getElementById('progressStudyHours');
-                    const shBar = document.getElementById('progressStudyBar');
-                    if (shEl) shEl.textContent = Math.floor(totalMins/60) + 'h ' + (totalMins%60) + 'm';
-                    if (shBar) shBar.style.width = Math.min(100, Math.round(totalMins/6)) + '%';
-                    // Total Quizzes card
-                    const totalQ = student.totalQuizzesCompleted || 0;
-                    const qVal = document.getElementById('progressQuizzesValue');
-                    const qBar = document.getElementById('progressQuizzesBar');
-                    if (qVal) qVal.textContent = totalQ;
-                    if (qBar) qBar.style.width = Math.min(100, Math.round(totalQ / 2)) + '%';
-                    // Save font to localStorage for cross-page use
-                    if (student.preferences && student.preferences.fontFamily) {
-                        localStorage.setItem('sb_preferred_font', student.preferences.fontFamily);
-                    }
-                    const wnEl = document.getElementById('welcomeName');
-                    if (wnEl) wnEl.textContent = displayName;
-                    const qEl = document.getElementById('quizzesDisplay');
-                    if (qEl) qEl.textContent = student.quizzesCompletedThisWeek || 0;
-                                        const achEl = document.getElementById('progressAchievements');
-                    if (achEl) achEl.textContent = (data.totalAchievements || 0);
-                    updateActiveTimeDisplay();
-                    
-                    // Set up preferred name dropdown
-                    const preferredNameSelect = document.getElementById('preferred-name');
-                    preferredNameSelect.innerHTML = '';
-                    const nameParts = student.studentName.split(' ');
-                    nameParts.forEach(part => {
-                        const option = document.createElement('option');
-                        option.value = part;
-                        option.textContent = part;
-                        if (student.preferredName === part) {
-                            option.selected = true;
-                        }
-                        preferredNameSelect.appendChild(option);
-                    });
-                    
-                    // Set font preference
-                    if (student.preferences && student.preferences.fontFamily) {
-                        document.getElementById('font-select').value = student.preferences.fontFamily;
-                        if (window.SBFont) window.SBFont.saveAndApply(student.preferences.fontFamily);
-                        else document.body.style.fontFamily = student.preferences.fontFamily;
-                    }
-                    
-                } else if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('token'); // Also remove old token
-                    window.location.href = 'studentlogin.html';
-                } else {
-                    console.error('Failed to fetch student data');
-                }
-            } catch (error) {
-                console.error('Error fetching student data:', error);
-            }
-        }
+                    <div style="height:1px;background:var(--color-neutral-light);margin:1.25rem 0;"></div>
 
-        // Function to fetch and display top 5 leaderboard
-        async function fetchLeaderboard() {
-            try {
-                const token = localStorage.getItem('token');
-                if (!token) return;
+                    <div class="info-row">
+                        <label for="preferred-name">What should we call you?</label>
+                        <select id="preferred-name">
+                            <option value="">Loading…</option>
+                        </select>
+                        <p class="tip-text"><i class="fas fa-lightbulb"></i> This name shows on your dashboard and throughout SchoolByte.</p>
+                    </div>
+                </div>
+            </div>
 
-                const response = await fetch(`${window.location.origin}/leaderboard`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
+            <!-- My Subjects card -->
+            <div class="card">
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+                    <div>
+                        <h3 class="card-title" style="margin:0;"><i class="fas fa-book-open"></i> My Subjects</h3>
+                        <p class="card-subtitle" style="margin-top:0.25rem;">Only these subjects will appear in your quizzes.</p>
+                    </div>
+                    <button id="editSubjectsBtn" class="btn btn-secondary" type="button" onclick="openSubjectEditor()">
+                        <i class="fas fa-pen"></i> Edit subjects
+                    </button>
+                </div>
+                <div class="card-content">
+                    <p id="subjectsRulesLine" style="color:var(--color-neutral-dark);font-size:0.92rem;margin-bottom:1rem;">Loading your subject list…</p>
+                    <div id="subjectsList" style="display:flex;flex-wrap:wrap;gap:0.5rem;"></div>
+                </div>
+            </div>
+        </div>
 
-                if (response.ok) {
-                    const data = await response.json();
-                    const all = data.leaderboard;
-                    const leaderboardPreview = document.getElementById('leaderboardPreview');
-                    leaderboardPreview.innerHTML = '';
-                    if (!all || !all.length) {
-                        leaderboardPreview.innerHTML = '<p style="color:var(--color-neutral-dark);text-align:center;">No students yet.</p>';
-                    } else {
-                        all.forEach(student => {
-                            const rankClass = student.rank === 1 ? 'rank-1' : student.rank === 2 ? 'rank-2' : student.rank === 3 ? 'rank-3' : '';
-                            const xpDisplay = student.xp != null ? student.xp.toLocaleString() + ' XP' : (student.bytes != null ? student.bytes + ' B' : '—');
-                            leaderboardPreview.innerHTML += `<div class="leaderboard-item" style="${student.isCurrentUser ? 'background: linear-gradient(to right, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1)); border: 2px solid var(--color-brand-gold);' : ''}"><div class="rank ${rankClass}">${student.rank}</div><div class="student-info"><div class="student-name">${student.displayName}${student.isCurrentUser ? ' (You)' : ''}</div></div><div class="student-bytes">${xpDisplay}</div></div>`;
-                        });
-                    }
-                } else if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('token');
-                    window.location.href = 'studentlogin.html';
-                }
-            } catch (error) {
-                console.error('Error fetching leaderboard preview:', error);
-            }
-        }
+        <!-- Subject editor modal -->
+        <div id="subjectEditorOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;padding:1rem;">
+            <div style="background:#fff;border-radius:var(--radius-card);max-width:720px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                <div style="padding:1.5rem 1.5rem 1rem;border-bottom:1px solid var(--color-neutral-light);display:flex;justify-content:space-between;align-items:center;gap:1rem;">
+                    <div>
+                        <h3 style="color:var(--color-brand-primary);font-weight:800;margin-bottom:0.2rem;">Choose your subjects</h3>
+                        <p id="subjectEditorClassLine" style="color:var(--color-neutral-dark);font-size:0.88rem;"></p>
+                    </div>
+                    <button type="button" onclick="closeSubjectEditor()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--color-neutral-dark);line-height:1;">&times;</button>
+                </div>
+                <div style="padding:1.5rem;">
+                    <div style="background:var(--color-neutral-lightest);border-left:4px solid var(--color-brand-gold);padding:0.75rem 1rem;border-radius:8px;margin-bottom:1.25rem;">
+                        <p id="subjectEditorRules" style="font-size:0.92rem;color:var(--color-neutral-darkest);"></p>
+                    </div>
+                    <h4 style="color:var(--color-brand-primary);margin-bottom:0.5rem;font-size:0.95rem;">
+                        <i class="fas fa-lock" style="font-size:0.8rem;"></i> Compulsory — you must take these
+                    </h4>
+                    <div id="editorCompulsoryList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.5rem;margin-bottom:1.25rem;"></div>
+                    <h4 id="editorElectivesHeading" style="color:var(--color-brand-primary);margin-bottom:0.25rem;font-size:0.95rem;">Choose your extra subjects</h4>
+                    <p id="editorElectivesSub" style="color:var(--color-neutral-dark);font-size:0.83rem;margin-bottom:0.6rem;"></p>
+                    <div id="editorElectivesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.5rem;margin-bottom:1rem;"></div>
+                    <p id="subjectEditorError" style="color:var(--color-error-red);font-size:0.9rem;margin-bottom:0.75rem;display:none;"></p>
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+                        <span id="subjectEditorCounter" style="font-weight:700;color:var(--color-brand-primary);">0 / 0 selected</span>
+                        <div style="display:flex;gap:0.5rem;">
+                            <button type="button" class="btn btn-secondary" onclick="closeSubjectEditor()">Cancel</button>
+                            <button type="button" id="subjectEditorSaveBtn" class="btn btn-primary" onclick="saveSubjects()" disabled>Save subjects</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        // ─── Subject editor ──────────────────────────────────────────────
-        let subjectOptions = null; // { class, rules, currentSubjects, needsSubjectSelection, ... }
-        let editorSelected = new Set();
+        <!-- ═══ MY STATS TAB ═══ -->
+        <div id="progress" class="tab-content">
 
-        async function loadSubjectsCard() {
-            try {
-                const token = localStorage.getItem('token');
-                if (!token) return;
-                const res = await fetch('/student/subjects/options', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                if (!res.ok) {
-                    document.getElementById('subjectsRulesLine').textContent =
-                        'Could not load your subject list. Please try again later.';
-                    return;
-                }
-                subjectOptions = await res.json();
-                renderSubjectsCard();
-            } catch (e) {
-                console.error('loadSubjectsCard failed:', e);
-            }
-        }
+            <!-- 4 stat mini-cards -->
+            <div class="stat-mini-grid">
+                <!-- Bytes -->
+                <div class="stat-mini">
+                    <div class="stat-mini-icon" style="background:linear-gradient(135deg,#fff3b0,#ffe44d);">
+                        💰
+                    </div>
+                    <div class="stat-mini-body">
+                        <div class="stat-mini-val" id="progressBytesValue" style="color:var(--color-brand-primary);">0</div>
+                        <div class="stat-mini-lbl">Bytes in your wallet</div>
+                        <div class="stat-mini-bar"><div class="stat-mini-bar-fill" id="progressBytesBar" style="background:var(--color-brand-gold);width:0%;"></div></div>
+                        <div class="stat-mini-sub" id="progressBytesLabel">Earn more by doing quizzes &amp; activities</div>
+                    </div>
+                </div>
+                <!-- Time -->
+                <div class="stat-mini">
+                    <div class="stat-mini-icon" style="background:linear-gradient(135deg,#d1fae5,#6ee7b7);">
+                        ⏱️
+                    </div>
+                    <div class="stat-mini-body">
+                        <div class="stat-mini-val" id="progressStudyHours" style="color:var(--color-success-green);">0m</div>
+                        <div class="stat-mini-lbl">Time on SchoolByte this month</div>
+                        <div class="stat-mini-bar"><div class="stat-mini-bar-fill" id="progressStudyBar" style="background:var(--color-success-green);width:0%;"></div></div>
+                        <div class="stat-mini-sub">Tracked automatically while you study</div>
+                    </div>
+                </div>
+                <!-- Badges -->
+                <div class="stat-mini">
+                    <div class="stat-mini-icon" style="background:linear-gradient(135deg,#fde8d8,#fdba74);">
+                        🏅
+                    </div>
+                    <div class="stat-mini-body">
+                        <div class="stat-mini-val" id="progressAchievements" style="color:var(--color-brand-secondary);">0</div>
+                        <div class="stat-mini-lbl">Badges unlocked</div>
+                        <div class="stat-mini-bar"><div class="stat-mini-bar-fill" id="progressAchBar" style="background:var(--color-brand-secondary);width:0%;"></div></div>
+                        <div class="stat-mini-sub">Complete tasks &amp; milestones to unlock more</div>
+                    </div>
+                </div>
+                <!-- Quizzes -->
+                <div class="stat-mini">
+                    <div class="stat-mini-icon" style="background:linear-gradient(135deg,#dbeafe,#93c5fd);">
+                        ✅
+                    </div>
+                    <div class="stat-mini-body">
+                        <div class="stat-mini-val" id="progressQuizzesValue" style="color:var(--color-info-blue);">0</div>
+                        <div class="stat-mini-lbl">Quizzes completed</div>
+                        <div class="stat-mini-bar"><div class="stat-mini-bar-fill" id="progressQuizzesBar" style="background:var(--color-info-blue);width:0%;"></div></div>
+                        <div class="stat-mini-sub">Total across all subjects, all time</div>
+                    </div>
+                </div>
+            </div>
 
-        function renderSubjectsCard() {
-            if (!subjectOptions) return;
-            const banner = document.getElementById('subjectReselectBanner');
-            const bannerMsg = document.getElementById('subjectReselectMessage');
-            const rulesLine = document.getElementById('subjectsRulesLine');
-            const list = document.getElementById('subjectsList');
+            <!-- Study Time Chart -->
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+                    <div>
+                        <h3 class="card-title" style="margin:0;">
+                            <i class="fas fa-chart-bar" style="color:var(--color-brand-primary);"></i> Study Time Chart
+                        </h3>
+                        <p class="card-subtitle" style="margin-top:0.25rem;">See exactly when you were most active on SchoolByte.</p>
+                    </div>
+                    <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">
+                        <select id="activityTimeUnit" style="padding:0.4rem 0.75rem;border:1.5px solid var(--color-neutral-light);border-radius:8px;font-size:0.85rem;background:#fff;cursor:pointer;">
+                            <option value="hours">Hours</option>
+                            <option value="minutes">Minutes</option>
+                            <option value="seconds">Seconds</option>
+                        </select>
+                        <select id="activityRange" style="padding:0.4rem 0.75rem;border:1.5px solid var(--color-neutral-light);border-radius:8px;font-size:0.85rem;background:#fff;cursor:pointer;">
+                            <option value="7days">Last 7 days</option>
+                            <option value="month">Last 30 days</option>
+                            <option value="year">Last year</option>
+                            <option value="2026">Year 2026</option>
+                            <option value="2025">Year 2025</option>
+                            <option value="2024">Year 2024</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div id="activityPeakInfo" style="background:linear-gradient(135deg,var(--color-brand-primary),var(--color-brand-secondary));color:#fff;border-radius:10px;padding:0.7rem 1.2rem;margin-bottom:1.2rem;font-size:0.92rem;display:none;">
+                        <i class="fas fa-star" style="margin-right:0.5rem;color:var(--color-brand-gold);"></i>
+                        <span id="activityPeakText">Your best day: –</span>
+                    </div>
+                    <div style="position:relative;height:300px;">
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                    <p style="text-align:center;font-size:0.78rem;color:var(--color-neutral-medium);margin-top:0.75rem;">
+                        <i class="fas fa-info-circle"></i> Time is tracked automatically whenever you use SchoolByte.
+                    </p>
+                </div>
+            </div>
 
-            if (subjectOptions.needsSubjectSelection) {
-                banner.style.display = 'block';
-                const fromTo = subjectOptions.previousClass
-                    ? `from ${subjectOptions.previousClass} to ${subjectOptions.class}`
-                    : `to ${subjectOptions.class}`;
-                bannerMsg.textContent =
-                    `You were just promoted ${fromTo}. ${subjectOptions.class} requires ${subjectOptions.rules.expectedCount} subjects (${subjectOptions.rules.description}). Pick them now to continue taking quizzes.`;
-            } else {
-                banner.style.display = 'none';
-            }
+            <!-- Badges / Achievements -->
+            <div class="card">
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;">
+                    <div>
+                        <h3 class="card-title" style="margin:0;"><i class="fas fa-medal"></i> My Badges</h3>
+                        <p class="card-subtitle" style="margin-top:0.25rem;">Earn badges by hitting milestones — quizzes, activities, projects and more.</p>
+                    </div>
+                </div>
+                <div class="card-content" id="achievementsContainer">
+                    <div style="text-align:center;padding:2rem;color:var(--color-neutral-dark);">
+                        <i class="fas fa-spinner fa-spin" style="font-size:2rem;margin-bottom:1rem;color:var(--color-neutral-medium);"></i>
+                        <p>Loading your badges…</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-            rulesLine.textContent =
-                `${subjectOptions.class}: ${subjectOptions.rules.description}.`;
+        <!-- ═══ RANKINGS TAB ═══ -->
+        <div id="leaderboard" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-trophy" style="color:var(--color-brand-gold);"></i> Rankings</h3>
+                    <p class="card-subtitle" style="margin-top:0.3rem;">See where you stand among all ByteScholars — sorted by total XP earned.</p>
+                </div>
+                <div class="card-content">
+                    <div id="leaderboardPreview" style="display:flex;flex-direction:column;gap:0.6rem;">
+                        <div style="text-align:center;padding:1.5rem;color:var(--color-neutral-dark);">
+                            <i class="fas fa-spinner fa-spin" style="font-size:1.5rem;"></i>
+                            <p style="margin-top:0.5rem;">Loading rankings…</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" style="width:100%;margin-top:1rem;" id="showMoreBtn">
+                        <i class="fas fa-trophy"></i> See Full Rankings (Top 200)
+                    </button>
+                </div>
+            </div>
+        </div>
 
-            list.innerHTML = '';
-            const compulsorySet = new Set(subjectOptions.rules.compulsory || []);
-            const subjects = subjectOptions.currentSubjects || [];
-            if (!subjects.length) {
-                const empty = document.createElement('p');
-                empty.style.cssText = 'color:var(--color-neutral-dark);font-style:italic;';
-                empty.textContent = 'You have no subjects yet. Click "Edit subjects" to choose them.';
-                list.appendChild(empty);
-                return;
-            }
-            subjects.forEach(name => {
-                const isComp = compulsorySet.has(name);
-                const chip = document.createElement('span');
-                chip.style.cssText =
-                    'padding:0.4rem 0.8rem;border-radius:999px;font-size:0.85rem;font-weight:600;display:inline-flex;align-items:center;gap:0.4rem;'
-                    + (isComp
-                        ? 'background:linear-gradient(135deg,var(--color-brand-primary),var(--color-brand-secondary));color:#fff;'
-                        : 'background:var(--color-neutral-lightest);color:var(--color-brand-primary);border:1px solid var(--color-neutral-light);');
-                chip.innerHTML = (isComp ? '<i class="fas fa-lock" style="font-size:0.7rem;"></i> ' : '') + escapeHtml(name);
-                list.appendChild(chip);
+    </div><!-- end .tabs -->
+
+    <!-- ═══ SETTINGS TAB ═══ -->
+    <div id="settings" class="tab-content" style="display:none;">
+
+        <!-- Theme picker -->
+        <div class="card" style="margin-bottom:1.5rem;">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-palette"></i> Pick Your Look</h3>
+                <p class="card-subtitle" style="margin-top:0.3rem;">Choose a colour theme — it applies everywhere on SchoolByte.</p>
+            </div>
+            <div class="card-content">
+                <div id="theme-picker-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:1rem;"></div>
+                <p id="theme-saved-msg" style="margin-top:1rem;font-size:0.9rem;color:var(--color-success-green);font-weight:600;display:none;">
+                    <i class="fas fa-check-circle"></i> Theme saved!
+                </p>
+            </div>
+        </div>
+
+        <!-- Preferences -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-sliders-h"></i> Make It Yours</h3>
+                <p class="card-subtitle" style="margin-top:0.3rem;">Personalise how SchoolByte looks and feels.</p>
+            </div>
+            <div class="card-content">
+
+                <!-- Font -->
+                <div class="form-group">
+                    <label for="font-select"><i class="fas fa-font" style="margin-right:0.35rem;"></i> Text style</label>
+                    <select id="font-select">
+                        <option value="Inter, sans-serif">Inter — Default (clean &amp; modern)</option>
+                        <option value="Roboto, sans-serif">Roboto — Simple &amp; readable</option>
+                        <option value="Open Sans, sans-serif">Open Sans — Friendly &amp; open</option>
+                        <option value="Lato, sans-serif">Lato — Light &amp; airy</option>
+                        <option value="Montserrat, sans-serif">Montserrat — Bold headings</option>
+                        <option value="Poppins, sans-serif">Poppins — Rounded &amp; fun</option>
+                        <option value="Nunito Sans, sans-serif">Nunito Sans — Soft &amp; warm</option>
+                        <option value="Ubuntu, sans-serif">Ubuntu — Tech style</option>
+                        <option value="Merriweather, serif">Merriweather — Classic serif</option>
+                        <option value="Playfair Display, serif">Playfair Display — Elegant</option>
+                        <option value="Space Mono, monospace">Space Mono — Code style</option>
+                        <option value="Dancing Script, cursive">Dancing Script — Handwritten</option>
+                    </select>
+                    <p class="tip-text" style="margin-top:0.5rem;"><i class="fas fa-info-circle"></i> Your font choice is saved and applied on every page.</p>
+                </div>
+
+                <div style="height:1px;background:var(--color-neutral-light);margin:1.5rem 0;"></div>
+
+                <!-- Dark Mode -->
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+                    <div>
+                        <div style="font-weight:700;color:var(--color-brand-primary);font-size:0.97rem;">
+                            <i class="fas fa-moon" style="margin-right:0.35rem;"></i> Dark Mode
+                        </div>
+                        <p class="tip-text" style="margin-top:0.25rem;">Easier on your eyes at night — works on every page.</p>
+                    </div>
+                    <button class="btn btn-secondary" id="toggleDarkMode" style="min-width:140px;">
+                        <i class="fas fa-moon" id="darkModeIcon"></i>
+                        <span id="darkModeLabel">Turn On</span>
+                    </button>
+                </div>
+
+                <div style="height:1px;background:var(--color-neutral-light);margin-bottom:1.5rem;"></div>
+
+                <!-- Coming soon social -->
+                <div style="margin-bottom:1.5rem;">
+                    <div style="font-weight:700;color:var(--color-brand-primary);font-size:0.97rem;margin-bottom:0.75rem;">
+                        <i class="fas fa-users" style="margin-right:0.35rem;"></i> Social (coming soon)
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                        <button class="btn btn-secondary" disabled style="opacity:0.6;">
+                            <i class="fas fa-comments"></i> Chat with classmates
+                            <span class="coming-soon">Soon</span>
+                        </button>
+                        <button class="btn btn-secondary" disabled style="opacity:0.6;">
+                            <i class="fas fa-users"></i> Study groups
+                            <span class="coming-soon">Soon</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div style="height:1px;background:var(--color-neutral-light);margin-bottom:1.5rem;"></div>
+
+                <!-- Log out -->
+                <button class="btn btn-danger" style="width:100%;" id="signOutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Log out
+                </button>
+            </div>
+        </div>
+
+    </div><!-- end settings tab -->
+</div><!-- end .container -->
+
+<!-- Floating Bytes Counter -->
+<div class="bytes-counter">
+    <i class="fas fa-coins bytes-icon"></i>
+    <span id="bytesCount">0</span> Bytes
+</div>
+
+<script>
+    // ── Tier name helper ──────────────────────────────────────────────────────
+    function getTierName(tier) {
+        var names = ['','New User','Novice','Apprentice','Adept','Specialist','Expert','Master','Grandmaster','Virtuoso','Legend'];
+        return names[tier] || ('Tier ' + tier);
+    }
+
+    // ── Active time helpers ───────────────────────────────────────────────────
+    function getActiveSeconds() {
+        return parseInt(localStorage.getItem('schoolbyte_active_seconds') || '0');
+    }
+    function formatActiveTime(seconds) {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        if (h === 0) return m + 'm';
+        return h + 'h ' + m + 'm';
+    }
+    function updateActiveTimeDisplay() {
+        const secs = getActiveSeconds();
+        const display = formatActiveTime(secs);
+        const el = document.getElementById('activeHoursDisplay');
+        const el2 = document.getElementById('progressActiveHours');
+        const bar = document.getElementById('activeHoursBar');
+        if (el) el.textContent = display;
+        if (el2) el2.textContent = display;
+        const pct = Math.min(100, Math.round(secs / (20 * 3600) * 100));
+        if (bar) bar.style.width = pct + '%';
+    }
+
+    // ── Fetch and display student data ────────────────────────────────────────
+    async function fetchStudentData() {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) { window.location.href = 'studentlogin.html'; return; }
+
+            const response = await fetch(`${window.location.origin}/student/dashboard`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
             });
-        }
 
-        function escapeHtml(s) {
-            return String(s).replace(/[&<>"']/g, c => (
-                { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-            ));
-        }
-
-        async function openSubjectEditor() {
-            if (!subjectOptions) await loadSubjectsCard();
-            if (!subjectOptions) {
-                alert('Could not load subject options. Please try again.');
-                return;
-            }
-            const overlay = document.getElementById('subjectEditorOverlay');
-            const classLine = document.getElementById('subjectEditorClassLine');
-            const rulesEl = document.getElementById('subjectEditorRules');
-            const compList = document.getElementById('editorCompulsoryList');
-            const electList = document.getElementById('editorElectivesList');
-            const electHeading = document.getElementById('editorElectivesHeading');
-            const electSub = document.getElementById('editorElectivesSub');
-            const errEl = document.getElementById('subjectEditorError');
-
-            errEl.style.display = 'none';
-            classLine.textContent = `Class: ${subjectOptions.class}`;
-            rulesEl.textContent = subjectOptions.rules.description
-                + ` — ${subjectOptions.rules.expectedCount} subjects total.`;
-
-            // Compulsory: locked-on
-            compList.innerHTML = '';
-            subjectOptions.rules.compulsory.forEach(name => {
-                compList.appendChild(buildSubjectRow(name, true, true));
-            });
-
-            // Electives: pre-check whichever the student already has
-            editorSelected = new Set();
-            subjectOptions.rules.compulsory.forEach(n => editorSelected.add(n));
-            const currentSet = new Set(subjectOptions.currentSubjects || []);
-            const compSet = new Set(subjectOptions.rules.compulsory);
-
-            electHeading.textContent = subjectOptions.rules.electivesLabel || 'Choose your additional subjects';
-            electSub.textContent = `Pick exactly ${subjectOptions.rules.electivesToPick} from the list below.`;
-
-            electList.innerHTML = '';
-            // Sort: those the student already had checked first, then the rest
-            const ordered = subjectOptions.rules.electives.slice().sort((a, b) => {
-                const aSel = currentSet.has(a) && !compSet.has(a);
-                const bSel = currentSet.has(b) && !compSet.has(b);
-                if (aSel === bSel) return a.localeCompare(b);
-                return aSel ? -1 : 1;
-            });
-            ordered.forEach(name => {
-                const checked = currentSet.has(name) && !compSet.has(name);
-                if (checked) editorSelected.add(name);
-                electList.appendChild(buildSubjectRow(name, checked, false));
-            });
-
-            updateEditorCounter();
-            overlay.style.display = 'flex';
-        }
-
-        function buildSubjectRow(name, checked, locked) {
-            const wrapper = document.createElement('label');
-            wrapper.style.cssText = 'display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.8rem;border:1px solid var(--color-neutral-light);border-radius:8px;cursor:'
-                + (locked ? 'not-allowed' : 'pointer') + ';background:'
-                + (locked ? 'var(--color-neutral-lightest)' : '#fff') + ';';
-            const cb = document.createElement('input');
-            cb.type = 'checkbox';
-            cb.checked = checked;
-            cb.disabled = locked;
-            cb.dataset.subject = name;
-            cb.style.cssText = 'width:18px;height:18px;accent-color:var(--color-brand-gold);';
-            const span = document.createElement('span');
-            span.textContent = name + (locked ? ' (compulsory)' : '');
-            span.style.cssText = 'font-size:0.95rem;color:var(--color-neutral-darkest);';
-            cb.addEventListener('change', () => {
-                if (cb.checked) editorSelected.add(name);
-                else editorSelected.delete(name);
-                updateEditorCounter();
-            });
-            wrapper.appendChild(cb);
-            wrapper.appendChild(span);
-            return wrapper;
-        }
-
-        function updateEditorCounter() {
-            if (!subjectOptions) return;
-            const expected = subjectOptions.rules.expectedCount;
-            const current = editorSelected.size;
-            const counter = document.getElementById('subjectEditorCounter');
-            const saveBtn = document.getElementById('subjectEditorSaveBtn');
-            counter.textContent = `${current} / ${expected} selected`;
-            const ok = current === expected;
-            saveBtn.disabled = !ok;
-            counter.style.color = ok ? 'var(--color-success-green)' : 'var(--color-brand-primary)';
-        }
-
-        function closeSubjectEditor() {
-            document.getElementById('subjectEditorOverlay').style.display = 'none';
-        }
-
-        async function saveSubjects() {
-            const errEl = document.getElementById('subjectEditorError');
-            const saveBtn = document.getElementById('subjectEditorSaveBtn');
-            errEl.style.display = 'none';
-            saveBtn.disabled = true;
-            saveBtn.textContent = 'Saving…';
-            try {
-                const token = localStorage.getItem('token');
-                const res = await fetch('/student/subjects', {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': 'Bearer ' + token,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ subjects: Array.from(editorSelected) })
-                });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok) {
-                    errEl.textContent = data.message || 'Failed to save subjects.';
-                    errEl.style.display = 'block';
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = 'Save subjects';
-                    return;
-                }
-                // Refresh the card and close
-                if (subjectOptions) {
-                    subjectOptions.currentSubjects = data.subjects || Array.from(editorSelected);
-                    subjectOptions.needsSubjectSelection = false;
-                }
-                renderSubjectsCard();
-                closeSubjectEditor();
-                saveBtn.disabled = false;
-                saveBtn.textContent = 'Save subjects';
-            } catch (e) {
-                console.error('saveSubjects failed:', e);
-                errEl.textContent = 'Network error. Please try again.';
-                errEl.style.display = 'block';
-                saveBtn.disabled = false;
-                saveBtn.textContent = 'Save subjects';
-            }
-        }
-
-        // Close modal when clicking the overlay backdrop
-        document.getElementById('subjectEditorOverlay').addEventListener('click', (e) => {
-            if (e.target.id === 'subjectEditorOverlay') closeSubjectEditor();
-        });
-
-        // Load student data and leaderboard on page load
-        fetchStudentData();
-        fetchLeaderboard();
-        loadSubjectsCard();
-
-        // Tab functionality
-        document.querySelectorAll('.tabs-trigger').forEach(tab => {
-            tab.addEventListener('click', () => {
-                // Remove active class from all tabs and content
-                document.querySelectorAll('.tabs-trigger').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                
-                // Add active class to clicked tab and corresponding content
-                tab.classList.add('active');
-                const tabId = tab.getAttribute('data-tab');
-                document.getElementById(tabId).classList.add('active');
-            });
-        });
-
-        // Preferred name change
-        document.getElementById('preferred-name').addEventListener('change', async function() {
-            const newPreferredName = this.value;
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${window.location.origin}/student/preferred-name`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ preferredName: newPreferredName })
-                });
-
-                if (response.ok) {
-                    document.getElementById('studentNameDisplay').textContent = newPreferredName;
-                    document.querySelector('.welcome-title').textContent = `Welcome back, ${newPreferredName}!`;
-                    alert('Preferred name updated successfully!');
-                } else {
-                    const error = await response.json();
-                    alert('Error updating preferred name: ' + error.message);
-                }
-            } catch (error) {
-                console.error('Error updating preferred name:', error);
-                alert('Network error updating preferred name');
-            }
-        });
-
-        // Font selection
-        document.getElementById('font-select').addEventListener('change', async function() {
-            const selectedFont = this.value;
-            // Apply immediately on this page + all other open tabs via SBFont
-            if (window.SBFont) window.SBFont.saveAndApply(selectedFont);
-            else {
-                document.body.style.fontFamily = selectedFont;
-                document.documentElement.style.fontFamily = selectedFont;
-                localStorage.setItem('sb_preferred_font', selectedFont);
-            }
-            try {
-                const token = localStorage.getItem('token');
-                const currentData = JSON.parse(localStorage.getItem('studentData') || '{}');
-                const updatedPreferences = {
-                    ...(currentData.preferences || {}),
-                    fontFamily: selectedFont
-                };
-                const response = await fetch(`${window.location.origin}/student/preferences`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ preferences: updatedPreferences })
-                });
-                if (response.ok) {
-                    currentData.preferences = updatedPreferences;
-                    localStorage.setItem('studentData', JSON.stringify(currentData));
-                    // Show subtle feedback
-                    const btn = document.querySelector('[data-tab="settings"]') || document.getElementById('font-select');
-                    const notice = document.createElement('span');
-                    notice.textContent = ' ✓ Font saved';
-                    notice.style.cssText = 'color:#2ecc71;font-size:0.85rem;margin-left:0.5rem;';
-                    document.getElementById('font-select').parentNode.appendChild(notice);
-                    setTimeout(() => notice.remove(), 2500);
-                } else {
-                    alert('Error saving font preference');
-                }
-            } catch (error) {
-                console.error('Error updating font preference:', error);
-                alert('Network error saving font preference');
-            }
-        });
-
-        // Earn Bytes button
-        // Sign Out button
-        document.getElementById('signOutBtn').addEventListener('click', function() {
-            // Clear all student-related data
-            localStorage.removeItem('token');
-            localStorage.removeItem('token'); // Also remove old token if exists
-            localStorage.removeItem('studentData');
-            localStorage.removeItem('preferredName');
-            localStorage.removeItem('preferredFont');
-            localStorage.removeItem('bytesCount');
-            localStorage.removeItem('studentName');
-            
-            // Redirect to login page
-            window.location.href = 'studentlogin.html';
-        });
-
-        // Show More button - redirect to full leaderboard page
-        document.getElementById('showMoreBtn').addEventListener('click', function() {
-            window.location.href = 'leaderboard.html';
-        });
-
-        // ── Dark Mode toggle ──────────────────────────────────────────────────
-        function syncDarkModeButton() {
-            var isDark = window.SchoolByteTheme && window.SchoolByteTheme.getDarkMode();
-            var icon = document.getElementById('darkModeIcon');
-            var label = document.getElementById('darkModeLabel');
-            var btn = document.getElementById('toggleDarkMode');
-            if (!icon || !label) return;
-            if (isDark) {
-                icon.className = 'fas fa-sun';
-                label.textContent = 'Light Mode';
-                if (btn) btn.style.background = 'linear-gradient(135deg,#252a40,#3a3f5c)';
-            } else {
-                icon.className = 'fas fa-moon';
-                label.textContent = 'Dark Mode';
-                if (btn) btn.style.background = '';
-            }
-        }
-        syncDarkModeButton();
-
-        document.getElementById('toggleDarkMode').addEventListener('click', function() {
-            if (window.SchoolByteTheme) {
-                window.SchoolByteTheme.toggleDarkMode();
-                syncDarkModeButton();
-            }
-        });
-
-        // Initialize preferred name from localStorage
-        const savedPreferredName = localStorage.getItem('preferredName');
-        if (savedPreferredName) {
-            document.getElementById('preferred-name').value = savedPreferredName;
-            document.getElementById('studentNameDisplay').textContent = savedPreferredName;
-        }
-
-        // Initialize preferred font from localStorage
-        const savedFont = localStorage.getItem('sb_preferred_font') || localStorage.getItem('preferredFont');
-        if (savedFont) {
-            document.getElementById('font-select').value = savedFont;
-            document.body.style.fontFamily = savedFont;
-        }
-
-        // Load achievements (uses new /api/student/achievements with progress data)
-        async function loadAchievements() {
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${window.location.origin}/api/student/achievements`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (!response.ok) throw new Error('Failed to load achievements');
-
+            if (response.ok) {
                 const data = await response.json();
-                const container = document.getElementById('achievementsContainer');
+                const student = data.student;
 
-                const unlocked = (data.achievements || []).filter(a => a.unlocked);
-                const inProgress = (data.achievements || []).filter(a => !a.unlocked && a.progress > 0 && (a.progress / (a.target || 1)) >= 0.4);
+                const displayName = student.preferredName || student.studentName;
+                document.getElementById('studentNameDisplay').textContent = displayName;
+                document.querySelector('.welcome-title').textContent = '';
+                document.querySelector('.welcome-title').innerHTML = 'Hey <span id="welcomeName">' + displayName + '</span>! 👋';
+                document.getElementById('name').value = student.studentName;
+                document.getElementById('index').value = student.indexNumber;
+                document.getElementById('email').value = student.email;
+                document.getElementById('class').value = `${student.class} ${student.stream}`;
 
-                // Update achievement stats
-                const achProgressEl = document.getElementById('progressAchievements');
-                const achBar = document.getElementById('progressAchBar');
-                if (achProgressEl) achProgressEl.textContent = unlocked.length + ' / ' + (data.totalCount || 0);
-                if (achBar) achBar.style.width = Math.min(100, Math.round((unlocked.length / Math.max(data.totalCount || 1, 1)) * 100)) + '%';
+                // Bytes counter
+                document.getElementById('bytesCount').textContent = student.bytes || 0;
+                document.getElementById('totalBytes').textContent = (student.bytes || 0).toLocaleString();
 
-                const tierColors = { Bronze: '#cd7f32', Silver: '#c0c0c0', Gold: '#ffd700', Platinum: '#e5e4e2', Diamond: '#b9f2ff' };
+                // Welcome quiz count
+                const wqEl = document.getElementById('welcomeQuizCount');
+                if (wqEl) wqEl.textContent = student.totalQuizzesCompleted || 0;
 
-                function achItemHTML(a, showDate) {
-                    const pct = a.target ? Math.round((a.progress / a.target) * 100) : 0;
-                    const tierColor = tierColors[a.tier] || '#ccc';
-                    return `<div style="display:flex;align-items:flex-start;gap:1rem;padding:1rem;background:var(--color-neutral-lightest);border-radius:var(--radius-input);border-left:4px solid ${tierColor};">
-                        <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,${tierColor}55,${tierColor}22);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                            <i class="fas ${a.icon || 'fa-trophy'}" style="color:${tierColor};font-size:1.1rem;"></i>
-                        </div>
-                        <div style="flex:1;min-width:0;">
-                            <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-                                <h4 style="font-weight:700;font-size:0.95rem;">${a.name}</h4>
-                                <span style="font-size:0.72rem;font-weight:700;background:${tierColor}33;color:${tierColor === '#ffd700' ? '#b8860b' : tierColor};padding:2px 8px;border-radius:20px;white-space:nowrap;">${a.tier}</span>
-                            </div>
-                            <p style="color:var(--color-neutral-dark);font-size:0.85rem;margin:2px 0 6px;">${a.description}</p>
-                            ${!a.unlocked && a.target > 1 ? `<div style="height:5px;background:var(--color-neutral-light);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${tierColor};border-radius:4px;transition:width 0.5s;"></div></div><p style="font-size:0.75rem;color:var(--color-neutral-medium);margin-top:3px;">${a.progress} / ${a.target}</p>` : ''}
-                            ${a.unlocked && showDate ? `<p style="font-size:0.75rem;color:var(--color-neutral-medium);">Earned ${new Date(a.unlockedAt).toLocaleDateString()}</p>` : ''}
-                            ${a.unlocked ? `<p style="font-size:0.75rem;color:var(--color-success-green);font-weight:600;"><i class="fas fa-check-circle"></i> +${a.byteReward} bytes · +${a.xpReward} XP</p>` : ''}
-                        </div>
-                    </div>`;
+                // Tier + streak in welcome card
+                const tier = student.currentTier || 1;
+                const tierEl = document.getElementById('welcomeTier');
+                if (tierEl) tierEl.textContent = 'Tier ' + tier + ': ' + getTierName(tier);
+
+                const streakEl = document.getElementById('welcomeStreak');
+                if (streakEl) {
+                    const s = student.currentStreak || 0;
+                    streakEl.textContent = s > 0 ? '🔥 ' + s + '-day streak!' : '⭐ Start your streak today!';
                 }
 
-                let html = '';
-
-                if (unlocked.length > 0) {
-                    const sorted = [...unlocked].sort((a, b) => new Date(b.unlockedAt) - new Date(a.unlockedAt));
-                    html += `<h4 style="font-weight:700;margin-bottom:0.75rem;color:var(--color-brand-gold);"><i class="fas fa-unlock"></i> Unlocked (${unlocked.length})</h4>`;
-                    html += sorted.slice(0, 10).map(a => achItemHTML(a, true)).join('');
-                    if (unlocked.length > 10) html += `<p style="text-align:center;color:var(--color-neutral-medium);font-size:0.85rem;margin-top:0.5rem;">…and ${unlocked.length - 10} more</p>`;
+                // XP bar — needs PlayerLevel data; approximate if not available
+                const xp = student.xp || 0;
+                const xpLabelEl = document.getElementById('xpLabel');
+                const xpNextEl = document.getElementById('xpNextLabel');
+                const xpBar = document.getElementById('xpBarFill');
+                if (xpLabelEl) xpLabelEl.textContent = xp.toLocaleString() + ' XP earned';
+                // XP thresholds per tier (matches PlayerLevel seed)
+                const xpThresholds = [0,20,100,250,500,800,1200,1700,2300,3000,4000];
+                const currentTierXP = xpThresholds[tier - 1] || 0;
+                const nextTierXP = xpThresholds[tier] || null;
+                if (nextTierXP && xpNextEl && xpBar) {
+                    xpNextEl.textContent = 'Next tier at ' + nextTierXP.toLocaleString() + ' XP';
+                    const pct = Math.min(100, Math.round(((xp - currentTierXP) / (nextTierXP - currentTierXP)) * 100));
+                    xpBar.style.width = pct + '%';
+                } else if (xpNextEl) {
+                    xpNextEl.textContent = '🏆 Max tier reached!';
+                    if (xpBar) xpBar.style.width = '100%';
                 }
 
-                if (inProgress.length > 0) {
-                    const sorted = [...inProgress].sort((a, b) => (b.progress / b.target) - (a.progress / a.target));
-                    html += `<h4 style="font-weight:700;margin:1.5rem 0 0.75rem;color:var(--color-brand-primary);"><i class="fas fa-spinner"></i> In Progress (${inProgress.length})</h4>`;
-                    html += sorted.slice(0, 5).map(a => achItemHTML(a, false)).join('');
+                // Progress tab — Bytes card
+                const peak = Math.max(student.peakBytes || 20, 20);
+                const bPct = Math.min(100, Math.round(((student.bytes || 0) / peak) * 100));
+                const bytesVal = document.getElementById('progressBytesValue');
+                const bytesBar = document.getElementById('progressBytesBar');
+                const bytesLbl = document.getElementById('progressBytesLabel');
+                if (bytesVal) bytesVal.textContent = (student.bytes || 0).toLocaleString();
+                if (bytesBar) bytesBar.style.width = bPct + '%';
+                if (bytesLbl) bytesLbl.textContent = (student.bytes || 0).toLocaleString() + ' bytes earned all time';
+
+                // Study hours card
+                const totalMins = student.studyMinutesThisMonth || 0;
+                const shEl = document.getElementById('progressStudyHours');
+                const shBar = document.getElementById('progressStudyBar');
+                if (shEl) shEl.textContent = Math.floor(totalMins / 60) + 'h ' + (totalMins % 60) + 'm';
+                if (shBar) shBar.style.width = Math.min(100, Math.round(totalMins / 6)) + '%';
+
+                // Total Quizzes card
+                const totalQ = student.totalQuizzesCompleted || 0;
+                const qVal = document.getElementById('progressQuizzesValue');
+                const qBar = document.getElementById('progressQuizzesBar');
+                if (qVal) qVal.textContent = totalQ;
+                if (qBar) qBar.style.width = Math.min(100, Math.round(totalQ / 2)) + '%';
+
+                // Save font to localStorage for cross-page use
+                if (student.preferences && student.preferences.fontFamily) {
+                    localStorage.setItem('sb_preferred_font', student.preferences.fontFamily);
                 }
 
-                if (!html) {
-                    html = `<div style="text-align:center;padding:2rem;color:var(--color-neutral-dark);">
-                        <i class="fas fa-trophy" style="font-size:3rem;margin-bottom:1rem;color:var(--color-neutral-light);"></i>
-                        <p>No achievements yet. Complete quizzes, activities and projects to earn them!</p>
-                    </div>`;
+                // Weekly quizzes display (optional element)
+                const qEl = document.getElementById('quizzesDisplay');
+                if (qEl) qEl.textContent = student.quizzesCompletedThisWeek || 0;
+
+                updateActiveTimeDisplay();
+
+                // Set up preferred name dropdown
+                const preferredNameSelect = document.getElementById('preferred-name');
+                preferredNameSelect.innerHTML = '';
+                const nameParts = student.studentName.split(' ');
+                nameParts.forEach(part => {
+                    const option = document.createElement('option');
+                    option.value = part;
+                    option.textContent = part;
+                    if (student.preferredName === part) option.selected = true;
+                    preferredNameSelect.appendChild(option);
+                });
+
+                // Set font preference
+                if (student.preferences && student.preferences.fontFamily) {
+                    document.getElementById('font-select').value = student.preferences.fontFamily;
+                    if (window.SBFont) window.SBFont.saveAndApply(student.preferences.fontFamily);
+                    else document.body.style.fontFamily = student.preferences.fontFamily;
                 }
 
-                container.innerHTML = `<div style="display:flex;flex-direction:column;gap:0.75rem;">${html}</div>`;
-
-            } catch (error) {
-                console.error('Error loading achievements:', error);
-                document.getElementById('achievementsContainer').innerHTML = `
-                    <div style="text-align:center;padding:2rem;color:var(--color-error-red);">
-                        <i class="fas fa-exclamation-triangle" style="font-size:2rem;margin-bottom:1rem;"></i>
-                        <p>Failed to load achievements. Please try again later.</p>
-                    </div>`;
-            }
-        }
-
-
-        // ─── ACTIVITY ANALYTICS GRAPH ───────────────────────────────────────
-        let activityChart = null;
-
-        function formatDateLabel(dateStr, range) {
-            const d = new Date(dateStr + 'T00:00:00');
-            if (range === '7days') {
-                return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-            } else if (range === 'month') {
-                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            } else if (response.status === 401 || response.status === 403) {
+                localStorage.removeItem('token');
+                window.location.href = 'studentlogin.html';
             } else {
-                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                console.error('Failed to fetch student data');
             }
+        } catch (error) {
+            console.error('Error fetching student data:', error);
         }
+    }
 
-        function convertMinutes(minutes, unit) {
-            if (unit === 'hours') return +(minutes / 60).toFixed(2);
-            if (unit === 'seconds') return minutes * 60;
-            return minutes;
-        }
-
-        function unitLabel(unit) {
-            return unit === 'hours' ? 'Hours' : unit === 'seconds' ? 'Seconds' : 'Minutes';
-        }
-
-        function getPeakText(peak, unit, range) {
-            if (!peak) return null;
-            const val = convertMinutes(peak.minutes, unit);
-            const d = new Date(peak.date + 'T00:00:00');
-            const dayStr = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            const rangeLabel = range === '7days' ? 'last 7 days' :
-                               range === 'month' ? 'last month' :
-                               range === 'year'  ? 'last year'  : 'year ' + range;
-            return `Peak in ${rangeLabel}: ${val.toFixed(unit === 'minutes' ? 0 : 2)} ${unitLabel(unit).toLowerCase()} on ${dayStr}`;
-        }
-
-        async function loadActivityGraph() {
+    // ── Leaderboard preview ───────────────────────────────────────────────────
+    async function fetchLeaderboard() {
+        try {
             const token = localStorage.getItem('token');
             if (!token) return;
-            const range = document.getElementById('activityRange').value;
-            const unit = document.getElementById('activityTimeUnit').value;
 
-            try {
-                const res = await fetch(`/api/student/activity-stats?range=${range}`, {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                if (!res.ok) return;
-                const stats = await res.json();
+            const response = await fetch(`${window.location.origin}/leaderboard`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+            });
 
-                // Build a complete date array for the range with zero-fills
-                const dataMap = {};
-                (stats.data || []).forEach(d => { dataMap[d.date] = d.minutes; });
+            if (response.ok) {
+                const data = await response.json();
+                const all = data.leaderboard;
+                const leaderboardPreview = document.getElementById('leaderboardPreview');
+                leaderboardPreview.innerHTML = '';
 
-                const labels = [];
-                const values = [];
-                const now = new Date();
-                let startDate, days;
-
-                if (range === '7days') {
-                    days = 7;
-                    startDate = new Date(now); startDate.setDate(startDate.getDate() - 6);
-                } else if (range === 'month') {
-                    days = 30;
-                    startDate = new Date(now); startDate.setDate(startDate.getDate() - 29);
-                } else if (range === 'year') {
-                    days = 365;
-                    startDate = new Date(now); startDate.setFullYear(startDate.getFullYear() - 1);
-                    startDate.setDate(startDate.getDate() + 1);
+                if (!all || !all.length) {
+                    leaderboardPreview.innerHTML = '<p style="color:var(--color-neutral-dark);text-align:center;padding:1rem;">No students yet — be the first!</p>';
                 } else {
-                    // specific year
-                    startDate = new Date(parseInt(range), 0, 1);
-                    const endDate = new Date(parseInt(range), 11, 31);
-                    const allDates = (stats.data || []).map(d => d.date).sort();
-                    allDates.forEach(dateStr => {
-                        labels.push(formatDateLabel(dateStr, range));
-                        values.push(convertMinutes(dataMap[dateStr] || 0, unit));
+                    all.slice(0, 10).forEach(student => {
+                        const rankClass = student.rank === 1 ? 'rank-1' : student.rank === 2 ? 'rank-2' : student.rank === 3 ? 'rank-3' : '';
+                        const medal = student.rank === 1 ? '🥇 ' : student.rank === 2 ? '🥈 ' : student.rank === 3 ? '🥉 ' : '';
+                        const xpDisplay = student.xp != null ? student.xp.toLocaleString() + ' XP' : (student.bytes != null ? student.bytes + ' B' : '—');
+                        leaderboardPreview.innerHTML += `
+                            <div class="leaderboard-item" style="${student.isCurrentUser ? 'background:linear-gradient(to right,rgba(255,215,0,0.18),rgba(255,165,0,0.1));border:2px solid var(--color-brand-gold);' : ''}">
+                                <div class="rank ${rankClass}">${student.rank}</div>
+                                <div class="student-info">
+                                    <div class="student-name">${medal}${student.displayName}${student.isCurrentUser ? ' <span style="color:var(--color-brand-gold);font-size:0.8rem;">(You)</span>' : ''}</div>
+                                </div>
+                                <div class="student-bytes"><i class="fas fa-bolt" style="margin-right:3px;font-size:0.8rem;"></i>${xpDisplay}</div>
+                            </div>`;
                     });
-                    days = 0;
                 }
-
-                if (days > 0) {
-                    for (let i = 0; i < days; i++) {
-                        const d = new Date(startDate);
-                        d.setDate(d.getDate() + i);
-                        const dateStr = d.toISOString().slice(0, 10);
-                        labels.push(formatDateLabel(dateStr, range));
-                        values.push(convertMinutes(dataMap[dateStr] || 0, unit));
-                    }
-                }
-
-                // Peak info
-                const peakInfo = document.getElementById('activityPeakInfo');
-                const peakText = document.getElementById('activityPeakText');
-                if (stats.peak && stats.peak.minutes > 0) {
-                    peakText.textContent = getPeakText(stats.peak, unit, range);
-                    peakInfo.style.display = 'block';
-                } else {
-                    peakInfo.style.display = 'none';
-                }
-
-                // Draw chart
-                const ctx = document.getElementById('activityChart').getContext('2d');
-                if (activityChart) activityChart.destroy();
-
-                activityChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels,
-                        datasets: [{
-                            label: unitLabel(unit) + ' on SchoolByte',
-                            data: values,
-                            backgroundColor: values.map((v, i) => {
-                                const maxV = Math.max(...values, 0.01);
-                                if (v === maxV && v > 0) return 'rgba(255, 193, 7, 0.9)'; // gold for peak
-                                return 'rgba(26, 42, 108, 0.75)';
-                            }),
-                            borderColor: values.map((v) => {
-                                const maxV = Math.max(...values, 0.01);
-                                return (v === maxV && v > 0) ? '#FFD700' : '#1a2a6c';
-                            }),
-                            borderWidth: 1,
-                            borderRadius: 5,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: ctx => ` ${ctx.parsed.y.toFixed(unit === 'minutes' ? 0 : 2)} ${unitLabel(unit).toLowerCase()}`
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: { display: true, text: unitLabel(unit) },
-                                ticks: { precision: unit === 'minutes' ? 0 : 2 }
-                            },
-                            x: {
-                                ticks: {
-                                    maxRotation: 45,
-                                    font: { size: days > 100 ? 9 : 11 }
-                                }
-                            }
-                        }
-                    }
-                });
-            } catch (e) {
-                console.error('Activity graph error:', e);
+            } else if (response.status === 401 || response.status === 403) {
+                localStorage.removeItem('token');
+                window.location.href = 'studentlogin.html';
             }
+        } catch (error) {
+            console.error('Error fetching leaderboard preview:', error);
         }
+    }
 
-        document.getElementById('activityRange').addEventListener('change', loadActivityGraph);
-        document.getElementById('activityTimeUnit').addEventListener('change', loadActivityGraph);
+    // ── Subject editor ────────────────────────────────────────────────────────
+    let subjectOptions = null;
+    let editorSelected = new Set();
 
-        // Load when progress tab is activated
-        document.querySelectorAll('.tabs-trigger').forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (btn.getAttribute('data-tab') === 'progress') setTimeout(loadActivityGraph, 200);
+    async function loadSubjectsCard() {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            const res = await fetch('/student/subjects/options', {
+                headers: { 'Authorization': 'Bearer ' + token }
             });
-        });
-        // Load only if progress tab is currently active
-        if (document.getElementById('progress') && document.getElementById('progress').classList.contains('active')) {
-            loadActivityGraph();
+            if (!res.ok) {
+                document.getElementById('subjectsRulesLine').textContent = 'Could not load your subject list. Please try again later.';
+                return;
+            }
+            subjectOptions = await res.json();
+            renderSubjectsCard();
+        } catch (e) {
+            console.error('loadSubjectsCard failed:', e);
         }
-        // ────────────────────────────────────────────────────────────────────
-        // Load achievements on page load
-        loadAchievements();
-        updateActiveTimeDisplay();
+    }
 
-        // ────────────────────────────────────────────────────────────────────
-        // Theme Picker
-        (function initThemePicker() {
-            var grid = document.getElementById('theme-picker-grid');
-            var savedMsg = document.getElementById('theme-saved-msg');
-            if (!grid || !window.SchoolByteTheme) return;
+    function renderSubjectsCard() {
+        if (!subjectOptions) return;
+        const banner = document.getElementById('subjectReselectBanner');
+        const bannerMsg = document.getElementById('subjectReselectMessage');
+        const rulesLine = document.getElementById('subjectsRulesLine');
+        const list = document.getElementById('subjectsList');
 
-            var themes = window.SchoolByteTheme.themes;
-            var current = window.SchoolByteTheme.getCurrent();
+        if (subjectOptions.needsSubjectSelection) {
+            banner.style.display = 'block';
+            const fromTo = subjectOptions.previousClass
+                ? `from ${subjectOptions.previousClass} to ${subjectOptions.class}`
+                : `to ${subjectOptions.class}`;
+            bannerMsg.textContent = `You moved up ${fromTo}. ${subjectOptions.class} needs ${subjectOptions.rules.expectedCount} subjects (${subjectOptions.rules.description}). Pick them now to keep taking quizzes!`;
+        } else {
+            banner.style.display = 'none';
+        }
 
-            Object.keys(themes).forEach(function(key) {
-                var t = themes[key];
-                var isActive = key === current;
+        rulesLine.textContent = `${subjectOptions.class}: ${subjectOptions.rules.description}.`;
 
-                var card = document.createElement('div');
-                card.setAttribute('data-theme-key', key);
-                card.style.cssText = [
-                    'border-radius: 12px',
-                    'overflow: hidden',
-                    'cursor: pointer',
-                    'border: 3px solid ' + (isActive ? t.gold : 'transparent'),
-                    'box-shadow: 0 2px 12px rgba(0,0,0,0.12)',
-                    'transition: border-color 0.25s, transform 0.2s',
-                    'position: relative'
-                ].join(';');
+        list.innerHTML = '';
+        const compulsorySet = new Set(subjectOptions.rules.compulsory || []);
+        const subjects = subjectOptions.currentSubjects || [];
+        if (!subjects.length) {
+            const empty = document.createElement('p');
+            empty.style.cssText = 'color:var(--color-neutral-dark);font-style:italic;';
+            empty.textContent = 'No subjects chosen yet — tap "Edit subjects" to pick yours!';
+            list.appendChild(empty);
+            return;
+        }
+        subjects.forEach(name => {
+            const isComp = compulsorySet.has(name);
+            const chip = document.createElement('span');
+            chip.style.cssText = 'padding:0.4rem 0.8rem;border-radius:999px;font-size:0.85rem;font-weight:600;display:inline-flex;align-items:center;gap:0.4rem;'
+                + (isComp
+                    ? 'background:linear-gradient(135deg,var(--color-brand-primary),var(--color-brand-secondary));color:#fff;'
+                    : 'background:var(--color-neutral-lightest);color:var(--color-brand-primary);border:1px solid var(--color-neutral-light);');
+            chip.innerHTML = (isComp ? '<i class="fas fa-lock" style="font-size:0.65rem;"></i> ' : '') + escapeHtml(name);
+            list.appendChild(chip);
+        });
+    }
 
-                var preview = document.createElement('div');
-                preview.style.cssText = [
-                    'background: linear-gradient(135deg, ' + t.primary + ', ' + t.secondary + ')',
-                    'height: 80px',
-                    'display: flex',
-                    'align-items: center',
-                    'justify-content: center',
-                    'gap: 8px'
-                ].join(';');
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
 
-                var dot1 = document.createElement('span');
-                dot1.style.cssText = 'width:18px;height:18px;border-radius:50%;background:' + t.gold + ';display:inline-block;';
-                var dot2 = document.createElement('span');
-                dot2.style.cssText = 'width:18px;height:18px;border-radius:50%;background:' + t.orange + ';display:inline-block;';
-                preview.appendChild(dot1);
-                preview.appendChild(dot2);
+    async function openSubjectEditor() {
+        if (!subjectOptions) await loadSubjectsCard();
+        if (!subjectOptions) { alert('Could not load subject options. Please try again.'); return; }
 
-                if (isActive) {
-                    var badge = document.createElement('span');
-                    badge.id = 'theme-active-badge-' + key;
-                    badge.style.cssText = [
-                        'position:absolute',
-                        'top:8px',
-                        'right:8px',
-                        'background:' + t.gold,
-                        'color:#000',
-                        'font-size:0.7rem',
-                        'font-weight:700',
-                        'padding:2px 8px',
-                        'border-radius:20px'
-                    ].join(';');
-                    badge.textContent = 'Active';
-                    card.appendChild(badge);
+        const overlay = document.getElementById('subjectEditorOverlay');
+        const classLine = document.getElementById('subjectEditorClassLine');
+        const rulesEl = document.getElementById('subjectEditorRules');
+        const compList = document.getElementById('editorCompulsoryList');
+        const electList = document.getElementById('editorElectivesList');
+        const electHeading = document.getElementById('editorElectivesHeading');
+        const electSub = document.getElementById('editorElectivesSub');
+        const errEl = document.getElementById('subjectEditorError');
+
+        errEl.style.display = 'none';
+        classLine.textContent = `Class: ${subjectOptions.class}`;
+        rulesEl.textContent = subjectOptions.rules.description + ` — ${subjectOptions.rules.expectedCount} subjects total.`;
+
+        compList.innerHTML = '';
+        subjectOptions.rules.compulsory.forEach(name => compList.appendChild(buildSubjectRow(name, true, true)));
+
+        editorSelected = new Set();
+        subjectOptions.rules.compulsory.forEach(n => editorSelected.add(n));
+        const currentSet = new Set(subjectOptions.currentSubjects || []);
+        const compSet = new Set(subjectOptions.rules.compulsory);
+
+        electHeading.textContent = subjectOptions.rules.electivesLabel || 'Choose your extra subjects';
+        electSub.textContent = `Pick exactly ${subjectOptions.rules.electivesToPick} from the list below.`;
+
+        electList.innerHTML = '';
+        const ordered = subjectOptions.rules.electives.slice().sort((a, b) => {
+            const aSel = currentSet.has(a) && !compSet.has(a);
+            const bSel = currentSet.has(b) && !compSet.has(b);
+            if (aSel === bSel) return a.localeCompare(b);
+            return aSel ? -1 : 1;
+        });
+        ordered.forEach(name => {
+            const checked = currentSet.has(name) && !compSet.has(name);
+            if (checked) editorSelected.add(name);
+            electList.appendChild(buildSubjectRow(name, checked, false));
+        });
+
+        updateEditorCounter();
+        overlay.style.display = 'flex';
+    }
+
+    function buildSubjectRow(name, checked, locked) {
+        const wrapper = document.createElement('label');
+        wrapper.style.cssText = 'display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.8rem;border:1.5px solid var(--color-neutral-light);border-radius:8px;cursor:'
+            + (locked ? 'not-allowed' : 'pointer') + ';background:'
+            + (locked ? 'var(--color-neutral-lightest)' : '#fff') + ';transition:border-color 0.2s;';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = checked;
+        cb.disabled = locked;
+        cb.dataset.subject = name;
+        cb.style.cssText = 'width:18px;height:18px;accent-color:var(--color-brand-gold);flex-shrink:0;';
+        const span = document.createElement('span');
+        span.textContent = name + (locked ? ' (must take)' : '');
+        span.style.cssText = 'font-size:0.92rem;color:var(--color-neutral-darkest);';
+        cb.addEventListener('change', () => {
+            if (cb.checked) editorSelected.add(name);
+            else editorSelected.delete(name);
+            updateEditorCounter();
+        });
+        if (!locked) {
+            wrapper.addEventListener('mouseenter', () => wrapper.style.borderColor = 'var(--color-brand-primary)');
+            wrapper.addEventListener('mouseleave', () => wrapper.style.borderColor = 'var(--color-neutral-light)');
+        }
+        wrapper.appendChild(cb);
+        wrapper.appendChild(span);
+        return wrapper;
+    }
+
+    function updateEditorCounter() {
+        if (!subjectOptions) return;
+        const expected = subjectOptions.rules.expectedCount;
+        const current = editorSelected.size;
+        const counter = document.getElementById('subjectEditorCounter');
+        const saveBtn = document.getElementById('subjectEditorSaveBtn');
+        const ok = current === expected;
+        counter.textContent = `${current} / ${expected} selected`;
+        saveBtn.disabled = !ok;
+        counter.style.color = ok ? 'var(--color-success-green)' : 'var(--color-brand-primary)';
+        if (saveBtn) saveBtn.style.opacity = ok ? '1' : '0.6';
+    }
+
+    function closeSubjectEditor() {
+        document.getElementById('subjectEditorOverlay').style.display = 'none';
+    }
+
+    async function saveSubjects() {
+        const errEl = document.getElementById('subjectEditorError');
+        const saveBtn = document.getElementById('subjectEditorSaveBtn');
+        errEl.style.display = 'none';
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/student/subjects', {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subjects: Array.from(editorSelected) })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                errEl.textContent = data.message || 'Failed to save subjects.';
+                errEl.style.display = 'block';
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save subjects';
+                return;
+            }
+            if (subjectOptions) {
+                subjectOptions.currentSubjects = data.subjects || Array.from(editorSelected);
+                subjectOptions.needsSubjectSelection = false;
+            }
+            renderSubjectsCard();
+            closeSubjectEditor();
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save subjects';
+        } catch (e) {
+            console.error('saveSubjects failed:', e);
+            errEl.textContent = 'Network error. Please try again.';
+            errEl.style.display = 'block';
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save subjects';
+        }
+    }
+
+    document.getElementById('subjectEditorOverlay').addEventListener('click', (e) => {
+        if (e.target.id === 'subjectEditorOverlay') closeSubjectEditor();
+    });
+
+    // ── Page init ─────────────────────────────────────────────────────────────
+    fetchStudentData();
+    fetchLeaderboard();
+    loadSubjectsCard();
+
+    // ── Tab switching ─────────────────────────────────────────────────────────
+    // Settings tab lives outside .tabs div, so handle it specially
+    const allTabs = ['profile','progress','leaderboard','settings'];
+
+    document.querySelectorAll('.tabs-trigger').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.tabs-trigger').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const tabId = tab.getAttribute('data-tab');
+
+            // Show/hide all tab content divs
+            allTabs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = (id === tabId) ? 'block' : 'none';
+            });
+            // Also toggle .tab-content active class for any tab-content inside .tabs
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            const target = document.getElementById(tabId);
+            if (target) target.classList.add('active');
+
+            if (tabId === 'progress') setTimeout(loadActivityGraph, 200);
+        });
+    });
+
+    // ── Preferred name change ─────────────────────────────────────────────────
+    document.getElementById('preferred-name').addEventListener('change', async function() {
+        const newPreferredName = this.value;
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${window.location.origin}/student/preferred-name`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ preferredName: newPreferredName })
+            });
+            if (response.ok) {
+                document.getElementById('studentNameDisplay').textContent = newPreferredName;
+                const wn = document.getElementById('welcomeName');
+                if (wn) wn.textContent = newPreferredName;
+                // Show subtle toast
+                showToast('✅ Name updated to ' + newPreferredName + '!');
+            } else {
+                const error = await response.json();
+                alert('Could not update name: ' + error.message);
+            }
+        } catch (error) {
+            console.error('Error updating preferred name:', error);
+            alert('Network error — please try again.');
+        }
+    });
+
+    // ── Font selection ────────────────────────────────────────────────────────
+    document.getElementById('font-select').addEventListener('change', async function() {
+        const selectedFont = this.value;
+        if (window.SBFont) window.SBFont.saveAndApply(selectedFont);
+        else {
+            document.body.style.fontFamily = selectedFont;
+            document.documentElement.style.fontFamily = selectedFont;
+            localStorage.setItem('sb_preferred_font', selectedFont);
+        }
+        try {
+            const token = localStorage.getItem('token');
+            const currentData = JSON.parse(localStorage.getItem('studentData') || '{}');
+            const updatedPreferences = { ...(currentData.preferences || {}), fontFamily: selectedFont };
+            const response = await fetch(`${window.location.origin}/student/preferences`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ preferences: updatedPreferences })
+            });
+            if (response.ok) {
+                currentData.preferences = updatedPreferences;
+                localStorage.setItem('studentData', JSON.stringify(currentData));
+                showToast('✅ Text style saved!');
+            } else {
+                alert('Error saving font preference');
+            }
+        } catch (error) {
+            console.error('Error updating font preference:', error);
+        }
+    });
+
+    // ── Sign out ──────────────────────────────────────────────────────────────
+    document.getElementById('signOutBtn').addEventListener('click', function() {
+        ['token','studentData','preferredName','preferredFont','bytesCount','studentName'].forEach(k => localStorage.removeItem(k));
+        window.location.href = 'studentlogin.html';
+    });
+
+    // ── Leaderboard "See Full" button ─────────────────────────────────────────
+    document.getElementById('showMoreBtn').addEventListener('click', function() {
+        window.location.href = 'leaderboard.html';
+    });
+
+    // ── Dark Mode toggle ──────────────────────────────────────────────────────
+    function syncDarkModeButton() {
+        var isDark = window.SchoolByteTheme && window.SchoolByteTheme.getDarkMode();
+        var icon = document.getElementById('darkModeIcon');
+        var label = document.getElementById('darkModeLabel');
+        var btn = document.getElementById('toggleDarkMode');
+        if (!icon || !label) return;
+        if (isDark) {
+            icon.className = 'fas fa-sun';
+            label.textContent = 'Turn Off';
+            if (btn) btn.style.background = 'linear-gradient(135deg,#252a40,#3a3f5c)';
+            if (btn) btn.style.color = '#dde0ee';
+        } else {
+            icon.className = 'fas fa-moon';
+            label.textContent = 'Turn On';
+            if (btn) { btn.style.background = ''; btn.style.color = ''; }
+        }
+    }
+    syncDarkModeButton();
+
+    document.getElementById('toggleDarkMode').addEventListener('click', function() {
+        if (window.SchoolByteTheme) {
+            window.SchoolByteTheme.toggleDarkMode();
+            syncDarkModeButton();
+        }
+    });
+
+    // ── Init font from localStorage ───────────────────────────────────────────
+    const savedFont = localStorage.getItem('sb_preferred_font') || localStorage.getItem('preferredFont');
+    if (savedFont) {
+        document.getElementById('font-select').value = savedFont;
+        document.body.style.fontFamily = savedFont;
+    }
+
+    // ── Toast helper ──────────────────────────────────────────────────────────
+    function showToast(msg) {
+        var t = document.createElement('div');
+        t.textContent = msg;
+        t.style.cssText = 'position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);background:#1a2a6c;color:#fff;padding:0.6rem 1.4rem;border-radius:999px;font-size:0.9rem;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.25);pointer-events:none;';
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2500);
+    }
+
+    // ── Load achievements (uses /api/student/achievements with progress data) ─
+    async function loadAchievements() {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${window.location.origin}/api/student/achievements`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) throw new Error('Failed to load achievements');
+
+            const data = await response.json();
+            const container = document.getElementById('achievementsContainer');
+
+            const unlocked = (data.achievements || []).filter(a => a.unlocked);
+            const inProgress = (data.achievements || []).filter(a => !a.unlocked && a.progress > 0 && (a.progress / (a.target || 1)) >= 0.4);
+
+            // Update welcome + progress stats
+            const achProgressEl = document.getElementById('progressAchievements');
+            const achBar = document.getElementById('progressAchBar');
+            const welcomeAch = document.getElementById('welcomeAchCount');
+            const totalCount = data.totalCount || 0;
+            if (achProgressEl) achProgressEl.textContent = unlocked.length + ' / ' + totalCount;
+            if (achBar) achBar.style.width = Math.min(100, Math.round((unlocked.length / Math.max(totalCount, 1)) * 100)) + '%';
+            if (welcomeAch) welcomeAch.textContent = unlocked.length + ' / ' + totalCount;
+
+            const tierColors = { Bronze: '#cd7f32', Silver: '#b8c0cc', Gold: '#ffd700', Platinum: '#e5e4e2', Diamond: '#7dd3fc' };
+
+            function achItemHTML(a, showDate) {
+                const pct = a.target ? Math.round((a.progress / a.target) * 100) : 0;
+                const tc = tierColors[a.tier] || '#ccc';
+                const textColor = a.tier === 'Gold' ? '#b8860b' : a.tier === 'Platinum' ? '#6b7280' : tc;
+                return `<div style="display:flex;align-items:flex-start;gap:1rem;padding:1rem;background:var(--color-neutral-lightest);border-radius:10px;border-left:4px solid ${tc};">
+                    <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,${tc}44,${tc}18);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fas ${a.icon || 'fa-trophy'}" style="color:${tc};font-size:1.1rem;"></i>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:2px;">
+                            <div style="font-weight:700;font-size:0.95rem;">${a.name}</div>
+                            <span style="font-size:0.7rem;font-weight:700;background:${tc}28;color:${textColor};padding:2px 9px;border-radius:999px;white-space:nowrap;">${a.tier}</span>
+                        </div>
+                        <p style="color:var(--color-neutral-dark);font-size:0.84rem;margin-bottom:5px;">${a.description}</p>
+                        ${!a.unlocked && a.target > 1 ? `<div style="height:5px;background:var(--color-neutral-light);border-radius:999px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${tc};border-radius:999px;transition:width 0.5s;"></div></div><p style="font-size:0.73rem;color:var(--color-neutral-medium);margin-top:3px;">${a.progress} / ${a.target} — ${pct}% done</p>` : ''}
+                        ${a.unlocked && showDate ? `<p style="font-size:0.73rem;color:var(--color-neutral-medium);">Earned ${new Date(a.unlockedAt).toLocaleDateString()}</p>` : ''}
+                        ${a.unlocked ? `<p style="font-size:0.73rem;color:var(--color-success-green);font-weight:700;margin-top:2px;"><i class="fas fa-check-circle"></i> +${a.byteReward} bytes · +${a.xpReward} XP</p>` : ''}
+                    </div>
+                </div>`;
+            }
+
+            let html = '';
+
+            if (unlocked.length > 0) {
+                const sorted = [...unlocked].sort((a, b) => new Date(b.unlockedAt) - new Date(a.unlockedAt));
+                html += `<div style="font-weight:800;font-size:0.88rem;letter-spacing:0.04em;color:var(--color-brand-gold);text-transform:uppercase;margin-bottom:0.6rem;display:flex;align-items:center;gap:0.4rem;"><i class="fas fa-unlock"></i> Unlocked — ${unlocked.length}</div>`;
+                html += sorted.slice(0, 10).map(a => achItemHTML(a, true)).join('');
+                if (unlocked.length > 10) html += `<p style="text-align:center;color:var(--color-neutral-medium);font-size:0.82rem;margin-top:0.5rem;">…and ${unlocked.length - 10} more badges</p>`;
+            }
+
+            if (inProgress.length > 0) {
+                const sorted = [...inProgress].sort((a, b) => (b.progress / b.target) - (a.progress / a.target));
+                html += `<div style="font-weight:800;font-size:0.88rem;letter-spacing:0.04em;color:var(--color-brand-primary);text-transform:uppercase;margin:1.25rem 0 0.6rem;display:flex;align-items:center;gap:0.4rem;"><i class="fas fa-hourglass-half"></i> Almost there — ${inProgress.length}</div>`;
+                html += sorted.slice(0, 5).map(a => achItemHTML(a, false)).join('');
+            }
+
+            if (!html) {
+                html = `<div style="text-align:center;padding:2rem;color:var(--color-neutral-dark);">
+                    <div style="font-size:3rem;margin-bottom:0.75rem;">🏅</div>
+                    <div style="font-weight:700;margin-bottom:0.4rem;">No badges yet — let's change that!</div>
+                    <p style="font-size:0.88rem;color:var(--color-neutral-medium);">Do quizzes, complete activities and upload projects to start earning badges.</p>
+                </div>`;
+            }
+
+            container.innerHTML = `<div style="display:flex;flex-direction:column;gap:0.65rem;">${html}</div>`;
+
+        } catch (error) {
+            console.error('Error loading achievements:', error);
+            document.getElementById('achievementsContainer').innerHTML = `
+                <div style="text-align:center;padding:2rem;color:var(--color-error-red);">
+                    <i class="fas fa-exclamation-triangle" style="font-size:2rem;margin-bottom:1rem;"></i>
+                    <p>Could not load badges. Please refresh and try again.</p>
+                </div>`;
+        }
+    }
+
+    // ── Activity / Study time chart ───────────────────────────────────────────
+    let activityChart = null;
+
+    function formatDateLabel(dateStr, range) {
+        const d = new Date(dateStr + 'T00:00:00');
+        if (range === '7days') return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    function convertMinutes(minutes, unit) {
+        if (unit === 'hours') return +(minutes / 60).toFixed(2);
+        if (unit === 'seconds') return minutes * 60;
+        return minutes;
+    }
+    function unitLabel(unit) {
+        return unit === 'hours' ? 'Hours' : unit === 'seconds' ? 'Seconds' : 'Minutes';
+    }
+    function getPeakText(peak, unit, range) {
+        if (!peak) return null;
+        const val = convertMinutes(peak.minutes, unit);
+        const d = new Date(peak.date + 'T00:00:00');
+        const dayStr = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const rangeLabel = range === '7days' ? 'last 7 days' : range === 'month' ? 'last month' : range === 'year' ? 'last year' : 'year ' + range;
+        return `Your best day in ${rangeLabel}: ${val.toFixed(unit === 'minutes' ? 0 : 2)} ${unitLabel(unit).toLowerCase()} on ${dayStr}`;
+    }
+
+    async function loadActivityGraph() {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const range = document.getElementById('activityRange').value;
+        const unit = document.getElementById('activityTimeUnit').value;
+
+        try {
+            const res = await fetch(`/api/student/activity-stats?range=${range}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) return;
+            const stats = await res.json();
+
+            const dataMap = {};
+            (stats.data || []).forEach(d => { dataMap[d.date] = d.minutes; });
+
+            const labels = [], values = [];
+            const now = new Date();
+            let startDate, days;
+
+            if (range === '7days') {
+                days = 7; startDate = new Date(now); startDate.setDate(startDate.getDate() - 6);
+            } else if (range === 'month') {
+                days = 30; startDate = new Date(now); startDate.setDate(startDate.getDate() - 29);
+            } else if (range === 'year') {
+                days = 365; startDate = new Date(now);
+                startDate.setFullYear(startDate.getFullYear() - 1);
+                startDate.setDate(startDate.getDate() + 1);
+            } else {
+                startDate = new Date(parseInt(range), 0, 1);
+                const allDates = (stats.data || []).map(d => d.date).sort();
+                allDates.forEach(dateStr => {
+                    labels.push(formatDateLabel(dateStr, range));
+                    values.push(convertMinutes(dataMap[dateStr] || 0, unit));
+                });
+                days = 0;
+            }
+
+            if (days > 0) {
+                for (let i = 0; i < days; i++) {
+                    const d = new Date(startDate); d.setDate(d.getDate() + i);
+                    const dateStr = d.toISOString().slice(0, 10);
+                    labels.push(formatDateLabel(dateStr, range));
+                    values.push(convertMinutes(dataMap[dateStr] || 0, unit));
                 }
+            }
 
-                var info = document.createElement('div');
-                info.style.cssText = 'padding: 0.75rem 1rem; background: #fff;';
+            const peakInfo = document.getElementById('activityPeakInfo');
+            const peakText = document.getElementById('activityPeakText');
+            if (stats.peak && stats.peak.minutes > 0) {
+                peakText.textContent = getPeakText(stats.peak, unit, range);
+                peakInfo.style.display = 'block';
+            } else {
+                peakInfo.style.display = 'none';
+            }
 
-                var title = document.createElement('div');
-                title.style.cssText = 'font-weight: 700; font-size: 0.95rem; color: #1a1a2e;';
-                title.textContent = t.name;
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            if (activityChart) activityChart.destroy();
 
-                var desc = document.createElement('div');
-                desc.style.cssText = 'font-size: 0.78rem; color: #6b7280; margin-top: 3px;';
-                desc.textContent = t.description;
-
-                info.appendChild(title);
-                info.appendChild(desc);
-                card.appendChild(preview);
-                card.appendChild(info);
-
-                card.addEventListener('mouseenter', function() {
-                    card.style.transform = 'translateY(-3px)';
-                });
-                card.addEventListener('mouseleave', function() {
-                    card.style.transform = 'translateY(0)';
-                });
-
-                card.addEventListener('click', function() {
-                    window.SchoolByteTheme.apply(key);
-
-                    // Update borders & badges
-                    grid.querySelectorAll('[data-theme-key]').forEach(function(c) {
-                        var k = c.getAttribute('data-theme-key');
-                        var th = themes[k];
-                        c.style.borderColor = (k === key) ? th.gold : 'transparent';
-                        var existing = c.querySelector('[id^="theme-active-badge-"]');
-                        if (existing) existing.remove();
-                        if (k === key) {
-                            var b = document.createElement('span');
-                            b.id = 'theme-active-badge-' + k;
-                            b.style.cssText = [
-                                'position:absolute',
-                                'top:8px',
-                                'right:8px',
-                                'background:' + th.gold,
-                                'color:#000',
-                                'font-size:0.7rem',
-                                'font-weight:700',
-                                'padding:2px 8px',
-                                'border-radius:20px'
-                            ].join(';');
-                            b.textContent = 'Active';
-                            c.appendChild(b);
+            activityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: unitLabel(unit) + ' on SchoolByte',
+                        data: values,
+                        backgroundColor: values.map(v => {
+                            const maxV = Math.max(...values, 0.01);
+                            return (v === maxV && v > 0) ? 'rgba(255,193,7,0.9)' : 'rgba(26,42,108,0.7)';
+                        }),
+                        borderColor: values.map(v => {
+                            const maxV = Math.max(...values, 0.01);
+                            return (v === maxV && v > 0) ? '#FFD700' : '#1a2a6c';
+                        }),
+                        borderWidth: 1,
+                        borderRadius: 5,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` ${ctx.parsed.y.toFixed(unit === 'minutes' ? 0 : 2)} ${unitLabel(unit).toLowerCase()}`
+                            }
                         }
-                    });
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: unitLabel(unit) },
+                            ticks: { precision: unit === 'minutes' ? 0 : 2 }
+                        },
+                        x: {
+                            ticks: { maxRotation: 45, font: { size: days > 100 ? 9 : 11 } }
+                        }
+                    }
+                }
+            });
+        } catch (e) {
+            console.error('Activity graph error:', e);
+        }
+    }
 
-                    if (savedMsg) {
-                        savedMsg.style.display = 'block';
-                        clearTimeout(savedMsg._timer);
-                        savedMsg._timer = setTimeout(function() { savedMsg.style.display = 'none'; }, 2500);
+    document.getElementById('activityRange').addEventListener('change', loadActivityGraph);
+    document.getElementById('activityTimeUnit').addEventListener('change', loadActivityGraph);
+
+    document.querySelectorAll('.tabs-trigger').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.getAttribute('data-tab') === 'progress') setTimeout(loadActivityGraph, 200);
+        });
+    });
+    if (document.getElementById('progress') && document.getElementById('progress').classList.contains('active')) {
+        loadActivityGraph();
+    }
+
+    // ── Load achievements on page load ────────────────────────────────────────
+    loadAchievements();
+    updateActiveTimeDisplay();
+
+    // ── Theme Picker ──────────────────────────────────────────────────────────
+    (function initThemePicker() {
+        var grid = document.getElementById('theme-picker-grid');
+        var savedMsg = document.getElementById('theme-saved-msg');
+        if (!grid || !window.SchoolByteTheme) return;
+
+        var themes = window.SchoolByteTheme.themes;
+        var current = window.SchoolByteTheme.getCurrent();
+
+        Object.keys(themes).forEach(function(key) {
+            var t = themes[key];
+            var isActive = key === current;
+
+            var card = document.createElement('div');
+            card.setAttribute('data-theme-key', key);
+            card.style.cssText = [
+                'border-radius:12px','overflow:hidden','cursor:pointer',
+                'border:3px solid ' + (isActive ? t.gold : 'transparent'),
+                'box-shadow:0 2px 12px rgba(0,0,0,0.12)',
+                'transition:border-color 0.25s,transform 0.2s','position:relative'
+            ].join(';');
+
+            var preview = document.createElement('div');
+            preview.style.cssText = [
+                'background:linear-gradient(135deg,' + t.primary + ',' + t.secondary + ')',
+                'height:75px','display:flex','align-items:center','justify-content:center','gap:8px'
+            ].join(';');
+
+            var dot1 = document.createElement('span');
+            dot1.style.cssText = 'width:18px;height:18px;border-radius:50%;background:' + t.gold + ';display:inline-block;';
+            var dot2 = document.createElement('span');
+            dot2.style.cssText = 'width:18px;height:18px;border-radius:50%;background:' + t.orange + ';display:inline-block;';
+            preview.appendChild(dot1);
+            preview.appendChild(dot2);
+
+            if (isActive) {
+                var badge = document.createElement('span');
+                badge.id = 'theme-active-badge-' + key;
+                badge.style.cssText = 'position:absolute;top:7px;right:7px;background:' + t.gold + ';color:#000;font-size:0.68rem;font-weight:800;padding:2px 8px;border-radius:20px;';
+                badge.textContent = '✓ Active';
+                card.appendChild(badge);
+            }
+
+            var info = document.createElement('div');
+            info.style.cssText = 'padding:0.65rem 0.9rem;background:#fff;';
+            var title = document.createElement('div');
+            title.style.cssText = 'font-weight:700;font-size:0.9rem;color:#1a1a2e;';
+            title.textContent = t.name;
+            var desc = document.createElement('div');
+            desc.style.cssText = 'font-size:0.74rem;color:#6b7280;margin-top:2px;';
+            desc.textContent = t.description;
+            info.appendChild(title);
+            info.appendChild(desc);
+            card.appendChild(preview);
+            card.appendChild(info);
+
+            card.addEventListener('mouseenter', function() { card.style.transform = 'translateY(-3px)'; });
+            card.addEventListener('mouseleave', function() { card.style.transform = 'translateY(0)'; });
+
+            card.addEventListener('click', function() {
+                window.SchoolByteTheme.apply(key);
+                grid.querySelectorAll('[data-theme-key]').forEach(function(c) {
+                    var k = c.getAttribute('data-theme-key');
+                    var th = themes[k];
+                    c.style.borderColor = (k === key) ? th.gold : 'transparent';
+                    var existing = c.querySelector('[id^="theme-active-badge-"]');
+                    if (existing) existing.remove();
+                    if (k === key) {
+                        var b = document.createElement('span');
+                        b.id = 'theme-active-badge-' + k;
+                        b.style.cssText = 'position:absolute;top:7px;right:7px;background:' + th.gold + ';color:#000;font-size:0.68rem;font-weight:800;padding:2px 8px;border-radius:20px;';
+                        b.textContent = '✓ Active';
+                        c.appendChild(b);
                     }
                 });
-
-                grid.appendChild(card);
+                if (savedMsg) {
+                    savedMsg.style.display = 'block';
+                    clearTimeout(savedMsg._timer);
+                    savedMsg._timer = setTimeout(function() { savedMsg.style.display = 'none'; }, 2500);
+                }
             });
-        })();
 
-    </script>
+            grid.appendChild(card);
+        });
+    })();
 
-    <script src="notifications-widget.js"></script>
-    <script src="bytenexus-chat-widget.js"></script>
-    <script src="ai-buddy-widget.js"></script>
-    <script src="bytenexus-support-widget.js"></script>
+    // ── Fix: settings tab is outside .tabs div, wire up manually ─────────────
+    document.querySelectorAll('.tabs-trigger').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var tabId = btn.getAttribute('data-tab');
+            var settingsEl = document.getElementById('settings');
+            if (settingsEl) {
+                settingsEl.style.display = (tabId === 'settings') ? 'block' : 'none';
+            }
+        });
+    });
+
+</script>
+
+<script src="notifications-widget.js"></script>
+<script src="bytenexus-chat-widget.js"></script>
+<script src="ai-buddy-widget.js"></script>
+<script src="bytenexus-support-widget.js"></script>
 </body>
 </html>
